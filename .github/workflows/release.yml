@@ -8,6 +8,8 @@ on:
       - "BG3ControllerActionMenu/**"
       - "build.ps1"
       - ".github/workflows/release.yml"
+      - "tools/verify-package.ps1"
+      - "tools/validate.py"
   workflow_dispatch:
 
 permissions:
@@ -50,12 +52,29 @@ jobs:
             Write-Host "Release $env:TAG does not exist and will be published."
           }
 
+      - uses: actions/setup-python@v5
+        if: steps.existing.outputs.exists != 'true'
+        with:
+          python-version: "3.x"
+
+      - name: Validate repository
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: python tools/validate.py
+
       - name: Build package
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: ./build.ps1 -Configuration $env:VERSION
+
+      - name: Verify packaged contents
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./tools/verify-package.ps1 -Package "./build/BG3ControllerActionMenu-$env:VERSION.pak"
 
       - name: Create GitHub release
         if: steps.existing.outputs.exists != 'true'
