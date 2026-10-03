@@ -39,11 +39,15 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           gh release view $env:TAG --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -eq 0) {
+          $exists = ($LASTEXITCODE -eq 0)
+          $global:LASTEXITCODE = 0
+
+          if ($exists) {
             "exists=true" >> $env:GITHUB_OUTPUT
             Write-Host "Release $env:TAG already exists; publication is immutable and will be skipped."
           } else {
             "exists=false" >> $env:GITHUB_OUTPUT
+            Write-Host "Release $env:TAG does not exist and will be published."
           }
 
       - name: Build package
