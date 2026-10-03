@@ -12,6 +12,7 @@ $Extract = Join-Path $Root "build/verify-extracted"
 if (-not (Test-Path $Package)) {
     throw "Package does not exist: $Package"
 }
+$Package = (Resolve-Path $Package).Path
 
 $divine = Get-ChildItem -Path $Tools -Filter "divine.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $divine) {
