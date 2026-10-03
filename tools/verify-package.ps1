@@ -51,7 +51,9 @@ $bootstrap = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/
 
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
+    "CurrentPlayer.SelectedCharacter.SpellsAndActions",
     "CurrentPlayer.SelectedCharacter.HotBars",
+    "VMCharacterAction",
     "UseSlotCommand",
     "SingleHotBar.SlotList",
     "ClearSingleHotbarCommand",
