@@ -75,6 +75,80 @@
 
     <ls:UIWidget.Resources>
         <ResourceDictionary>
+            <DataTemplate x:Key="CAM_ActionTemplate" DataType="{x:Type ls:VMCharacterAction}">
+                <ContentControl x:Name="EntryRoot"
+                                Width="136"
+                                Height="136"
+                                Margin="8"
+                                Focusable="True"
+                                ls:MoveFocus.Focusable="True"
+                                IsEnabled="{Binding CanUse}"
+                                Tag="{Binding .}">
+                    <ContentControl.ToolTip>
+                        <ls:LSTooltip Content="{TemplateBinding DataContext}"/>
+                    </ContentControl.ToolTip>
+                    <Grid>
+                        <Border x:Name="Background"
+                                Width="124"
+                                Height="124"
+                                CornerRadius="8"
+                                Background="#CC111820"
+                                BorderBrush="#887F8A96"
+                                BorderThickness="2"/>
+                        <Rectangle Width="108"
+                                   Height="108"
+                                   Fill="{Binding Icon}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                        <Image x:Name="SubSelectIndicator"
+                               Source="pack://application:,,,/Core;component/Assets/BottomBar/ico_spellSubSelectIndicator.png"
+                               Stretch="None"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Top"
+                               Margin="0,10,10,0"
+                               Visibility="Collapsed"/>
+                        <Border x:Name="FocusFrame"
+                                Width="132"
+                                Height="132"
+                                CornerRadius="10"
+                                BorderBrush="#FFF3D68A"
+                                BorderThickness="5"
+                                Visibility="Collapsed"/>
+                    </Grid>
+                </ContentControl>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding IsContainer}" Value="True">
+                        <Setter TargetName="SubSelectIndicator" Property="Visibility" Value="Visible"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), ElementName=EntryRoot}" Value="True">
+                        <Setter Property="Panel.ZIndex" Value="1"/>
+                        <Setter TargetName="FocusFrame" Property="Visibility" Value="Visible"/>
+                        <Setter TargetName="Background" Property="Background" Value="#EE263342"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding CanUse}" Value="False">
+                        <Setter TargetName="EntryRoot" Property="Opacity" Value="0.42"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate x:Key="CAM_ActionGroupTemplate" DataType="{x:Type ls:VMActionGroup}">
+                <StackPanel x:Name="GroupRoot" Margin="0,22,0,34">
+                    <TextBlock Text="{Binding Name}"
+                               Margin="10,0,0,14"
+                               FontSize="34"
+                               FontWeight="DemiBold"
+                               Foreground="#FFE9D8A6"/>
+                    <ItemsControl ItemsSource="{Binding Actions}"
+                                  ItemTemplate="{StaticResource CAM_ActionTemplate}"
+                                  ItemsPanel="{StaticResource CAM_GridPanel}"/>
+                </StackPanel>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding Actions.Count}" Value="0">
+                        <Setter TargetName="GroupRoot" Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
             <DataTemplate x:Key="CAM_SlotTemplate">
                 <ContentControl x:Name="EntryRoot"
                                 Width="136"
@@ -213,7 +287,7 @@
             </ItemsPanelTemplate>
 
             <DataTemplate x:Key="CAM_HotBarSection">
-                <StackPanel Margin="0,22,0,34">
+                <StackPanel x:Name="SectionRoot" Margin="0,22,0,34">
                     <TextBlock x:Name="SectionTitle"
                                Text="{Binding HotBarType}"
                                Margin="10,0,0,14"
@@ -228,10 +302,10 @@
 
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HotBarType}" Value="CommonHotBar">
-                        <Setter TargetName="SectionTitle" Property="Text" Value="Actions"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ClassHotBar">
-                        <Setter TargetName="SectionTitle" Property="Text" Value="Class"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ItemHotBar">
                         <Setter TargetName="SectionTitle" Property="Text" Value="Items"/>
@@ -240,7 +314,7 @@
                         <Setter TargetName="SectionTitle" Property="Text" Value="Passives"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="FixedSideBar">
-                        <Setter TargetName="SectionTitle" Property="Text" Value="Common"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
@@ -281,8 +355,15 @@
                                            VerticalScrollBarVisibility="Auto"
                                            HorizontalScrollBarVisibility="Disabled"
                                            ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220">
-                            <ItemsControl ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"
-                                          ItemTemplate="{StaticResource CAM_HotBarSection}"/>
+                            <StackPanel>
+                                <ItemsControl x:Name="ActionGroups"
+                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"
+                                              ItemTemplate="{StaticResource CAM_ActionGroupTemplate}"/>
+
+                                <ItemsControl x:Name="UtilityHotbars"
+                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"
+                                              ItemTemplate="{StaticResource CAM_HotBarSection}"/>
+                            </StackPanel>
                         </ls:LSScrollViewer>
 
                         <Grid x:Name="VariantHolder"
