@@ -1,7 +1,7 @@
 local RadialProbe = {}
 
 local OUTPUT_FILE = "BG3ControllerActionMenu/probe.json"
-local BUILD_ID = "0.0.1-probe"
+local BUILD_ID = "0.0.2-grid-prototype"
 local MAX_DEPTH = 16
 local MAX_NODES = 2500
 local MAX_PROPERTIES = 300
@@ -380,11 +380,13 @@ local function resetProbe()
     Ext.Utils.Print("[BG3ControllerActionMenu] probe log reset")
 end
 
-function RadialProbe.Register()
+function RadialProbe.Register(options)
     if registered then
         return
     end
     registered = true
+    options = options or {}
+    local auto = options.Auto ~= false
 
     persist()
 
@@ -395,21 +397,23 @@ function RadialProbe.Register()
         Ext.RegisterConsoleCommand("cam_probe_reset", resetProbe)
     end)
 
-    pcall(function()
-        Ext.Events.ControllerButtonInput:Subscribe(function()
-            startBurst()
+    if auto then
+        pcall(function()
+            Ext.Events.ControllerButtonInput:Subscribe(function()
+                startBurst()
+            end)
         end)
-    end)
 
-    pcall(function()
-        Ext.Events.SessionLoaded:Subscribe(function()
-            burstGeneration = burstGeneration + 1
-            Ext.Timer.WaitForRealtime(1000, startBurst)
+        pcall(function()
+            Ext.Events.SessionLoaded:Subscribe(function()
+                burstGeneration = burstGeneration + 1
+                Ext.Timer.WaitForRealtime(1000, startBurst)
+            end)
         end)
-    end)
+    end
 
     Ext.Utils.Print(
-        "[BG3ControllerActionMenu] 0.0.1-probe loaded; open the controller action radial once"
+        "[BG3ControllerActionMenu] radial probe registered; use !cam_probe when diagnostics are needed"
     )
 end
 
