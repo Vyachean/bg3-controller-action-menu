@@ -61,7 +61,9 @@ def validate_semantics() -> list[str]:
             ACTION_PAGE,
             [
                 'ls:UIWidget.ContextName="HotBar"',
+                "CurrentPlayer.SelectedCharacter.SpellsAndActions",
                 "CurrentPlayer.SelectedCharacter.HotBars",
+                "VMCharacterAction",
                 "UseSlotCommand",
                 "SingleHotBar.SlotList",
                 "ClearSingleHotbarCommand",
