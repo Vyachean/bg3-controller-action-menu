@@ -22,6 +22,7 @@
                                     Value="{Binding Path=FocusedElement.DataContext, ElementName=CAM_ActionMenu}"/>
             <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElement}"
                                    CommandParameter="{Binding Path=FocusedElement, ElementName=CAM_ActionMenu}"/>
+            <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
             <b:InvokeCommandAction Command="{Binding HighlightResourcesCommand}"
                                    CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"/>
         </b:EventTrigger>
@@ -31,8 +32,29 @@
             <b:ChangePropertyAction TargetObject="{Binding CurrentPlayer.UIData}"
                                     PropertyName="AreRadialsOpen"
                                     Value="True"/>
+            <b:InvokeCommandAction Command="{Binding TutorialEvent}"
+                                   CommandParameter="f651618e-d396-4d4a-ba5a-8f50c3697708"/>
+            <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_Open"/>
             <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
         </b:EventTrigger>
+
+        <b:EventTrigger EventName="Loaded">
+            <b:Interaction.Behaviors>
+                <b:ConditionBehavior>
+                    <b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding Metadata, ElementName=CAM_ActionMenu}"
+                                               Operator="Equal"
+                                               RightOperand="CallAllies"/>
+                    </b:ConditionalExpression>
+                </b:ConditionBehavior>
+            </b:Interaction.Behaviors>
+            <b:InvokeCommandAction Command="{Binding CallAllies}"/>
+        </b:EventTrigger>
+
+        <b:DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
+                       Value="True">
+            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu" FocusElement="{Binding ElementName=VariantList}"/>
+        </b:DataTrigger>
 
         <b:EventTrigger EventName="WidgetClosing">
             <b:InvokeCommandAction Command="{Binding HideTooltipOnUIElement}"/>
@@ -40,11 +62,93 @@
             <b:ChangePropertyAction TargetObject="{Binding CurrentPlayer.UIData}"
                                     PropertyName="AreRadialsOpen"
                                     Value="False"/>
+            <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_Close"/>
+        </b:EventTrigger>
+
+        <b:EventTrigger EventName="MoveFocusRight">
+            <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_MoveRight"/>
+        </b:EventTrigger>
+        <b:EventTrigger EventName="MoveFocusLeft">
+            <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_MoveLeft"/>
         </b:EventTrigger>
     </b:Interaction.Triggers>
 
     <ls:UIWidget.Resources>
         <ResourceDictionary>
+            <DataTemplate x:Key="CAM_ActionTemplate" DataType="{x:Type ls:VMCharacterAction}">
+                <ContentControl x:Name="EntryRoot"
+                                Width="136"
+                                Height="136"
+                                Margin="8"
+                                Focusable="True"
+                                ls:MoveFocus.Focusable="True"
+                                IsEnabled="{Binding CanUse}"
+                                Tag="{Binding .}">
+                    <ContentControl.ToolTip>
+                        <ls:LSTooltip Content="{TemplateBinding DataContext}"/>
+                    </ContentControl.ToolTip>
+                    <Grid>
+                        <Border x:Name="Background"
+                                Width="124"
+                                Height="124"
+                                CornerRadius="8"
+                                Background="#CC111820"
+                                BorderBrush="#887F8A96"
+                                BorderThickness="2"/>
+                        <Rectangle Width="108"
+                                   Height="108"
+                                   Fill="{Binding Icon}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                        <Image x:Name="SubSelectIndicator"
+                               Source="pack://application:,,,/Core;component/Assets/BottomBar/ico_spellSubSelectIndicator.png"
+                               Stretch="None"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Top"
+                               Margin="0,10,10,0"
+                               Visibility="Collapsed"/>
+                        <Border x:Name="FocusFrame"
+                                Width="132"
+                                Height="132"
+                                CornerRadius="10"
+                                BorderBrush="#FFF3D68A"
+                                BorderThickness="5"
+                                Visibility="Collapsed"/>
+                    </Grid>
+                </ContentControl>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding IsContainer}" Value="True">
+                        <Setter TargetName="SubSelectIndicator" Property="Visibility" Value="Visible"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), ElementName=EntryRoot}" Value="True">
+                        <Setter Property="Panel.ZIndex" Value="1"/>
+                        <Setter TargetName="FocusFrame" Property="Visibility" Value="Visible"/>
+                        <Setter TargetName="Background" Property="Background" Value="#EE263342"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding CanUse}" Value="False">
+                        <Setter TargetName="EntryRoot" Property="Opacity" Value="0.42"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate x:Key="CAM_ActionGroupTemplate" DataType="{x:Type ls:VMActionGroup}">
+                <StackPanel x:Name="GroupRoot" Margin="0,22,0,34">
+                    <TextBlock Text="{Binding Name}"
+                               Margin="10,0,0,14"
+                               FontSize="34"
+                               FontWeight="DemiBold"
+                               Foreground="#FFE9D8A6"/>
+                    <ItemsControl ItemsSource="{Binding Actions}"
+                                  ItemTemplate="{StaticResource CAM_ActionTemplate}"
+                                  ItemsPanel="{StaticResource CAM_GridPanel}"/>
+                </StackPanel>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding Actions.Count}" Value="0">
+                        <Setter TargetName="GroupRoot" Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
             <DataTemplate x:Key="CAM_SlotTemplate">
                 <ContentControl x:Name="EntryRoot"
                                 Width="136"
@@ -54,6 +158,10 @@
                                 ls:MoveFocus.Focusable="True"
                                 IsEnabled="{Binding CanUse}"
                                 Tag="{Binding .}">
+                    <ContentControl.ToolTip>
+                        <ls:LSTooltip Content="{TemplateBinding DataContext}"/>
+                    </ContentControl.ToolTip>
+
                     <Grid>
                         <Border x:Name="Background"
                                 Width="124"
@@ -82,6 +190,14 @@
                                    Width="108"
                                    Height="108"
                                    Fill="{Binding Passive.Icon}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+
+                        <Rectangle x:Name="DirectActionIcon"
+                                   Width="108"
+                                   Height="108"
+                                   Fill="{Binding Icon}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    Visibility="Collapsed"/>
@@ -125,6 +241,7 @@
                         <Setter TargetName="SpellIcon" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="ItemIcon" Property="Visibility" Value="Visible"/>
                         <Setter TargetName="PassiveIcon" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="DirectActionIcon" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="SlotInfo" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="ItemCount" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
@@ -133,10 +250,20 @@
                         <Setter TargetName="SpellIcon" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="ItemIcon" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="PassiveIcon" Property="Visibility" Value="Visible"/>
+                        <Setter TargetName="DirectActionIcon" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="SlotInfo" Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding ., Converter={StaticResource TypeConverter}}" Value="ls.VMCharacterAction">
+                        <Setter TargetName="SpellIcon" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="ItemIcon" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="PassiveIcon" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="DirectActionIcon" Property="Visibility" Value="Visible"/>
                         <Setter TargetName="SlotInfo" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), ElementName=EntryRoot}" Value="True">
+                        <Setter Property="Panel.ZIndex" Value="1"/>
                         <Setter TargetName="FocusFrame" Property="Visibility" Value="Visible"/>
                         <Setter TargetName="Background" Property="Background" Value="#EE263342"/>
                     </DataTrigger>
@@ -160,7 +287,7 @@
             </ItemsPanelTemplate>
 
             <DataTemplate x:Key="CAM_HotBarSection">
-                <StackPanel Margin="0,22,0,34">
+                <StackPanel x:Name="SectionRoot" Margin="0,22,0,34">
                     <TextBlock x:Name="SectionTitle"
                                Text="{Binding HotBarType}"
                                Margin="10,0,0,14"
@@ -175,10 +302,10 @@
 
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HotBarType}" Value="CommonHotBar">
-                        <Setter TargetName="SectionTitle" Property="Text" Value="Actions"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ClassHotBar">
-                        <Setter TargetName="SectionTitle" Property="Text" Value="Class"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ItemHotBar">
                         <Setter TargetName="SectionTitle" Property="Text" Value="Items"/>
@@ -187,7 +314,7 @@
                         <Setter TargetName="SectionTitle" Property="Text" Value="Passives"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="FixedSideBar">
-                        <Setter TargetName="SectionTitle" Property="Text" Value="Common"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
@@ -208,26 +335,52 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Margin="24,22,24,10">
-                        <TextBlock Text="Actions"
+                        <TextBlock x:Name="PanelTitle"
+                                   Text="Actions"
                                    HorizontalAlignment="Center"
                                    FontSize="48"
                                    FontWeight="DemiBold"
                                    Foreground="White"/>
-                        <TextBlock Text="Controller action menu prototype"
+                        <TextBlock x:Name="PanelSubtitle"
+                                   Text="Controller action menu"
                                    HorizontalAlignment="Center"
                                    Margin="0,6,0,0"
                                    FontSize="22"
                                    Foreground="#FFAFB7C1"/>
                     </StackPanel>
 
-                    <ls:LSScrollViewer Grid.Row="1"
-                                       Margin="34,10,34,10"
-                                       VerticalScrollBarVisibility="Auto"
-                                       HorizontalScrollBarVisibility="Disabled"
-                                       ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220">
-                        <ItemsControl ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"
-                                      ItemTemplate="{StaticResource CAM_HotBarSection}"/>
-                    </ls:LSScrollViewer>
+                    <Grid Grid.Row="1">
+                        <ls:LSScrollViewer x:Name="MainHotbarListHolder"
+                                           Margin="34,10,34,10"
+                                           VerticalScrollBarVisibility="Auto"
+                                           HorizontalScrollBarVisibility="Disabled"
+                                           ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220">
+                            <StackPanel>
+                                <ItemsControl x:Name="ActionGroups"
+                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"
+                                              ItemTemplate="{StaticResource CAM_ActionGroupTemplate}"/>
+
+                                <ItemsControl x:Name="UtilityHotbars"
+                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"
+                                              ItemTemplate="{StaticResource CAM_HotBarSection}"/>
+                            </StackPanel>
+                        </ls:LSScrollViewer>
+
+                        <Grid x:Name="VariantHolder"
+                              Visibility="Collapsed"
+                              Margin="34,20,34,20"
+                              ls:MoveFocus.IsMoveFocusScope="True">
+                            <ls:LSListBox x:Name="VariantList"
+                                          ItemsSource="{Binding SingleHotBar.SlotList}"
+                                          ItemTemplate="{StaticResource CAM_SlotTemplate}"
+                                          ItemsPanel="{StaticResource CAM_GridPanel}"
+                                          Template="{StaticResource ScrolllessListBox}"
+                                          Focusable="False"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          KeyboardNavigation.DirectionalNavigation="Continue"/>
+                        </Grid>
+                    </Grid>
 
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
@@ -237,20 +390,55 @@
                                    Margin="20,0"
                                    FontSize="24"
                                    Foreground="White"/>
-                        <TextBlock Text="B  Close"
+                        <TextBlock x:Name="CancelHint"
+                                   Text="B  Close"
                                    Margin="20,0"
                                    FontSize="24"
                                    Foreground="White"/>
                     </StackPanel>
 
-                    <ls:LSInputBinding Command="{Binding UseSlotCommand}"
+                    <ls:LSInputBinding x:Name="UseSlotBinding"
+                                       Command="{Binding UseSlotCommand}"
                                        CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"
                                        BoundEvent="UIAccept"/>
 
-                    <ls:LSInputBinding Command="{Binding CustomEvent}"
-                                       CommandParameter="CloseWidget"
-                                       BoundEvent="UICancel"/>
+                    <ls:LSButton x:Name="CancelButton"
+                                 Visibility="Collapsed"
+                                 BoundEvent="UICancel"
+                                 Command="{Binding ClearSingleHotbarCommand}"/>
                 </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
+                                 Value="True">
+                        <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="VariantHolder" Property="Visibility" Value="Visible"/>
+                        <Setter TargetName="PanelTitle" Property="Text" Value="Select"/>
+                        <Setter TargetName="PanelSubtitle" Property="Text" Value="Variant / spell level"/>
+                        <Setter TargetName="CancelHint" Property="Text" Value="B  Back"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
+                        <Setter TargetName="PanelTitle"
+                                Property="Text"
+                                Value="{Binding Source='h79b6dc4egf450g4037gad34g8bfd57289b9a', Converter={StaticResource TranslatedStringConverter}}"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
+                        <Setter TargetName="PanelTitle"
+                                Property="Text"
+                                Value="{Binding Source='hcc0de24fgee83g49cdgb15fg2fa9b96203c9', Converter={StaticResource TranslatedStringConverter}}"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count}" Value="0">
+                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding Tag.CanUse, ElementName=CAM_ActionMenu}" Value="False">
+                        <Setter TargetName="UseSlotBinding" Property="IsEnabled" Value="False"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
             </Grid>
         </DataTemplate>
     </ls:UIWidget.ContentTemplate>
