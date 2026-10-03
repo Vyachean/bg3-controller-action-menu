@@ -1,0 +1,39 @@
+name: Build package
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate repository
+        shell: pwsh
+        run: python tools/validate.py
+
+      - name: Build .pak
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Verify packaged contents
+        shell: pwsh
+        run: ./tools/verify-package.ps1 -Package ./build/BG3ControllerActionMenu-probe.pak
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: BG3ControllerActionMenu-package
+          path: build/BG3ControllerActionMenu-probe.pak
+          if-no-files-found: error
