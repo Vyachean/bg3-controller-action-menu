@@ -71,7 +71,7 @@ function Find-PackageRoots {
             throw "Explicit -PackageRoot does not exist: $ExplicitRoot"
         }
         Add-CandidateRoot -List $roots -Root $ExplicitRoot -Source "Explicit"
-        return @($roots)
+        return @($roots | ForEach-Object { $_ })
     }
 
     $packages = @(Get-Bg3AppxPackages)
@@ -118,7 +118,7 @@ function Find-PackageRoots {
         # Discovery remains useful even when WpSystem is inaccessible.
     }
 
-    return @($roots)
+    return @($roots | ForEach-Object { $_ })
 }
 
 function Test-ModSettingsShape {
