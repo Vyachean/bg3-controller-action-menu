@@ -58,4 +58,5 @@ jobs:
           path: |
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
+            tools/capture-native-radials.ps1
           if-no-files-found: error
