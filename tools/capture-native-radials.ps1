@@ -285,6 +285,279 @@ function Get-NativeRadialContract {
     }
 }
 
+function Get-NativeContractAnalysis {
+    param(
+        [Parameter(Mandatory = $true)]$Matches,
+        [Parameter(Mandatory = $true)]$DuplicatePackagedPaths,
+        [Parameter(Mandatory = $true)]$ScanErrors
+    )
+
+    $mainSources = @()
+    $keyboardSources = @()
+    $nestedSources = @()
+    $acceptBindings = @()
+    $cancelBindings = @()
+    $focusBindings = @()
+    $nestedEvidence = @()
+    $materialization = @()
+    $useSlotEvidence = @()
+
+    foreach ($match in @($Matches)) {
+        $contract = $match.Contract
+        $sourceIdentity = [ordered]@{
+            SourceType = $match.SourceType
+            SourcePackage = $match.SourcePackage
+            PackagedPath = $match.PackagedPath
+            Sha256 = $match.Sha256
+        }
+
+        foreach ($source in @($contract.ItemsSources)) {
+            $record = [pscustomobject]([ordered]@{
+                SourceType = $sourceIdentity.SourceType
+                SourcePackage = $sourceIdentity.SourcePackage
+                PackagedPath = $sourceIdentity.PackagedPath
+                Sha256 = $sourceIdentity.Sha256
+                Element = $source.Element
+                Name = $source.Name
+                Value = $source.Value
+            })
+
+            if ($source.Value -match "(?i)KeyboardHotBars") {
+                $keyboardSources += $record
+            } elseif ($source.Value -match "(?i)SingleHotBar") {
+                $nestedSources += $record
+            } elseif ($source.Value -match "(?i)(HotBar|Radial|ControllerBar|SlotList)") {
+                $mainSources += $record
+            }
+        }
+
+        foreach ($binding in @($contract.ControllerBindings)) {
+            $record = [pscustomobject]([ordered]@{
+                SourceType = $sourceIdentity.SourceType
+                SourcePackage = $sourceIdentity.SourcePackage
+                PackagedPath = $sourceIdentity.PackagedPath
+                Sha256 = $sourceIdentity.Sha256
+                Element = $binding.Element
+                Name = $binding.Name
+                BoundEvent = $binding.BoundEvent
+                Command = $binding.Command
+                CommandParameter = $binding.CommandParameter
+                EatInput = $binding.EatInput
+            })
+
+            if ($binding.BoundEvent -eq "UIAccept") {
+                $acceptBindings += $record
+            }
+            if ($binding.BoundEvent -eq "UICancel") {
+                $cancelBindings += $record
+            }
+            if (("$($binding.Command) $($binding.CommandParameter)") -match "(?i)UseSlotCommand") {
+                $useSlotEvidence += $record
+            }
+        }
+
+        foreach ($scroll in @($contract.ScrollBindings)) {
+            $focusBindings += [pscustomobject]([ordered]@{
+                SourceType = $sourceIdentity.SourceType
+                SourcePackage = $sourceIdentity.SourcePackage
+                PackagedPath = $sourceIdentity.PackagedPath
+                Sha256 = $sourceIdentity.Sha256
+                Element = $scroll.Element
+                Name = $scroll.Name
+                Attribute = $scroll.Attribute
+                Value = $scroll.Value
+            })
+        }
+
+        foreach ($binding in @($contract.BindingAttributes)) {
+            if ($binding.Value -match "(?i)(SingleHotBar|CurrentSingleHotbarFilter|IsShowingAContainerWithVariants|IsSelectingUpcastedSpell)") {
+                $nestedEvidence += [pscustomobject]([ordered]@{
+                    SourceType = $sourceIdentity.SourceType
+                    SourcePackage = $sourceIdentity.SourcePackage
+                    PackagedPath = $sourceIdentity.PackagedPath
+                    Sha256 = $sourceIdentity.Sha256
+                    Element = $binding.Element
+                    Name = $binding.Name
+                    Attribute = $binding.Attribute
+                    Value = $binding.Value
+                })
+            }
+            if ($binding.Value -match "(?i)UseSlotCommand") {
+                $useSlotEvidence += [pscustomobject]([ordered]@{
+                    SourceType = $sourceIdentity.SourceType
+                    SourcePackage = $sourceIdentity.SourcePackage
+                    PackagedPath = $sourceIdentity.PackagedPath
+                    Sha256 = $sourceIdentity.Sha256
+                    Element = $binding.Element
+                    Name = $binding.Name
+                    BoundEvent = $null
+                    Command = $binding.Value
+                    CommandParameter = $null
+                    EatInput = $null
+                })
+            }
+        }
+
+        $materialization += [pscustomobject]([ordered]@{
+            SourceType = $sourceIdentity.SourceType
+            SourcePackage = $sourceIdentity.SourcePackage
+            PackagedPath = $sourceIdentity.PackagedPath
+            Sha256 = $sourceIdentity.Sha256
+            ListBox = $contract.Structure.ListBox
+            LSListBox = $contract.Structure.LSListBox
+            ItemsControl = $contract.Structure.ItemsControl
+            PagedList = $contract.Structure.PagedList
+            PageView = $contract.Structure.PageView
+            LSGrid = $contract.Structure.LSGrid
+            Radial = $contract.Structure.Radial
+            LSScrollViewer = $contract.Structure.LSScrollViewer
+            ScrollViewer = $contract.Structure.ScrollViewer
+            LSInputBinding = $contract.Structure.LSInputBinding
+            LSButton = $contract.Structure.LSButton
+        })
+    }
+
+    $conflictingDuplicates = @(
+        foreach ($duplicate in @($DuplicatePackagedPaths)) {
+            $distinctHashes = @($duplicate.Copies | Select-Object -ExpandProperty Sha256 -Unique)
+            if ($distinctHashes.Count -gt 1) {
+                $duplicate
+            }
+        }
+    )
+
+    $distinctMainValues = @($mainSources | Select-Object -ExpandProperty Value -Unique)
+    $captureComplete = @($ScanErrors).Count -eq 0 -and @($Matches).Count -gt 0
+    $hasMainControllerSource = $mainSources.Count -gt 0
+    $hasCancel = $cancelBindings.Count -gt 0
+    $hasFocus = $focusBindings.Count -gt 0
+    $hasNested = ($nestedSources.Count + $nestedEvidence.Count) -gt 0
+    $sourceUnambiguous = $distinctMainValues.Count -eq 1 -and $conflictingDuplicates.Count -eq 0
+
+    $blockers = @()
+    if (-not $captureComplete) { $blockers += "capture-incomplete" }
+    if (-not $hasMainControllerSource) { $blockers += "controller-source-not-found" }
+    if (-not $sourceUnambiguous) { $blockers += "controller-source-ambiguous" }
+    if (-not $hasCancel) { $blockers += "radial-cancel-not-found" }
+    if (-not $hasFocus) { $blockers += "focus-scroll-not-found" }
+    if (-not $hasNested) { $blockers += "nested-state-not-found" }
+
+    return [pscustomobject]([ordered]@{
+        SchemaVersion = 1
+        CaptureComplete = $captureComplete
+        NativeFileCount = @($Matches).Count
+        DuplicatePackagedPathCount = @($DuplicatePackagedPaths).Count
+        ConflictingDuplicateCount = $conflictingDuplicates.Count
+        ConflictingDuplicates = $conflictingDuplicates
+        MainControllerSourceCandidates = $mainSources
+        KeyboardOnlySources = $keyboardSources
+        NestedSources = $nestedSources
+        DistinctMainControllerSourceValues = $distinctMainValues
+        UIAcceptBindings = $acceptBindings
+        UICancelBindings = $cancelBindings
+        FocusScrollBindings = $focusBindings
+        NestedStateEvidence = $nestedEvidence
+        UseSlotEvidence = @($useSlotEvidence | Sort-Object PackagedPath, Element, Name, Command -Unique)
+        Materialization = $materialization
+        Facts = [pscustomobject]([ordered]@{
+            HasMainControllerSourceCandidate = $hasMainControllerSource
+            ControllerSourceUnambiguous = $sourceUnambiguous
+            HasUIAccept = $acceptBindings.Count -gt 0
+            HasUICancel = $hasCancel
+            HasFocusScroll = $hasFocus
+            HasNestedStateEvidence = $hasNested
+            HasUseSlotEvidenceInRadialFiles = $useSlotEvidence.Count -gt 0
+            HasKeyboardOnlySourceEvidence = $keyboardSources.Count -gt 0
+        })
+        ImplementationGate = [pscustomobject]([ordered]@{
+            Ready = $blockers.Count -eq 0
+            Blockers = $blockers
+        })
+    })
+}
+
+function Format-NativeContractAnalysis {
+    param([Parameter(Mandatory = $true)]$Analysis)
+
+    $lines = @()
+    $lines += "BG3 native radial contract analysis"
+    $lines += "Capture complete: $($Analysis.CaptureComplete)"
+    $lines += "Native files: $($Analysis.NativeFileCount)"
+    $lines += "Conflicting duplicate paths: $($Analysis.ConflictingDuplicateCount)"
+    $lines += "Implementation gate ready: $($Analysis.ImplementationGate.Ready)"
+    $lines += "Blockers: $(if (@($Analysis.ImplementationGate.Blockers).Count) { @($Analysis.ImplementationGate.Blockers) -join ', ' } else { '(none)' })"
+    $lines += ""
+
+    $lines += "=== Main controller source candidates ==="
+    if (@($Analysis.MainControllerSourceCandidates).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($source in @($Analysis.MainControllerSourceCandidates)) {
+            $lines += "[$([System.IO.Path]::GetFileName($source.SourcePackage)) :: $($source.PackagedPath) :: $($source.Element) $($source.Name)] $($source.Value)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== Keyboard-only sources (not valid controller substitutes) ==="
+    if (@($Analysis.KeyboardOnlySources).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($source in @($Analysis.KeyboardOnlySources)) {
+            $lines += "[$([System.IO.Path]::GetFileName($source.SourcePackage)) :: $($source.PackagedPath)] $($source.Value)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== Nested sources/state ==="
+    foreach ($source in @($Analysis.NestedSources)) {
+        $lines += "[ItemsSource :: $($source.PackagedPath)] $($source.Value)"
+    }
+    foreach ($binding in @($Analysis.NestedStateEvidence)) {
+        $lines += "[$($binding.Attribute) :: $($binding.PackagedPath)] $($binding.Value)"
+    }
+    if (@($Analysis.NestedSources).Count -eq 0 -and @($Analysis.NestedStateEvidence).Count -eq 0) {
+        $lines += "(none)"
+    }
+    $lines += ""
+
+    $lines += "=== UIAccept ==="
+    if (@($Analysis.UIAcceptBindings).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($binding in @($Analysis.UIAcceptBindings)) {
+            $lines += "[$($binding.PackagedPath) :: $($binding.Element) $($binding.Name)] $($binding.Command) :: $($binding.CommandParameter)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== UICancel ==="
+    if (@($Analysis.UICancelBindings).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($binding in @($Analysis.UICancelBindings)) {
+            $lines += "[$($binding.PackagedPath) :: $($binding.Element) $($binding.Name)] $($binding.Command) :: $($binding.CommandParameter)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== Focus / scroll ==="
+    if (@($Analysis.FocusScrollBindings).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($binding in @($Analysis.FocusScrollBindings)) {
+            $lines += "[$($binding.PackagedPath) :: $($binding.Element) $($binding.Name)] $($binding.Attribute) = $($binding.Value)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== Materialization ==="
+    foreach ($entry in @($Analysis.Materialization)) {
+        $lines += "[$([System.IO.Path]::GetFileName($entry.SourcePackage)) :: $($entry.PackagedPath)] ListBox=$($entry.ListBox), LSListBox=$($entry.LSListBox), ItemsControl=$($entry.ItemsControl), PagedList=$($entry.PagedList), PageView=$($entry.PageView), LSGrid=$($entry.LSGrid), Radial=$($entry.Radial), LSScrollViewer=$($entry.LSScrollViewer)"
+    }
+
+    return $lines
+}
+
 $packageInfo = $null
 if (-not $GameInstallRoot) {
     $packageInfo = Get-Bg3PackageInfo
@@ -448,6 +721,13 @@ $contractReport = [ordered]@{
 }
 $contractReport | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $contractPath -Encoding UTF8
 
+$analysis = Get-NativeContractAnalysis -Matches $manifestMatches -DuplicatePackagedPaths $duplicatePackagedPaths -ScanErrors $scanErrors
+$analysisPath = Join-Path $OutputDirectory "native-contract-analysis.json"
+$analysis | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $analysisPath -Encoding UTF8
+
+$analysisSummaryPath = Join-Path $OutputDirectory "native-contract-analysis.txt"
+Format-NativeContractAnalysis -Analysis $analysis | Set-Content -LiteralPath $analysisSummaryPath -Encoding UTF8
+
 $summaryPath = Join-Path $OutputDirectory "capture-summary.txt"
 $summary = @()
 $summary += "BG3 native radial capture"
@@ -549,6 +829,8 @@ Write-Host "Duplicate paths: $($duplicatePackagedPaths.Count)"
 Write-Host "Manifest: $manifestPath"
 Write-Host "Summary:  $summaryPath"
 Write-Host "Contract: $contractPath"
+Write-Host "Analysis: $analysisPath"
+Write-Host "Gate ready: $($analysis.ImplementationGate.Ready)"
 Write-Host "Archive:  $zipPath"
 Write-Host ""
 Write-Host "No game, profile or mod files were modified."
