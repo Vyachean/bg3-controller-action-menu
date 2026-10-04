@@ -151,6 +151,140 @@ function Get-PackageMatches {
     }
 }
 
+function Get-XamlAttributeValue {
+    param(
+        [Parameter(Mandatory = $true)]$Node,
+        [Parameter(Mandatory = $true)][string]$LocalName
+    )
+
+    foreach ($attribute in @($Node.Attributes)) {
+        if ($attribute.LocalName -eq $LocalName) {
+            return $attribute.Value
+        }
+    }
+
+    return $null
+}
+
+function Get-NativeRadialContract {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    [xml]$xml = Get-Content -Raw -LiteralPath $Path
+    $root = $xml.DocumentElement
+    if (-not $root) {
+        throw "XAML has no document element: $Path"
+    }
+
+    $allElements = @($xml.SelectNodes("//*"))
+
+    $itemsSources = @(
+        foreach ($node in $allElements) {
+            $value = Get-XamlAttributeValue -Node $node -LocalName "ItemsSource"
+            if ($null -ne $value) {
+                [pscustomobject]@{
+                    Element = $node.LocalName
+                    Name = Get-XamlAttributeValue -Node $node -LocalName "Name"
+                    Value = $value
+                }
+            }
+        }
+    )
+
+    $controllerBindings = @(
+        foreach ($node in $allElements) {
+            $boundEvent = Get-XamlAttributeValue -Node $node -LocalName "BoundEvent"
+            if (-not $boundEvent) { continue }
+
+            [pscustomobject]@{
+                Element = $node.LocalName
+                Name = Get-XamlAttributeValue -Node $node -LocalName "Name"
+                BoundEvent = $boundEvent
+                Command = Get-XamlAttributeValue -Node $node -LocalName "Command"
+                CommandParameter = Get-XamlAttributeValue -Node $node -LocalName "CommandParameter"
+                EatInput = Get-XamlAttributeValue -Node $node -LocalName "EatInput"
+            }
+        }
+    )
+
+    $scrollBindings = @(
+        foreach ($node in $allElements) {
+            foreach ($attribute in @($node.Attributes)) {
+                if ($attribute.LocalName -eq "ScrollToElement") {
+                    [pscustomobject]@{
+                        Element = $node.LocalName
+                        Name = Get-XamlAttributeValue -Node $node -LocalName "Name"
+                        Attribute = $attribute.Name
+                        Value = $attribute.Value
+                    }
+                }
+            }
+        }
+    )
+
+    $dataContextBindings = @(
+        foreach ($node in $allElements) {
+            $value = Get-XamlAttributeValue -Node $node -LocalName "DataContext"
+            if ($null -ne $value) {
+                [pscustomobject]@{
+                    Element = $node.LocalName
+                    Name = Get-XamlAttributeValue -Node $node -LocalName "Name"
+                    Value = $value
+                }
+            }
+        }
+    )
+
+    $bindingAttributes = @(
+        foreach ($node in $allElements) {
+            foreach ($attribute in @($node.Attributes)) {
+                if ($attribute.Value -like "*{Binding*") {
+                    [pscustomobject]@{
+                        Element = $node.LocalName
+                        Name = Get-XamlAttributeValue -Node $node -LocalName "Name"
+                        Attribute = $attribute.Name
+                        Value = $attribute.Value
+                    }
+                }
+            }
+        }
+    )
+
+    $structureNames = @(
+        "ListBox",
+        "LSListBox",
+        "ItemsControl",
+        "PagedList",
+        "PageView",
+        "LSGrid",
+        "Radial",
+        "LSScrollViewer",
+        "ScrollViewer",
+        "LSInputBinding",
+        "LSButton",
+        "ControlTemplate",
+        "DataTemplate"
+    )
+    $structure = [ordered]@{}
+    foreach ($name in $structureNames) {
+        $structure[$name] = @($allElements | Where-Object { $_.LocalName -eq $name }).Count
+    }
+
+    return [pscustomobject]@{
+        FileName = [System.IO.Path]::GetFileName($Path)
+        RootElement = $root.LocalName
+        RootName = Get-XamlAttributeValue -Node $root -LocalName "Name"
+        ContextName = Get-XamlAttributeValue -Node $root -LocalName "ContextName"
+        RootDataContext = Get-XamlAttributeValue -Node $root -LocalName "DataContext"
+        LsNamespace = $root.GetNamespaceOfPrefix("ls")
+        Structure = [pscustomobject]$structure
+        ItemsSources = $itemsSources
+        ControllerBindings = $controllerBindings
+        ScrollBindings = $scrollBindings
+        DataContextBindings = $dataContextBindings
+        BindingAttributes = $bindingAttributes
+    }
+}
+
 $packageInfo = $null
 if (-not $GameInstallRoot) {
     $packageInfo = Get-Bg3PackageInfo
@@ -201,6 +335,7 @@ foreach ($file in $loose) {
         ExtractedPath = $dest
         Size = (Get-Item -LiteralPath $dest).Length
         Sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $dest).Hash.ToLowerInvariant()
+        Contract = Get-NativeRadialContract -Path $dest
     }
 }
 
@@ -233,12 +368,13 @@ foreach ($pak in $search.Packages) {
             ExtractedPath = $dest
             Size = (Get-Item -LiteralPath $dest).Length
             Sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $dest).Hash.ToLowerInvariant()
+            Contract = Get-NativeRadialContract -Path $dest
         }
     }
 }
 
 $manifest = [ordered]@{
-    SchemaVersion = 1
+    SchemaVersion = 2
     CreatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
     GameInstallRoot = $GameInstallRoot
     PackageName = if ($packageInfo) { $packageInfo.Name } else { $null }
@@ -253,7 +389,25 @@ $manifest = [ordered]@{
 }
 
 $manifestPath = Join-Path $OutputDirectory "capture-manifest.json"
-$manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+$manifest | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+
+$contractPath = Join-Path $OutputDirectory "native-contract.json"
+$contractReport = [ordered]@{
+    SchemaVersion = 1
+    GamePackageVersion = if ($packageInfo) { "$($packageInfo.Version)" } else { $null }
+    Files = @(
+        $manifestMatches | ForEach-Object {
+            [pscustomobject]@{
+                SourceType = $_.SourceType
+                SourcePackage = $_.SourcePackage
+                PackagedPath = $_.PackagedPath
+                Sha256 = $_.Sha256
+                Contract = $_.Contract
+            }
+        }
+    )
+}
+$contractReport | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $contractPath -Encoding UTF8
 
 $summaryPath = Join-Path $OutputDirectory "capture-summary.txt"
 $summary = @()
@@ -286,6 +440,23 @@ foreach ($match in $manifestMatches) {
     $summary += "=== $($match.SourceType): $($match.PackagedPath) ==="
     $summary += "SHA256: $($match.Sha256)"
     $summary += "Source PAK: $($match.SourcePackage)"
+    $summary += "Root: $($match.Contract.RootElement) / $($match.Contract.RootName)"
+    $summary += "ContextName: $($match.Contract.ContextName)"
+    $summary += "ls namespace: $($match.Contract.LsNamespace)"
+    $summary += "Structure: " + (($match.Contract.Structure.psobject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ", ")
+    $summary += "ItemsSource bindings:"
+    foreach ($source in @($match.Contract.ItemsSources)) {
+        $summary += "  [$($source.Element) $($source.Name)] $($source.Value)"
+    }
+    $summary += "Controller bindings:"
+    foreach ($binding in @($match.Contract.ControllerBindings)) {
+        $summary += "  [$($binding.Element) $($binding.Name)] $($binding.BoundEvent) -> $($binding.Command) :: $($binding.CommandParameter)"
+    }
+    $summary += "Scroll/focus bindings:"
+    foreach ($scroll in @($match.Contract.ScrollBindings)) {
+        $summary += "  [$($scroll.Element) $($scroll.Name)] $($scroll.Attribute) = $($scroll.Value)"
+    }
+    $summary += ""
 
     $lines = @(Get-Content -LiteralPath $match.ExtractedPath -ErrorAction SilentlyContinue)
     $interesting = @(
@@ -315,6 +486,7 @@ Write-Host "Capture complete."
 Write-Host "Matches:  $($manifestMatches.Count)"
 Write-Host "Manifest: $manifestPath"
 Write-Host "Summary:  $summaryPath"
+Write-Host "Contract: $contractPath"
 Write-Host "Archive:  $zipPath"
 Write-Host ""
 Write-Host "No game, profile or mod files were modified."
