@@ -193,6 +193,10 @@ A separate current mod, Auto-Sorting Hotbar v1.1.0.0/1.1.0.1 (August/September 2
 
 These projects corroborate that the controller radial should be treated as its own persisted/ordered data surface, not as a visual projection of `KeyboardHotBars`.
 
+RadialHotbarCustomization's September 2026 author notes add an important architectural limit: keyboard hotbars and controller radials are stored in the same mapped hotbar area with a controller/radial marker, but the persisted memory layout does **not** map cleanly to the visual radial wheels. The author consequently moved current work toward the game's native Noesis controller UI instead of rebuilding radials directly from component memory.
+
+That matches the current BG3SE mapping (`Bar.Controller`, `HotBarController`, `IsController`) and rules out using `HotbarContainer` as CAM's presentation model. CAM needs the native radial UI/view-model materialization, not just the underlying persisted slots.
+
 References:
 
 - https://github.com/Norbyte/bg3se/blob/main/BG3Extender/GameDefinitions/Components/Hotbar.h
@@ -228,15 +232,20 @@ Use a read-only tool that:
 
 ### Phase B — native contract audit
 
-From the captured current files, document:
+The capture tool performs the first audit automatically and emits `native-contract-analysis.json` / `.txt`.
 
-- root context and template structure;
-- exact action/hotbar collection;
-- nested slot hierarchy;
-- focus and scroll path;
+It must identify without guessing:
+
+- candidate main controller collection bindings;
+- keyboard-only bindings separately;
+- nested `SingleHotBar` / variant state;
+- list/paging/grid/radial materialization structure;
+- focus and scroll bindings;
 - `UIAccept` command + parameter;
 - top-level and nested `UICancel` behavior;
-- variant/upcast state.
+- conflicting base/patch copies of the same radial XAML.
+
+The implementation gate is fail-closed: incomplete scans, missing controller-source evidence, conflicting native copies, missing cancel/focus or missing nested-state evidence remain explicit blockers.
 
 Then compare those facts with Patch 8 shared resources and state-machine files.
 
@@ -259,4 +268,6 @@ After the expanded open-source audit, the remaining high-value unknowns are:
 
 Normal slot execution is no longer unknown: Patch 8 `HotBarSlotStyle` proves `UseSlotCommand` with the slot object as its command parameter.
 
-If no modern public source exposes items 1–3, they should be resolved by one read-only native-file capture, not by another gameplay trial build.
+The expanded public search covered current Patch 8 shared resources, BG3SE mappings, late-2026 production UI code, ImprovedUI and current controller-hotbar/radial mods. No modern public repository exposes the full current `ActionRadials.xaml` / `PreloadedActionRadials_c.xaml` or the controller collection binding itself.
+
+Therefore items 1–3 have reached a genuine public-source boundary. They should now be resolved by **one read-only native-file capture**, whose automatic contract gate is tested in CI, not by another gameplay trial build.
