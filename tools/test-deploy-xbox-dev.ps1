@@ -98,6 +98,18 @@ if ($reportJson.Roots[0].Mods[0].PakCount -ne 1) {
 if ($reportJson.Roots[0].ModSettings.Count -ne 2) {
     throw "Discovery should report both the package-local decoy and the real active order."
 }
+if (-not $reportJson.Roots[0].ModSettings[0].ShapeSummary) {
+    throw "Discovery did not report XML shape for the decoy settings file."
+}
+if ($reportJson.Roots[0].ModSettings[0].ShapeSummary.RegionIds -notcontains "ModPackageMetadata") {
+    throw "Decoy XML shape did not expose its region id."
+}
+if (-not $reportJson.Roots[0].ModSettings[1].ShapeSummary) {
+    throw "Discovery did not report XML shape for the real load order."
+}
+if ($reportJson.Roots[0].ModSettings[1].ShapeSummary.RegionIds -notcontains "ModuleSettings") {
+    throw "Real load-order XML shape did not expose ModuleSettings."
+}
 $usableSettings = @($reportJson.Roots[0].ModSettings | Where-Object { $_.WriteSchemaReady })
 if ($usableSettings.Count -ne 1) {
     throw "Exactly one active load order should provide a reusable LSX write schema."
