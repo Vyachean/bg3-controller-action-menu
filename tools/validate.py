@@ -57,6 +57,8 @@ def validate_semantics() -> list[str]:
             ACTION_PAGE,
             [
                 'ls:UIWidget.ContextName="HotBar"',
+                "<ls:UIWidget.Template>",
+                "<ControlTemplate>",
                 "CurrentPlayer.SelectedCharacter.HotBars",
                 "HotBarSections",
                 "CAM_HotBarSectionTemplate",
@@ -114,6 +116,7 @@ def validate_semantics() -> list[str]:
             'Command="{Binding UseSlotCommand}"',
             'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"',
             'x:Name="CancelButton"\n                                 Visibility="Collapsed"',
+            "<ls:UIWidget.ContentTemplate>",
         ]
         for needle in forbidden:
             if needle in page_text:

@@ -110,13 +110,15 @@ Confirmed:
 - the custom page and native resource dictionaries resolve;
 - `AreRadialsOpen` and `SingleHotBar` bindings are live.
 
-Failed and fixed for the next candidate:
+Observed across 0.0.13 and 0.0.14:
 
-- main content was empty because CAM used the slot-assignment-only `SpellsAndActions` source and hid `CommonHotBar` / `ClassHotBar`;
-- B did not close because the actual cancel handler was collapsed while the visible B element was only a hint;
-- no slot focus was established because there were no visible main hotbar slots.
+- the updated diagnostic version changed in-game, proving that Xbox App loaded the newer PAK;
+- the menu still remained empty and B still did not close it;
+- therefore delivery/caching was not the cause.
 
-The next runtime test should therefore validate populated HotBars, initial focus, B close, A dispatch and one variant/upcast transition.
+Static comparison with native `ActionRadials.xaml` found that CAM alone used `UIWidget.ContentTemplate/DataTemplate` for an interactive controller widget, while BG3's controller widgets use `UIWidget.Template/ControlTemplate`. This became the next runtime hypothesis because BoundEvent/focus/data behavior lives inside that widget contract.
+
+The next runtime test should validate populated HotBars and B close first; only after those pass should A dispatch and variants be tested.
 
 ## Manual test report format
 

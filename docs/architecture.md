@@ -64,6 +64,16 @@ The custom layer should not own:
 - item counts/state;
 - cell visuals already provided by native BG3 resources.
 
+## Native widget contract
+
+The replacement page must follow BG3's controller-widget structure:
+
+- `ls:UIWidget.ContextName="HotBar"`;
+- `ls:UIWidget.Template`;
+- a `ControlTemplate` containing the interactive controls.
+
+Do not build the interactive controller page through `UIWidget.ContentTemplate/DataTemplate`. Runtime testing showed that this can render visuals while failing to behave like the native DCHotBar controller widget for input/focus/data composition.
+
 ## Native UI reuse
 
 The current implementation consumes game-owned resources including:

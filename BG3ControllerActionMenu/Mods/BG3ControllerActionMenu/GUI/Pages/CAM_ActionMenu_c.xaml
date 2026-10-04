@@ -155,8 +155,8 @@
         </ResourceDictionary>
     </ls:UIWidget.Resources>
 
-    <ls:UIWidget.ContentTemplate>
-        <DataTemplate>
+    <ls:UIWidget.Template>
+        <ControlTemplate>
             <Grid Background="{DynamicResource LS_tint00}">
                 <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Options/opaqueBG.png"
                        Stretch="Fill"
@@ -175,7 +175,7 @@
                         BorderThickness="2"
                         Panel.ZIndex="20">
                     <StackPanel Width="320">
-                        <TextBlock Text="CAM 0.0.14-runtime-hotbars-cancel Xbox diagnostic"
+                        <TextBlock Text="CAM 0.0.15-widget-control-template Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
@@ -315,7 +315,7 @@
                     </StackPanel>
                 </Grid>
 
-                <DataTemplate.Triggers>
+                <ControlTemplate.Triggers>
                     <DataTrigger Binding="{Binding Items.Count, ElementName=HotBarSections}" Value="0">
                         <Setter TargetName="CAM_NoHotbarsWarning" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
@@ -343,8 +343,8 @@
                         <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
                         <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
                     </DataTrigger>
-                </DataTemplate.Triggers>
+                </ControlTemplate.Triggers>
             </Grid>
-        </DataTemplate>
-    </ls:UIWidget.ContentTemplate>
+        </ControlTemplate>
+    </ls:UIWidget.Template>
 </ls:UIWidget>
