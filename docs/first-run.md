@@ -1,102 +1,69 @@
-# First in-game run
+# First in-game run — Xbox App / PC
 
-Use **v0.0.5-first-run-diagnostics** or newer. Older candidates do not collect enough information for a one-session diagnosis.
+Use **v0.0.6-xbox-app-candidate** or newer.
 
-## Before launching BG3
-
-For this first diagnostic session only, enable Script Extender runtime logging in the game's `bin/ScriptExtenderSettings.json`.
-
-If the file already exists, preserve its existing settings and add:
-
-```json
-"LogRuntime": true
-```
-
-If it does not exist, a minimal file is:
-
-```json
-{
-  "LogRuntime": true
-}
-```
-
-The mod itself enables Script Extender's Noesis error reporting, so XAML/resource failures are written to the runtime log when `LogRuntime` is enabled.
+This candidate intentionally contains **no Script Extender**.
 
 ## Install
 
-Install:
+1. Download the released `.pak`.
+2. Copy it to:
 
-`BG3ControllerActionMenu-0.0.5-first-run-diagnostics.pak`
+   `%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
 
-Enable it in the normal BG3 mod load order and start the game through Script Extender.
+3. Launch the Xbox App version of Baldur's Gate 3.
+4. Open the in-game **Mod Manager**.
+5. Check **Installed** and make sure **BG3 Controller Action Menu** is present and enabled.
+6. Load a save with controller UI active.
 
-Do not run `cam_probe` manually. Diagnostics are automatic and bounded.
+Do not copy the mod into the Xbox App installation directory or `WpSystem`.
 
-## One-session test sequence
+## What the diagnostic panel means
 
-After loading a save with controller UI active:
+The first candidate displays a small panel in the top-right corner when the custom action page loads.
+
+It shows:
+
+- **Action groups** — number of native `SpellsAndActions` groups;
+- **Hotbars** — number of native hotbar groups;
+- **Variant slots** — current `SingleHotBar` nested choices;
+- **Variants open** — whether BG3 reports a variant container;
+- **Upcast open** — whether BG3 reports upcast selection;
+- **Radials flag** — native `AreRadialsOpen`;
+- **Focus name** — current controller-focused UI element;
+- **Focused usable** — native usability state for the focused action.
+
+If action groups are zero, the panel also shows **NO ACTION GROUPS**.
+
+## One-run test sequence
 
 1. Open the normal controller action menu.
-2. Move focus left/right/up/down across several entries.
-3. Move far enough to cross at least one action/spell group boundary and force scrolling.
-4. Focus a normal action.
-5. Open a spell/action that has a nested choice, variant, or upcast option if one is available.
-6. Move focus inside the nested selection and press **B** to go back.
-7. Open the action menu again.
-8. Select one ordinary action or spell far enough to enter BG3's native targeting/execution flow.
-9. Cancel targeting if you do not want to actually perform it.
-10. Close the action menu.
+2. Take a screenshot immediately.
+3. Move left/right/up/down through several actions.
+4. Move far enough to cross a group boundary and force scrolling.
+5. Take a second screenshot while an action is focused.
+6. Open an action/spell with variants or upcast if available.
+7. Take a screenshot of the nested selection.
+8. Press **B** and confirm it returns to the main grid.
+9. Open the menu again.
+10. Select one ordinary action or spell and confirm it reaches BG3's normal targeting/execution flow.
+11. Cancel targeting if desired.
+12. Close the menu.
 
-If the custom page is blank, broken, or does not appear, do not troubleshoot manually in that session. Close the game after reproducing it once; the diagnostics are designed to preserve the failure evidence.
+## What to send back
 
-## Files to provide after that same session
+Prefer:
 
-### 1. Automatic mod diagnostics
+- the screenshots from the steps above;
+- a brief note for any step that failed;
+- if the game crashes, the newest crash/gold log available from the game installation/report location.
 
-`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\BG3ControllerActionMenu\diagnostics.json`
+If the mod does not appear in **Mod Manager → Installed**, send a screenshot of that screen and confirm the `.pak` is present in the Local AppData Mods folder.
 
-This file records:
+If the mod appears and is enabled but the vanilla radial still opens, that is a state-override/load-order failure.
 
-- game version;
-- Script Extender API version;
-- session state;
-- controller button sequence;
-- whether `CAM_ActionMenu` was created;
-- whether vanilla `ActionRadials` was seen instead;
-- relevant Noesis UI nodes and filenames;
-- runtime UI/DataContext types;
-- `DCHotBar` properties and native commands;
-- `UseSlotCommand:CanExecute` for the focused action;
-- action-group and hotbar counts plus bounded samples;
-- focused action identity/properties;
-- `SingleHotBar` variant/upcast state;
-- named grid/scroll/variant elements and item counts;
-- internal diagnostic exceptions;
-- an automatic `FailureClass`.
+If the radial disappears or the page is blank, the diagnostic panel (or its absence) tells us whether the custom page reached the rendering/binding stage.
 
-### 2. Script Extender runtime log
+## Why no automatic JSON log
 
-Upload the newest file matching:
-
-`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Script Extender Logs\Extender Runtime *.log`
-
-This is needed mainly if the page cannot be created at all. The mod calls `Ext.UI.EnableErrorReporting(true)`, so Noesis XAML/resource errors are emitted into this log.
-
-## What should be diagnosable from one session
-
-The pair `diagnostics.json + Extender Runtime log` is intended to distinguish:
-
-- mod/Lua did not load;
-- ActionRadials state override did not apply;
-- custom XAML failed to load;
-- a native resource dictionary/key failed to resolve;
-- wrong DataContext;
-- missing `SpellsAndActions`;
-- action groups are empty or malformed;
-- controller focus was never established;
-- focused action is wrong;
-- `UseSlotCommand` is unavailable or cannot execute the focused action;
-- nested `SingleHotBar` variants/upcast did not appear;
-- B/back behavior did not restore the main grid.
-
-The recorder does not execute discovered commands on its own; it only observes them and calls `CanExecute`.
+The Xbox App-compatible shipping package cannot depend on Script Extender. The previous SE-based JSON recorder is retained only under `dev/script-extender` for developer research and is not packaged.
