@@ -6,10 +6,10 @@ Last reviewed: 2026-10-04.
 
 The safest local-development path is **discovery first, write only from machine-local evidence**:
 
-1. let BG3's built-in Mod Manager install and enable one small catalog mod;
-2. discover the real package cache read-only;
-3. require exactly one Mods directory, one load-order file, and one active non-CAM mod whose `ModOrder` + `ModuleShortDesc` entries provide a reusable LSX schema;
-4. mirror that proven schema when adding CAM;
+1. let BG3's built-in Mod Manager install and enable at least one catalog mod;
+2. discover the real package cache and signed-in `PlayerProfiles` order read-only;
+3. require exactly one Mods directory and one profile `modsettings.lsx` with `ModuleSettings/root/Mods`;
+4. mirror an existing active `ModuleShortDesc` schema when adding CAM;
 5. back up, write atomically, verify, and fail closed on ambiguity.
 
 Do not hard-code `C:\WpSystem`, do not select a profile by recency, and do not assume the Steam/GOG `%LOCALAPPDATA%\Larian Studios\...` layout applies to Xbox App.
@@ -42,17 +42,19 @@ Current GitHub prerelease **0.2.3**:
 
 Its BG3 Mod Manager patch documents a Microsoft-specific cached profile/order view, two directory junctions in `ManagerView`, Microsoft AUMID launch, and a live export whose XML survived a game startup unchanged. This is strong implementation evidence, but it remains an unofficial prerelease and is **not** a dependency of CAM.
 
-The ordinary upstream BG3 Mod Manager source defines current `modsettings.lsx` entries with:
+The current upstream BG3 Mod Manager source is more important than the older `ModOrder` assumption:
 
-- `ModOrder/Module/UUID`: type `guid`;
-- `ModuleShortDesc`: `Folder`, `MD5`, `Name`, `PublishHandle`, `UUID`, `Version64`;
-- `PublishHandle`: type `uint64`;
-- `UUID`: type `guid`;
-- `Version64`: type `int64`.
+- `XML_MOD_SETTINGS_TEMPLATE` contains `ModuleSettings/root/Mods` only;
+- each active entry is a `ModuleShortDesc`;
+- `GenerateModSettingsFile` serializes active mods in list order;
+- `LoadModSettingsFileAsync` reads that same `Mods` list in file order;
+- the current template does **not** require a separate `ModOrder` node.
 
-Nexus Mods App's BG3 documentation shows the same modern load-order shape. LaughingLeader's modding snippets also confirm `36028797018963968` as the Int64 encoding for version 1.0.0.0.
+Each `ModuleShortDesc` contains `Folder`, `MD5`, `Name`, `PublishHandle`, `UUID`, and `Version64`; the template uses `uint64` for `PublishHandle`, `guid` for `UUID`, and `int64` for `Version64`.
 
-This exposed a flaw in CAM's earlier fixture: it used `FixedString` UUIDs and omitted `PublishHandle`. The installer must therefore mirror the schema written on the target machine instead of treating the fixture as authoritative.
+A real Microsoft package 1.8.910.0 discovery on 2026-10-04 matched this Mods-only shape in the signed-in cache under `SystemAppData/xgs/.../PlayerProfiles/.../modsettings.lsx`. A different `modsettings.lsx` inside `LocalCache/Local/Mods/<uuid>` had a similar shape but is package-local data, not the signed-in profile order. Therefore path role and XML shape are both required.
+
+This corrected two earlier CAM assumptions: UUIDs must not use the old `FixedString` fixture, and Xbox profile order must not require `ModOrder`. The installer mirrors the active profile's `ModuleShortDesc` schema instead of inventing one.
 
 ### Multiple independent reports / implementations
 
@@ -108,15 +110,16 @@ The Xbox development tool must:
 
 1. query installed BG3 package identity when available;
 2. inspect `%LOCALAPPDATA%\Packages` and treat `WpSystem` only as a fallback candidate;
-3. require an existing PAK installed by BG3's built-in Mod Manager;
-4. require exactly one valid `modsettings.lsx`;
-5. require an active non-CAM mod whose load-order entries provide one unambiguous reusable LSX schema;
-6. report all evidence without changing BG3 by default;
-7. permit `-Apply` only when every proof gate passes;
-8. mirror donor LSX attribute types/fields rather than hard-coding the old fixture format;
-9. back up the load order and any previous CAM PAK;
-10. modify only CAM's UUID and verify the resulting XML;
-11. fail closed on missing evidence, multiple profiles/caches, conflicting schemas, or unexpected XML.
+3. require existing PAK evidence in the discovered Mods cache;
+4. exclude package-local `modsettings.lsx` files under the Mods cache from profile-order selection;
+5. require exactly one writable `PlayerProfiles/.../modsettings.lsx` with `ModuleSettings/root/Mods`;
+6. require an active non-CAM `ModuleShortDesc` that provides one unambiguous reusable LSX schema;
+7. report all evidence without changing BG3 by default;
+8. permit `-Apply` only when every proof gate passes;
+9. mirror donor LSX attribute types/fields and preserve the profile's Mods-only vs legacy layout;
+10. back up the profile order and any previous CAM PAK;
+11. modify only CAM's entry and verify the resulting XML;
+12. fail closed on missing evidence, multiple profiles/caches, conflicting schemas, or unexpected XML.
 
 ## Sources
 
