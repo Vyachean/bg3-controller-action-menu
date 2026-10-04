@@ -21,6 +21,7 @@ XML_SUFFIXES = {".xaml", ".xml", ".lsx"}
 ACTION_PAGE = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml"
 CONTROLLER_STATE = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml"
 BOOTSTRAP = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/ScriptExtender/Lua/BootstrapClient.lua"
+DIAGNOSTICS = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/ScriptExtender/Lua/Client/RadialProbe.lua"
 VERSION = ROOT / "VERSION"
 
 
@@ -92,7 +93,25 @@ def validate_semantics() -> list[str]:
         )
     )
 
-    errors.extend(require_text(BOOTSTRAP, ["Probe.Register({ Auto = false })"]))
+    errors.extend(require_text(BOOTSTRAP, ["Diagnostics.Register({ Auto = true })"]))
+    errors.extend(
+        require_text(
+            DIAGNOSTICS,
+            [
+                "0.0.5-first-run-diagnostics",
+                "Ext.UI.EnableErrorReporting(true)",
+                "ControllerButtonInput",
+                "CAM_ActionMenu",
+                "SpellsAndActions",
+                "UseSlotCommand",
+                "ClearSingleHotbarCommand",
+                "DiagnosticsCompleteEnough",
+                "FailureClass",
+                "NeedsScriptExtenderRuntimeLog",
+                "BG3ControllerActionMenu/diagnostics.json",
+            ],
+        )
+    )
 
     if ACTION_PAGE.exists():
         page_text = ACTION_PAGE.read_text(encoding="utf-8")
