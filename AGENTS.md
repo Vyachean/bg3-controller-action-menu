@@ -4,38 +4,48 @@
 
 Build a controller-first replacement for Baldur's Gate 3 action radials.
 
-The preferred end state is a tabbed grid that exposes the complete action set without forcing the player through many radial pages.
+The primary runtime target includes the **Xbox App / Microsoft Store PC build**, so the shipping mod must work as a normal BG3 `.pak` without third-party runtime injection.
 
 ## Non-negotiable architecture rules
 
 1. **BG3 remains the source of truth.**
    Do not reimplement spell availability, action costs, targeting, upcasting, recasts, cooldowns, resources, or execution rules if the existing UI/action model can provide them.
 
-2. **Thin UI adapter.**
-   The mod may categorize and present actions, but should pass selection back into the native action flow whenever possible.
+2. **Thin UI composition.**
+   Reuse BG3-owned view models, templates, styles and commands wherever possible. The mod should primarily change composition/layout.
 
-3. **Controller-first.**
+3. **No Script Extender dependency in the shipping package.**
+   `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` must not contain a `ScriptExtender` directory. Script Extender experiments may live under `dev/`, but they are not part of the runtime package or required workflow.
+
+4. **Xbox App / PC compatibility is a release gate.**
+   Do not introduce DLL/native-loader/Script-Extender requirements into the primary build.
+
+5. **Controller-first.**
    Every interactive element must have deterministic controller focus/navigation. Mouse support is secondary.
 
-4. **Do not optimize around unverified assumptions.**
-   If an engine binding, data shape, page/state name, or dispatch mechanism is not proven against the current game/toolkit, document it as an assumption and isolate it behind a spike.
+6. **Do not optimize around unverified assumptions.**
+   If an engine binding, data shape, page/state name, or dispatch mechanism is not proven against the current game/toolkit/open Patch 8 resources, document it and isolate it.
 
-5. **Minimize manual testing.**
-   Add static validation and fixture-driven tests for everything that does not require the running game.
+7. **Minimize manual testing.**
+   Add static validation, package round-trip verification and visible in-game diagnostics for everything that does not require a running game.
 
-6. **Milestone game tests only.**
-   In-game testing should be requested only when a build crosses a defined proof boundary that cannot be established statically.
+8. **Milestone game tests only.**
+   In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically.
 
-## Development order
+## Current architecture
 
-1. Research and document the current controller action UI/data path.
-2. Prove read access to the native action collection.
-3. Prove dispatch of one selected native action.
-4. Build the smallest navigable controller grid.
-5. Add categorization/tabs.
-6. Add spell-level filtering.
-7. Cover edge cases: upcast, variants, recast, toggles, temporary actions, item actions, class resources.
-8. Polish and compatibility work.
+The current candidate intentionally uses:
+
+- controller state `ActionRadials`;
+- `DCHotBar` context;
+- `SelectedCharacter.SpellsAndActions`;
+- `SelectedCharacter.HotBars`;
+- native `HotBarSlotStyle`;
+- native Spell Book group chrome;
+- native `SingleHotBar` for variants/upcast;
+- native action dispatch owned by `HotBarSlotStyle`.
+
+Custom code owns only the page composition, grid geometry, section ordering and first-run diagnostic overlay.
 
 ## Pull request expectations
 
@@ -44,6 +54,7 @@ Every PR must state:
 - what behavior or assumption it proves;
 - what can be validated automatically;
 - what still requires an in-game proof;
+- whether the shipping `.pak` remains Script-Extender-free;
 - whether it changes any documented architecture decision.
 
 Do not claim in-game behavior is working unless it has been proven in-game.

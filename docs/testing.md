@@ -86,13 +86,19 @@ A deliberately chosen test character/save should cover, in as few runs as possib
 
 Milestone artifacts should expose enough diagnostics to avoid repeated blind tests.
 
+For Xbox App-compatible candidates, diagnostics must not require Script Extender.
+
 Where possible include:
 
 - visible build/version identifier;
-- optional debug overlay showing current UI state, tab, focus index, and selected native action identifier;
-- logging for state transitions and action selection.
+- on-screen debug overlay using ordinary BG3/XAML bindings;
+- action-group/hotbar/variant counts;
+- focus and variant/upcast state;
+- screenshots as the first-line diagnostic artifact.
 
-Debug instrumentation must be removable/disabled for release builds.
+Script Extender logging may be used only by optional developer builds under `dev/`, never as a requirement for the shipping package.
+
+Debug instrumentation must be removable/disabled for stable releases.
 
 ## Manual test report format
 

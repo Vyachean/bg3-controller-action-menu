@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Repository-level static validation.
-
-Uses only the Python standard library so CI and local validation do not need a
-dependency bootstrap. XML validity alone is insufficient for this project:
-the semantic checks below protect the native BG3 integration seams that must
-remain intact until an in-game run proves them.
-"""
+"""Repository-level static validation for the no-Script-Extender runtime package."""
 
 from __future__ import annotations
 
@@ -15,14 +9,14 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
+PACKAGE_ROOT = ROOT / "BG3ControllerActionMenu"
+MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
+ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
+CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
+VERSION = ROOT / "VERSION"
+
 IGNORED_DIRS = {".git", ".local", "build", "dist", "artifacts", "extracted", "game-data", "toolkit-data"}
 XML_SUFFIXES = {".xaml", ".xml", ".lsx"}
-
-ACTION_PAGE = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml"
-CONTROLLER_STATE = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml"
-BOOTSTRAP = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/ScriptExtender/Lua/BootstrapClient.lua"
-DIAGNOSTICS = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/ScriptExtender/Lua/Client/RadialProbe.lua"
-VERSION = ROOT / "VERSION"
 
 
 def iter_files():
@@ -47,11 +41,11 @@ def require_text(path: Path, required: list[str]) -> list[str]:
         return [f"{path.relative_to(ROOT)}: required file is missing"]
 
     text = path.read_text(encoding="utf-8")
-    errors: list[str] = []
-    for needle in required:
-        if needle not in text:
-            errors.append(f"{path.relative_to(ROOT)}: missing required integration seam: {needle}")
-    return errors
+    return [
+        f"{path.relative_to(ROOT)}: missing required integration seam: {needle}"
+        for needle in required
+        if needle not in text
+    ]
 
 
 def validate_semantics() -> list[str]:
@@ -76,6 +70,12 @@ def validate_semantics() -> list[str]:
                 "CallAllies",
                 "IsSelectingUpcastedSpell",
                 "IsShowingAContainerWithVariants",
+                'x:Name="CAM_DiagnosticPanel"',
+                "Action groups:",
+                "Variant slots:",
+                "Focus name:",
+                "Focused usable:",
+                'x:Name="CAM_NoGroupsWarning"',
             ],
         )
     )
@@ -93,25 +93,11 @@ def validate_semantics() -> list[str]:
         )
     )
 
-    errors.extend(require_text(BOOTSTRAP, ["Diagnostics.Register({ Auto = true })"]))
-    errors.extend(
-        require_text(
-            DIAGNOSTICS,
-            [
-                "0.0.5-first-run-diagnostics",
-                "Ext.UI.EnableErrorReporting(true)",
-                "ControllerButtonInput",
-                "CAM_ActionMenu",
-                "SpellsAndActions",
-                "UseSlotCommand",
-                "ClearSingleHotbarCommand",
-                "DiagnosticsCompleteEnough",
-                "FailureClass",
-                "NeedsScriptExtenderRuntimeLog",
-                "BG3ControllerActionMenu/diagnostics.json",
-            ],
+    script_extender = MOD_ROOT / "ScriptExtender"
+    if script_extender.exists():
+        errors.append(
+            f"{script_extender.relative_to(ROOT)}: runtime package must not contain Script Extender files"
         )
-    )
 
     if ACTION_PAGE.exists():
         page_text = ACTION_PAGE.read_text(encoding="utf-8")
@@ -124,8 +110,7 @@ def validate_semantics() -> list[str]:
         for needle in forbidden:
             if needle in page_text:
                 errors.append(
-                    f"{ACTION_PAGE.relative_to(ROOT)}: custom slot visual remains; "
-                    f"native BG3 resources must own cell rendering: {needle}"
+                    f"{ACTION_PAGE.relative_to(ROOT)}: custom slot rendering/dispatch regression: {needle}"
                 )
 
     if not VERSION.exists():
@@ -157,7 +142,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "native integration seams present)."
+        "native UI seams present; runtime package is Script-Extender-free)."
     )
     return 0
 

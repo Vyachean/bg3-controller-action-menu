@@ -195,6 +195,82 @@
                        Stretch="Fill"
                        Opacity="0.92"/>
 
+                <!-- Xbox App / no-Script-Extender first-run diagnostics.
+                     This panel uses ordinary BG3 bindings only, so a screenshot is enough
+                     to distinguish most data/focus/variant failures. -->
+                <Border x:Name="CAM_DiagnosticPanel"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,28,28,0"
+                        Padding="14"
+                        Background="#D9151820"
+                        BorderBrush="{StaticResource LS_InventoryGridSurround}"
+                        BorderThickness="2"
+                        Panel.ZIndex="20">
+                    <StackPanel Width="320">
+                        <TextBlock Text="CAM 0.0.6 Xbox diagnostic"
+                                   Foreground="{DynamicResource LS_PrimaryColor}"
+                                   FontWeight="DemiBold"
+                                   FontSize="{DynamicResource SmallFontSize}"
+                                   Margin="0,0,0,8"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Action groups: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions.Count}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Hotbars: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.HotBars.Count}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Variant slots: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding SingleHotBar.SlotList.Count}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Variants open: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding IsShowingAContainerWithVariants}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Upcast open: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding IsSelectingUpcastedSpell}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Radials flag: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentPlayer.UIData.AreRadialsOpen}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Focus name: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding Path=FocusedElement.Name, ElementName=CAM_ActionMenu}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Focused usable: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding Path=Tag.CanUse, ElementName=CAM_ActionMenu}"
+                                       Foreground="White"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="CAM_NoGroupsWarning"
+                                   Text="NO ACTION GROUPS"
+                                   Foreground="#FFFF8A80"
+                                   FontWeight="Bold"
+                                   Margin="0,8,0,0"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
                 <Grid Width="1120"
                       MaxHeight="1900"
                       HorizontalAlignment="Center"
@@ -278,6 +354,10 @@
                 </Grid>
 
                 <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions.Count}" Value="0">
+                        <Setter TargetName="CAM_NoGroupsWarning" Property="Visibility" Value="Visible"/>
+                    </DataTrigger>
+
                     <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
                                  Value="True">
                         <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>

@@ -1,5 +1,5 @@
 {
   "RequiredVersion": 30,
-  "ModTable": "BG3ControllerActionMenu",
+  "ModTable": "BG3ControllerActionMenuDiagnostics",
   "FeatureFlags": ["Lua"]
 }

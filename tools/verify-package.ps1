@@ -32,9 +32,6 @@ if ($LASTEXITCODE -ne 0) {
 
 $required = @(
     "Mods/BG3ControllerActionMenu/meta.lsx",
-    "Mods/BG3ControllerActionMenu/ScriptExtender/Config.json",
-    "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/BootstrapClient.lua",
-    "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/Client/RadialProbe.lua",
     "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml",
     "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml"
 )
@@ -47,10 +44,13 @@ foreach ($relative in $required) {
     Write-Host "OK packaged file: $relative"
 }
 
+$scriptExtender = Join-Path $Extract "Mods/BG3ControllerActionMenu/ScriptExtender"
+if (Test-Path $scriptExtender) {
+    throw "Xbox/App-compatible package unexpectedly contains ScriptExtender files."
+}
+
 $page = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml")
 $state = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml")
-$bootstrap = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/BootstrapClient.lua")
-$diagnostics = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/Client/RadialProbe.lua")
 
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
@@ -64,12 +64,18 @@ $requiredPageSeams = @(
     "LS_InventoryGridSurround",
     "SingleHotBar.SlotList",
     "ClearSingleHotbarCommand",
-    "CallAllies"
+    "CallAllies",
+    'x:Name="CAM_DiagnosticPanel"',
+    "Action groups:",
+    "Variant slots:",
+    "Focus name:",
+    "Focused usable:",
+    'x:Name="CAM_NoGroupsWarning"'
 )
 
 foreach ($needle in $requiredPageSeams) {
     if (-not $page.Contains($needle)) {
-        throw "Packaged action page is missing native integration seam: $needle"
+        throw "Packaged action page is missing integration/diagnostic seam: $needle"
     }
 }
 
@@ -85,32 +91,8 @@ foreach ($needle in $requiredStateSeams) {
     }
 }
 
-if (-not $bootstrap.Contains("Diagnostics.Register({ Auto = true })")) {
-    throw "Packaged bootstrap does not enable bounded first-run diagnostics."
-}
-
-$requiredDiagnosticSeams = @(
-    "0.0.5-first-run-diagnostics",
-    "Ext.UI.EnableErrorReporting(true)",
-    "ControllerButtonInput",
-    "CAM_ActionMenu",
-    "SpellsAndActions",
-    "UseSlotCommand",
-    "ClearSingleHotbarCommand",
-    "DiagnosticsCompleteEnough",
-    "FailureClass",
-    "NeedsScriptExtenderRuntimeLog",
-    "BG3ControllerActionMenu/diagnostics.json"
-)
-
-foreach ($needle in $requiredDiagnosticSeams) {
-    if (-not $diagnostics.Contains($needle)) {
-        throw "Packaged diagnostics are missing first-run seam: $needle"
-    }
-}
-
-Write-Host "Package verification passed."
-
 if ($page.Contains('Command="{Binding UseSlotCommand}"')) {
     throw "Packaged page bypasses native HotBarSlotStyle dispatch with a custom UseSlotCommand binding."
 }
+
+Write-Host "Package verification passed: no Script Extender dependency; native UI + on-screen diagnostics present."

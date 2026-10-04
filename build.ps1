@@ -1,5 +1,5 @@
 param(
-    [string]$Configuration = "probe"
+    [string]$Configuration = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,6 +11,15 @@ $Build = Join-Path $Root "build"
 $Tools = Join-Path $Root ".tools"
 $LslibVersion = "v1.20.4"
 $LslibDir = Join-Path $Tools "lslib-$LslibVersion"
+
+if ([string]::IsNullOrWhiteSpace($Configuration)) {
+    $Configuration = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
+}
+
+if ([string]::IsNullOrWhiteSpace($Configuration)) {
+    throw "Build configuration/version is empty."
+}
+
 $Pak = Join-Path $Build "BG3ControllerActionMenu-$Configuration.pak"
 
 New-Item -ItemType Directory -Force -Path $Build | Out-Null
