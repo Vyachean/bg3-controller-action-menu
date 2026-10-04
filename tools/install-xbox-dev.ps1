@@ -82,6 +82,21 @@ function Find-PackageRoots {
         }
     }
 
+    # Package identity lookup is useful but not required for read-only discovery.
+    # Enumerate package-data directories as an independent fallback because GDK /
+    # Gaming Services registration can differ between Windows builds.
+    $localPackagesRoot = Join-Path $env:LOCALAPPDATA "Packages"
+    if (Test-Path -LiteralPath $localPackagesRoot) {
+        Get-ChildItem -LiteralPath $localPackagesRoot -Directory -Force -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.Name -like "*baldur*" -or
+                $_.Name -like "LarianStudiosGamesLtd.baldurssgate3_*"
+            } |
+            ForEach-Object {
+                Add-CandidateRoot -List $roots -Root $_.FullName -Source "LocalAppDataEnumeration"
+            }
+    }
+
     # Some Xbox/Gaming Services configurations expose package data through
     # WpSystem on the selected game drive. This is a fallback, not an assumed path.
     try {
