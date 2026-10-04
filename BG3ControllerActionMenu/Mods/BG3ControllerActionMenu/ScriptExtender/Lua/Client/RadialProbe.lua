@@ -385,7 +385,7 @@ local function namedChildInfo(page, name, context)
     return info
 end
 
-local function describeDCHotBar(dc, focusedParameter, context)
+local function describeDCHotBar(dc, focusedParameter, context, deep)
     if dc == nil then
         return nil
     end
@@ -393,24 +393,35 @@ local function describeDCHotBar(dc, focusedParameter, context)
     local info = {
         Type = objectType(dc),
         Values = simpleKnownProperties(dc, context),
-        Properties = {},
-        PropertiesTruncated = false,
         Commands = {},
     }
 
-    info.Properties, info.PropertiesTruncated = propertyNames(dc, context)
-
+    local wasDCHotBarSeen = report.Summary.DCHotBarSeen
     if info.Type and string.lower(info.Type):find("dchotbar", 1, true) then
         report.Summary.DCHotBarSeen = true
     end
 
-    local props = propertyBag(dc, context)
-    if props then
-        for key, value in pairs(props) do
-            local command = commandInfo(value, focusedParameter, context .. ":command:" .. tostring(key))
-            if command then
-                info.Commands[tostring(key)] = command
-            end
+    if deep or not wasDCHotBarSeen then
+        info.Properties, info.PropertiesTruncated = propertyNames(dc, context)
+    end
+
+    local commandNames = {
+        "UseSlotCommand",
+        "ClearSingleHotbarCommand",
+        "CustomEvent",
+        "ShowTooltipOnUIElement",
+        "HideTooltipOnUIElement",
+        "HighlightResourcesCommand",
+        "ClearResourceHighlightsCommand",
+        "CallAllies",
+    }
+    for _, name in ipairs(commandNames) do
+        local value = safe(context .. ":command:" .. name, function()
+            return dc[name]
+        end, true)
+        local command = commandInfo(value, focusedParameter, context .. ":command:" .. name)
+        if command then
+            info.Commands[name] = command
         end
     end
 
@@ -421,6 +432,22 @@ local function describeDCHotBar(dc, focusedParameter, context)
         return currentPlayer.SelectedCharacter
     end)
 
+    if currentPlayer then
+        info.CurrentPlayer = {
+            Type = objectType(currentPlayer),
+            Values = simpleKnownProperties(currentPlayer, context .. ":CurrentPlayer"),
+        }
+        local uiData = safe(context .. ":UIData", function()
+            return currentPlayer.UIData
+        end, true)
+        if uiData then
+            info.CurrentPlayer.UIData = {
+                Type = objectType(uiData),
+                Values = simpleKnownProperties(uiData, context .. ":UIData"),
+            }
+        end
+    end
+
     if selectedCharacter then
         local groups = safe(context .. ":SpellsAndActions", function()
             return selectedCharacter.SpellsAndActions
@@ -429,27 +456,45 @@ local function describeDCHotBar(dc, focusedParameter, context)
             return selectedCharacter.HotBars
         end)
 
-        info.SpellsAndActions = collectionPreview(groups, context .. ":SpellsAndActions", describeActionGroup)
-        info.HotBars = collectionPreview(hotbars, context .. ":HotBars", describeHotbar)
+        local groupsCount = countOf(groups)
+        local hotbarsCount = countOf(hotbars)
+        info.SpellsAndActions = { Count = groupsCount }
+        info.HotBars = { Count = hotbarsCount }
 
-        if info.SpellsAndActions.Count and info.SpellsAndActions.Count > 0 then
+        if groupsCount and groupsCount > 0 then
             report.Summary.ActionGroupsSeen = true
+        end
+
+        if deep then
+            info.SpellsAndActions = collectionPreview(groups, context .. ":SpellsAndActions", describeActionGroup)
+            info.HotBars = collectionPreview(hotbars, context .. ":HotBars", describeHotbar)
         end
     end
 
     local singleHotbar = safe(context .. ":SingleHotBar", function()
         return dc.SingleHotBar
-    end)
+    end, true)
     if singleHotbar then
-        info.SingleHotBar = describeHotbar(singleHotbar, context .. ":SingleHotBar")
-        if info.SingleHotBar.SlotList.Count and info.SingleHotBar.SlotList.Count > 0 then
+        local slots = safe(context .. ":SingleHotBar.SlotList", function()
+            return singleHotbar.SlotList
+        end, true)
+        local slotCount = countOf(slots)
+        info.SingleHotBar = {
+            Type = objectType(singleHotbar),
+            SlotList = { Count = slotCount },
+        }
+
+        if slotCount and slotCount > 0 then
+            local firstSeen = not report.Summary.SingleHotBarSeen
             report.Summary.SingleHotBarSeen = true
+            if deep or firstSeen then
+                info.SingleHotBar = describeHotbar(singleHotbar, context .. ":SingleHotBar")
+            end
         end
     end
 
     return info
 end
-
 local function rootAndContent()
     local root = safe("Ext.UI.GetRoot", function()
         return Ext.UI.GetRoot()
@@ -592,6 +637,7 @@ local function capture(reason, forceScan)
         relevant, visited = scanRelevantNodes(content)
     end
 
+    local firstCustomPage = custom ~= nil and not report.Summary.CustomPageSeen
     if custom ~= nil then
         report.Summary.CustomPageSeen = true
     end
@@ -604,6 +650,7 @@ local function capture(reason, forceScan)
     local dc = page and safe("page.DataContext", function()
         return page.DataContext
     end) or nil
+    local deep = forceScan or firstCustomPage or not report.Summary.DCHotBarSeen
 
     local snapshot = {
         T = rawNow(),
@@ -616,7 +663,7 @@ local function capture(reason, forceScan)
         RelevantNodes = relevant,
         ScannedNodes = visited,
         Focused = focusedInfo,
-        DataContext = describeDCHotBar(dc, focusedParameter, "DCHotBar"),
+        DataContext = describeDCHotBar(dc, focusedParameter, "DCHotBar", deep),
         NamedElements = {},
     }
 
