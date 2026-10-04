@@ -38,9 +38,9 @@ This proves only that the artifact is structurally valid, not that BG3 will rend
 
 ## Level 3 — in-game proof
 
-Requested only for milestones that cannot be proven outside the game.
+Requested only for milestones that cannot be proven outside the game **after current game-file inspection is exhausted**.
 
-Each manual test request must be short and diagnostic. Prefer one build that answers several questions.
+Do not ask the user to validate one speculative binding/layout hypothesis per build. Before requesting a run, inspect the installed/native current UI contract where possible, update deterministic fixtures, and make the single run answer several remaining runtime-only questions.
 
 Expected milestones:
 
@@ -102,31 +102,25 @@ Debug instrumentation must be removable/disabled for stable releases.
 
 ## Runtime evidence
 
-### 2026-10-04 — first Xbox App run
+### 2026-10-04 — Xbox App 1.8.910.0
 
-Confirmed:
+Confirmed by real runs:
 
-- the `ActionRadials` state override loads on Microsoft package 1.8.910.0;
-- the custom page and native resource dictionaries resolve;
-- `AreRadialsOpen` and `SingleHotBar` bindings are live.
+- CAM's `ActionRadials` state override loads;
+- release version changes are visible in-game, so package delivery/replacement works;
+- `CurrentPlayer.UIData.AreRadialsOpen` can be read/written from the root HotBar context;
+- the page shell and imported resources render;
+- builds through 0.0.16 did **not** populate the intended action grid;
+- B did **not** close the menu in those builds;
+- the original CAM full-screen dim/background was undesirable and must not return.
 
-Observed across 0.0.13 and 0.0.14:
+Important correction:
 
-- the updated diagnostic version changed in-game, proving that Xbox App loaded the newer PAK;
-- the menu still remained empty and B still did not close it;
-- therefore delivery/caching was not the cause.
+- blank object-level diagnostic fields such as `CurrentPlayer:` / `SelectedCharacter:` were produced using `NullToBoolFalseConverter` and are not reliable evidence that those VM objects were absent;
+- the public `ActionRadials.xaml` used for several design decisions is Patch 2 Hotfix 1 (2023-09-06), not Patch 8;
+- therefore the 0.0.14–0.0.17 sequence contained too much inference from stale/native-adjacent evidence.
 
-0.0.15 switched CAM to the native `UIWidget.Template/ControlTemplate` shell, but the real Xbox run was unchanged. This rules out the outer template type as the primary cause.
-
-A comparison with a working controller state override showed the remaining mismatch: interactive controls inside the template explicitly bind back to the owning `ls:UIWidget.DataContext` with `RelativeSource AncestorType=ls:UIWidget`. CAM instead relied on implicit template DataContext for HotBars, SingleHotBar state and CustomEvent. The observed split is consistent with that: root-level DCHotBar bindings work, while template content and B do not.
-
-0.0.16 anchored template bindings through `AncestorType=ls:UIWidget`, but the Xbox screenshot still showed blank `CurrentPlayer`, `SelectedCharacter`, `HotBars source` and `Sections`; B also remained nonfunctional. That disproves the AncestorType route for this ControlTemplate.
-
-Patch 8 `DataTemplates.xaml` uses the stronger native ControlTemplate pattern `(ls:WidgetData.DataContext)…` with `RelativeSource TemplatedParent`. 0.0.17 adopts that pattern for the hotbar source, nested SingleHotBar state and controller hint data. Top-level B is also made independent of DCHotBar by using the native `ls:UIWidget.CloseRequestCommand`; nested B still uses `ClearSingleHotbarCommand`.
-
-0.0.17 also removes CAM's full-screen dim image/background. Only the local action panel and diagnostic overlay remain above gameplay.
-
-The next runtime test should validate: visible gameplay background, populated HotBars, and B close. If data is still missing, the PlayerId/Character diagnostic fields should identify the remaining context boundary in one screenshot.
+No further in-game run should be requested until the current installed Patch 8/Xbox radial XAML is captured and the next candidate is rebuilt from that current contract.
 
 ## Manual test report format
 
