@@ -55,6 +55,8 @@ $requiredPageSeams = @(
     "CurrentPlayer.SelectedCharacter.SpellsAndActions",
     "CurrentPlayer.SelectedCharacter.HotBars",
     "VMCharacterAction",
+    "HotBarSlotStyle",
+    "GustavNoesisGUI;component/Library/DataTemplates.xaml",
     "UseSlotCommand",
     "SingleHotBar.SlotList",
     "ClearSingleHotbarCommand",
