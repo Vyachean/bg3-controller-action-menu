@@ -57,7 +57,10 @@ $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
     "<ls:UIWidget.Template>",
     "<ControlTemplate>",
-    "CurrentPlayer.SelectedCharacter.HotBars",
+    "DataContext.CurrentPlayer.SelectedCharacter.HotBars",
+    "RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}",
+    "CurrentPlayer:",
+    "SelectedCharacter:",
     "HotBarSections",
     "CAM_HotBarSectionTemplate",
     "HotBarSlotStyle",
@@ -112,6 +115,12 @@ if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Spells
 }
 if ($page.Contains("<ls:UIWidget.ContentTemplate>")) {
     throw "Packaged controller page uses ContentTemplate instead of BG3's native UIWidget ControlTemplate contract."
+}
+if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"')) {
+    throw "Packaged controller page relies on implicit template DataContext for the HotBars source."
+}
+if ($page.Contains('Command="{Binding CustomEvent}"')) {
+    throw "Packaged controller page relies on implicit template DataContext for CustomEvent."
 }
 if ($page -match '(?s)Value="CommonHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
     throw "Packaged page hides CommonHotBar from the main menu."
