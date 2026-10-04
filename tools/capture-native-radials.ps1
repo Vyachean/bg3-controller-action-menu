@@ -295,6 +295,7 @@ function Get-NativeContractAnalysis {
     $mainSources = @()
     $keyboardSources = @()
     $nestedSources = @()
+    $slotMaterializationSources = @()
     $acceptBindings = @()
     $cancelBindings = @()
     $focusBindings = @()
@@ -326,7 +327,11 @@ function Get-NativeContractAnalysis {
                 $keyboardSources += $record
             } elseif ($source.Value -match "(?i)SingleHotBar") {
                 $nestedSources += $record
-            } elseif ($source.Value -match "(?i)(HotBar|Radial|ControllerBar|SlotList)") {
+            } elseif ($source.Value -match "(?i)SlotList") {
+                # A per-bar SlotList describes slot materialization inside an already
+                # selected bar. It is not an independent root controller collection.
+                $slotMaterializationSources += $record
+            } elseif ($source.Value -match "(?i)(HotBar|Radial|Controller)") {
                 $mainSources += $record
             }
         }
@@ -443,7 +448,7 @@ function Get-NativeContractAnalysis {
     if (-not $hasNested) { $blockers += "nested-state-not-found" }
 
     return [pscustomobject]([ordered]@{
-        SchemaVersion = 1
+        SchemaVersion = 2
         CaptureComplete = $captureComplete
         NativeFileCount = @($NativeMatches).Count
         DuplicatePackagedPathCount = @($DuplicatePackagedPaths).Count
@@ -452,6 +457,7 @@ function Get-NativeContractAnalysis {
         MainControllerSourceCandidates = $mainSources
         KeyboardOnlySources = $keyboardSources
         NestedSources = $nestedSources
+        SlotMaterializationSources = $slotMaterializationSources
         DistinctMainControllerSourceValues = $distinctMainValues
         UIAcceptBindings = $acceptBindings
         UICancelBindings = $cancelBindings
@@ -466,6 +472,7 @@ function Get-NativeContractAnalysis {
             HasUICancel = $hasCancel
             HasFocusScroll = $hasFocus
             HasNestedStateEvidence = $hasNested
+            HasSlotMaterializationSource = $slotMaterializationSources.Count -gt 0
             HasUseSlotEvidenceInRadialFiles = $useSlotEvidence.Count -gt 0
             HasKeyboardOnlySourceEvidence = $keyboardSources.Count -gt 0
         })
@@ -493,6 +500,16 @@ function Format-NativeContractAnalysis {
         $lines += "(none)"
     } else {
         foreach ($source in @($Analysis.MainControllerSourceCandidates)) {
+            $lines += "[$([System.IO.Path]::GetFileName($source.SourcePackage)) :: $($source.PackagedPath) :: $($source.Element) $($source.Name)] $($source.Value)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== Slot materialization sources (not root controller collections) ==="
+    if (@($Analysis.SlotMaterializationSources).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($source in @($Analysis.SlotMaterializationSources)) {
             $lines += "[$([System.IO.Path]::GetFileName($source.SourcePackage)) :: $($source.PackagedPath) :: $($source.Element) $($source.Name)] $($source.Value)"
         }
     }
