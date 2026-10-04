@@ -40,6 +40,8 @@ A successful capture produces:
 - `capture-manifest.json`
 - `capture-summary.txt`
 - `native-contract.json`
+- `native-contract-analysis.json`
+- `native-contract-analysis.txt`
 - `files/.../*.xaml`
 - `<capture-directory>.zip`
 
@@ -53,6 +55,19 @@ The manifest records the BG3 package version, every scanned PAK (path, size, tim
 - every controller `BoundEvent` together with `Command`, `CommandParameter` and `EatInput`;
 - every `ScrollToElement` binding;
 - DataContext and other binding-bearing attributes.
+
+The capture also analyzes the contract automatically. `native-contract-analysis.json` and its readable `.txt` companion report:
+
+- candidate main controller collection bindings;
+- `KeyboardHotBars` bindings separately, explicitly marked as invalid controller substitutes;
+- nested `SingleHotBar` / variant-state evidence;
+- all `UIAccept` and `UICancel` command paths;
+- focus/`ScrollToElement` bindings;
+- per-file list/paging/grid/radial materialization counts;
+- conflicting copies of the same packaged radial path;
+- a fail-closed implementation gate with explicit blockers.
+
+The gate does not claim the mod works in-game. It only answers whether the captured native evidence is internally complete and unambiguous enough to rebuild the next candidate without guessing.
 
 The text summary renders the important parts of that structured contract and also selects source lines relevant to:
 
@@ -70,6 +85,6 @@ The text summary renders the important parts of that structured contract and als
 
 ## Development fixture
 
-`tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, verifies the parsed ItemsSource/UIAccept/UICancel/ScrollToElement contract, and verifies that the source PAK is byte-identical before and after capture.
+`tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, verifies the parsed ItemsSource/UIAccept/UICancel/ScrollToElement contract, verifies keyboard-only source classification and fail-closed ambiguity handling, and verifies that the source PAK is byte-identical before and after capture.
 
 The Windows build CI must pass that fixture before the capture tool is considered ready for use against a real install. The fixture also simulates a patched game by placing a second `ActionRadials.xaml` at the same packaged path in a patch PAK; the report must retain both copies and flag the duplicate path.

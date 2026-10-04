@@ -54,6 +54,8 @@ Not yet proven for the current Patch 8 radial page:
 
 Do not use the proven current `PlayerCharacterProperties.KeyboardHotBars` collection as a controller substitute: current engine mappings prove the two modes carry distinct state.
 
+Do not reconstruct the visible radial/grid directly from `HotbarContainer` component memory. Current RadialHotbarCustomization research reports that the persisted hotbar/radial storage does not map cleanly to the visual radial layout. Component data is useful corroborating evidence, but the presentation source must come from the current native radial UI/view-model contract.
+
 The public `ActionRadials.xaml` dump used earlier is Patch 2 Hotfix 1 (2023-09-06), not Patch 8. It may be used only as historical/secondary evidence.
 
 Do not request another in-game test until the current installed game's native radial XAML has been captured and the candidate is rebuilt from that current contract.

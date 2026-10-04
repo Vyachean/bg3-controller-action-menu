@@ -137,6 +137,13 @@ def validate_semantics() -> list[str]:
                 "--action extract-single-file",
                 "capture-manifest.json",
                 "capture-summary.txt",
+                "native-contract.json",
+                "native-contract-analysis.json",
+                "native-contract-analysis.txt",
+                "KeyboardOnlySources",
+                "MainControllerSourceCandidates",
+                "ImplementationGate",
+                "controller-source-ambiguous",
                 "No game, profile or mod files were modified.",
             ],
         )
