@@ -267,14 +267,6 @@
                                      Margin="12,0"/>
                     </StackPanel>
 
-                    <!-- Native HotBarSlotStyle already owns UIAccept dispatch for each focused
-                         button. This binding is retained only as a compatibility fallback for
-                         controller focus implementations that bubble accept to the widget. -->
-                    <ls:LSInputBinding x:Name="UseSlotBinding"
-                                       Command="{Binding UseSlotCommand}"
-                                       CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"
-                                       BoundEvent="UIAccept"/>
-
                     <ls:LSButton x:Name="CancelButton"
                                  Visibility="Collapsed"
                                  BoundEvent="UICancel"
@@ -304,10 +296,6 @@
                     <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count}" Value="0">
                         <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
                         <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
-                    </DataTrigger>
-
-                    <DataTrigger Binding="{Binding Tag.CanUse, ElementName=CAM_ActionMenu}" Value="False">
-                        <Setter TargetName="UseSlotBinding" Property="IsEnabled" Value="False"/>
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </Grid>
