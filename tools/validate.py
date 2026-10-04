@@ -178,7 +178,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "native UI seams present; runtime package is Script-Extender-free)."
+        "structural/safety seams present; runtime package is Script-Extender-free)."
     )
     return 0
 

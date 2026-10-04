@@ -40,15 +40,19 @@ Proven against Patch 8 / the real Xbox App build:
 - the state is reached by `OpenActionRadials` and removed by `CloseWidget` / `CloseRadials`;
 - the real Xbox App build loads CAM's state override and `HotBar` context;
 - current Patch 8 native resources still expose `HotBarSlotStyle`;
+- Patch 8 `HotBarSlotStyle` binds its command to the owning `UIWidget.DataContext.UseSlotCommand` and passes the current slot as `CommandParameter`;
+- a 2026-09-27 production mod confirms the live top-level `HotBar.DataContext`, `CurrentSingleHotbarFilter`, `PlayerCharacterProperties.KeyboardHotBars[*].SlotList` and `UseSlotCommand:Execute(slot)`;
+- current BG3SE data mappings prove keyboard and controller hotbar state are distinct;
 - the shipped Patch 8 controller radial has a runtime/preloaded file named `PreloadedActionRadials_c.xaml`.
 
 Not yet proven for the current Patch 8 radial page:
 
-- the exact action collection path;
-- the exact slot materialization hierarchy;
-- the exact `UIAccept` dispatch binding;
+- the exact current **controller-radial collection** path;
+- the exact slot materialization/paging hierarchy;
 - the exact top-level/nested `UICancel` path;
-- whether old `CurrentPlayer.SelectedCharacter.HotBars` / `SingleHotBar` bindings remain unchanged.
+- whether the historical `SingleHotBar` collection path itself is unchanged.
+
+Do not use the proven current `PlayerCharacterProperties.KeyboardHotBars` collection as a controller substitute: current engine mappings prove the two modes carry distinct state.
 
 The public `ActionRadials.xaml` dump used earlier is Patch 2 Hotfix 1 (2023-09-06), not Patch 8. It may be used only as historical/secondary evidence.
 

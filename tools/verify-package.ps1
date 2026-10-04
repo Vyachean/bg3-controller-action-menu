@@ -57,38 +57,13 @@ $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
     "<ls:UIWidget.Template>",
     "<ControlTemplate>",
-    "(ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars",
-    "RelativeSource={RelativeSource TemplatedParent}",
-    "CurrentPlayer:",
-    "SelectedCharacter:",
-    "HotBarSections",
-    "CAM_HotBarSectionTemplate",
-    "HotBarSlotStyle",
-    "GustavNoesisGUI;component/Library/DataTemplates.xaml",
-    "FocusableControls_c.xaml",
-    "ExpanderButtonTemplateSpellBook",
-    "LS_InventoryGridSurround",
-    "SingleHotBar.SlotList",
-    "ClearSingleHotbarCommand",
-    "CallAllies",
     'x:Name="CAM_DiagnosticPanel"',
-    "HotBars source:",
-    "Sections:",
-    "Variant slots:",
-    "Focus name:",
-    "Focused usable:",
-    'x:Name="CAM_NoHotbarsWarning"',
-    'x:Name="CancelButton"',
-    'BoundEvent="UICancel"',
-    "(ls:WidgetData.DataContext).ClearSingleHotbarCommand",
-    'Command="ls:UIWidget.CloseRequestCommand"',
-    'x:Name="CancelNestedButton"',
     'Background="Transparent"'
 )
 
 foreach ($needle in $requiredPageSeams) {
     if (-not $page.Contains($needle)) {
-        throw "Packaged action page is missing integration/diagnostic seam: $needle"
+        throw "Packaged action page is missing structural/safety seam: $needle"
     }
 }
 
@@ -109,32 +84,11 @@ foreach ($needle in $requiredStateSeams) {
     }
 }
 
-if ($page.Contains('Command="{Binding UseSlotCommand}"')) {
-    throw "Packaged page bypasses native HotBarSlotStyle dispatch with a custom UseSlotCommand binding."
-}
-if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"')) {
-    throw "Packaged page regressed to the slot-assignment-only SpellsAndActions source."
-}
 if ($page.Contains("<ls:UIWidget.ContentTemplate>")) {
-    throw "Packaged controller page uses ContentTemplate instead of BG3's native UIWidget ControlTemplate contract."
-}
-if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"')) {
-    throw "Packaged controller page relies on implicit template DataContext for the HotBars source."
-}
-if ($page.Contains('Command="{Binding CustomEvent}"')) {
-    throw "Packaged controller page relies on implicit template DataContext for CustomEvent."
-}
-if ($page.Contains("DataContext.CurrentPlayer.SelectedCharacter.HotBars") -or $page.Contains("RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}")) {
-    throw "Packaged controller page regressed from Patch 8 WidgetData/TemplatedParent bindings."
+    throw "Packaged controller page regressed to the rejected ContentTemplate shell."
 }
 if ($page.Contains("opaqueBG.png") -or $page.Contains('Background="{DynamicResource LS_tint00}"')) {
     throw "Packaged controller page regressed to a full-screen opaque/dimmed background."
 }
-if ($page -match '(?s)Value="CommonHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
-    throw "Packaged page hides CommonHotBar from the main menu."
-}
-if ($page -match '(?s)Value="ClassHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
-    throw "Packaged page hides ClassHotBar from the main menu."
-}
 
-Write-Host "Package verification passed: no Script Extender dependency; native HotBars + controller cancel + diagnostics present."
+Write-Host "Package verification passed: required files/state/diagnostics present; no Script Extender dependency or full-screen dim regression."

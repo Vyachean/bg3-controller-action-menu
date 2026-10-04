@@ -82,15 +82,19 @@ This means our desired menu is not a foreign UI concept; it is essentially a com
 
 ### Action radial
 
-An openly available game-data dump of the controller radial establishes the important execution seam:
+The old public radial page is Patch 2 Hotfix 1 and is no longer treated as a current data-source specification.
 
-- root context: `HotBar`;
-- design-time view model: `DCHotBar`;
-- current radials: `CurrentPlayer.SelectedCharacter.HotBars`;
-- focused entries can be `VMHotBarSlot` or `VMCharacterAction`;
-- confirm is dispatched through the native `UseSlotCommand`.
+Current Patch 8 / 2026 evidence establishes the parts that matter independently:
 
-That substantially reduces the need to invent a custom execution path.
+- controller state/context: `ActionRadials` / `HotBar`;
+- current native slot template: `HotBarSlotStyle`;
+- native dispatch: owning `UIWidget.DataContext.UseSlotCommand`;
+- dispatch parameter: the current slot object;
+- current nested-state property: `CurrentSingleHotbarFilter`;
+- current Patch 8 variant state: `IsShowingAContainerWithVariants`;
+- current focus-scroll mechanism: `LSScrollViewer.ScrollToElement` following `FocusedElement`.
+
+The exact controller-radial collection is still not published. A September-2026 production mod exposes `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`, but engine mappings prove keyboard/controller state is distinct, so this cannot be used as the controller source.
 
 ## Architecture implication
 
@@ -124,7 +128,7 @@ Only after that proof should categorisation be made more sophisticated.
 
 The runtime probe remains useful as a compatibility/debug tool, but it is no longer considered a hard prerequisite.
 
-Open source evidence now gives us enough to attempt a native-binding functional prototype directly. If current Patch 8 property/state names have changed from the public references, the probe becomes the fallback that tells us exactly what changed.
+Open-source evidence is now enough to lock state, native slot rendering/dispatch and focus strategy, but not enough to name the controller collection. Do not build another gameplay candidate until that remaining collection/materialization seam is proven by a modern source or one read-only native-file capture.
 
 ## Visual policy
 

@@ -24,7 +24,7 @@ BG3 controller ActionRadials state
        native BG3 dispatch
 ```
 
-The exact current Patch 8 collection and dispatch bindings are **not yet proven**. They must be taken from the installed game's current radial XAML before the next runtime candidate is accepted.
+The exact current Patch 8 **controller collection** is not yet proven. Normal slot dispatch is now proven independently by current Patch 8 `HotBarSlotStyle`: it invokes `UseSlotCommand` on the owning `UIWidget` and passes the slot object as the command parameter.
 
 The shipping `.pak` contains only ordinary BG3 mod resources. It has **no Script Extender, DLL, native loader or external runtime dependency**.
 
@@ -75,7 +75,7 @@ Confirmed current Patch 8 structural evidence:
 
 Therefore neither direct binding nor `WidgetData.DataContext` should be treated as a universal rule. The correct choice must match the actual current radial template boundary.
 
-The older public `Public/Game/GUI/Widgets/ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06. Its `HotBars`, `PagedList/PageView`, `UseSlotCommand`, `SingleHotBar` and cancel structure are historical evidence only.
+The older public `Public/Game/GUI/Widgets/ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06. Its `HotBars`, `PagedList/PageView`, `SingleHotBar` and radial-specific cancel structure are historical evidence only. `UseSlotCommand` itself is separately confirmed current by Patch 8 `HotBarSlotStyle` and September-2026 production code.
 
 ## Native UI reuse
 
@@ -92,17 +92,38 @@ Action cells should remain native. Recreating focus frames, disabled overlays, i
 
 ## Controller data
 
-Current evidence does **not** yet prove the Patch 8 action collection path.
+Current evidence proves the **data model is mode-sensitive** but does not yet publish the Patch 8 controller collection property exposed to XAML.
 
-Historical Patch 2 `ActionRadials.xaml` used:
+Current engine/component evidence:
 
-- `CurrentPlayer.SelectedCharacter.HotBars`;
-- per-hotbar `SlotList`;
-- `PagedList/PageView` wrappers;
-- `SingleHotBar.SlotList` for nested choices;
-- native `UseSlotCommand` dispatch.
+- `HotbarContainer.Containers` stores arrays of native bars;
+- each bar has `Index`, `Controller`, `Elements`, dimensions and name;
+- hotbar mutation/event structures explicitly carry `HotBarController` / `IsController`.
 
-Patch 8 public resources prove that `HotBarSlotStyle` still exists, but the current controller radial page itself is not publicly available. The next implementation must be based on a read-only extraction of the installed game's current `ActionRadials.xaml` / `PreloadedActionRadials_c.xaml`, not on the 2023 file.
+Current UI evidence from a production mod dated 2026-09-27:
+
+- top-level widget name: `HotBar`;
+- live view model: `HotBar.DataContext`;
+- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList` exists;
+- `CurrentSingleHotbarFilter` exists;
+- `UseSlotCommand:Execute(slot)` works.
+
+The word **Keyboard** is significant. The current engine data proves keyboard and controller state are distinct, so `KeyboardHotBars` is evidence of the modern view-model shape, not the controller source CAM should render.
+
+Historical Patch 2 `ActionRadials.xaml` used `CurrentPlayer.SelectedCharacter.HotBars`, per-bar `SlotList` and `PagedList/PageView`. That path must not be promoted to Patch 8 truth without current evidence.
+
+## Native slot dispatch
+
+Current Patch 8 `HotBarSlotStyle` supplies the gameplay seam CAM wants to preserve:
+
+```text
+BoundEvent       <- slot.BoundEvent
+Command          <- owning UIWidget.DataContext.UseSlotCommand
+CommandParameter <- current slot object
+```
+
+Therefore CAM must not add its own gameplay execution command. Once the correct controller slot collection is identified, native slot buttons should continue to use `HotBarSlotStyle`.
+
 
 ## First-run diagnostics without Script Extender
 
