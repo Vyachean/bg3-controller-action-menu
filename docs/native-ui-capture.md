@@ -43,7 +43,7 @@ A successful capture produces:
 - `files/.../*.xaml`
 - `<capture-directory>.zip`
 
-The manifest records the BG3 package version, scanned PAK count, packaged path, SHA-256 and parsed contract of each extracted XAML.
+The manifest records the BG3 package version, every scanned PAK (path, size, timestamp, match count/error), packaged path, SHA-256 and parsed contract of each extracted XAML. If the same radial path exists in both a base and patch PAK, **all copies are preserved and reported separately** instead of silently choosing one.
 
 `native-contract.json` is the machine-readable contract used for implementation review. For every matching native page it records:
 
@@ -72,4 +72,4 @@ The text summary renders the important parts of that structured contract and als
 
 `tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, verifies the parsed ItemsSource/UIAccept/UICancel/ScrollToElement contract, and verifies that the source PAK is byte-identical before and after capture.
 
-The Windows build CI must pass that fixture before the capture tool is considered ready for use against a real install.
+The Windows build CI must pass that fixture before the capture tool is considered ready for use against a real install. The fixture also simulates a patched game by placing a second `ActionRadials.xaml` at the same packaged path in a patch PAK; the report must retain both copies and flag the duplicate path.

@@ -6,6 +6,8 @@ $FixtureSource = Join-Path $Temp "fixture-src"
 $FakeInstall = Join-Path $Temp "fake-install"
 $DataDir = Join-Path $FakeInstall "Data"
 $FixturePak = Join-Path $DataDir "Game.pak"
+$PatchSource = Join-Path $Temp "patch-src"
+$PatchPak = Join-Path $DataDir "Patch0_Hotfix1.pak"
 $CaptureDir = Join-Path $Temp "capture"
 
 if (Test-Path -LiteralPath $Temp) {
@@ -54,7 +56,27 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $FixturePak)) {
     throw "Failed to create native radial fixture PAK."
 }
 
+$patchActionPath = Join-Path $PatchSource "Mods\MainUI\GUI\Pages\ActionRadials.xaml"
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $patchActionPath) | Out-Null
+@'
+<ls:UIWidget x:Name="ActionRadials"
+             ls:UIWidget.ContextName="HotBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ls="clr-namespace:ls;assembly=Code">
+  <ListBox ItemsSource="{Binding PatchedControllerBars}"/>
+  <ls:LSInputBinding BoundEvent="UIAccept" Command="{Binding PatchedUseCommand}"/>
+  <ls:LSButton BoundEvent="UICancel" Command="{Binding CustomEvent}" CommandParameter="CloseWidget"/>
+</ls:UIWidget>
+'@ | Set-Content -LiteralPath $patchActionPath -Encoding UTF8
+
+& $divine.FullName --game bg3 --action create-package --source $PatchSource --destination $PatchPak --loglevel error
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $PatchPak)) {
+    throw "Failed to create native radial patch fixture PAK."
+}
+
 $pakHashBefore = (Get-FileHash -Algorithm SHA256 -LiteralPath $FixturePak).Hash
+$patchHashBefore = (Get-FileHash -Algorithm SHA256 -LiteralPath $PatchPak).Hash
 
 $captureArgs = @{
     GameInstallRoot = $FakeInstall
@@ -65,8 +87,9 @@ $captureArgs = @{
 & (Join-Path $Root "tools\capture-native-radials.ps1") @captureArgs
 
 $pakHashAfter = (Get-FileHash -Algorithm SHA256 -LiteralPath $FixturePak).Hash
-if ($pakHashBefore -ne $pakHashAfter) {
-    throw "Capture tool modified the source game PAK."
+$patchHashAfter = (Get-FileHash -Algorithm SHA256 -LiteralPath $PatchPak).Hash
+if ($pakHashBefore -ne $pakHashAfter -or $patchHashBefore -ne $patchHashAfter) {
+    throw "Capture tool modified a source game PAK."
 }
 
 $manifestPath = Join-Path $CaptureDir "capture-manifest.json"
@@ -81,19 +104,26 @@ foreach ($required in @($manifestPath, $summaryPath, $contractPath, $zipPath)) {
 }
 
 $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
-if ($manifest.ScannedPakCount -ne 1) {
-    throw "Expected exactly one fixture PAK to be scanned."
+if ($manifest.ScannedPakCount -ne 2 -or $manifest.PackageScan.Count -ne 2) {
+    throw "Expected exactly two fixture PAKs to be scanned."
 }
-if ($manifest.Matches.Count -ne 2) {
-    throw "Expected exactly two radial XAML matches, got $($manifest.Matches.Count)."
+if ($manifest.Matches.Count -ne 3) {
+    throw "Expected exactly three radial XAML matches, got $($manifest.Matches.Count)."
+}
+if ($manifest.DuplicatePackagedPaths.Count -ne 1) {
+    throw "Expected one duplicate packaged radial path across base/patch PAKs."
+}
+if ($manifest.DuplicatePackagedPaths[0].Copies.Count -ne 2) {
+    throw "Expected both base and patch copies of ActionRadials.xaml in duplicate evidence."
 }
 if (@($manifest.ScanErrors).Count -ne 0) {
     throw "Fixture capture unexpectedly reported package scan errors."
 }
 
 $names = @($manifest.Matches | ForEach-Object { [System.IO.Path]::GetFileName($_.PackagedPath) })
-if ($names -notcontains "ActionRadials.xaml" -or $names -notcontains "PreloadedActionRadials_c.xaml") {
-    throw "Capture did not extract both expected radial files."
+if (@($names | Where-Object { $_ -eq "ActionRadials.xaml" }).Count -ne 2 -or
+    @($names | Where-Object { $_ -eq "PreloadedActionRadials_c.xaml" }).Count -ne 1) {
+    throw "Capture did not preserve both duplicate ActionRadials copies plus PreloadedActionRadials."
 }
 
 foreach ($match in $manifest.Matches) {
@@ -107,16 +137,31 @@ foreach ($match in $manifest.Matches) {
 }
 
 $contractReport = Get-Content -Raw -LiteralPath $contractPath | ConvertFrom-Json
-if ($contractReport.Files.Count -ne 2) {
-    throw "Expected two files in native-contract.json."
+if ($contractReport.Files.Count -ne 3) {
+    throw "Expected three files in native-contract.json."
 }
 
 $actionContract = @(
     $contractReport.Files |
-        Where-Object { [System.IO.Path]::GetFileName($_.PackagedPath) -eq "ActionRadials.xaml" }
+        Where-Object {
+            [System.IO.Path]::GetFileName($_.PackagedPath) -eq "ActionRadials.xaml" -and
+            [System.IO.Path]::GetFileName($_.SourcePackage) -eq "Game.pak"
+        }
 )
 if ($actionContract.Count -ne 1) {
-    throw "ActionRadials contract entry is missing or ambiguous."
+    throw "Base ActionRadials contract entry is missing or ambiguous."
+}
+
+$patchedContract = @(
+    $contractReport.Files |
+        Where-Object {
+            [System.IO.Path]::GetFileName($_.PackagedPath) -eq "ActionRadials.xaml" -and
+            [System.IO.Path]::GetFileName($_.SourcePackage) -eq "Patch0_Hotfix1.pak"
+        }
+)
+if ($patchedContract.Count -ne 1 -or
+    @($patchedContract[0].Contract.ItemsSources | Where-Object { $_.Value -eq "{Binding PatchedControllerBars}" }).Count -ne 1) {
+    throw "Patched duplicate ActionRadials contract was not preserved independently."
 }
 if ($actionContract[0].Contract.ContextName -ne "HotBar") {
     throw "ActionRadials ContextName was not captured."

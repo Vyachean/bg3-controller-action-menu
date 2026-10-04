@@ -316,6 +316,7 @@ Write-Host ""
 
 $manifestMatches = @()
 $scanErrors = @()
+$packageScan = @()
 
 # Capture loose files too, if the package happens to expose them outside PAKs.
 $loose = @(
@@ -339,8 +340,23 @@ foreach ($file in $loose) {
     }
 }
 
+$pakIndex = 0
 foreach ($pak in $search.Packages) {
+    $pakIndex += 1
+    Write-Host ("Scanning [{0}/{1}] {2}" -f $pakIndex, $search.Packages.Count, $pak.Name)
+
     $result = Get-PackageMatches -Divine $divine -Package $pak.FullName
+
+    $packageScan += [pscustomobject]@{
+        Name = $pak.Name
+        Path = $pak.FullName
+        Size = $pak.Length
+        LastWriteTimeUtc = $pak.LastWriteTimeUtc.ToString("o")
+        MatchCount = @($result.Matches).Count
+        Matches = @($result.Matches)
+        Error = $result.Error
+    }
+
     if ($result.Error) {
         $scanErrors += [pscustomobject]@{
             Package = $pak.FullName
@@ -373,6 +389,27 @@ foreach ($pak in $search.Packages) {
     }
 }
 
+$duplicatePackagedPaths = @(
+    $manifestMatches |
+        Where-Object { $_.SourceType -eq "Pak" } |
+        Group-Object PackagedPath |
+        Where-Object { $_.Count -gt 1 } |
+        ForEach-Object {
+            [pscustomobject]@{
+                PackagedPath = $_.Name
+                Copies = @(
+                    $_.Group | ForEach-Object {
+                        [pscustomobject]@{
+                            SourcePackage = $_.SourcePackage
+                            Sha256 = $_.Sha256
+                            ExtractedPath = $_.ExtractedPath
+                        }
+                    }
+                )
+            }
+        }
+)
+
 $manifest = [ordered]@{
     SchemaVersion = 2
     CreatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
@@ -384,7 +421,9 @@ $manifest = [ordered]@{
     ScannedPakCount = $search.Packages.Count
     TargetExpression = $TargetExpression
     LslibVersion = $LslibVersion
+    PackageScan = $packageScan
     Matches = $manifestMatches
+    DuplicatePackagedPaths = $duplicatePackagedPaths
     ScanErrors = $scanErrors
 }
 
@@ -416,7 +455,28 @@ $summary += "Install root: $GameInstallRoot"
 $summary += "Package version: $(if ($packageInfo) { $packageInfo.Version } else { 'explicit fixture/root' })"
 $summary += "Scanned PAKs: $($search.Packages.Count)"
 $summary += "Matches: $($manifestMatches.Count)"
+$summary += "Scan errors: $($scanErrors.Count)"
+$summary += "Duplicate packaged paths: $($duplicatePackagedPaths.Count)"
 $summary += ""
+
+if ($scanErrors.Count -gt 0) {
+    $summary += "=== PAK scan errors ==="
+    foreach ($errorInfo in $scanErrors) {
+        $summary += "  $($errorInfo.Package): $($errorInfo.Error)"
+    }
+    $summary += ""
+}
+
+if ($duplicatePackagedPaths.Count -gt 0) {
+    $summary += "=== Duplicate packaged paths ==="
+    foreach ($duplicate in $duplicatePackagedPaths) {
+        $summary += "  $($duplicate.PackagedPath)"
+        foreach ($copy in @($duplicate.Copies)) {
+            $summary += "    $($copy.SourcePackage) :: $($copy.Sha256)"
+        }
+    }
+    $summary += ""
+}
 
 $tokens = @(
     "ContextName",
@@ -484,12 +544,18 @@ Compress-Archive -Path (Join-Path $OutputDirectory "*") -DestinationPath $zipPat
 Write-Host ""
 Write-Host "Capture complete."
 Write-Host "Matches:  $($manifestMatches.Count)"
+Write-Host "Scan errors: $($scanErrors.Count)"
+Write-Host "Duplicate paths: $($duplicatePackagedPaths.Count)"
 Write-Host "Manifest: $manifestPath"
 Write-Host "Summary:  $summaryPath"
 Write-Host "Contract: $contractPath"
 Write-Host "Archive:  $zipPath"
 Write-Host ""
 Write-Host "No game, profile or mod files were modified."
+
+if ($scanErrors.Count -gt 0) {
+    throw "One or more game PAKs could not be inspected. The capture report was written, but the evidence set is incomplete."
+}
 
 if ($manifestMatches.Count -eq 0) {
     throw "No *ActionRadials*.xaml files were found. The capture report was still written for diagnosis."
