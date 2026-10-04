@@ -275,9 +275,13 @@ function Find-Evidence {
         if (Test-Path -LiteralPath $ExplicitModSettingsPath) {
             $settingsCandidates = @((Get-Item -LiteralPath $ExplicitModSettingsPath))
         }
-    } elseif (Test-Path -LiteralPath $localCacheLocal) {
+    } elseif (Test-Path -LiteralPath $root) {
+        # Xbox package data can place the active profile/order outside LocalCache\Local.
+        # Search the package-data root, then identify the real order by its LSX shape.
+        # A mod package may itself contain a file named modsettings.lsx; filename alone
+        # is therefore not evidence that a file is the active game load order.
         $settingsCandidates = @(
-            Get-ChildItem -LiteralPath $localCacheLocal -File -Recurse -Force -Filter "modsettings.lsx" -ErrorAction SilentlyContinue
+            Get-ChildItem -LiteralPath $root -File -Recurse -Force -Filter "modsettings.lsx" -ErrorAction SilentlyContinue
         )
     }
 
@@ -317,8 +321,7 @@ function Find-Evidence {
         (Test-Path -LiteralPath $localCacheLocal) -and
         $modsInfo.Count -eq 1 -and
         $modsWithPak.Count -eq 1 -and
-        $writableSettings.Count -eq 1 -and
-        $settingsInfo.Count -eq 1
+        $writableSettings.Count -eq 1
 
     return [pscustomobject]@{
         Root = $root
@@ -330,6 +333,7 @@ function Find-Evidence {
         LocalCacheLocal = $localCacheLocal
         Mods = $modsInfo
         ModSettings = $settingsInfo
+        SelectedModSettings = if ($writableSettings.Count -eq 1) { $writableSettings[0] } else { $null }
         ReadyForApply = $ready
         Evidence = @(
             if (Test-Path -LiteralPath $localCacheLocal) { "LocalCacheLocalExists" }
@@ -486,8 +490,9 @@ foreach ($candidate in $report.Roots) {
         Write-Host ("    PAKs:      {0}" -f $mods.PakCount)
     }
     foreach ($settings in $candidate.ModSettings) {
-        Write-Host ("  Load order:  {0}" -f $settings.Path)
-        Write-Host ("    Valid:     {0}" -f $settings.ValidShape)
+        Write-Host ("  Settings candidate: {0}" -f $settings.Path)
+        Write-Host ("    Valid order:       {0}" -f $settings.ValidShape)
+        Write-Host ("    Writable schema:   {0}" -f $settings.WriteSchemaReady)
     }
     Write-Host ("  Safe target: {0}" -f $candidate.ReadyForApply)
     Write-Host ""
@@ -503,8 +508,13 @@ if (-not $Apply) {
     } else {
         Write-Host "Nothing was changed."
         Write-Host ""
-        Write-Host "The safest next step is to install one small mod through the in-game Mod Manager,"
-        Write-Host "exit the game, then rerun this discovery check."
+        if (@($report.Roots | ForEach-Object { $_.Mods } | Where-Object { $_.PakCount -gt 0 }).Count -gt 0) {
+            Write-Host "Existing Xbox mods were found, but no unique writable active load order was proven."
+            Write-Host "Do not install another mod just for discovery; use xbox-dev-environment.json for diagnosis."
+        } else {
+            Write-Host "No existing Xbox mod PAKs were found."
+            Write-Host "Install one small mod through the in-game Mod Manager, exit BG3, then rerun."
+        }
     }
     return
 }
@@ -514,8 +524,8 @@ if (-not $report.ReadyForApply) {
 Refusing to modify Xbox data: no unique evidence-backed target exists.
 
 No files were changed by this run.
-Use the discovery report above. Install one small mod through the in-game Mod Manager
-to establish the real cache, then rerun without -Apply first.
+Use the discovery report above. If Xbox mods already exist, do not install another one
+just for discovery; the report is the evidence needed to diagnose the remaining path/order issue.
 "@
 }
 
@@ -537,8 +547,8 @@ $PackagePath = (Resolve-Path -LiteralPath $PackagePath).Path
 
 $target = $report.Selected
 $targetMods = $target.Mods[0].Path
-$targetSettings = $target.ModSettings[0].Path
-$schema = $target.ModSettings[0].WriteSchema
+$targetSettings = $target.SelectedModSettings.Path
+$schema = $target.SelectedModSettings.WriteSchema
 if (-not $schema) {
     throw "Refusing to modify Xbox data: no reusable LSX schema was proven from an existing active mod."
 }

@@ -124,6 +124,8 @@ def validate_semantics() -> list[str]:
                 "ExistingPakFound",
                 "ReusableModSettingsSchemaFound",
                 "WriteSchemaReady",
+                "SelectedModSettings",
+                "Get-ChildItem -LiteralPath $root",
                 "PublishHandle",
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
