@@ -316,8 +316,8 @@
                 </Grid>
 
                 <DataTemplate.Triggers>
-                    <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions.Count}" Value="0">
-                        <Setter TargetName="CAM_NoGroupsWarning" Property="Visibility" Value="Visible"/>
+                    <DataTrigger Binding="{Binding Items.Count, ElementName=HotbarSections}" Value="0">
+                        <Setter TargetName="CAM_NoHotbarsWarning" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
