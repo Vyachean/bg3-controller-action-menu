@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.16-template-dchotbar-context** or newer.
+Use **v0.0.17-widgetdata-native-close** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -14,7 +14,7 @@ Launch BG3 from Xbox App and install one small mod through the **built-in Mod Ma
 
 Download both release assets into the same folder:
 
-- `BG3ControllerActionMenu-0.0.16-template-dchotbar-context.pak`
+- `BG3ControllerActionMenu-0.0.17-widgetdata-native-close.pak`
 - `install-xbox-dev.ps1`
 
 ### 3. Run the read-only discovery
@@ -47,10 +47,11 @@ After a successful install:
 2. use a disposable/pre-mod save;
 3. switch to controller UI;
 4. open the normal action menu;
-5. check whether HotBar sections/icons are populated;
-6. press B and verify the menu closes.
+5. verify the gameplay view is still visible behind the local menu panel;
+6. check whether HotBar sections/icons are populated;
+7. press B and verify the menu closes.
 
-If either of those two checks fails, stop there and capture one screenshot. Only after both pass should focus, A dispatch and variants/upcast be tested.
+If any of those checks fails, stop there and capture one screenshot. The diagnostic panel now includes PlayerId and character name so a remaining data-context failure should be visible immediately. Only after these checks pass should focus, A dispatch and variants/upcast be tested.
 
 The prerelease includes an on-screen diagnostic panel, so these screenshots should distinguish page-load, data-binding, focus and variant-state failures without Script Extender.
 
