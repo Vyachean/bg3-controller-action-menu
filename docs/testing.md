@@ -100,6 +100,24 @@ Script Extender logging may be used only by optional developer builds under `dev
 
 Debug instrumentation must be removable/disabled for stable releases.
 
+## Runtime evidence
+
+### 2026-10-04 — first Xbox App run
+
+Confirmed:
+
+- the `ActionRadials` state override loads on Microsoft package 1.8.910.0;
+- the custom page and native resource dictionaries resolve;
+- `AreRadialsOpen` and `SingleHotBar` bindings are live.
+
+Failed and fixed for the next candidate:
+
+- main content was empty because CAM used the slot-assignment-only `SpellsAndActions` source and hid `CommonHotBar` / `ClassHotBar`;
+- B did not close because the actual cancel handler was collapsed while the visible B element was only a hint;
+- no slot focus was established because there were no visible main hotbar slots.
+
+The next runtime test should therefore validate populated HotBars, initial focus, B close, A dispatch and one variant/upcast transition.
+
 ## Manual test report format
 
 A useful report is:
