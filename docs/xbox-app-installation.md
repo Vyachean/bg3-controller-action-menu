@@ -1,80 +1,90 @@
 # Xbox App / Microsoft Store PC installation
 
-## Recommended local-development workflow
+## Current development method
 
-For this project, do not use Mod.io or a patched third-party mod manager for every iteration.
+The project uses a **discovery-first** installer. It does not assume that `C:\WpSystem` exists and it does not write anything on its first run.
 
-Each GitHub prerelease includes:
+Each prerelease contains:
 
-- the versioned `BG3ControllerActionMenu-*.pak`;
+- `BG3ControllerActionMenu-*.pak`;
 - `install-xbox-dev.ps1`.
 
-Put both files in the same folder and run:
+## One-time preparation on the gaming PC
+
+1. Launch Baldur's Gate 3 from Xbox App.
+2. Open the built-in Mod Manager.
+3. Install **one small mod from the built-in catalog** and enable it.
+4. Exit BG3 normally.
+
+The existing official/in-game-installed PAK becomes ground-truth evidence for the directory that this particular Xbox build actually uses.
+
+## Phase 1 — discover only
+
+Put the CAM `.pak` and `install-xbox-dev.ps1` in the same folder and run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
 ```
 
-## One-time prerequisite
+This writes only `xbox-dev-environment.json` next to the script. It does not touch BG3 files.
 
-Before the first install:
+The report contains:
 
-1. Launch the Xbox App version of BG3.
-2. Open the in-game Mod Manager once.
-3. Exit the game normally.
+- Windows BG3 package name, PackageFamilyName and version when available;
+- game `InstallLocation` reported by Windows;
+- package-data roots discovered under `%LOCALAPPDATA%\Packages`;
+- any `WpSystem` candidate only as a fallback;
+- actual `LocalCache\Local` paths;
+- discovered `Mods` directories;
+- number/names of existing `.pak` files;
+- discovered `modsettings.lsx` files and whether their expected BG3 XML shape is valid;
+- whether there is exactly one evidence-backed target safe enough for automatic installation.
 
-This causes the Microsoft package cache/profile files to exist.
+## Phase 2 — install
 
-## What the installer does
+Only if phase 1 prints:
 
-The installer detects the Xbox package root, including the `WpSystem` layout used by Xbox Play Anywhere, then works only inside that package's `LocalCache\Local` tree.
+`A unique, evidence-backed Xbox mod target was found.`
 
-It:
-
-1. finds the released `.pak` next to the installer;
-2. finds `LocalCache\Local\Mods`;
-3. recursively finds `modsettings.lsx` under the Xbox cache;
-4. if there are several profiles, chooses the most recently modified one and prints the candidates;
-5. validates that `ModuleSettings`, `ModOrder` and `Mods` exist;
-6. creates a timestamped backup of `modsettings.lsx`;
-7. backs up the previous CAM `.pak` if present;
-8. copies the new package as `BG3ControllerActionMenu.pak`;
-9. removes stale entries for UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
-10. appends exactly one CAM entry to `ModOrder` and `Mods`;
-11. reloads `modsettings.lsx` and verifies both entries.
-
-If the structure is unexpected, the installer stops rather than generating a new load-order file from guesses.
-
-## Dry run
-
-To see what it would use without modifying files:
+run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
 ```
 
-## Repository development
+The installer then:
 
-When working from a repository checkout, developers can instead run:
+1. uses only the previously provable cache shape;
+2. backs up `modsettings.lsx`;
+3. backs up an existing CAM PAK if present;
+4. copies the current CAM PAK into the proven Mods directory;
+5. removes only stale entries for CAM UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
+6. adds exactly one CAM entry to `ModOrder` and one to `Mods`;
+7. writes through a temporary XML file;
+8. reopens and validates the resulting load order;
+9. restores the original `modsettings.lsx` if verification fails.
 
-```powershell
-.\tools\deploy-xbox-dev.ps1
-```
+## Fail-closed cases
 
-That command builds the current version and then invokes the same tested installer.
+The script refuses to write when:
 
-## Why this is necessary
+- no BG3 Xbox package data can be found;
+- no existing PAK proves which Mods directory the built-in manager uses;
+- no valid `modsettings.lsx` exists;
+- more than one profile/load-order file is plausible;
+- more than one package cache is independently plausible;
+- the BG3 XML structure is unexpected.
 
-The Xbox Play Anywhere build uses a Microsoft package cache rather than the normal Steam/GOG user-mod path. Recent successful external-`.pak` reports use a path shaped like:
+In those cases send `xbox-dev-environment.json`; no manual `WpSystem` editing is required.
 
-`<drive>:\WpSystem\<SID>\AppData\Local\Packages\LarianStudiosGamesLtd.baldurssgate3_551z37b1dechw\LocalCache\Local\Mods`
+## Why this approach
 
-and also move/export `modsettings.lsx` into the corresponding Xbox profile cache.
+Microsoft documents modern PC GDK games as flat-file installs under a configurable `[drive]:\XboxGames`, so `C:\WpSystem` is not a universal game location. Microsoft also documents package-scoped user data under `%LOCALAPPDATA%\Packages\<PackageFamilyName>` for GDK storage scenarios.
 
-## Safety
+Nexus Mods App currently documents BG3 support for Steam/GOG rather than Xbox App. Separate experimental Xbox-PC BG3 managers appeared on Nexus in September 2026 and explicitly describe a Microsoft mod cache / cached Xbox profile plus `Export Order to Game`; they provide independent evidence that the Xbox App build uses a different cache/profile path, but they are not an official Larian workflow and are build-specific.
 
-- A backup is created before changing the load order.
-- Other mods are preserved.
-- Only this project's UUID is removed/re-added.
-- The script is fixture-tested in CI for idempotence and preservation of unrelated mods.
-- External `.pak` support on Xbox App remains unofficial; use a disposable save while testing.
+See [research/xbox-app-modding.md](research/xbox-app-modding.md) for the evidence and source list.
+
+## Subsequent development builds
+
+Once the target has been proven on the machine, the same command with `-Apply` can be reused for later CAM packages. The UUID stays stable, so the installer replaces only CAM's PAK and refreshes its two load-order entries.

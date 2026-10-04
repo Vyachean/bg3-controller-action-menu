@@ -8,6 +8,8 @@ $Profile = Join-Path $Local "1234567890\PlayerProfiles\Public"
 $Mods = Join-Path $Local "Mods"
 $Settings = Join-Path $Profile "modsettings.lsx"
 $FakePak = Join-Path $Temp "fixture.pak"
+$OfficialPak = Join-Path $Mods "OfficialFixture.pak"
+$Report = Join-Path $Temp "xbox-dev-environment.json"
 $Uuid = "c4be2039-13bf-4413-8d4f-2642f86d4a8e"
 
 if (Test-Path $Temp) {
@@ -16,7 +18,8 @@ if (Test-Path $Temp) {
 
 New-Item -ItemType Directory -Force -Path $Profile | Out-Null
 New-Item -ItemType Directory -Force -Path $Mods | Out-Null
-Set-Content -Path $FakePak -Value "fake pak bytes" -NoNewline
+Set-Content -Path $FakePak -Value "fake CAM pak bytes" -NoNewline
+Set-Content -Path $OfficialPak -Value "existing official pak evidence" -NoNewline
 
 @'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -50,17 +53,47 @@ Set-Content -Path $FakePak -Value "fake pak bytes" -NoNewline
 '@ | Set-Content -Path $Settings -Encoding UTF8
 
 $installer = Join-Path $Root "tools\install-xbox-dev.ps1"
+$before = (Get-FileHash -Algorithm SHA256 $Settings).Hash
 
-& $installer -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
+# Phase 1 must be read-only and should discover a unique evidence-backed target.
+& $installer -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
 
+if (-not (Test-Path $Report)) {
+    throw "Discovery report was not created."
+}
+
+$afterDiscovery = (Get-FileHash -Algorithm SHA256 $Settings).Hash
+if ($afterDiscovery -ne $before) {
+    throw "Discovery mode modified modsettings.lsx."
+}
+
+if (Test-Path (Join-Path $Mods "BG3ControllerActionMenu.pak")) {
+    throw "Discovery mode copied the CAM package."
+}
+
+$reportJson = Get-Content -Raw $Report | ConvertFrom-Json
+if (-not $reportJson.ReadyForApply) {
+    throw "Fixture should be recognized as a safe apply target."
+}
+if ($reportJson.Roots.Count -ne 1) {
+    throw "Fixture discovery should have exactly one candidate root."
+}
+if ($reportJson.Roots[0].Mods[0].PakCount -ne 1) {
+    throw "Existing official PAK evidence was not detected."
+}
+
+# Phase 2 performs the write only when explicitly requested.
+& $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
 
 $deployedPak = Join-Path $Mods "BG3ControllerActionMenu.pak"
 if (-not (Test-Path $deployedPak)) {
-    throw "Deployed pak is missing."
+    throw "Deployed CAM pak is missing."
+}
+if (-not (Test-Path $OfficialPak)) {
+    throw "Existing official mod PAK was removed."
 }
 
 [xml]$xml = Get-Content -Raw $Settings
-
 $orderOurs = @(
     $xml.SelectNodes("//node[@id='ModOrder']/children/node[@id='Module']/attribute[@id='UUID']") |
         Where-Object { $_.GetAttribute("value") -eq $Uuid }
@@ -78,10 +111,10 @@ if ($orderOurs.Count -ne 1) { throw "Expected one CAM ModOrder entry." }
 if ($descOurs.Count -ne 1) { throw "Expected one CAM Mods entry." }
 if ($existing.Count -ne 2) { throw "Existing unrelated mod was not preserved." }
 
-# Run a second time to prove idempotence and duplicate removal.
-& $installer -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
-[xml]$xml2 = Get-Content -Raw $Settings
+# Repeat apply: no duplicate UUID entries may appear.
+& $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
 
+[xml]$xml2 = Get-Content -Raw $Settings
 $orderOurs2 = @(
     $xml2.SelectNodes("//node[@id='ModOrder']/children/node[@id='Module']/attribute[@id='UUID']") |
         Where-Object { $_.GetAttribute("value") -eq $Uuid }
@@ -90,9 +123,8 @@ $descOurs2 = @(
     $xml2.SelectNodes("//node[@id='Mods']/children/node[@id='ModuleShortDesc']/attribute[@id='UUID']") |
         Where-Object { $_.GetAttribute("value") -eq $Uuid }
 )
-
 if ($orderOurs2.Count -ne 1 -or $descOurs2.Count -ne 1) {
-    throw "Deploy is not idempotent."
+    throw "Apply is not idempotent."
 }
 
 $backups = @(Get-ChildItem (Join-Path $Profile "BG3ControllerActionMenu-backups") -Filter "modsettings.*.lsx")
@@ -100,4 +132,24 @@ if ($backups.Count -lt 1) {
     throw "modsettings backup was not created."
 }
 
-Write-Host "Xbox dev deploy fixture test passed."
+# Ambiguous profile layout must fail closed.
+$OtherProfile = Join-Path $Local "9876543210\PlayerProfiles\Public"
+$OtherSettings = Join-Path $OtherProfile "modsettings.lsx"
+New-Item -ItemType Directory -Force -Path $OtherProfile | Out-Null
+Copy-Item $Settings $OtherSettings -Force
+
+$failedClosed = $false
+try {
+    & $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
+} catch {
+    if ($_.Exception.Message -like "*Refusing to modify Xbox data*") {
+        $failedClosed = $true
+    } else {
+        throw
+    }
+}
+if (-not $failedClosed) {
+    throw "Ambiguous profile layout did not fail closed."
+}
+
+Write-Host "Xbox discovery/apply fixture tests passed."

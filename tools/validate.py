@@ -14,6 +14,7 @@ MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
 ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
 CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
+XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
 
 IGNORED_DIRS = {".git", ".local", "build", "dist", "artifacts", "extracted", "game-data", "toolkit-data"}
 XML_SUFFIXES = {".xaml", ".xml", ".lsx"}
@@ -112,6 +113,21 @@ def validate_semantics() -> list[str]:
                 errors.append(
                     f"{ACTION_PAGE.relative_to(ROOT)}: custom slot rendering/dispatch regression: {needle}"
                 )
+
+    errors.extend(
+        require_text(
+            XBOX_INSTALLER,
+            [
+                "[switch]$Apply",
+                "Get-AppxPackage",
+                "LocalCache\\Local",
+                "ExistingPakFound",
+                "ReadyForApply",
+                "Refusing to modify Xbox data",
+                "BG3ControllerActionMenu-backups",
+            ],
+        )
+    )
 
     if not VERSION.exists():
         errors.append("VERSION: required file is missing")
