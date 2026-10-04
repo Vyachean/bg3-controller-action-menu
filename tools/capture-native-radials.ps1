@@ -158,7 +158,7 @@ function Get-XamlAttributeValue {
     )
 
     foreach ($attribute in @($Node.Attributes)) {
-        if ($attribute.LocalName -eq $LocalName) {
+        if ($attribute.LocalName -eq $LocalName -or $attribute.LocalName.EndsWith(".$LocalName")) {
             return $attribute.Value
         }
     }
@@ -209,7 +209,7 @@ function Get-NativeRadialContract {
     $scrollBindings = @(
         foreach ($node in $allElements) {
             foreach ($attribute in @($node.Attributes)) {
-                if ($attribute.LocalName -eq "ScrollToElement") {
+                if ($attribute.LocalName -eq "ScrollToElement" -or $attribute.LocalName.EndsWith(".ScrollToElement")) {
                     [pscustomobject]@{
                         Element = $node.LocalName
                         Name = Get-XamlAttributeValue -Node $node -LocalName "Name"
