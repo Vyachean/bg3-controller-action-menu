@@ -6,78 +6,66 @@ A controller-first action menu replacement for **Baldur's Gate 3**.
 
 Replace the default sequence of radial wheels with a controller-native grid that reuses Baldur's Gate 3's own Spell Book / spell-preparation UI language and native action execution path.
 
-The mod intentionally reuses BG3-owned data and UI resources instead of reimplementing gameplay or drawing a separate visual system.
+## Runtime compatibility
+
+The shipping mod is an ordinary BG3 `.pak` and does **not** require:
+
+- Script Extender;
+- Native Mod Loader;
+- DLL injection;
+- a Steam/GOG-specific executable layout.
+
+The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**First in-game candidate.**
+**First Xbox App / no-Script-Extender in-game candidate.**
 
-Current release line:
+Current candidate:
 
-- native `DCHotBar` / `SpellsAndActions` data;
-- native `HotBarSlotStyle` for action, upcast, item and passive cells;
-- native Spell Book expander/group chrome;
-- native `UseSlotCommand` dispatch;
-- native `SingleHotBar` nested variants/upcast flow;
-- automatic bounded first-run diagnostics.
+- overrides controller `ActionRadials`;
+- uses native `DCHotBar` data;
+- renders `SpellsAndActions` with native `HotBarSlotStyle`;
+- reuses Spell Book-style group chrome;
+- keeps native `SingleHotBar` variants/upcast;
+- includes a temporary on-screen diagnostic panel for the first Xbox run.
 
-The first game session is now intended to validate runtime-only behavior rather than discover basic architecture.
+See [docs/first-run.md](docs/first-run.md).
 
-See [docs/first-run.md](docs/first-run.md) before the first launch.
+## Installation on PC / Xbox App
 
-## Target interaction
+Place the released `.pak` in:
 
-The intended combat menu is structurally similar to BG3's controller Spell Book:
+`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
 
-```text
-Actions
-[ ][ ][ ][ ][ ][ ]
+Then launch BG3, open **Mod Manager**, verify the mod appears under **Installed**, and enable it.
 
-Cantrips
-[ ][ ][ ][ ][ ][ ]
+Do not install anything into the protected Xbox App game directory or `WpSystem`.
 
-Level I
-[ ][ ][ ][ ][ ][ ]
-
-Level II
-[ ][ ][ ][ ][ ][ ]
-
-Items
-[ ][ ][ ][ ][ ][ ]
-
-Passives
-[ ][ ][ ][ ][ ][ ]
-```
-
-Nested variants and upcast choices switch to the native `SingleHotBar` selection surface and return with B.
+Official Larian manual-mod instructions use the same Local AppData Mods folder:
+https://baldursgate3.game/mods-how-to/
 
 ## Architecture
 
 ```text
-BG3 native DCHotBar / character view models
-                 |
-                 v
-      BG3 native UI resources
-  HotBarSlotStyle / SpellBook chrome
-                 |
-                 v
-        thin combat composition
-      groups + six-column LSGrid
-                 |
-                 v
-       native UseSlotCommand
+BG3 ActionRadials state
+        |
+        v
+      DCHotBar
+        |
+        +--> SpellsAndActions
+        +--> HotBars
+        |
+        v
+BG3 native UI resources
+HotBarSlotStyle / SpellBook chrome
+        |
+        v
+thin custom grid composition
+        |
+        v
+native BG3 action execution
 ```
-
-The custom layer owns layout and state composition only. It must not reimplement spell availability, costs, targeting, upcasting, recasts, cooldowns, resources or execution.
-
-## Development principles
-
-- Controller-first.
-- Reuse native BG3 data, templates and commands wherever possible.
-- Keep the presentation layer thin.
-- Prefer deterministic CI validation over repeated in-game testing.
-- Manual testing occurs at explicit proof boundaries.
-- First-run candidates must collect enough diagnostics to avoid blind retry cycles.
 
 See:
 
@@ -85,9 +73,3 @@ See:
 - [Native UI reuse](docs/native-ui-reuse.md)
 - [Testing strategy](docs/testing.md)
 - [First in-game run](docs/first-run.md)
-
-## References
-
-- Larian UI modding setup: https://mod.io/g/baldursgate3/r/ui-basic-setup
-- BG3 ImprovedUI: https://github.com/TheRealDjmr/BG3ImprovedUI
-- BG3 Script Extender: https://github.com/Norbyte/bg3se
