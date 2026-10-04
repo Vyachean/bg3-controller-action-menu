@@ -1,50 +1,42 @@
-# Grid prototype test
+# Grid prototype — historical runtime result
 
-Version: `0.0.2-grid-prototype`
+Version: `0.0.2-grid-prototype` and later descendants through the first Xbox runtime sequence.
 
-## What this build changes
+## Status
 
-This is the first functional attempt to replace the controller radial presentation.
+This prototype is **superseded research**, not a build the user should test.
 
-It keeps BG3's native `DCHotBar` view model and native `UseSlotCommand`, but presents the existing hotbar/radial slots as vertically stacked controller grids.
+The original implementation assumed the Patch 2 binding `CurrentPlayer.SelectedCharacter.HotBars` was still the Patch 8 controller collection. Real Xbox App runs later proved that the override/page shell could load while this grid remained empty.
 
-The visual direction intentionally follows the controller Spell Book / spell-preparation screens:
+The public source behind that assumption was subsequently dated to Patch 2 Hotfix 1 (2023-09-06).
 
-- square icon cells;
-- directional controller focus;
-- scrollable grid;
-- native tooltips;
-- no radial-page carousel.
+## What the failed prototype still proved
 
-This prototype still groups entries using the existing native hotbar groups. Spell-level grouping and final category tabs come after the native dispatch proof.
+Real Xbox App testing established:
 
-## Test
+- CAM can override the Patch 8 `ActionRadials` state;
+- the shipping ordinary `.pak` is actually loaded by the Xbox App build;
+- the `HotBar` context/root lifecycle is active enough for `CurrentPlayer.UIData.AreRadialsOpen`;
+- imported native resources can render;
+- package replacement/version changes reach the game.
 
-1. Install the released `.pak`.
-2. Load a save with a controller.
-3. Open the normal action menu.
-4. Confirm whether the radial is replaced by the grid.
-5. Move focus in all four directions.
-6. Select:
-   - one normal action;
-   - one spell;
-   - one item if available.
-7. Press B to close the menu.
+It did **not** prove:
 
-## Expected proof
+- `CurrentPlayer.SelectedCharacter.HotBars` is the current controller source;
+- the custom section/materialization hierarchy is compatible;
+- its B/cancel implementation is correct;
+- its controller focus graph is correct.
 
-A successful run proves:
+## Current implementation gate
 
-- the Patch 8 `ActionRadials` state override loads;
-- `DCHotBar` bindings are still compatible;
-- `CurrentPlayer.SelectedCharacter.HotBars` is available;
-- focused `VMHotBarSlot` entries can be fed directly to `UseSlotCommand`;
-- controller focus and scrolling work without custom Lua navigation.
+Before another runtime candidate:
 
-## If the page fails
+1. identify the current controller-radial collection/materialization path;
+2. keep Patch 8 `HotBarSlotStyle` for slot rendering and `UseSlotCommand(slot)` dispatch;
+3. preserve native focus-driven scrolling;
+4. ground radial-specific cancel behavior in current evidence;
+5. change only composition/layout;
+6. statically/package-verify those seams;
+7. combine rendering, focus, B and one simple A dispatch into one milestone game test.
 
-The manual probe is still available from the Script Extender console:
-
-`!cam_probe`
-
-The probe is no longer automatic in this build.
+See `docs/research/open-source-findings.md` and `docs/native-ui-capture.md`.
