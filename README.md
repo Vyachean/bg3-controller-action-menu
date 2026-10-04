@@ -14,17 +14,23 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**First Xbox App / no-Script-Extender in-game candidate.**
+**Runtime contract reconstruction after the first Xbox App proof.**
 
-Current candidate:
+The Xbox App build has already proven that CAM's `ActionRadials` override loads, but the early grid prototype does not yet materialize the current controller action collection correctly. It is therefore **not a usable release candidate**.
 
-- overrides controller `ActionRadials`;
-- uses native `DCHotBar` data;
-- renders the native controller `HotBars` / `VMHotBarSlot` data with `HotBarSlotStyle`;
-- keeps Common/Class/Items/Passives as native-backed grid sections;
-- keeps native `SingleHotBar` variants/upcast;
-- preserves the live gameplay view instead of placing an opaque full-screen background behind the menu;
-- includes a temporary on-screen diagnostic panel for the first Xbox run.
+Current proven seams:
+
+- Patch 8 still owns the controller `ActionRadials` state and `HotBar` context;
+- Patch 8 `HotBarSlotStyle` still renders native slot types and dispatches through `UseSlotCommand` with the slot object;
+- current UI code still exposes the live `HotBar.DataContext`, nested-hotbar state and per-bar `SlotList` objects;
+- controller and keyboard hotbar state are distinct.
+
+Current research target:
+
+- identify the exact Patch 8 controller-radial collection/materialization path;
+- preserve its native focus/paging/cancel behavior;
+- change only presentation to a compact grid;
+- request no further gameplay test until that contract is grounded in current evidence.
 
 ## Xbox App local development
 
@@ -52,20 +58,19 @@ See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App researc
 BG3 ActionRadials state
         |
         v
-      DCHotBar
-        |
-        |
-        +--> HotBars / VMHotBarSlot
+   HotBar context
         |
         v
-BG3 native UI resources
-HotBarSlotStyle / SpellBook chrome
+current controller slot collection
+        |
+        v
+native HotBarSlotStyle
         |
         v
 thin custom grid composition
         |
         v
-native BG3 action execution
+native UseSlotCommand(slot)
 ```
 
 See:
