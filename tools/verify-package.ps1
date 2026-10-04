@@ -80,7 +80,7 @@ $requiredPageSeams = @(
     'x:Name="CAM_NoHotbarsWarning"',
     'x:Name="CancelButton"',
     'BoundEvent="UICancel"',
-    'Command="{Binding ClearSingleHotbarCommand}"',
+    "DataContext.ClearSingleHotbarCommand",
     'Property="CommandParameter" Value="CloseWidget"'
 )
 
