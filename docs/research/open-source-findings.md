@@ -185,6 +185,21 @@ Current BG3SE mappings expose:
 
 RadialHotbarCustomization v0.8.0.0 (tagged 2026-02-22) was rewritten specifically after its author identified how BG3 distinguishes keyboard/mouse hotbar state from controller radial state.
 
+The tagged v0.8.0.0 source makes that storage contract concrete:
+
+- its entity declarations map `HotbarContainer.Containers.DefaultBarContainer`;
+- its legacy bar field `field_1` is documented from observation as `0` for keyboard/mouse hotbars and `1` for controller radials;
+- its player persistence code reads, serializes and restores `DefaultBarContainer`, using that field to distinguish the two UI modes;
+- current BG3SE maps the same legacy `field_1` to the named `Bar.Controller` field.
+
+This is strong evidence for the persisted controller discriminator and shared storage container. It is **not** evidence for the current Noesis/XAML controller collection or for how persisted bars become visual radial wheels. That presentation seam still has to come from the native radial UI contract.
+
+Tagged-source references:
+
+- https://gitlab.com/saghm/RadialHotbarCustomization/-/blob/v0.8.0.0/src/entity.d.tl
+- https://gitlab.com/saghm/RadialHotbarCustomization/-/blob/v0.8.0.0/src/tl/Server/Player.tl
+- https://github.com/Norbyte/bg3se/blob/main/BG3Extender/GameDefinitions/Components/Hotbar.h
+
 A separate current mod, Auto-Sorting Hotbar v1.1.0.0/1.1.0.1 (August/September 2026), added controller radial support and its author documents behavior that differs from keyboard ordering:
 
 - one radial wheel contains 12 slots;
@@ -237,6 +252,7 @@ The capture tool performs the first audit automatically and emits `native-contra
 It must identify without guessing:
 
 - candidate main controller collection bindings;
+- per-bar `SlotList` materialization bindings separately from root collection candidates;
 - keyboard-only bindings separately;
 - nested `SingleHotBar` / variant state;
 - list/paging/grid/radial materialization structure;
