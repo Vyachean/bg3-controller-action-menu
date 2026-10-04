@@ -38,8 +38,9 @@ The current candidate intentionally uses:
 
 - controller state `ActionRadials`;
 - `DCHotBar` context;
-- `SelectedCharacter.SpellsAndActions`;
-- `SelectedCharacter.HotBars`;
+- `SelectedCharacter.HotBars` as the normal controller action source;
+- native `SlotList` / `VMHotBarSlot` entries from those hotbars;
+- `SelectedCharacter.SpellsAndActions` only where BG3 itself uses it (slot assignment), not as the normal replacement-menu source;
 - native `HotBarSlotStyle`;
 - native Spell Book group chrome;
 - native `SingleHotBar` for variants/upcast;
