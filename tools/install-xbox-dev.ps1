@@ -237,7 +237,7 @@ function Test-ModSettingsShape {
     }
 }
 
-function Find-Evidence {function Find-Evidence {
+function Find-Evidence {
     param(
         [Parameter(Mandatory = $true)]$RootInfo,
         [string]$ExplicitModsPath,
