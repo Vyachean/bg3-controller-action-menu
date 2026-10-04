@@ -8,7 +8,7 @@
         <node id="ModuleInfo">
           <attribute id="Author" type="LSString" value="Vyachean" />
           <attribute id="CharacterCreationLevelName" type="FixedString" value="" />
-          <attribute id="Description" type="LSString" value="Controller-first action menu for Baldur's Gate 3. Early probe build: discovers the native controller radial UI bindings without changing gameplay." />
+          <attribute id="Description" type="LSString" value="Controller-first action menu for Baldur's Gate 3. Replaces controller radial browsing with a native-style grid. No Script Extender required." />
           <attribute id="Folder" type="LSString" value="BG3ControllerActionMenu" />
           <attribute id="LobbyLevelName" type="FixedString" value="" />
           <attribute id="MD5" type="LSString" value="" />
