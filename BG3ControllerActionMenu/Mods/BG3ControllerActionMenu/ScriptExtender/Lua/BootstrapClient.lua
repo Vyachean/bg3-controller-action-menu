@@ -1,5 +1,5 @@
-local Probe = Ext.Require("Client/RadialProbe.lua")
+local Diagnostics = Ext.Require("Client/RadialProbe.lua")
 
--- Keep the runtime probe available as a manual diagnostic fallback without
--- scanning the UI tree on ordinary controller input.
-Probe.Register({ Auto = false })
+-- First-run candidate builds collect bounded controller/UI diagnostics automatically.
+-- The recorder never executes discovered commands; it only observes state and CanExecute.
+Diagnostics.Register({ Auto = true })

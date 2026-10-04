@@ -4,57 +4,90 @@ A controller-first action menu replacement for **Baldur's Gate 3**.
 
 ## Goal
 
-Replace the default sequence of many radial wheels with a controller UI that scales to characters with large action sets.
+Replace the default sequence of radial wheels with a controller-native grid that reuses Baldur's Gate 3's own Spell Book / spell-preparation UI language and native action execution path.
 
-Target interaction:
+The mod intentionally reuses BG3-owned data and UI resources instead of reimplementing gameplay or drawing a separate visual system.
 
-- open the action menu with the normal controller action-menu input;
-- switch top-level categories such as **Actions**, **Spells**, **Items**, and **Class**;
-- browse actions in a compact grid;
-- filter spells by level when useful;
-- navigate entirely with D-pad / stick;
-- preserve Baldur's Gate 3 as the source of truth for action availability, costs, targeting, upcasting, recasts, and execution.
+## Current status
 
-The mod should change presentation and navigation, not reimplement game rules.
+**First in-game candidate.**
 
-## Status
+Current release line:
 
-**Research / technical spike.**
+- native `DCHotBar` / `SpellsAndActions` data;
+- native `HotBarSlotStyle` for action, upcast, item and passive cells;
+- native Spell Book expander/group chrome;
+- native `UseSlotCommand` dispatch;
+- native `SingleHotBar` nested variants/upcast flow;
+- automatic bounded first-run diagnostics.
 
-The first milestone is deliberately narrow: prove that a custom controller page can consume the same action data used by the game UI and dispatch a selected action through the existing game UI/action flow.
+The first game session is now intended to validate runtime-only behavior rather than discover basic architecture.
 
-Do not treat the current repository as an installable mod yet.
+See [docs/first-run.md](docs/first-run.md) before the first launch.
 
-## Design direction
+## Target interaction
 
-Primary UI:
+The intended combat menu is structurally similar to BG3's controller Spell Book:
 
+```text
+Actions
+[ ][ ][ ][ ][ ][ ]
+
+Cantrips
+[ ][ ][ ][ ][ ][ ]
+
+Level I
+[ ][ ][ ][ ][ ][ ]
+
+Level II
+[ ][ ][ ][ ][ ][ ]
+
+Items
+[ ][ ][ ][ ][ ][ ]
+
+Passives
+[ ][ ][ ][ ][ ][ ]
 ```
-[ Actions ] [ Spells ] [ Items ] [ Class ]
 
-[ All ] [ Cantrip ] [ I ] [ II ] [ III ] ...
+Nested variants and upcast choices switch to the native `SingleHotBar` selection surface and return with B.
 
-┌──────┬──────┬──────┬──────┬──────┐
-│      │      │      │      │      │
-├──────┼──────┼──────┼──────┼──────┤
-│      │      │      │      │      │
-└──────┴──────┴──────┴──────┴──────┘
+## Architecture
+
+```text
+BG3 native DCHotBar / character view models
+                 |
+                 v
+      BG3 native UI resources
+  HotBarSlotStyle / SpellBook chrome
+                 |
+                 v
+        thin combat composition
+      groups + six-column LSGrid
+                 |
+                 v
+       native UseSlotCommand
 ```
 
-A small favorites/quick radial may be added later, but it is not part of the first milestone.
+The custom layer owns layout and state composition only. It must not reimplement spell availability, costs, targeting, upcasting, recasts, cooldowns, resources or execution.
 
 ## Development principles
 
 - Controller-first.
-- Reuse BG3 action data and execution semantics.
+- Reuse native BG3 data, templates and commands wherever possible.
 - Keep the presentation layer thin.
-- Prefer deterministic validation over repeated in-game testing.
-- Manual game testing happens at explicit milestones, not after every commit.
-- Keep experimental assumptions documented and fail visibly when an assumption is unverified.
+- Prefer deterministic CI validation over repeated in-game testing.
+- Manual testing occurs at explicit proof boundaries.
+- First-run candidates must collect enough diagnostics to avoid blind retry cycles.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/testing.md](docs/testing.md).
+See:
+
+- [Architecture](docs/architecture.md)
+- [Native UI reuse](docs/native-ui-reuse.md)
+- [Testing strategy](docs/testing.md)
+- [First in-game run](docs/first-run.md)
 
 ## References
 
 - Larian UI modding setup: https://mod.io/g/baldursgate3/r/ui-basic-setup
 - BG3 ImprovedUI: https://github.com/TheRealDjmr/BG3ImprovedUI
+- BG3 Script Extender: https://github.com/Norbyte/bg3se

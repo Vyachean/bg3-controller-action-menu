@@ -34,6 +34,7 @@ $required = @(
     "Mods/BG3ControllerActionMenu/meta.lsx",
     "Mods/BG3ControllerActionMenu/ScriptExtender/Config.json",
     "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/BootstrapClient.lua",
+    "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/Client/RadialProbe.lua",
     "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml",
     "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml"
 )
@@ -49,6 +50,7 @@ foreach ($relative in $required) {
 $page = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml")
 $state = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml")
 $bootstrap = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/BootstrapClient.lua")
+$diagnostics = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/ScriptExtender/Lua/Client/RadialProbe.lua")
 
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
@@ -83,8 +85,28 @@ foreach ($needle in $requiredStateSeams) {
     }
 }
 
-if (-not $bootstrap.Contains("Probe.Register({ Auto = false })")) {
-    throw "Packaged bootstrap unexpectedly enables the runtime probe automatically."
+if (-not $bootstrap.Contains("Diagnostics.Register({ Auto = true })")) {
+    throw "Packaged bootstrap does not enable bounded first-run diagnostics."
+}
+
+$requiredDiagnosticSeams = @(
+    "0.0.5-first-run-diagnostics",
+    "Ext.UI.EnableErrorReporting(true)",
+    "ControllerButtonInput",
+    "CAM_ActionMenu",
+    "SpellsAndActions",
+    "UseSlotCommand",
+    "ClearSingleHotbarCommand",
+    "DiagnosticsCompleteEnough",
+    "FailureClass",
+    "NeedsScriptExtenderRuntimeLog",
+    "BG3ControllerActionMenu/diagnostics.json"
+)
+
+foreach ($needle in $requiredDiagnosticSeams) {
+    if (-not $diagnostics.Contains($needle)) {
+        throw "Packaged diagnostics are missing first-run seam: $needle"
+    }
 }
 
 Write-Host "Package verification passed."
