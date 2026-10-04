@@ -71,9 +71,10 @@ if ($pakHashBefore -ne $pakHashAfter) {
 
 $manifestPath = Join-Path $CaptureDir "capture-manifest.json"
 $summaryPath = Join-Path $CaptureDir "capture-summary.txt"
+$contractPath = Join-Path $CaptureDir "native-contract.json"
 $zipPath = "$CaptureDir.zip"
 
-foreach ($required in @($manifestPath, $summaryPath, $zipPath)) {
+foreach ($required in @($manifestPath, $summaryPath, $contractPath, $zipPath)) {
     if (-not (Test-Path -LiteralPath $required)) {
         throw "Capture output missing: $required"
     }
@@ -103,6 +104,56 @@ foreach ($match in $manifest.Matches) {
     if ($hash -ne $match.Sha256) {
         throw "Manifest SHA256 does not match extracted file: $($match.ExtractedPath)"
     }
+}
+
+$contractReport = Get-Content -Raw -LiteralPath $contractPath | ConvertFrom-Json
+if ($contractReport.Files.Count -ne 2) {
+    throw "Expected two files in native-contract.json."
+}
+
+$actionContract = @(
+    $contractReport.Files |
+        Where-Object { [System.IO.Path]::GetFileName($_.PackagedPath) -eq "ActionRadials.xaml" }
+)
+if ($actionContract.Count -ne 1) {
+    throw "ActionRadials contract entry is missing or ambiguous."
+}
+if ($actionContract[0].Contract.ContextName -ne "HotBar") {
+    throw "ActionRadials ContextName was not captured."
+}
+if ($actionContract[0].Contract.Structure.LSInputBinding -ne 1) {
+    throw "ActionRadials LSInputBinding structure count was not captured."
+}
+if (@($actionContract[0].Contract.ItemsSources | Where-Object { $_.Value -eq "{Binding CurrentPlayer.SelectedCharacter.HotBars}" }).Count -ne 1) {
+    throw "ActionRadials ItemsSource contract was not captured."
+}
+if (@($actionContract[0].Contract.ControllerBindings | Where-Object {
+    $_.BoundEvent -eq "UIAccept" -and $_.Command -eq "{Binding UseSlotCommand}"
+}).Count -ne 1) {
+    throw "ActionRadials UIAccept dispatch contract was not captured."
+}
+if (@($actionContract[0].Contract.ControllerBindings | Where-Object {
+    $_.BoundEvent -eq "UICancel" -and $_.Command -eq "{Binding ClearSingleHotbarCommand}"
+}).Count -ne 1) {
+    throw "ActionRadials UICancel contract was not captured."
+}
+
+$preloadedContract = @(
+    $contractReport.Files |
+        Where-Object { [System.IO.Path]::GetFileName($_.PackagedPath) -eq "PreloadedActionRadials_c.xaml" }
+)
+if ($preloadedContract.Count -ne 1) {
+    throw "PreloadedActionRadials contract entry is missing or ambiguous."
+}
+if (@($preloadedContract[0].Contract.ScrollBindings | Where-Object {
+    $_.Value -eq "{Binding FocusedElement}"
+}).Count -ne 1) {
+    throw "PreloadedActionRadials ScrollToElement contract was not captured."
+}
+if (@($preloadedContract[0].Contract.ControllerBindings | Where-Object {
+    $_.BoundEvent -eq "UICancel" -and $_.Command -eq "{Binding CustomEvent}" -and $_.CommandParameter -eq "CloseWidget"
+}).Count -ne 1) {
+    throw "PreloadedActionRadials close binding contract was not captured."
 }
 
 $summary = Get-Content -Raw -LiteralPath $summaryPath

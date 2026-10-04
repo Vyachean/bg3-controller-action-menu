@@ -39,12 +39,22 @@ A successful capture produces:
 
 - `capture-manifest.json`
 - `capture-summary.txt`
+- `native-contract.json`
 - `files/.../*.xaml`
 - `<capture-directory>.zip`
 
-The manifest records the BG3 package version, scanned PAK count, packaged path and SHA-256 of each extracted XAML.
+The manifest records the BG3 package version, scanned PAK count, packaged path, SHA-256 and parsed contract of each extracted XAML.
 
-The summary selects only lines relevant to the controller action contract, including:
+`native-contract.json` is the machine-readable contract used for implementation review. For every matching native page it records:
+
+- root element/name, `ContextName` and `ls` namespace;
+- counts of `ListBox`, `LSListBox`, `ItemsControl`, `PagedList`, `PageView`, `LSGrid`, `Radial`, `LSScrollViewer`, `LSInputBinding` and `LSButton`;
+- every `ItemsSource` binding;
+- every controller `BoundEvent` together with `Command`, `CommandParameter` and `EatInput`;
+- every `ScrollToElement` binding;
+- DataContext and other binding-bearing attributes.
+
+The text summary renders the important parts of that structured contract and also selects source lines relevant to:
 
 - `ContextName`
 - `ItemsSource`
@@ -60,6 +70,6 @@ The summary selects only lines relevant to the controller action contract, inclu
 
 ## Development fixture
 
-`tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, and verifies that the source PAK is byte-identical before and after capture.
+`tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, verifies the parsed ItemsSource/UIAccept/UICancel/ScrollToElement contract, and verifies that the source PAK is byte-identical before and after capture.
 
 The Windows build CI must pass that fixture before the capture tool is considered ready for use against a real install.
