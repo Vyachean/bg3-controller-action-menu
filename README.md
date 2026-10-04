@@ -20,8 +20,8 @@ Current candidate:
 
 - overrides controller `ActionRadials`;
 - uses native `DCHotBar` data;
-- renders `SpellsAndActions` with native `HotBarSlotStyle`;
-- reuses Spell Book-style group chrome;
+- renders the native controller `HotBars` / `VMHotBarSlot` data with `HotBarSlotStyle`;
+- keeps Common/Class/Items/Passives as native-backed grid sections;
 - keeps native `SingleHotBar` variants/upcast;
 - includes a temporary on-screen diagnostic panel for the first Xbox run.
 
@@ -34,13 +34,13 @@ Release `v0.0.9-xbox-schema-mirror` and newer includes the schema-grounded `inst
 First establish ground truth by installing one small mod through BG3's built-in Mod Manager. Then run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
+powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
 ```
 
 This is read-only and creates `xbox-dev-environment.json`. Only when it finds one unambiguous cache, an existing PAK, a valid BG3 `modsettings.lsx`, and one reusable schema written by an already-active in-game mod should installation be allowed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
+powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
 ```
 
 See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
@@ -53,8 +53,8 @@ BG3 ActionRadials state
         v
       DCHotBar
         |
-        +--> SpellsAndActions
-        +--> HotBars
+        |
+        +--> HotBars / VMHotBarSlot
         |
         v
 BG3 native UI resources

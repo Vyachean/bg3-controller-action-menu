@@ -57,9 +57,9 @@ def validate_semantics() -> list[str]:
             ACTION_PAGE,
             [
                 'ls:UIWidget.ContextName="HotBar"',
-                "CurrentPlayer.SelectedCharacter.SpellsAndActions",
                 "CurrentPlayer.SelectedCharacter.HotBars",
-                "VMCharacterAction",
+                "HotBarSections",
+                "CAM_HotBarSectionTemplate",
                 "HotBarSlotStyle",
                 "GustavNoesisGUI;component/Library/DataTemplates.xaml",
                 "FocusableControls_c.xaml",
@@ -72,11 +72,16 @@ def validate_semantics() -> list[str]:
                 "IsSelectingUpcastedSpell",
                 "IsShowingAContainerWithVariants",
                 'x:Name="CAM_DiagnosticPanel"',
-                "Action groups:",
+                "HotBars source:",
+                "Sections:",
                 "Variant slots:",
                 "Focus name:",
                 "Focused usable:",
-                'x:Name="CAM_NoGroupsWarning"',
+                'x:Name="CAM_NoHotbarsWarning"',
+                'x:Name="CancelButton"',
+                'BoundEvent="UICancel"',
+                'Command="{Binding ClearSingleHotbarCommand}"',
+                'Property="CommandParameter" Value="CloseWidget"',
             ],
         )
     )
@@ -107,12 +112,21 @@ def validate_semantics() -> list[str]:
             'x:Name="FocusFrame"',
             'BorderBrush="#FFF3D68A"',
             'Command="{Binding UseSlotCommand}"',
+            'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"',
+            'x:Name="CancelButton"\n                                 Visibility="Collapsed"',
         ]
         for needle in forbidden:
             if needle in page_text:
                 errors.append(
                     f"{ACTION_PAGE.relative_to(ROOT)}: custom slot rendering/dispatch regression: {needle}"
                 )
+
+        if 'Value="CommonHotBar">\n                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>' in page_text:
+            errors.append(f"{ACTION_PAGE.relative_to(ROOT)}: CommonHotBar must remain visible in the main action menu")
+        if 'Value="ClassHotBar">\n                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>' in page_text:
+            errors.append(f"{ACTION_PAGE.relative_to(ROOT)}: ClassHotBar must remain visible in the main action menu")
+        if 'x:Name="UseHint"\n                                     EatInput=' in page_text or 'x:Name="UseHint"\n                                     BoundEvent=' in page_text:
+            errors.append(f"{ACTION_PAGE.relative_to(ROOT)}: UseHint must be visual-only so focused HotBarSlotStyle owns UIAccept")
 
     errors.extend(
         require_text(

@@ -54,7 +54,7 @@
 
         <b:DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
                        Value="True">
-            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu" FocusElement="{Binding ElementName=VariantList}"/>
+            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
         </b:DataTrigger>
 
         <b:EventTrigger EventName="Unloaded">
@@ -87,21 +87,8 @@
                 <ResourceDictionary Source="pack://application:,,,/MainUI;component/Library/Tooltips.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Thin wrapper only: visuals, state overlays, tooltip internals and dispatch
-                 come from BG3's native HotBarSlotStyle. -->
-            <DataTemplate x:Key="CAM_NativeActionButton" DataType="{x:Type ls:VMCharacterAction}">
-                <ls:LSButton Style="{StaticResource HotBarSlotStyle}"
-                             Content="{Binding .}"
-                             BoundEvent="UIAccept"
-                             Focusable="True"
-                             ls:MoveFocus.Focusable="True"
-                             Margin="8">
-                    <ls:LSButton.ToolTip>
-                        <ls:LSTooltip Content="{Binding .}" ls:TooltipExtender.Context="Hotbar"/>
-                    </ls:LSButton.ToolTip>
-                </ls:LSButton>
-            </DataTemplate>
-
+            <!-- HotBarSlotStyle owns slot visuals and UseSlotCommand dispatch.
+                 CAM only composes the game's VMHotBarSlot entries into a grid. -->
             <DataTemplate x:Key="CAM_NativeHotbarButton">
                 <ls:LSButton x:Name="NativeSlotButton"
                              Style="{StaticResource HotBarSlotStyle}"
@@ -132,27 +119,7 @@
                            DisableScrolling="True"/>
             </ItemsPanelTemplate>
 
-            <DataTemplate x:Key="CAM_ActionGroupTemplate" DataType="{x:Type ls:VMActionGroup}">
-                <StackPanel x:Name="GroupRoot" Margin="0,0,0,12">
-                    <Expander IsExpanded="True"
-                              Template="{StaticResource ExpanderButtonTemplateSpellBook}"
-                              Header="{Binding Name}">
-                        <Border BorderThickness="4"
-                                BorderBrush="{StaticResource LS_InventoryGridSurround}">
-                            <ItemsControl ItemsSource="{Binding Actions}"
-                                          ItemTemplate="{StaticResource CAM_NativeActionButton}"
-                                          ItemsPanel="{StaticResource CAM_NativeGrid}"/>
-                        </Border>
-                    </Expander>
-                </StackPanel>
-                <DataTemplate.Triggers>
-                    <DataTrigger Binding="{Binding Actions.Count}" Value="0">
-                        <Setter TargetName="GroupRoot" Property="Visibility" Value="Collapsed"/>
-                    </DataTrigger>
-                </DataTemplate.Triggers>
-            </DataTemplate>
-
-            <DataTemplate x:Key="CAM_UtilityHotbarTemplate">
+            <DataTemplate x:Key="CAM_HotBarSectionTemplate">
                 <StackPanel x:Name="SectionRoot" Margin="0,0,0,12">
                     <Expander x:Name="SectionExpander"
                               IsExpanded="True"
@@ -169,10 +136,10 @@
 
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HotBarType}" Value="CommonHotBar">
-                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="SectionExpander" Property="Header" Value="Common"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ClassHotBar">
-                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="SectionExpander" Property="Header" Value="Class"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ItemHotBar">
                         <Setter TargetName="SectionExpander" Property="Header" Value="Items"/>
@@ -208,21 +175,21 @@
                         BorderThickness="2"
                         Panel.ZIndex="20">
                     <StackPanel Width="320">
-                        <TextBlock Text="CAM 0.0.13-xbox-mods-only-order Xbox diagnostic"
+                        <TextBlock Text="CAM 0.0.14-runtime-hotbars-cancel Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
                                    Margin="0,0,0,8"/>
 
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Action groups: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions.Count}"
+                            <TextBlock Text="HotBars source: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.HotBars, Converter={StaticResource NullToBoolFalseConverter}}"
                                        Foreground="White"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Hotbars: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.HotBars.Count}"
+                            <TextBlock Text="Sections: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding Items.Count, ElementName=HotBarSections}"
                                        Foreground="White"/>
                         </StackPanel>
 
@@ -262,8 +229,8 @@
                                        Foreground="White"/>
                         </StackPanel>
 
-                        <TextBlock x:Name="CAM_NoGroupsWarning"
-                                   Text="NO ACTION GROUPS"
+                        <TextBlock x:Name="CAM_NoHotbarsWarning"
+                                   Text="NO HOTBAR SECTIONS"
                                    Foreground="#FFFF8A80"
                                    FontWeight="Bold"
                                    Margin="0,8,0,0"
@@ -295,20 +262,17 @@
                                            Margin="24,0"
                                            VerticalScrollBarVisibility="Auto"
                                            HorizontalScrollBarVisibility="Disabled"
-                                           ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220">
-                            <StackPanel>
-                                <!-- This is the same native grouped action source used by BG3's
-                                     controller spell/action views. -->
-                                <ItemsControl x:Name="ActionGroups"
-                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"
-                                              ItemTemplate="{StaticResource CAM_ActionGroupTemplate}"/>
-
-                                <!-- Items/passives retain their native VMHotBarSlot wrappers so
-                                     HotBarSlotStyle can render all normal count/state overlays. -->
-                                <ItemsControl x:Name="UtilityHotbars"
-                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"
-                                              ItemTemplate="{StaticResource CAM_UtilityHotbarTemplate}"/>
-                            </StackPanel>
+                                           ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220"
+                                           ls:MoveFocus.IsMoveFocusScope="True">
+                            <ItemsControl x:Name="HotBarSections"
+                                          ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"
+                                          ItemTemplate="{StaticResource CAM_HotBarSectionTemplate}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="Loaded">
+                                        <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </ItemsControl>
                         </ls:LSScrollViewer>
 
                         <Grid x:Name="VariantHolder"
@@ -332,30 +296,28 @@
                                 HorizontalAlignment="Center"
                                 Margin="0,14,0,22">
                         <ls:LSButton x:Name="UseHint"
-                                     EatInput="False"
-                                     BoundEvent="UIAccept"
                                      IsHitTestVisible="False"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
                                      Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UIAccept'}"
                                      Margin="12,0"/>
-                        <ls:LSButton x:Name="CancelHint"
-                                     EatInput="False"
+                        <ls:LSButton x:Name="CancelButton"
                                      BoundEvent="UICancel"
-                                     IsHitTestVisible="False"
+                                     Command="{Binding ClearSingleHotbarCommand}"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
                                      Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
-                                     Margin="12,0"/>
+                                     Margin="12,0">
+                            <b:Interaction.Triggers>
+                                <b:EventTrigger EventName="LSButtonReleased">
+                                    <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
+                                </b:EventTrigger>
+                            </b:Interaction.Triggers>
+                        </ls:LSButton>
                     </StackPanel>
-
-                    <ls:LSButton x:Name="CancelButton"
-                                 Visibility="Collapsed"
-                                 BoundEvent="UICancel"
-                                 Command="{Binding ClearSingleHotbarCommand}"/>
                 </Grid>
 
                 <DataTemplate.Triggers>
-                    <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions.Count}" Value="0">
-                        <Setter TargetName="CAM_NoGroupsWarning" Property="Visibility" Value="Visible"/>
+                    <DataTrigger Binding="{Binding Items.Count, ElementName=HotBarSections}" Value="0">
+                        <Setter TargetName="CAM_NoHotbarsWarning" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"

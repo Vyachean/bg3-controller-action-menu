@@ -55,9 +55,9 @@ $version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
 
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
-    "CurrentPlayer.SelectedCharacter.SpellsAndActions",
     "CurrentPlayer.SelectedCharacter.HotBars",
-    "VMCharacterAction",
+    "HotBarSections",
+    "CAM_HotBarSectionTemplate",
     "HotBarSlotStyle",
     "GustavNoesisGUI;component/Library/DataTemplates.xaml",
     "FocusableControls_c.xaml",
@@ -67,11 +67,16 @@ $requiredPageSeams = @(
     "ClearSingleHotbarCommand",
     "CallAllies",
     'x:Name="CAM_DiagnosticPanel"',
-    "Action groups:",
+    "HotBars source:",
+    "Sections:",
     "Variant slots:",
     "Focus name:",
     "Focused usable:",
-    'x:Name="CAM_NoGroupsWarning"'
+    'x:Name="CAM_NoHotbarsWarning"',
+    'x:Name="CancelButton"',
+    'BoundEvent="UICancel"',
+    'Command="{Binding ClearSingleHotbarCommand}"',
+    'Property="CommandParameter" Value="CloseWidget"'
 )
 
 foreach ($needle in $requiredPageSeams) {
@@ -100,5 +105,14 @@ foreach ($needle in $requiredStateSeams) {
 if ($page.Contains('Command="{Binding UseSlotCommand}"')) {
     throw "Packaged page bypasses native HotBarSlotStyle dispatch with a custom UseSlotCommand binding."
 }
+if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"')) {
+    throw "Packaged page regressed to the slot-assignment-only SpellsAndActions source."
+}
+if ($page -match '(?s)Value="CommonHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
+    throw "Packaged page hides CommonHotBar from the main menu."
+}
+if ($page -match '(?s)Value="ClassHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
+    throw "Packaged page hides ClassHotBar from the main menu."
+}
 
-Write-Host "Package verification passed: no Script Extender dependency; native UI + on-screen diagnostics present."
+Write-Host "Package verification passed: no Script Extender dependency; native HotBars + controller cancel + diagnostics present."

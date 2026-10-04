@@ -12,13 +12,10 @@ BG3 controller ActionRadials state
               v
         DCHotBar context
               |
-      +-------+--------+
-      |                |
-      v                v
-SpellsAndActions     HotBars
- VMActionGroup       VMHotBarSlot
-      |                |
-      +-------+--------+
+              |
+              v
+           HotBars
+        VMHotBarSlot
               |
               v
      native BG3 UI resources
@@ -84,11 +81,13 @@ Action cells should remain native. Recreating focus frames, disabled overlays, i
 
 The main page uses:
 
-- `CurrentPlayer.SelectedCharacter.SpellsAndActions` for native action/spell groups;
-- `CurrentPlayer.SelectedCharacter.HotBars` for item/passive utility sections;
+- `CurrentPlayer.SelectedCharacter.HotBars` as the authoritative normal radial/action source;
+- each hotbar's native `SlotList` / `VMHotBarSlot` entries for actions, spells, items and passives;
 - `SingleHotBar.SlotList` for nested variants and upcast selections.
 
-Selection remains in the game's native action path through the native hotbar/action templates.
+`SpellsAndActions` is intentionally **not** the main runtime source: BG3's native `ActionRadials.xaml` uses it inside the slot-assignment popup. The first Xbox runtime test proved that treating it as the normal menu source leaves the replacement menu empty.
+
+Selection remains in the game's native action path through `HotBarSlotStyle`, whose native command binding invokes `UseSlotCommand` with the slot VM.
 
 ## First-run diagnostics without Script Extender
 
