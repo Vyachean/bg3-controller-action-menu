@@ -74,6 +74,8 @@ The replacement page must follow BG3's controller-widget structure:
 
 Do not build the interactive controller page through `UIWidget.ContentTemplate/DataTemplate`. Runtime testing showed that this can render visuals while failing to behave like the native DCHotBar controller widget for input/focus/data composition.
 
+Inside the `ControlTemplate`, bindings that depend on `DCHotBar` must resolve explicitly through the owning `ls:UIWidget` (`DataContext.…` + `RelativeSource AncestorType=ls:UIWidget`). Do not assume that the template content inherits the runtime context in the same way as root-level interaction triggers.
+
 ## Native UI reuse
 
 The current implementation consumes game-owned resources including:
