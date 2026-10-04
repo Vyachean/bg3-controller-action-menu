@@ -1,66 +1,80 @@
 # Xbox App / Microsoft Store PC installation
 
-## Why this is different
+## Recommended local-development workflow
 
-Baldur's Gate 3 on Xbox Play Anywhere uses a Microsoft package data/cache layout that differs from the Steam/GOG Win32 profile layout.
+For this project, do not use Mod.io or a patched third-party mod manager for every iteration.
 
-For this build, copying an external `.pak` only to:
+Each GitHub prerelease includes:
 
-`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
+- the versioned `BG3ControllerActionMenu-*.pak`;
+- `install-xbox-dev.ps1`.
 
-does not make the Xbox App version load it.
+Put both files in the same folder and run:
 
-Fresh community reports identify the live mod cache under a path shaped like:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
+```
 
-`<install drive>:\WpSystem\<user SID>\AppData\Local\Packages\LarianStudiosGamesLtd.baldurssgate3_551z37b1dechw\LocalCache\Local\Mods`
+## One-time prerequisite
 
-The exact drive and SID vary by machine.
+Before the first install:
 
-## Preferred long-term distribution
-
-The clean target is the official BG3 Mod.io pipeline.
-
-A Mod.io-installed PC mod is managed by the game's own Mod Manager and Microsoft package cache. Once this project is ready for wider testing, Mod.io should be the preferred installation channel for Xbox App users.
-
-## Current development/testing path
-
-Until the mod is published on Mod.io, external `.pak` testing on Xbox App is experimental.
-
-A community-proven workflow is:
-
-1. Launch BG3 from Xbox App.
+1. Launch the Xbox App version of BG3.
 2. Open the in-game Mod Manager once.
-3. Exit BG3 normally.
-4. Use an Xbox-PC-aware BG3 Mod Manager / compatibility build that targets the Microsoft mod cache.
-5. Import this project's `.pak`.
-6. Move it to Active Mods.
-7. Export the load order to the Xbox profile/cache.
-8. Launch BG3 again from Xbox App.
-9. Check the in-game Installed tab and then test the mod.
+3. Exit the game normally.
 
-A currently reported Xbox-PC compatibility tool supports Microsoft package **1.8.907.0** / game build **4.1.1.7445165**. Do not use a compatibility build against a different game/package version unless that build explicitly supports it.
+This causes the Microsoft package cache/profile files to exist.
 
-## Manual cache inspection
+## What the installer does
 
-Run:
+The installer detects the Xbox package root, including the `WpSystem` layout used by Xbox Play Anywhere, then works only inside that package's `LocalCache\Local` tree.
 
-`tools/find-xbox-mod-cache.ps1`
+It:
 
-The script is read-only. It searches common Microsoft package locations and prints:
+1. finds the released `.pak` next to the installer;
+2. finds `LocalCache\Local\Mods`;
+3. recursively finds `modsettings.lsx` under the Xbox cache;
+4. if there are several profiles, chooses the most recently modified one and prints the candidates;
+5. validates that `ModuleSettings`, `ModOrder` and `Mods` exist;
+6. creates a timestamped backup of `modsettings.lsx`;
+7. backs up the previous CAM `.pak` if present;
+8. copies the new package as `BG3ControllerActionMenu.pak`;
+9. removes stale entries for UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
+10. appends exactly one CAM entry to `ModOrder` and `Mods`;
+11. reloads `modsettings.lsx` and verifies both entries.
 
-- detected Xbox package root(s);
-- `LocalCache\Local`;
-- candidate `Mods` directories;
-- any `modsettings.lsx` files found underneath the package cache.
+If the structure is unexpected, the installer stops rather than generating a new load-order file from guesses.
 
-It does not copy files or change load order.
+## Dry run
 
-## Test-only warning
+To see what it would use without modifying files:
 
-Community testing of raw external `.pak` mods on the Xbox App build has also reported save/reload problems.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -DryRun
+```
 
-For development builds:
+## Repository development
 
-- use a disposable save;
-- avoid saving progress until the mod-loading method has been verified;
-- prefer the official Mod.io pipeline before normal play.
+When working from a repository checkout, developers can instead run:
+
+```powershell
+.\tools\deploy-xbox-dev.ps1
+```
+
+That command builds the current version and then invokes the same tested installer.
+
+## Why this is necessary
+
+The Xbox Play Anywhere build uses a Microsoft package cache rather than the normal Steam/GOG user-mod path. Recent successful external-`.pak` reports use a path shaped like:
+
+`<drive>:\WpSystem\<SID>\AppData\Local\Packages\LarianStudiosGamesLtd.baldurssgate3_551z37b1dechw\LocalCache\Local\Mods`
+
+and also move/export `modsettings.lsx` into the corresponding Xbox profile cache.
+
+## Safety
+
+- A backup is created before changing the load order.
+- Other mods are preserved.
+- Only this project's UUID is removed/re-added.
+- The script is fixture-tested in CI for idempotence and preservation of unrelated mods.
+- External `.pak` support on Xbox App remains unofficial; use a disposable save while testing.

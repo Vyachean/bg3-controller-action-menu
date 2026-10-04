@@ -26,6 +26,8 @@ The Xbox App version uses a Microsoft package cache. Community-confirmed paths u
 
 External `.pak` files also need a valid Xbox-profile load order; copying a file alone may not activate it.
 
+For local Xbox App development, the release includes `install-xbox-dev.ps1`. Put it next to the released `.pak` and run it once; it discovers the Microsoft cache, backs up the current load order, installs the mod and adds only this mod's UUID.
+
 See [Xbox App installation](docs/xbox-app-installation.md) before testing.
 
 ## Current status

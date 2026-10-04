@@ -1,55 +1,50 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.6-xbox-app-candidate** or newer.
+Use **v0.0.7-xbox-dev-installer** or newer.
 
-This candidate intentionally contains **no Script Extender**.
+This candidate contains **no Script Extender**.
 
-## Install first
+## Install
 
-Do **not** place the test `.pak` only in:
+Download these two assets from the same GitHub release into one folder:
 
-`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
+- `BG3ControllerActionMenu-0.0.7-xbox-dev-installer.pak`
+- `install-xbox-dev.ps1`
 
-That is the normal Steam/GOG workflow and is not sufficient for the Xbox Play Anywhere build.
+Before the first install:
 
-Follow [xbox-app-installation.md](xbox-app-installation.md) and make sure the mod is actually present in the Xbox package cache and active in the Xbox profile load order before testing.
+1. Launch Baldur's Gate 3 from Xbox App.
+2. Open the in-game **Mod Manager** once.
+3. Exit BG3 normally.
 
-## Diagnostic panel
+Then open PowerShell in the folder with the two downloaded files and run:
 
-When the custom action page loads, a small panel appears in the top-right corner.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
+```
 
-It shows:
+The installer will:
 
-- **Action groups** — number of native `SpellsAndActions` groups;
-- **Hotbars** — number of native hotbar groups;
-- **Variant slots** — current `SingleHotBar` nested choices;
-- **Variants open** — whether BG3 reports a variant container;
-- **Upcast open** — whether BG3 reports upcast selection;
-- **Radials flag** — native `AreRadialsOpen`;
-- **Focus name** — current controller-focused UI element;
-- **Focused usable** — native usability state for the focused action.
+- find the Xbox/Microsoft BG3 package cache;
+- find the active `modsettings.lsx` under that cache;
+- back up the existing load order;
+- copy the `.pak` into the Xbox `LocalCache\Local\Mods` directory;
+- remove any old entries for this mod's UUID;
+- add exactly one entry to `ModOrder` and one to `Mods`;
+- reopen the file and verify the entries.
 
-If action groups are zero, the panel also shows **NO ACTION GROUPS**.
+If it cannot identify the cache or load-order structure safely, it stops **before modifying anything**.
 
-## One-run test sequence
+## Test
 
-1. Open the normal controller action menu.
-2. Take a screenshot immediately.
-3. Move left/right/up/down through several actions.
-4. Move far enough to cross a group boundary and force scrolling.
-5. Take a second screenshot while an action is focused.
-6. Open an action/spell with variants or upcast if available.
-7. Take a screenshot of the nested selection.
-8. Press **B** and confirm it returns to the main grid.
-9. Open the menu again.
-10. Select one ordinary action or spell and confirm it reaches BG3's normal targeting/execution flow.
-11. Cancel targeting if desired.
-12. Close the menu.
+1. Launch BG3 normally from Xbox App.
+2. Load a disposable/test save with controller UI active.
+3. Open the normal controller action menu.
+4. Take a screenshot immediately.
+5. Move left/right/up/down across several actions and groups.
+6. Take another screenshot.
+7. If available, open an upcast/variant action and take a screenshot.
+8. Press B and check that you return to the main grid.
+9. Select one ordinary action/spell and verify BG3 reaches its normal targeting/execution flow.
 
-## What to send back
-
-- screenshots from the steps above;
-- a brief note for any failed step;
-- if the game crashes, the newest crash/gold log available.
-
-For the external-`.pak` Xbox workaround, use a disposable test save and avoid saving progress until save/reload behavior has been verified.
+Do not save over an important campaign save during this external-`.pak` development test.
