@@ -16,7 +16,7 @@ Each prerelease contains:
 3. Install **one small mod from the built-in catalog** and enable it.
 4. Exit BG3 normally.
 
-The existing official/in-game-installed PAK becomes ground-truth evidence for the directory that this particular Xbox build actually uses.
+The existing in-game-installed PAK becomes ground-truth evidence for the directory that this particular Xbox build actually uses. Its active load-order entry also becomes a **schema donor**: CAM will reuse the LSX attribute types/fields actually written on this machine instead of assuming the Steam/GOG or test-fixture format.
 
 ## Phase 1 — discover only
 
@@ -38,6 +38,8 @@ The report contains:
 - discovered `Mods` directories;
 - number/names of existing `.pak` files;
 - discovered `modsettings.lsx` files and whether their expected BG3 XML shape is valid;
+- whether an active non-CAM mod provides one unambiguous reusable `ModOrder` / `ModuleShortDesc` write schema;
+- the donor schema types that would be mirrored during installation;
 - whether there is exactly one evidence-backed target safe enough for automatic installation.
 
 ## Phase 2 — install
@@ -59,7 +61,7 @@ The installer then:
 3. backs up an existing CAM PAK if present;
 4. copies the current CAM PAK into the proven Mods directory;
 5. removes only stale entries for CAM UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
-6. adds exactly one CAM entry to `ModOrder` and one to `Mods`;
+6. adds exactly one CAM entry to `ModOrder` and one to `Mods`, mirroring the proven donor mod's LSX types and optional `PublishHandle` field;
 7. writes through a temporary XML file;
 8. reopens and validates the resulting load order;
 9. restores the original `modsettings.lsx` if verification fails.
@@ -71,6 +73,8 @@ The script refuses to write when:
 - no BG3 Xbox package data can be found;
 - no existing PAK proves which Mods directory the built-in manager uses;
 - no valid `modsettings.lsx` exists;
+- no active non-CAM mod supplies a reusable load-order schema;
+- active mods expose conflicting LSX schemas;
 - more than one profile/load-order file is plausible;
 - more than one package cache is independently plausible;
 - the BG3 XML structure is unexpected.
@@ -81,7 +85,7 @@ In those cases send `xbox-dev-environment.json`; no manual `WpSystem` editing is
 
 Microsoft documents modern PC GDK games as flat-file installs under a configurable `[drive]:\XboxGames`, so `C:\WpSystem` is not a universal game location. Microsoft also documents package-scoped user data under `%LOCALAPPDATA%\Packages\<PackageFamilyName>` for GDK storage scenarios.
 
-Nexus Mods App currently documents BG3 support for Steam/GOG rather than Xbox App. Separate experimental Xbox-PC BG3 managers appeared on Nexus in September 2026 and explicitly describe a Microsoft mod cache / cached Xbox profile plus `Export Order to Game`; they provide independent evidence that the Xbox App build uses a different cache/profile path, but they are not an official Larian workflow and are build-specific.
+Nexus Mods App currently documents BG3 support for Steam/GOG rather than Xbox App. A separate experimental Xbox-PC BG3 manager is available as community source and describes a Microsoft mod cache / cached Xbox profile plus `Export Order to Game`. Its current 0.2.3 prerelease accepts Microsoft package 1.8.907.0+ and has a maintainer launch confirmation on 1.8.910.0, but its Nexus page is under moderation and 0.2.3 has no fresh gameplay/save-load pass. It is evidence, not a CAM dependency.
 
 See [research/xbox-app-modding.md](research/xbox-app-modding.md) for the evidence and source list.
 
