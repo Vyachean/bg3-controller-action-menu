@@ -181,6 +181,7 @@ function Test-ModSettingsShape {
 
             $required = @($orderUuid, $folder, $md5, $name, $uuid, $version64)
             if (@($required | Where-Object { -not $_ -or -not $_.Type }).Count -gt 0) { continue }
+            if ($publishHandle -and -not $publishHandle.Type) { continue }
 
             $schema = [pscustomobject]@{
                 ModOrderUuidType = $orderUuid.Type
