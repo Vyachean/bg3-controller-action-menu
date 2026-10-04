@@ -49,9 +49,9 @@ Set-Content -Path $FakePak -Value "fake pak bytes" -NoNewline
 </save>
 '@ | Set-Content -Path $Settings -Encoding UTF8
 
-$deploy = Join-Path $Root "tools\deploy-xbox-dev.ps1"
+$installer = Join-Path $Root "tools\install-xbox-dev.ps1"
 
-& $deploy -SkipBuild -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
+& $installer -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
 
 if ($LASTEXITCODE -ne 0) {
     throw "First deploy failed."
@@ -82,7 +82,7 @@ if ($descOurs.Count -ne 1) { throw "Expected one CAM Mods entry." }
 if ($existing.Count -ne 2) { throw "Existing unrelated mod was not preserved." }
 
 # Run a second time to prove idempotence and duplicate removal.
-& $deploy -SkipBuild -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
+& $installer -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
 [xml]$xml2 = Get-Content -Raw $Settings
 
 $orderOurs2 = @(
