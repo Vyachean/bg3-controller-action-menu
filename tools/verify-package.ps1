@@ -55,6 +55,8 @@ $version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
 
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
+    "<ls:UIWidget.Template>",
+    "<ControlTemplate>",
     "CurrentPlayer.SelectedCharacter.HotBars",
     "HotBarSections",
     "CAM_HotBarSectionTemplate",
@@ -107,6 +109,9 @@ if ($page.Contains('Command="{Binding UseSlotCommand}"')) {
 }
 if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"')) {
     throw "Packaged page regressed to the slot-assignment-only SpellsAndActions source."
+}
+if ($page.Contains("<ls:UIWidget.ContentTemplate>")) {
+    throw "Packaged controller page uses ContentTemplate instead of BG3's native UIWidget ControlTemplate contract."
 }
 if ($page -match '(?s)Value="CommonHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
     throw "Packaged page hides CommonHotBar from the main menu."
