@@ -111,19 +111,11 @@ function Save-XmlUtf8 {
         [Parameter(Mandatory = $true)][string]$Path
     )
 
-    $settings = New-Object System.Xml.XmlWriterSettings
-    $settings.Encoding = New-Object System.Text.UTF8Encoding($false)
-    $settings.Indent = $true
-    $settings.IndentChars = "  "
-    $settings.NewLineChars = [Environment]::NewLine
-    $settings.NewLineHandling = [System.Xml.NewLineHandling]::Replace
-
-    $writer = [System.Xml.XmlWriter]::Create($Path, $settings)
-    try {
-        $Document.Save($writer)
-    } finally {
-        $writer.Dispose()
-    }
+    # XmlDocument.Save(XmlWriter) is inconsistently surfaced by PowerShell 7's
+    # adapted XML object on GitHub-hosted Windows runners. OuterXml is the
+    # canonical serialized document and avoids that adapter edge case.
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $Document.OuterXml, $encoding)
 }
 
 if (-not $PackagePath) {
