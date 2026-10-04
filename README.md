@@ -8,14 +8,25 @@ Replace the default sequence of radial wheels with a controller-native grid that
 
 ## Runtime compatibility
 
-The shipping mod is an ordinary BG3 `.pak` and does **not** require:
-
-- Script Extender;
-- Native Mod Loader;
-- DLL injection;
-- a Steam/GOG-specific executable layout.
+The shipping mod is an ordinary BG3 `.pak` and does **not** require Script Extender, Native Mod Loader, DLL injection, or a Steam/GOG-specific executable layout.
 
 The primary target includes the **Xbox App / Microsoft Store PC build**.
+
+## Important: Xbox App installation differs from Steam/GOG
+
+The standard Steam/GOG user folder:
+
+`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
+
+is **not the active external-mod location for the Xbox Play Anywhere build**.
+
+The Xbox App version uses a Microsoft package cache. Community-confirmed paths use a layout like:
+
+`<drive>:\WpSystem\<user SID>\AppData\Local\Packages\LarianStudiosGamesLtd.baldurssgate3_551z37b1dechw\LocalCache\Local\Mods`
+
+External `.pak` files also need a valid Xbox-profile load order; copying a file alone may not activate it.
+
+See [Xbox App installation](docs/xbox-app-installation.md) before testing.
 
 ## Current status
 
@@ -29,21 +40,6 @@ Current candidate:
 - reuses Spell Book-style group chrome;
 - keeps native `SingleHotBar` variants/upcast;
 - includes a temporary on-screen diagnostic panel for the first Xbox run.
-
-See [docs/first-run.md](docs/first-run.md).
-
-## Installation on PC / Xbox App
-
-Place the released `.pak` in:
-
-`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
-
-Then launch BG3, open **Mod Manager**, verify the mod appears under **Installed**, and enable it.
-
-Do not install anything into the protected Xbox App game directory or `WpSystem`.
-
-Official Larian manual-mod instructions use the same Local AppData Mods folder:
-https://baldursgate3.game/mods-how-to/
 
 ## Architecture
 
@@ -72,4 +68,5 @@ See:
 - [Architecture](docs/architecture.md)
 - [Native UI reuse](docs/native-ui-reuse.md)
 - [Testing strategy](docs/testing.md)
+- [Xbox App installation](docs/xbox-app-installation.md)
 - [First in-game run](docs/first-run.md)
