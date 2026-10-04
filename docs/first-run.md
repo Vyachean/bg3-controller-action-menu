@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.8-xbox-discovery-first** or newer.
+Use **v0.0.9-xbox-schema-mirror** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -8,13 +8,13 @@ The runtime mod contains no Script Extender.
 
 ### 1. Establish the real Xbox mod cache
 
-Launch BG3 from Xbox App and install one small mod through the **built-in Mod Manager**. Enable it, then exit BG3 normally.
+Launch BG3 from Xbox App and install one small mod through the **built-in Mod Manager**. Enable it, then exit BG3 normally. That mod supplies both path evidence and the real `modsettings.lsx` schema for this Xbox build.
 
 ### 2. Download the CAM candidate
 
 Download both release assets into the same folder:
 
-- `BG3ControllerActionMenu-0.0.8-xbox-discovery-first.pak`
+- `BG3ControllerActionMenu-0.0.9-xbox-schema-mirror.pak`
 - `install-xbox-dev.ps1`
 
 ### 3. Run the read-only discovery
