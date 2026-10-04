@@ -59,7 +59,10 @@ def validate_semantics() -> list[str]:
                 'ls:UIWidget.ContextName="HotBar"',
                 "<ls:UIWidget.Template>",
                 "<ControlTemplate>",
-                "CurrentPlayer.SelectedCharacter.HotBars",
+                "DataContext.CurrentPlayer.SelectedCharacter.HotBars",
+                "RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}",
+                "CurrentPlayer:",
+                "SelectedCharacter:",
                 "HotBarSections",
                 "CAM_HotBarSectionTemplate",
                 "HotBarSlotStyle",
@@ -117,6 +120,8 @@ def validate_semantics() -> list[str]:
             'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"',
             'x:Name="CancelButton"\n                                 Visibility="Collapsed"',
             "<ls:UIWidget.ContentTemplate>",
+            'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"',
+            'Command="{Binding CustomEvent}"',
         ]
         for needle in forbidden:
             if needle in page_text:
