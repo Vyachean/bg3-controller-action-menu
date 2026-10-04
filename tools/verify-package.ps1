@@ -60,7 +60,6 @@ $requiredPageSeams = @(
     "FocusableControls_c.xaml",
     "ExpanderButtonTemplateSpellBook",
     "LS_InventoryGridSurround",
-    "UseSlotCommand",
     "SingleHotBar.SlotList",
     "ClearSingleHotbarCommand",
     "CallAllies"
@@ -89,3 +88,7 @@ if (-not $bootstrap.Contains("Probe.Register({ Auto = false })")) {
 }
 
 Write-Host "Package verification passed."
+
+if ($page.Contains('Command="{Binding UseSlotCommand}"')) {
+    throw "Packaged page bypasses native HotBarSlotStyle dispatch with a custom UseSlotCommand binding."
+}
