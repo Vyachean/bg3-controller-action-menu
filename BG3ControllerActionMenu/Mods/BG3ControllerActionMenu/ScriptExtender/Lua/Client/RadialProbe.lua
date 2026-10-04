@@ -54,12 +54,14 @@ local function recordError(context, err)
     }
 end
 
-local function safe(context, fn)
+local function safe(context, fn, quiet)
     local ok, result = pcall(fn)
     if ok then
         return result
     end
-    recordError(context, result)
+    if not quiet then
+        recordError(context, result)
+    end
     return nil
 end
 
@@ -107,14 +109,14 @@ local function countOf(value)
 
     local count = safe("count:#", function()
         return #value
-    end)
+    end, true)
     if type(count) == "number" then
         return count
     end
 
     count = safe("count:.Count", function()
         return value.Count
-    end)
+    end, true)
     if type(count) == "number" then
         return count
     end
@@ -175,10 +177,10 @@ local function commandInfo(value, parameter, context)
 
     local canExecuteMember = safe(context .. ":CanExecuteMember", function()
         return value.CanExecute
-    end)
+    end, true)
     local executeMember = safe(context .. ":ExecuteMember", function()
         return value.Execute
-    end)
+    end, true)
 
     if canExecuteMember == nil or executeMember == nil then
         return nil
@@ -223,7 +225,7 @@ local function simpleKnownProperties(object, context)
     for _, name in ipairs(names) do
         local value = safe(context .. ":" .. name, function()
             return object[name]
-        end)
+        end, true)
         if value ~= nil then
             result[name] = stringify(value)
         end
@@ -306,19 +308,19 @@ end
 local function nodeName(node)
     return stringify(safe("node.Name", function()
         return node.Name
-    end)) or ""
+    end, true)) or ""
 end
 
 local function nodeFileName(node)
     return stringify(safe("node.FileName", function()
         return node.FileName
-    end)) or ""
+    end, true)) or ""
 end
 
 local function nodeType(node)
     return stringify(safe("node.Type", function()
         return node.Type
-    end)) or objectType(node)
+    end, true)) or objectType(node)
 end
 
 local function describeNodeShallow(node, context)
@@ -328,7 +330,7 @@ local function describeNodeShallow(node, context)
 
     local dc = safe(context .. ":DataContext", function()
         return node.DataContext
-    end)
+    end, true)
 
     return {
         Name = nodeName(node),
@@ -346,14 +348,14 @@ local function describeFocused(page, context)
 
     local focused = safe(context .. ":FocusedElement", function()
         return page.FocusedElement
-    end)
+    end, true)
     if focused == nil then
         return nil, nil
     end
 
     local dc = safe(context .. ":FocusedElement.DataContext", function()
         return focused.DataContext
-    end)
+    end, true)
 
     if dc ~= nil then
         report.Summary.FocusedActionSeen = true
@@ -376,10 +378,10 @@ local function namedChildInfo(page, name, context)
     local info = describeNodeShallow(child, context .. ":" .. name)
     info.ItemsCount = safe(context .. ":" .. name .. ":Items.Count", function()
         return child.Items.Count
-    end)
+    end, true)
     info.ItemsSourceCount = countOf(safe(context .. ":" .. name .. ":ItemsSource", function()
         return child.ItemsSource
-    end))
+    end, true))
     return info
 end
 
@@ -510,12 +512,12 @@ local function scanRelevantNodes(content)
         if entry.Depth < MAX_SCAN_DEPTH then
             local count = safe("VisualChildrenCount", function()
                 return node.VisualChildrenCount
-            end)
+            end, true)
             if type(count) == "number" then
                 for i = 1, count do
                     local child = safe("VisualChild(" .. i .. ")", function()
                         return node:VisualChild(i)
-                    end)
+                    end, true)
                     if child then
                         queue[#queue + 1] = {
                             Node = child,
@@ -775,8 +777,8 @@ function Diagnostics.Register(options)
         Ext.Events.ViewportResized:Subscribe(function(event)
             report.Environment.LastViewportResize = {
                 T = rawNow(),
-                Width = stringify(safe("ViewportResized.Width", function() return event.Width end)),
-                Height = stringify(safe("ViewportResized.Height", function() return event.Height end)),
+                Width = stringify(safe("ViewportResized.Width", function() return event.Width end, true)),
+                Height = stringify(safe("ViewportResized.Height", function() return event.Height end, true)),
             }
             persist()
         end)
