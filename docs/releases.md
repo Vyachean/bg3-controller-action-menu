@@ -30,3 +30,9 @@ Published versions are immutable. If `v<VERSION>` already exists, the workflow d
 3. the merge to `main` publishes the release automatically.
 
 Do not reuse a published version number.
+
+## Runtime package compatibility
+
+Release packaging verifies that the extracted `.pak` contains no `ScriptExtender` directory.
+
+The primary artifact is intended to remain compatible with the Xbox App / Microsoft Store PC build and therefore must not acquire DLL/native-loader/SE dependencies.
