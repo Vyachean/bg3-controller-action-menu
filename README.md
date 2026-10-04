@@ -23,6 +23,7 @@ Current candidate:
 - renders the native controller `HotBars` / `VMHotBarSlot` data with `HotBarSlotStyle`;
 - keeps Common/Class/Items/Passives as native-backed grid sections;
 - keeps native `SingleHotBar` variants/upcast;
+- preserves the live gameplay view instead of placing an opaque full-screen background behind the menu;
 - includes a temporary on-screen diagnostic panel for the first Xbox run.
 
 ## Xbox App local development

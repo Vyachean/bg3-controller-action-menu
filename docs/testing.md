@@ -120,7 +120,13 @@ Observed across 0.0.13 and 0.0.14:
 
 A comparison with a working controller state override showed the remaining mismatch: interactive controls inside the template explicitly bind back to the owning `ls:UIWidget.DataContext` with `RelativeSource AncestorType=ls:UIWidget`. CAM instead relied on implicit template DataContext for HotBars, SingleHotBar state and CustomEvent. The observed split is consistent with that: root-level DCHotBar bindings work, while template content and B do not.
 
-0.0.16 anchors all DCHotBar-dependent bindings inside the template to the owning UIWidget. The next runtime test should validate populated HotBars and B close first; only after those pass should A dispatch and variants be tested.
+0.0.16 anchored template bindings through `AncestorType=ls:UIWidget`, but the Xbox screenshot still showed blank `CurrentPlayer`, `SelectedCharacter`, `HotBars source` and `Sections`; B also remained nonfunctional. That disproves the AncestorType route for this ControlTemplate.
+
+Patch 8 `DataTemplates.xaml` uses the stronger native ControlTemplate pattern `(ls:WidgetData.DataContext)…` with `RelativeSource TemplatedParent`. 0.0.17 adopts that pattern for the hotbar source, nested SingleHotBar state and controller hint data. Top-level B is also made independent of DCHotBar by using the native `ls:UIWidget.CloseRequestCommand`; nested B still uses `ClearSingleHotbarCommand`.
+
+0.0.17 also removes CAM's full-screen dim image/background. Only the local action panel and diagnostic overlay remain above gameplay.
+
+The next runtime test should validate: visible gameplay background, populated HotBars, and B close. If data is still missing, the PlayerId/Character diagnostic fields should identify the remaining context boundary in one screenshot.
 
 ## Manual test report format
 

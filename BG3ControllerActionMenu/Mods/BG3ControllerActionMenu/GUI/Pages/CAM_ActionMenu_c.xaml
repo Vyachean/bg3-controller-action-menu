@@ -52,7 +52,7 @@
             <b:InvokeCommandAction Command="{Binding CallAllies}"/>
         </b:EventTrigger>
 
-        <b:DataTrigger Binding="{Binding DataContext.SingleHotBar.SlotList.Count, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
+        <b:DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
                        Value="True">
             <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
         </b:DataTrigger>
@@ -157,10 +157,7 @@
 
     <ls:UIWidget.Template>
         <ControlTemplate>
-            <Grid Background="{DynamicResource LS_tint00}">
-                <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Options/opaqueBG.png"
-                       Stretch="Fill"
-                       Opacity="0.92"/>
+            <Grid Background="Transparent">
 
                 <!-- Xbox App / no-Script-Extender first-run diagnostics.
                      This panel uses ordinary BG3 bindings only, so a screenshot is enough
@@ -175,7 +172,7 @@
                         BorderThickness="2"
                         Panel.ZIndex="20">
                     <StackPanel Width="320">
-                        <TextBlock Text="CAM 0.0.16-template-dchotbar-context Xbox diagnostic"
+                        <TextBlock Text="CAM 0.0.17-widgetdata-native-close Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
@@ -183,17 +180,27 @@
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="CurrentPlayer: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.CurrentPlayer, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource NullToBoolFalseConverter}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
+                                       Foreground="White"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="PlayerId: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.PlayerId, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Foreground="White"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Character: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.Name.Str, RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="White"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="SelectedCharacter: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.CurrentPlayer.SelectedCharacter, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource NullToBoolFalseConverter}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
                                        Foreground="White"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="HotBars source: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.CurrentPlayer.SelectedCharacter.HotBars, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource NullToBoolFalseConverter}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
                                        Foreground="White"/>
                         </StackPanel>
 
@@ -205,25 +212,25 @@
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Variant slots: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.SingleHotBar.SlotList.Count, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList.Count, RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="White"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Variants open: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.IsShowingAContainerWithVariants, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).IsShowingAContainerWithVariants, RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="White"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Upcast open: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.IsSelectingUpcastedSpell, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).IsSelectingUpcastedSpell, RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="White"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Radials flag: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding DataContext.CurrentPlayer.UIData.AreRadialsOpen, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.AreRadialsOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="White"/>
                         </StackPanel>
 
@@ -251,7 +258,8 @@
                 <Grid Width="1120"
                       MaxHeight="1900"
                       HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
+                      VerticalAlignment="Center"
+                      Background="#CC111318">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -275,7 +283,7 @@
                                            ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220"
                                            ls:MoveFocus.IsMoveFocusScope="True">
                             <ItemsControl x:Name="HotBarSections"
-                                          ItemsSource="{Binding DataContext.CurrentPlayer.SelectedCharacter.HotBars, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                          ItemsSource="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars, RelativeSource={RelativeSource TemplatedParent}}"
                                           ItemTemplate="{StaticResource CAM_HotBarSectionTemplate}">
                                 <b:Interaction.Triggers>
                                     <b:EventTrigger EventName="Loaded">
@@ -290,7 +298,7 @@
                               Margin="24"
                               ls:MoveFocus.IsMoveFocusScope="True">
                             <ls:LSListBox x:Name="VariantList"
-                                          ItemsSource="{Binding DataContext.SingleHotBar.SlotList, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                          ItemsSource="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList, RelativeSource={RelativeSource TemplatedParent}}"
                                           ItemTemplate="{StaticResource CAM_NativeHotbarButton}"
                                           ItemsPanel="{StaticResource CAM_NativeGrid}"
                                           Template="{StaticResource ScrolllessListBox}"
@@ -308,13 +316,20 @@
                         <ls:LSButton x:Name="UseHint"
                                      IsHitTestVisible="False"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding DataContext.CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UIAccept'}"
+                                     Content="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UIAccept'}"
                                      Margin="12,0"/>
                         <ls:LSButton x:Name="CancelButton"
                                      BoundEvent="UICancel"
-                                     Command="{Binding DataContext.ClearSingleHotbarCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                     Command="ls:UIWidget.CloseRequestCommand"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding DataContext.CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
+                                     Content="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
+                                     Margin="12,0"/>
+                        <ls:LSButton x:Name="CancelNestedButton"
+                                     Visibility="Collapsed"
+                                     BoundEvent="UICancel"
+                                     Command="{Binding (ls:WidgetData.DataContext).ClearSingleHotbarCommand, RelativeSource={RelativeSource TemplatedParent}}"
+                                     ContentTemplate="{StaticResource ControllerButtonHint}"
+                                     Content="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
                                      Margin="12,0">
                             <b:Interaction.Triggers>
                                 <b:EventTrigger EventName="LSButtonReleased">
@@ -330,28 +345,28 @@
                         <Setter TargetName="CAM_NoHotbarsWarning" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding DataContext.SingleHotBar.SlotList.Count, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
+                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList.Count, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
                                  Value="True">
                         <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="VariantHolder" Property="Visibility" Value="Visible"/>
                         <Setter TargetName="PanelTitle" Property="Text" Value="Select"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding DataContext.IsShowingAContainerWithVariants, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" Value="True">
+                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).IsShowingAContainerWithVariants, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
                         <Setter TargetName="PanelTitle"
                                 Property="Text"
                                 Value="{Binding Source='h79b6dc4egf450g4037gad34g8bfd57289b9a', Converter={StaticResource TranslatedStringConverter}}"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding DataContext.IsSelectingUpcastedSpell, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" Value="True">
+                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).IsSelectingUpcastedSpell, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
                         <Setter TargetName="PanelTitle"
                                 Property="Text"
                                 Value="{Binding Source='hcc0de24fgee83g49cdgb15fg2fa9b96203c9', Converter={StaticResource TranslatedStringConverter}}"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding DataContext.SingleHotBar.SlotList.Count, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" Value="0">
-                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding DataContext.CustomEvent, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList.Count, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="True">
+                        <Setter TargetName="CancelButton" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="CancelNestedButton" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
                 </ControlTemplate.Triggers>
             </Grid>

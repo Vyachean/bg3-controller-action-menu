@@ -59,8 +59,8 @@ def validate_semantics() -> list[str]:
                 'ls:UIWidget.ContextName="HotBar"',
                 "<ls:UIWidget.Template>",
                 "<ControlTemplate>",
-                "DataContext.CurrentPlayer.SelectedCharacter.HotBars",
-                "RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}",
+                "(ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars",
+                "RelativeSource={RelativeSource TemplatedParent}",
                 "CurrentPlayer:",
                 "SelectedCharacter:",
                 "HotBarSections",
@@ -85,8 +85,10 @@ def validate_semantics() -> list[str]:
                 'x:Name="CAM_NoHotbarsWarning"',
                 'x:Name="CancelButton"',
                 'BoundEvent="UICancel"',
-                "DataContext.ClearSingleHotbarCommand",
-                'Property="CommandParameter" Value="CloseWidget"',
+                "(ls:WidgetData.DataContext).ClearSingleHotbarCommand",
+                'Command="ls:UIWidget.CloseRequestCommand"',
+                'x:Name="CancelNestedButton"',
+                'Background="Transparent"',
             ],
         )
     )
@@ -122,6 +124,10 @@ def validate_semantics() -> list[str]:
             "<ls:UIWidget.ContentTemplate>",
             'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"',
             'Command="{Binding CustomEvent}"',
+            "DataContext.CurrentPlayer.SelectedCharacter.HotBars",
+            "RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}",
+            "opaqueBG.png",
+            'Background="{DynamicResource LS_tint00}"',
         ]
         for needle in forbidden:
             if needle in page_text:

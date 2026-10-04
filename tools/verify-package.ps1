@@ -57,8 +57,8 @@ $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
     "<ls:UIWidget.Template>",
     "<ControlTemplate>",
-    "DataContext.CurrentPlayer.SelectedCharacter.HotBars",
-    "RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}",
+    "(ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars",
+    "RelativeSource={RelativeSource TemplatedParent}",
     "CurrentPlayer:",
     "SelectedCharacter:",
     "HotBarSections",
@@ -80,8 +80,10 @@ $requiredPageSeams = @(
     'x:Name="CAM_NoHotbarsWarning"',
     'x:Name="CancelButton"',
     'BoundEvent="UICancel"',
-    "DataContext.ClearSingleHotbarCommand",
-    'Property="CommandParameter" Value="CloseWidget"'
+    "(ls:WidgetData.DataContext).ClearSingleHotbarCommand",
+    'Command="ls:UIWidget.CloseRequestCommand"',
+    'x:Name="CancelNestedButton"',
+    'Background="Transparent"'
 )
 
 foreach ($needle in $requiredPageSeams) {
@@ -121,6 +123,12 @@ if ($page.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBar
 }
 if ($page.Contains('Command="{Binding CustomEvent}"')) {
     throw "Packaged controller page relies on implicit template DataContext for CustomEvent."
+}
+if ($page.Contains("DataContext.CurrentPlayer.SelectedCharacter.HotBars") -or $page.Contains("RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}")) {
+    throw "Packaged controller page regressed from Patch 8 WidgetData/TemplatedParent bindings."
+}
+if ($page.Contains("opaqueBG.png") -or $page.Contains('Background="{DynamicResource LS_tint00}"')) {
+    throw "Packaged controller page regressed to a full-screen opaque/dimmed background."
 }
 if ($page -match '(?s)Value="CommonHotBar">\s*<Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>') {
     throw "Packaged page hides CommonHotBar from the main menu."

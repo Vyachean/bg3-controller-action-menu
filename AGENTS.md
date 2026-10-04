@@ -45,9 +45,11 @@ The current candidate intentionally uses:
 - native Spell Book group chrome;
 - native `SingleHotBar` for variants/upcast;
 - native action dispatch owned by `HotBarSlotStyle`;
-- the native interactive widget contract: `UIWidget.Template/ControlTemplate`, not `UIWidget.ContentTemplate/DataTemplate`.
+- the native interactive widget contract: `UIWidget.Template/ControlTemplate`, not `UIWidget.ContentTemplate/DataTemplate`;
+- Patch 8 ControlTemplate data access through `(ls:WidgetData.DataContext)` + `TemplatedParent`;
+- native `UIWidget.CloseRequestCommand` for top-level controller cancel.
 
-Custom code owns only the page composition, grid geometry, section ordering and first-run diagnostic overlay.
+Custom code owns only the page composition, grid geometry, section ordering and first-run diagnostic overlay. It must preserve the live gameplay view rather than adding a full-screen opaque/dim background.
 
 ## Pull request expectations
 
