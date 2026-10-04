@@ -208,7 +208,9 @@ A separate current mod, Auto-Sorting Hotbar v1.1.0.0/1.1.0.1 (August/September 2
 
 These projects corroborate that the controller radial should be treated as its own persisted/ordered data surface, not as a visual projection of `KeyboardHotBars`.
 
-RadialHotbarCustomization's September 2026 author notes add an important architectural limit: keyboard hotbars and controller radials are stored in the same mapped hotbar area with a controller/radial marker, but the persisted memory layout does **not** map cleanly to the visual radial wheels. The author consequently moved current work toward the game's native Noesis controller UI instead of rebuilding radials directly from component memory.
+RadialHotbarCustomization's September 2026 author comments add an important architectural limit: keyboard hotbars and controller radials are stored in the same mapped hotbar area with a controller/radial marker, but the persisted memory layout does **not** map cleanly to the visual radial wheels. On 2026-09-27 the author described ongoing work toward interacting more directly with the native gamepad/Noesis UI.
+
+Those September comments describe **unreleased experimentation**, not additional code in the v0.8.0.0 release. They therefore corroborate the presentation-model direction but do not publish the controller collection/property path CAM still needs.
 
 That matches the current BG3SE mapping (`Bar.Controller`, `HotBarController`, `IsController`) and rules out using `HotbarContainer` as CAM's presentation model. CAM needs the native radial UI/view-model materialization, not just the underlying persisted slots.
 
@@ -216,6 +218,7 @@ References:
 
 - https://github.com/Norbyte/bg3se/blob/main/BG3Extender/GameDefinitions/Components/Hotbar.h
 - https://gitlab.com/saghm/RadialHotbarCustomization/-/tags/v0.8.0.0
+- https://www.nexusmods.com/baldursgate3/mods/18194?tab=posts
 - https://www.nexusmods.com/baldursgate3/mods/24369
 
 ## 9. Patch 8 gives two valid close patterns, but radial-specific nesting is still unknown
