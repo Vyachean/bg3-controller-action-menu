@@ -138,6 +138,13 @@ def validate_semantics() -> list[str]:
         version = VERSION.read_text(encoding="utf-8").strip()
         if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?", version):
             errors.append(f"VERSION: invalid SemVer-like value: {version!r}")
+        elif ACTION_PAGE.exists():
+            expected_diagnostic = f"CAM {version} Xbox diagnostic"
+            if expected_diagnostic not in ACTION_PAGE.read_text(encoding="utf-8"):
+                errors.append(
+                    f"{ACTION_PAGE.relative_to(ROOT)}: diagnostic build marker must match VERSION: "
+                    f"{expected_diagnostic!r}"
+                )
 
     return errors
 

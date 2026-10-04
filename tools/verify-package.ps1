@@ -51,6 +51,7 @@ if (Test-Path $scriptExtender) {
 
 $page = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml")
 $state = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml")
+$version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
 
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
@@ -77,6 +78,11 @@ foreach ($needle in $requiredPageSeams) {
     if (-not $page.Contains($needle)) {
         throw "Packaged action page is missing integration/diagnostic seam: $needle"
     }
+}
+
+$diagnosticBuild = "CAM $version Xbox diagnostic"
+if (-not $page.Contains($diagnosticBuild)) {
+    throw "Packaged diagnostic build marker does not match VERSION: $diagnosticBuild"
 }
 
 $requiredStateSeams = @(
