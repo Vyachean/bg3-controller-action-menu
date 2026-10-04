@@ -44,7 +44,8 @@ The current candidate intentionally uses:
 - native `HotBarSlotStyle`;
 - native Spell Book group chrome;
 - native `SingleHotBar` for variants/upcast;
-- native action dispatch owned by `HotBarSlotStyle`.
+- native action dispatch owned by `HotBarSlotStyle`;
+- the native interactive widget contract: `UIWidget.Template/ControlTemplate`, not `UIWidget.ContentTemplate/DataTemplate`.
 
 Custom code owns only the page composition, grid geometry, section ordering and first-run diagnostic overlay.
 
