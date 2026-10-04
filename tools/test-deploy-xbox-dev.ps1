@@ -31,7 +31,7 @@ Set-Content -Path $OfficialPak -Value "existing official pak evidence" -NoNewlin
         <node id="ModOrder">
           <children>
             <node id="Module">
-              <attribute id="UUID" type="FixedString" value="11111111-1111-1111-1111-111111111111"/>
+              <attribute id="UUID" type="guid" value="11111111-1111-1111-1111-111111111111"/>
             </node>
           </children>
         </node>
@@ -41,7 +41,8 @@ Set-Content -Path $OfficialPak -Value "existing official pak evidence" -NoNewlin
               <attribute id="Folder" type="LSString" value="ExistingMod"/>
               <attribute id="MD5" type="LSString" value=""/>
               <attribute id="Name" type="LSString" value="Existing Mod"/>
-              <attribute id="UUID" type="FixedString" value="11111111-1111-1111-1111-111111111111"/>
+              <attribute id="PublishHandle" type="uint64" value="42"/>
+              <attribute id="UUID" type="guid" value="11111111-1111-1111-1111-111111111111"/>
               <attribute id="Version64" type="int64" value="1"/>
             </node>
           </children>
@@ -81,6 +82,15 @@ if ($reportJson.Roots.Count -ne 1) {
 if ($reportJson.Roots[0].Mods[0].PakCount -ne 1) {
     throw "Existing official PAK evidence was not detected."
 }
+if (-not $reportJson.Roots[0].ModSettings[0].WriteSchemaReady) {
+    throw "Existing active mod did not produce a reusable LSX write schema."
+}
+if ($reportJson.Roots[0].ModSettings[0].WriteSchema.ModOrderUuidType -ne "guid" -or
+    $reportJson.Roots[0].ModSettings[0].WriteSchema.ModsUuidType -ne "guid" -or
+    -not $reportJson.Roots[0].ModSettings[0].WriteSchema.HasPublishHandle -or
+    $reportJson.Roots[0].ModSettings[0].WriteSchema.PublishHandleType -ne "uint64") {
+    throw "Discovery did not preserve the donor modsettings.lsx schema."
+}
 
 # Phase 2 performs the write only when explicitly requested.
 & $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
@@ -110,6 +120,17 @@ $existing = @(
 if ($orderOurs.Count -ne 1) { throw "Expected one CAM ModOrder entry." }
 if ($descOurs.Count -ne 1) { throw "Expected one CAM Mods entry." }
 if ($existing.Count -ne 2) { throw "Existing unrelated mod was not preserved." }
+if ($orderOurs[0].GetAttribute("type") -ne "guid") {
+    throw "CAM ModOrder UUID did not mirror donor UUID type."
+}
+if ($descOurs[0].GetAttribute("type") -ne "guid") {
+    throw "CAM ModuleShortDesc UUID did not mirror donor UUID type."
+}
+$camDesc = $descOurs[0].ParentNode
+$camPublish = $camDesc.SelectSingleNode("attribute[@id='PublishHandle']")
+if (-not $camPublish -or $camPublish.GetAttribute("type") -ne "uint64" -or $camPublish.GetAttribute("value") -ne "0") {
+    throw "CAM PublishHandle did not mirror the proven donor schema."
+}
 
 # Repeat apply: no duplicate UUID entries may appear.
 & $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
