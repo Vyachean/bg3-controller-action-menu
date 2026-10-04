@@ -322,13 +322,26 @@ function Find-Evidence {
             $settingsCandidates = @((Get-Item -LiteralPath $ExplicitModSettingsPath))
         }
     } elseif (Test-Path -LiteralPath $root) {
-        # Xbox package data can place the active profile/order outside LocalCache\Local.
-        # Search the package-data root, then identify the real order by its LSX shape.
-        # A mod package may itself contain a file named modsettings.lsx; filename alone
-        # is therefore not evidence that a file is the active game load order.
-        $settingsCandidates = @(
+        # Xbox active profile orders live under a PlayerProfiles directory.
+        # Files named modsettings.lsx inside the Mods cache are mod/package data,
+        # not the signed-in profile order, even when they have a similar XML shape.
+        foreach ($file in @(
             Get-ChildItem -LiteralPath $root -File -Recurse -Force -Filter "modsettings.lsx" -ErrorAction SilentlyContinue
-        )
+        )) {
+            $fullPath = [System.IO.Path]::GetFullPath($file.FullName)
+            $underMods = $false
+            foreach ($modsDir in $modsCandidates) {
+                $modsPrefix = [System.IO.Path]::GetFullPath($modsDir.FullName).TrimEnd("\") + "\"
+                if ($fullPath.StartsWith($modsPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    $underMods = $true
+                    break
+                }
+            }
+
+            if (-not $underMods -and $fullPath -match '[\\/]PlayerProfiles[\\/]') {
+                $settingsCandidates += $file
+            }
+        }
     }
 
     $modsInfo = @()
@@ -350,6 +363,7 @@ function Find-Evidence {
             Path = $file.FullName
             LastWriteTimeUtc = $file.LastWriteTimeUtc.ToString("o")
             ValidShape = $shape.Valid
+            Layout = $shape.Layout
             WriteSchemaReady = $shape.WriteSchemaReady
             WriteSchema = $shape.WriteSchema
             ShapeSummary = $shape.ShapeSummary
@@ -361,9 +375,7 @@ function Find-Evidence {
     $writableSettings = @($settingsInfo | Where-Object { $_.ValidShape -and $_.WriteSchemaReady })
     $modsWithPak = @($modsInfo | Where-Object { $_.PakCount -gt 0 })
 
-    # We deliberately require an existing PAK and a load-order entry created by the
-    # game as ground truth. This proves both the real Mods directory and the LSX
-    # serialization schema for this exact Xbox build/profile.
+    # Require one real Mods cache and one writable signed-in profile order.
     $ready =
         (Test-Path -LiteralPath $localCacheLocal) -and
         $modsInfo.Count -eq 1 -and
@@ -386,7 +398,7 @@ function Find-Evidence {
             if (Test-Path -LiteralPath $localCacheLocal) { "LocalCacheLocalExists" }
             if ($modsInfo.Count -gt 0) { "ModsDirectoryFound" }
             if ($modsWithPak.Count -gt 0) { "ExistingPakFound" }
-            if ($validShapeSettings.Count -gt 0) { "ValidModSettingsFound" }
+            if ($validShapeSettings.Count -gt 0) { "ValidProfileModSettingsFound" }
             if ($writableSettings.Count -gt 0) { "ReusableModSettingsSchemaFound" }
         )
     }
