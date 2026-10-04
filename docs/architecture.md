@@ -6,28 +6,25 @@ Replace Baldur's Gate 3 controller action radial browsing with a native-style gr
 
 ## Runtime architecture
 
+The intended boundary is still:
+
 ```text
 BG3 controller ActionRadials state
               |
               v
-        DCHotBar context
-              |
-              |
-              v
-           HotBars
-        VMHotBarSlot
+        native HotBar context
               |
               v
-     native BG3 UI resources
- HotBarSlotStyle / SpellBook chrome
+     current native action/slot VM
               |
               v
-      thin custom composition
-   groups + six-column LSGrid
+      thin custom grid layout
               |
               v
-     native action execution
+       native BG3 dispatch
 ```
+
+The exact current Patch 8 collection and dispatch bindings are **not yet proven**. They must be taken from the installed game's current radial XAML before the next runtime candidate is accepted.
 
 The shipping `.pak` contains only ordinary BG3 mod resources. It has **no Script Extender, DLL, native loader or external runtime dependency**.
 
@@ -69,17 +66,16 @@ The custom layer should not own:
 
 ## Native widget contract
 
-The replacement page must follow BG3's controller-widget structure:
+Confirmed current Patch 8 structural evidence:
 
-- `ls:UIWidget.ContextName="HotBar"`;
-- `ls:UIWidget.Template`;
-- a `ControlTemplate` containing the interactive controls.
+- `Controller.xaml` still defines the `ActionRadials` state and points it at `ActionRadials.xaml`;
+- Patch 8 pages such as `CharacterPanel.xaml` use `ls:UIWidget.Template/ControlTemplate` and direct view-model bindings inside that root template;
+- Patch 8 `DataTemplates.xaml` uses `(ls:WidgetData.DataContext)` + `TemplatedParent` in nested reusable templates where the templated parent is not the root widget;
+- a July 2026 Patch 8 runtime report identifies `PreloadedActionRadials_c.xaml` and focus-driven `LSScrollViewer.ScrollToElement`.
 
-Do not build the interactive controller page through `UIWidget.ContentTemplate/DataTemplate`. Runtime testing showed that this can render visuals while failing to behave like the native DCHotBar controller widget for input/focus/data composition.
+Therefore neither direct binding nor `WidgetData.DataContext` should be treated as a universal rule. The correct choice must match the actual current radial template boundary.
 
-Inside the `ControlTemplate`, bindings that depend on `DCHotBar` must use the Patch 8 native template path `(ls:WidgetData.DataContext)…` with `RelativeSource TemplatedParent`. Runtime testing showed that both implicit template bindings and `AncestorType=ls:UIWidget` can render the shell while leaving CurrentPlayer/action data unresolved.
-
-Top-level cancel should use the game-owned `ls:UIWidget.CloseRequestCommand` so closing the action panel does not depend on a view-model command binding. Nested variant/upcast cancel continues to use `ClearSingleHotbarCommand`.
+The older public `Public/Game/GUI/Widgets/ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06. Its `HotBars`, `PagedList/PageView`, `UseSlotCommand`, `SingleHotBar` and cancel structure are historical evidence only.
 
 ## Native UI reuse
 
@@ -96,15 +92,17 @@ Action cells should remain native. Recreating focus frames, disabled overlays, i
 
 ## Controller data
 
-The main page uses:
+Current evidence does **not** yet prove the Patch 8 action collection path.
 
-- `CurrentPlayer.SelectedCharacter.HotBars` as the authoritative normal radial/action source;
-- each hotbar's native `SlotList` / `VMHotBarSlot` entries for actions, spells, items and passives;
-- `SingleHotBar.SlotList` for nested variants and upcast selections.
+Historical Patch 2 `ActionRadials.xaml` used:
 
-`SpellsAndActions` is intentionally **not** the main runtime source: BG3's native `ActionRadials.xaml` uses it inside the slot-assignment popup. The first Xbox runtime test proved that treating it as the normal menu source leaves the replacement menu empty.
+- `CurrentPlayer.SelectedCharacter.HotBars`;
+- per-hotbar `SlotList`;
+- `PagedList/PageView` wrappers;
+- `SingleHotBar.SlotList` for nested choices;
+- native `UseSlotCommand` dispatch.
 
-Selection remains in the game's native action path through `HotBarSlotStyle`, whose native command binding invokes `UseSlotCommand` with the slot VM.
+Patch 8 public resources prove that `HotBarSlotStyle` still exists, but the current controller radial page itself is not publicly available. The next implementation must be based on a read-only extraction of the installed game's current `ActionRadials.xaml` / `PreloadedActionRadials_c.xaml`, not on the 2023 file.
 
 ## First-run diagnostics without Script Extender
 
