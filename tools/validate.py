@@ -59,7 +59,7 @@ def validate_semantics() -> list[str]:
                 'ls:UIWidget.ContextName="HotBar"',
                 "CurrentPlayer.SelectedCharacter.HotBars",
                 "HotBarSections",
-                "CAM_HotbarSectionTemplate",
+                "CAM_HotBarSectionTemplate",
                 "HotBarSlotStyle",
                 "GustavNoesisGUI;component/Library/DataTemplates.xaml",
                 "FocusableControls_c.xaml",
@@ -81,7 +81,7 @@ def validate_semantics() -> list[str]:
                 'x:Name="CancelButton"',
                 'BoundEvent="UICancel"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
-                'CommandParameter="CloseWidget"',
+                'Property="CommandParameter" Value="CloseWidget"',
             ],
         )
     )
