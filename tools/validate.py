@@ -64,6 +64,8 @@ def validate_semantics() -> list[str]:
                 "CurrentPlayer.SelectedCharacter.SpellsAndActions",
                 "CurrentPlayer.SelectedCharacter.HotBars",
                 "VMCharacterAction",
+                "HotBarSlotStyle",
+                "GustavNoesisGUI;component/Library/DataTemplates.xaml",
                 "UseSlotCommand",
                 "SingleHotBar.SlotList",
                 "ClearSingleHotbarCommand",
@@ -89,6 +91,20 @@ def validate_semantics() -> list[str]:
     )
 
     errors.extend(require_text(BOOTSTRAP, ["Probe.Register({ Auto = false })"]))
+
+    if ACTION_PAGE.exists():
+        page_text = ACTION_PAGE.read_text(encoding="utf-8")
+        forbidden = [
+            'x:Key="CAM_ActionTemplate"',
+            'x:Name="FocusFrame"',
+            'BorderBrush="#FFF3D68A"',
+        ]
+        for needle in forbidden:
+            if needle in page_text:
+                errors.append(
+                    f"{ACTION_PAGE.relative_to(ROOT)}: custom slot visual remains; "
+                    f"native BG3 resources must own cell rendering: {needle}"
+                )
 
     if not VERSION.exists():
         errors.append("VERSION: required file is missing")
