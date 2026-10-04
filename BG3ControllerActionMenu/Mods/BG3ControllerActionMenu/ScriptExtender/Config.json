@@ -1,5 +1,0 @@
-{
-  "RequiredVersion": 30,
-  "ModTable": "BG3ControllerActionMenu",
-  "FeatureFlags": ["Lua"]
-}
