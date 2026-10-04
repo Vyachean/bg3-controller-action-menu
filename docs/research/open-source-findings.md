@@ -2,13 +2,24 @@
 
 ## Conclusion
 
-The project **does need current native radial-file evidence before another in-game candidate**.
+Open sources now prove more of the current Patch 8 controller contract than the first investigation found.
 
-Public sources prove the Patch 8 state name, shared UI resources and the existence of the shipped/preloaded `PreloadedActionRadials_c.xaml`, but they do not publish that file's current action collection, materialization hierarchy or cancel/dispatch bindings.
+**Current, independently supported facts:**
 
-The earlier public `ActionRadials.xaml` used as implementation evidence is Patch 2 Hotfix 1 from 2023-09-06. It is historical evidence only.
+- the Patch 8 state is still `ActionRadials` with the `HotBar` context;
+- `HotBarSlotStyle` is current Patch 8 and dispatches through the owning `UIWidget.DataContext.UseSlotCommand`;
+- its command parameter is the current slot object (`CommandParameter="{Binding}"`);
+- a late-September-2026 production mod obtains the live `HotBar` widget DataContext and successfully calls `UseSlotCommand:Execute(slot)`;
+- that same current mod uses `CurrentSingleHotbarFilter`, proving the nested-hotbar filter still exists;
+- current Patch 8 templates use `IsShowingAContainerWithVariants`;
+- controller and keyboard hotbar state are distinct at the game-component level;
+- the shipped Patch 8 controller radial uses focus-driven `LSScrollViewer.ScrollToElement`.
 
-Instead of asking for repeated gameplay tests, use a read-only extractor to scan the installed current game PAKs and capture the native radial XAML first.
+The main unresolved seam is now narrower: **the exact current controller-radial collection exposed by the UI view model and its materialization hierarchy**. A September-2026 mod proves `PlayerCharacterProperties.KeyboardHotBars` exists, but that is explicitly the keyboard collection and must not be substituted for controller radial state.
+
+The earlier public `ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06. It remains historical evidence only.
+
+Therefore another gameplay build is not justified yet. Continue exhausting modern open sources; if the controller collection remains unpublished, one read-only native-file capture is the correct final evidence step.
 
 ## 1. Hotbar/radial data is publicly mapped
 
@@ -119,6 +130,89 @@ Reference:
 
 This supports using native gamepad focus movement for a future grid rather than inventing script-driven scrolling.
 
+## 6. Patch 8 `HotBarSlotStyle` proves current dispatch semantics
+
+The Patch 8 `DataTemplates.xaml` snapshot contains the complete current `HotBarSlotStyle`.
+
+Its relevant setters are:
+
+- `BoundEvent = {Binding BoundEvent}`;
+- `Command = {Binding DataContext.UseSlotCommand, RelativeSource=AncestorType ls:UIWidget}`;
+- `CommandParameter = {Binding}`.
+
+The template is explicitly designed around `VMHotBarSlot` and related native content types.
+
+This is stronger evidence than the old radial page. We no longer need the current radial XAML to prove the normal slot dispatch command or parameter: a CAM slot that uses `HotBarSlotStyle` under the real `HotBar` UIWidget should leave execution to BG3.
+
+Reference:
+
+- `Coyote-31/bg3-advanced-character-sheet/Sources/BG3/Patch8/Game/Public/Game/GUI/Library/DataTemplates.xaml`
+
+## 7. A September 2026 mod confirms the live HotBar view model
+
+`belakarkache/bg3-shared-actions`, commit `2459fa91fb95a4795659840cb5930c695bfa0dab` dated 2026-09-27, contains production runtime code that:
+
+1. walks `Ext.UI.GetRoot()`;
+2. finds the top widget named `HotBar`;
+3. reads its `DataContext`;
+4. reads `context.CurrentSingleHotbarFilter`;
+5. finds slots in `context.CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList`;
+6. calls `context.UseSlotCommand:Execute(slot)`.
+
+This gives unusually fresh proof that the following names still exist in the live Patch 8-era UI context:
+
+- `CurrentPlayer`;
+- `SelectedCharacter`;
+- `PlayerCharacterProperties`;
+- `KeyboardHotBars`;
+- per-bar `SlotList`;
+- `CurrentSingleHotbarFilter`;
+- `UseSlotCommand`.
+
+The important limitation is equally useful: `KeyboardHotBars` is explicitly the keyboard collection. BG3SE's current hotbar component mapping and RadialHotbarCustomization both show that controller state is distinct, so CAM must not use `KeyboardHotBars` as the controller menu source merely because it is publicly visible.
+
+Reference:
+
+- https://github.com/belakarkache/bg3-shared-actions/blob/main/src/Mods/SharedActions/ScriptExtender/Lua/Client/VariantMenu.lua
+
+## 8. Current controller state is independently distinct from keyboard state
+
+Current BG3SE mappings expose:
+
+- `Bar.Controller`;
+- `AddSlotEntryData.HotBarController`;
+- `SlotEventData.IsController`.
+
+RadialHotbarCustomization v0.8.0.0 (tagged 2026-02-22) was rewritten specifically after its author identified how BG3 distinguishes keyboard/mouse hotbar state from controller radial state.
+
+A separate current mod, Auto-Sorting Hotbar v1.1.0.0/1.1.0.1 (August/September 2026), added controller radial support and its author documents behavior that differs from keyboard ordering:
+
+- one radial wheel contains 12 slots;
+- families are kept together where possible rather than split across wheels;
+- basic actions and combat toggles such as Metamagic start their own wheel.
+
+These projects corroborate that the controller radial should be treated as its own persisted/ordered data surface, not as a visual projection of `KeyboardHotBars`.
+
+References:
+
+- https://github.com/Norbyte/bg3se/blob/main/BG3Extender/GameDefinitions/Components/Hotbar.h
+- https://gitlab.com/saghm/RadialHotbarCustomization/-/tags/v0.8.0.0
+- https://www.nexusmods.com/baldursgate3/mods/24369
+
+## 9. Patch 8 gives two valid close patterns, but radial-specific nesting is still unknown
+
+Current Patch 8 pages demonstrate both:
+
+- `BoundEvent="UICancel" Command="ls:UIWidget.CloseRequestCommand"` for a normal top-level controller page (`CharacterPanel.xaml`);
+- `BoundEvent="UICancel" Command="{Binding CustomEvent}" CommandParameter="..."` for pages whose state owns a specific close event (`LearnSpells.xaml`).
+
+This proves that both mechanisms are valid BG3 patterns. It does **not** prove which exact main/nested cancel switch the current radial uses. The radial-specific `UICancel` behavior remains one of the few seams worth reading from the current native page rather than guessing.
+
+Reference:
+
+- `Coyote-31/bg3-advanced-character-sheet/Sources/BG3/Patch8/Game/Mods/MainUI/GUI/Pages/CharacterPanel.xaml`
+- `Coyote-31/bg3-advanced-character-sheet/Sources/BG3/Patch8/Game/Mods/MainUI/GUI/Pages/LearnSpells.xaml`
+
 ## Revised technical plan
 
 ### Phase A — current game-file capture
@@ -157,6 +251,12 @@ Only after Phase B:
 
 ## Remaining unknown
 
-Open sources found so far do not publish the exact current property names for the action collection and selection/cancel commands inside `PreloadedActionRadials_c.xaml`.
+After the expanded open-source audit, the remaining high-value unknowns are:
 
-This is now a **game-file inspection problem**, not a reason for another speculative gameplay build.
+1. the exact current **controller** radial collection/property path (not `KeyboardHotBars`);
+2. the current radial's list/paging/materialization hierarchy;
+3. the exact top-level vs nested `UICancel` switching used by the current radial page.
+
+Normal slot execution is no longer unknown: Patch 8 `HotBarSlotStyle` proves `UseSlotCommand` with the slot object as its command parameter.
+
+If no modern public source exposes items 1–3, they should be resolved by one read-only native-file capture, not by another gameplay trial build.
