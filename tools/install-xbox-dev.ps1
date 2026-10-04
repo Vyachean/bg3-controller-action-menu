@@ -13,7 +13,7 @@ $Mod = @{
     Folder = "BG3ControllerActionMenu"
     Name = "BG3 Controller Action Menu"
     UUID = "c4be2039-13bf-4413-8d4f-2642f86d4a8e"
-    Version64 = "36028797018963968"
+    Version64 = "36028797018963983"
 }
 
 function Normalize-Path {
@@ -662,12 +662,21 @@ New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
 $settingsBackup = Join-Path $backupDir ("modsettings." + $stamp + ".lsx")
 Copy-Item -LiteralPath $targetSettings -Destination $settingsBackup -Force
 
+$pakBackup = $null
 if (Test-Path -LiteralPath $destPak) {
-    Copy-Item -LiteralPath $destPak -Destination (Join-Path $backupDir ("BG3ControllerActionMenu." + $stamp + ".pak")) -Force
+    $pakBackup = Join-Path $backupDir ("BG3ControllerActionMenu." + $stamp + ".pak")
+    Copy-Item -LiteralPath $destPak -Destination $pakBackup -Force
 }
+
+$sourcePakHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $PackagePath).Hash
 
 try {
     Copy-Item -LiteralPath $PackagePath -Destination $destPak -Force
+    $installedPakHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $destPak).Hash
+    if ($installedPakHash -ne $sourcePakHash) {
+        throw "Copied CAM PAK hash does not match the selected release package."
+    }
+
     Write-XmlAtomically -Document $settingsXml -Path $targetSettings
 
     [xml]$verify = Get-Content -Raw -LiteralPath $targetSettings
@@ -689,14 +698,33 @@ try {
     if ($schema.Layout -eq "ModsOnly" -and $orderUuid.Count -ne 0) {
         throw "Mods-only Xbox profile unexpectedly gained a ModOrder entry."
     }
+
+    $camVersion = @(
+        $verify.SelectNodes("//node[@id='Mods']/children/node[@id='ModuleShortDesc']") |
+            Where-Object {
+                $uuidNode = $_.SelectSingleNode("attribute[@id='UUID']")
+                $uuidNode -and $uuidNode.GetAttribute("value") -eq $Mod.UUID
+            } |
+            ForEach-Object { $_.SelectSingleNode("attribute[@id='Version64']") }
+    )
+    if ($camVersion.Count -ne 1 -or $camVersion[0].GetAttribute("value") -ne $Mod.Version64) {
+        throw "Written Xbox profile does not contain CAM Version64 $($Mod.Version64)."
+    }
 } catch {
     Copy-Item -LiteralPath $settingsBackup -Destination $targetSettings -Force
-    throw "Install verification failed and modsettings.lsx was restored: $($_.Exception.Message)"
+    if ($pakBackup -and (Test-Path -LiteralPath $pakBackup)) {
+        Copy-Item -LiteralPath $pakBackup -Destination $destPak -Force
+    } elseif (Test-Path -LiteralPath $destPak) {
+        Remove-Item -LiteralPath $destPak -Force
+    }
+    throw "Install verification failed; modsettings.lsx and CAM PAK were restored: $($_.Exception.Message)"
 }
 
 Write-Host ""
 Write-Host "Installed successfully into the evidence-backed Xbox mod cache."
 Write-Host "  PAK:        $destPak"
+Write-Host "  SHA256:     $installedPakHash"
+Write-Host "  Version64:  $($Mod.Version64)"
 Write-Host "  Load order: $targetSettings"
 Write-Host "  Backup:     $settingsBackup"
 Write-Host ""
