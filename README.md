@@ -8,27 +8,9 @@ Replace the default sequence of radial wheels with a controller-native grid that
 
 ## Runtime compatibility
 
-The shipping mod is an ordinary BG3 `.pak` and does **not** require Script Extender, Native Mod Loader, DLL injection, or a Steam/GOG-specific executable layout.
+The shipping mod is an ordinary BG3 `.pak` and does **not** require Script Extender, Native Mod Loader or DLL injection.
 
 The primary target includes the **Xbox App / Microsoft Store PC build**.
-
-## Important: Xbox App installation differs from Steam/GOG
-
-The standard Steam/GOG user folder:
-
-`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
-
-is **not the active external-mod location for the Xbox Play Anywhere build**.
-
-The Xbox App version uses a Microsoft package cache. Community-confirmed paths use a layout like:
-
-`<drive>:\WpSystem\<user SID>\AppData\Local\Packages\LarianStudiosGamesLtd.baldurssgate3_551z37b1dechw\LocalCache\Local\Mods`
-
-External `.pak` files also need a valid Xbox-profile load order; copying a file alone may not activate it.
-
-For local Xbox App development, the release includes `install-xbox-dev.ps1`. Put it next to the released `.pak` and run it once; it discovers the Microsoft cache, backs up the current load order, installs the mod and adds only this mod's UUID.
-
-See [Xbox App installation](docs/xbox-app-installation.md) before testing.
 
 ## Current status
 
@@ -42,6 +24,26 @@ Current candidate:
 - reuses Spell Book-style group chrome;
 - keeps native `SingleHotBar` variants/upcast;
 - includes a temporary on-screen diagnostic panel for the first Xbox run.
+
+## Xbox App local development
+
+The Xbox App build does not use the ordinary Steam/GOG mod path in the same way. The project therefore does **not** hard-code `C:\WpSystem` or assume one cache location.
+
+Release `v0.0.8-xbox-discovery-first` and newer includes `install-xbox-dev.ps1`.
+
+First establish ground truth by installing one small mod through BG3's built-in Mod Manager. Then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
+```
+
+This is read-only and creates `xbox-dev-environment.json`. Only when it finds one unambiguous cache containing both an existing PAK and a valid BG3 `modsettings.lsx` should installation be allowed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
+```
+
+See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
 
 ## Architecture
 
