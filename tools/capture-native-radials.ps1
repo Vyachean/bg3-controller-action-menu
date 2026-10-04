@@ -133,7 +133,7 @@ function Get-PackageMatches {
         }
     }
 
-    $matches = @()
+    $foundPaths = @()
     foreach ($line in $output) {
         if ($line -notmatch "\.xaml\t") { continue }
         $parts = $line -split "\t"
@@ -142,11 +142,11 @@ function Get-PackageMatches {
         $packagedPath = $parts[0].Trim()
         if (-not $packagedPath) { continue }
 
-        $matches += $packagedPath
+        $foundPaths += $packagedPath
     }
 
     return [pscustomobject]@{
-        Matches = @($matches | Sort-Object -Unique)
+        Matches = @($foundPaths | Sort-Object -Unique)
         Error = $null
     }
 }
