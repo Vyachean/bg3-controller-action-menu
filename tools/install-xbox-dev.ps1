@@ -172,48 +172,58 @@ function Test-ModSettingsShape {
         $root = $xml.SelectSingleNode("//region[@id='ModuleSettings']/node[@id='root']")
         $order = if ($root) { $root.SelectSingleNode("children/node[@id='ModOrder']") } else { $null }
         $mods = if ($root) { $root.SelectSingleNode("children/node[@id='Mods']") } else { $null }
-        $validShape = [bool]($root -and $order -and $mods)
+
+        # Current BG3 Mod Manager generates ModuleSettings/root/Mods only.
+        # Older layouts may also contain ModOrder, so support it when present
+        # without requiring it for the Xbox cached profile.
+        $validShape = [bool]($root -and $mods)
+        $layout = if ($order) { "ModsAndModOrder" } else { "ModsOnly" }
 
         if (-not $validShape) {
             return [pscustomobject]@{
                 Valid = $false
+                Layout = $null
                 WriteSchemaReady = $false
                 WriteSchema = $null
                 ShapeSummary = $shapeSummary
-                Error = "Missing ModuleSettings/root/ModOrder/Mods structure."
+                Error = "Missing ModuleSettings/root/Mods structure."
             }
         }
 
-        # Do not invent LSX attribute types. The built-in Mod Manager has already
-        # written at least one active mod before Apply is allowed, so use that
-        # real entry as the schema donor for this exact Xbox build/profile.
+        # Mirror attribute types from an already-active mod in this exact profile.
+        # This avoids hard-coding LSX serialization details.
         $schemas = @()
         foreach ($desc in @($mods.SelectNodes("children/node[@id='ModuleShortDesc']"))) {
             $uuid = Get-LsxAttributeInfo -Node $desc -Id "UUID"
             if (-not $uuid -or -not $uuid.Value -or $uuid.Value -eq $Mod.UUID) { continue }
 
-            $matchingOrder = @()
-            foreach ($module in @($order.SelectNodes("children/node[@id='Module']"))) {
-                $candidateUuid = Get-LsxAttributeInfo -Node $module -Id "UUID"
-                if ($candidateUuid -and $candidateUuid.Value -eq $uuid.Value) {
-                    $matchingOrder += $module
-                }
-            }
-            if ($matchingOrder.Count -ne 1) { continue }
-
-            $orderUuid = Get-LsxAttributeInfo -Node $matchingOrder[0] -Id "UUID"
             $folder = Get-LsxAttributeInfo -Node $desc -Id "Folder"
             $md5 = Get-LsxAttributeInfo -Node $desc -Id "MD5"
             $name = Get-LsxAttributeInfo -Node $desc -Id "Name"
             $version64 = Get-LsxAttributeInfo -Node $desc -Id "Version64"
             $publishHandle = Get-LsxAttributeInfo -Node $desc -Id "PublishHandle"
+            $orderUuid = $null
 
-            $required = @($orderUuid, $folder, $md5, $name, $uuid, $version64)
+            if ($order) {
+                $matchingOrder = @()
+                foreach ($module in @($order.SelectNodes("children/node[@id='Module']"))) {
+                    $candidateUuid = Get-LsxAttributeInfo -Node $module -Id "UUID"
+                    if ($candidateUuid -and $candidateUuid.Value -eq $uuid.Value) {
+                        $matchingOrder += $module
+                    }
+                }
+                if ($matchingOrder.Count -ne 1) { continue }
+                $orderUuid = Get-LsxAttributeInfo -Node $matchingOrder[0] -Id "UUID"
+            }
+
+            $required = @($folder, $md5, $name, $uuid, $version64)
+            if ($order) { $required += $orderUuid }
             if (@($required | Where-Object { -not $_ -or -not $_.Type }).Count -gt 0) { continue }
             if ($publishHandle -and -not $publishHandle.Type) { continue }
 
             $schema = [pscustomobject]@{
-                ModOrderUuidType = $orderUuid.Type
+                Layout = $layout
+                ModOrderUuidType = if ($orderUuid) { $orderUuid.Type } else { $null }
                 FolderType = $folder.Type
                 Md5Type = $md5.Type
                 NameType = $name.Type
@@ -223,7 +233,8 @@ function Test-ModSettingsShape {
                 PublishHandleType = if ($publishHandle) { $publishHandle.Type } else { $null }
             }
             $schema | Add-Member -NotePropertyName Signature -NotePropertyValue (
-                "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}" -f
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}" -f
+                    $schema.Layout,
                     $schema.ModOrderUuidType,
                     $schema.FolderType,
                     $schema.Md5Type,
@@ -240,11 +251,12 @@ function Test-ModSettingsShape {
         if ($schemaGroups.Count -ne 1) {
             return [pscustomobject]@{
                 Valid = $true
+                Layout = $layout
                 WriteSchemaReady = $false
                 WriteSchema = $null
                 ShapeSummary = $shapeSummary
                 Error = if ($schemaGroups.Count -eq 0) {
-                    "No active non-CAM mod provides a reusable ModOrder/ModuleShortDesc schema."
+                    "No active non-CAM mod provides a reusable ModuleShortDesc schema."
                 } else {
                     "Active mods use multiple LSX schemas; automatic write is intentionally disabled."
                 }
@@ -253,6 +265,7 @@ function Test-ModSettingsShape {
 
         return [pscustomobject]@{
             Valid = $true
+            Layout = $layout
             WriteSchemaReady = $true
             WriteSchema = $schemas[0]
             ShapeSummary = $shapeSummary
@@ -261,6 +274,7 @@ function Test-ModSettingsShape {
     } catch {
         return [pscustomobject]@{
             Valid = $false
+            Layout = $null
             WriteSchemaReady = $false
             WriteSchema = $null
             ShapeSummary = $null
@@ -308,13 +322,26 @@ function Find-Evidence {
             $settingsCandidates = @((Get-Item -LiteralPath $ExplicitModSettingsPath))
         }
     } elseif (Test-Path -LiteralPath $root) {
-        # Xbox package data can place the active profile/order outside LocalCache\Local.
-        # Search the package-data root, then identify the real order by its LSX shape.
-        # A mod package may itself contain a file named modsettings.lsx; filename alone
-        # is therefore not evidence that a file is the active game load order.
-        $settingsCandidates = @(
+        # Xbox active profile orders live under a PlayerProfiles directory.
+        # Files named modsettings.lsx inside the Mods cache are mod/package data,
+        # not the signed-in profile order, even when they have a similar XML shape.
+        foreach ($file in @(
             Get-ChildItem -LiteralPath $root -File -Recurse -Force -Filter "modsettings.lsx" -ErrorAction SilentlyContinue
-        )
+        )) {
+            $fullPath = [System.IO.Path]::GetFullPath($file.FullName)
+            $underMods = $false
+            foreach ($modsDir in $modsCandidates) {
+                $modsPrefix = [System.IO.Path]::GetFullPath($modsDir.FullName).TrimEnd("\") + "\"
+                if ($fullPath.StartsWith($modsPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    $underMods = $true
+                    break
+                }
+            }
+
+            if (-not $underMods -and $fullPath -match '[\\/]PlayerProfiles[\\/]') {
+                $settingsCandidates += $file
+            }
+        }
     }
 
     $modsInfo = @()
@@ -336,6 +363,7 @@ function Find-Evidence {
             Path = $file.FullName
             LastWriteTimeUtc = $file.LastWriteTimeUtc.ToString("o")
             ValidShape = $shape.Valid
+            Layout = $shape.Layout
             WriteSchemaReady = $shape.WriteSchemaReady
             WriteSchema = $shape.WriteSchema
             ShapeSummary = $shape.ShapeSummary
@@ -347,9 +375,7 @@ function Find-Evidence {
     $writableSettings = @($settingsInfo | Where-Object { $_.ValidShape -and $_.WriteSchemaReady })
     $modsWithPak = @($modsInfo | Where-Object { $_.PakCount -gt 0 })
 
-    # We deliberately require an existing PAK and a load-order entry created by the
-    # game as ground truth. This proves both the real Mods directory and the LSX
-    # serialization schema for this exact Xbox build/profile.
+    # Require one real Mods cache and one writable signed-in profile order.
     $ready =
         (Test-Path -LiteralPath $localCacheLocal) -and
         $modsInfo.Count -eq 1 -and
@@ -372,7 +398,7 @@ function Find-Evidence {
             if (Test-Path -LiteralPath $localCacheLocal) { "LocalCacheLocalExists" }
             if ($modsInfo.Count -gt 0) { "ModsDirectoryFound" }
             if ($modsWithPak.Count -gt 0) { "ExistingPakFound" }
-            if ($validShapeSettings.Count -gt 0) { "ValidModSettingsFound" }
+            if ($validShapeSettings.Count -gt 0) { "ValidProfileModSettingsFound" }
             if ($writableSettings.Count -gt 0) { "ReusableModSettingsSchemaFound" }
         )
     }
@@ -524,7 +550,8 @@ foreach ($candidate in $report.Roots) {
     }
     foreach ($settings in $candidate.ModSettings) {
         Write-Host ("  Settings candidate: {0}" -f $settings.Path)
-        Write-Host ("    Valid order:       {0}" -f $settings.ValidShape)
+        Write-Host ("    Valid profile:     {0}" -f $settings.ValidShape)
+        Write-Host ("    Layout:            {0}" -f $settings.Layout)
         Write-Host ("    Writable schema:   {0}" -f $settings.WriteSchemaReady)
         if ($settings.ShapeSummary) {
             Write-Host ("    XML root:          {0}" -f $settings.ShapeSummary.DocumentElement)
@@ -543,7 +570,7 @@ if (-not $Apply) {
         Write-Host "Nothing was changed."
         Write-Host ""
         Write-Host "To install the mod, rerun:"
-        Write-Host "  powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply"
+        Write-Host "  powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply"
     } else {
         Write-Host "Nothing was changed."
         Write-Host ""
@@ -595,16 +622,26 @@ $destPak = Join-Path $targetMods "BG3ControllerActionMenu.pak"
 
 [xml]$settingsXml = Get-Content -Raw -LiteralPath $targetSettings
 $settingsRoot = $settingsXml.SelectSingleNode("//region[@id='ModuleSettings']/node[@id='root']")
-$modOrder = $settingsRoot.SelectSingleNode("children/node[@id='ModOrder']")
-$modsNode = $settingsRoot.SelectSingleNode("children/node[@id='Mods']")
+$modsNode = if ($settingsRoot) { $settingsRoot.SelectSingleNode("children/node[@id='Mods']") } else { $null }
+$modOrder = if ($settingsRoot) { $settingsRoot.SelectSingleNode("children/node[@id='ModOrder']") } else { $null }
 
-$modOrderChildren = Remove-ModEntriesByUuid -Document $settingsXml -Container $modOrder -ChildNodeId "Module" -Uuid $Mod.UUID
+if (-not $settingsRoot -or -not $modsNode) {
+    throw "Refusing to modify Xbox data: selected profile no longer has ModuleSettings/root/Mods."
+}
+$hasModOrder = [bool]$modOrder
+if (($schema.Layout -eq "ModsAndModOrder") -ne $hasModOrder) {
+    throw "Refusing to modify Xbox data: profile layout changed after discovery."
+}
+
 $modsChildren = Remove-ModEntriesByUuid -Document $settingsXml -Container $modsNode -ChildNodeId "ModuleShortDesc" -Uuid $Mod.UUID
 
-$orderEntry = $settingsXml.CreateElement("node")
-$orderEntry.SetAttribute("id", "Module")
-[void]$orderEntry.AppendChild((New-LsxAttribute -Document $settingsXml -Id "UUID" -Type $schema.ModOrderUuidType -Value $Mod.UUID))
-[void]$modOrderChildren.AppendChild($orderEntry)
+if ($modOrder) {
+    $modOrderChildren = Remove-ModEntriesByUuid -Document $settingsXml -Container $modOrder -ChildNodeId "Module" -Uuid $Mod.UUID
+    $orderEntry = $settingsXml.CreateElement("node")
+    $orderEntry.SetAttribute("id", "Module")
+    [void]$orderEntry.AppendChild((New-LsxAttribute -Document $settingsXml -Id "UUID" -Type $schema.ModOrderUuidType -Value $Mod.UUID))
+    [void]$modOrderChildren.AppendChild($orderEntry)
+}
 
 $descEntry = $settingsXml.CreateElement("node")
 $descEntry.SetAttribute("id", "ModuleShortDesc")
@@ -634,17 +671,23 @@ try {
     Write-XmlAtomically -Document $settingsXml -Path $targetSettings
 
     [xml]$verify = Get-Content -Raw -LiteralPath $targetSettings
-    $orderUuid = @(
-        $verify.SelectNodes("//node[@id='ModOrder']/children/node[@id='Module']/attribute[@id='UUID']") |
-            Where-Object { $_.GetAttribute("value") -eq $Mod.UUID }
-    )
     $descUuid = @(
         $verify.SelectNodes("//node[@id='Mods']/children/node[@id='ModuleShortDesc']/attribute[@id='UUID']") |
             Where-Object { $_.GetAttribute("value") -eq $Mod.UUID }
     )
+    if ($descUuid.Count -ne 1) {
+        throw "Written Xbox profile does not contain exactly one CAM ModuleShortDesc entry."
+    }
 
-    if ($orderUuid.Count -ne 1 -or $descUuid.Count -ne 1) {
-        throw "Written load order does not contain exactly one CAM entry in both required sections."
+    $orderUuid = @(
+        $verify.SelectNodes("//node[@id='ModOrder']/children/node[@id='Module']/attribute[@id='UUID']") |
+            Where-Object { $_.GetAttribute("value") -eq $Mod.UUID }
+    )
+    if ($schema.Layout -eq "ModsAndModOrder" -and $orderUuid.Count -ne 1) {
+        throw "Written legacy profile does not contain exactly one CAM ModOrder entry."
+    }
+    if ($schema.Layout -eq "ModsOnly" -and $orderUuid.Count -ne 0) {
+        throw "Mods-only Xbox profile unexpectedly gained a ModOrder entry."
     }
 } catch {
     Copy-Item -LiteralPath $settingsBackup -Destination $targetSettings -Force
