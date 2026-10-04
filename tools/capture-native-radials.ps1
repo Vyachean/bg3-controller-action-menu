@@ -287,7 +287,7 @@ function Get-NativeRadialContract {
 
 function Get-NativeContractAnalysis {
     param(
-        [Parameter(Mandatory = $true)]$Matches,
+        [Parameter(Mandatory = $true)]$NativeMatches,
         [Parameter(Mandatory = $true)]$DuplicatePackagedPaths,
         [Parameter(Mandatory = $true)]$ScanErrors
     )
@@ -302,7 +302,7 @@ function Get-NativeContractAnalysis {
     $materialization = @()
     $useSlotEvidence = @()
 
-    foreach ($match in @($Matches)) {
+    foreach ($match in @($NativeMatches)) {
         $contract = $match.Contract
         $sourceIdentity = [ordered]@{
             SourceType = $match.SourceType
@@ -427,7 +427,7 @@ function Get-NativeContractAnalysis {
     )
 
     $distinctMainValues = @($mainSources | Select-Object -ExpandProperty Value -Unique)
-    $captureComplete = @($ScanErrors).Count -eq 0 -and @($Matches).Count -gt 0
+    $captureComplete = @($ScanErrors).Count -eq 0 -and @($NativeMatches).Count -gt 0
     $hasMainControllerSource = $mainSources.Count -gt 0
     $hasCancel = $cancelBindings.Count -gt 0
     $hasFocus = $focusBindings.Count -gt 0
@@ -445,7 +445,7 @@ function Get-NativeContractAnalysis {
     return [pscustomobject]([ordered]@{
         SchemaVersion = 1
         CaptureComplete = $captureComplete
-        NativeFileCount = @($Matches).Count
+        NativeFileCount = @($NativeMatches).Count
         DuplicatePackagedPathCount = @($DuplicatePackagedPaths).Count
         ConflictingDuplicateCount = $conflictingDuplicates.Count
         ConflictingDuplicates = $conflictingDuplicates
@@ -721,7 +721,7 @@ $contractReport = [ordered]@{
 }
 $contractReport | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $contractPath -Encoding UTF8
 
-$analysis = Get-NativeContractAnalysis -Matches $manifestMatches -DuplicatePackagedPaths $duplicatePackagedPaths -ScanErrors $scanErrors
+$analysis = Get-NativeContractAnalysis -NativeMatches $manifestMatches -DuplicatePackagedPaths $duplicatePackagedPaths -ScanErrors $scanErrors
 $analysisPath = Join-Path $OutputDirectory "native-contract-analysis.json"
 $analysis | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $analysisPath -Encoding UTF8
 
