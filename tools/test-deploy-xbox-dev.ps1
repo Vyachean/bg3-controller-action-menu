@@ -9,6 +9,8 @@ $Mods = Join-Path $Local "Mods"
 $Settings = Join-Path $Profile "modsettings.lsx"
 $FakePak = Join-Path $Temp "fixture.pak"
 $OfficialPak = Join-Path $Mods "OfficialFixture.pak"
+$DecoyDir = Join-Path $Mods "00000000-0000-0441-2693-069153013516"
+$DecoySettings = Join-Path $DecoyDir "modsettings.lsx"
 $Report = Join-Path $Temp "xbox-dev-environment.json"
 $Uuid = "c4be2039-13bf-4413-8d4f-2642f86d4a8e"
 
@@ -18,8 +20,19 @@ if (Test-Path $Temp) {
 
 New-Item -ItemType Directory -Force -Path $Profile | Out-Null
 New-Item -ItemType Directory -Force -Path $Mods | Out-Null
+New-Item -ItemType Directory -Force -Path $DecoyDir | Out-Null
 Set-Content -Path $FakePak -Value "fake CAM pak bytes" -NoNewline
 Set-Content -Path $OfficialPak -Value "existing official pak evidence" -NoNewline
+
+@'
+<?xml version="1.0" encoding="UTF-8"?>
+<save>
+  <version major="4" minor="8" revision="0" build="700"/>
+  <region id="ModPackageMetadata">
+    <node id="root"/>
+  </region>
+</save>
+'@ | Set-Content -Path $DecoySettings -Encoding UTF8
 
 @'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -82,13 +95,20 @@ if ($reportJson.Roots.Count -ne 1) {
 if ($reportJson.Roots[0].Mods[0].PakCount -ne 1) {
     throw "Existing official PAK evidence was not detected."
 }
-if (-not $reportJson.Roots[0].ModSettings[0].WriteSchemaReady) {
-    throw "Existing active mod did not produce a reusable LSX write schema."
+if ($reportJson.Roots[0].ModSettings.Count -ne 2) {
+    throw "Discovery should report both the package-local decoy and the real active order."
 }
-if ($reportJson.Roots[0].ModSettings[0].WriteSchema.ModOrderUuidType -ne "guid" -or
-    $reportJson.Roots[0].ModSettings[0].WriteSchema.ModsUuidType -ne "guid" -or
-    -not $reportJson.Roots[0].ModSettings[0].WriteSchema.HasPublishHandle -or
-    $reportJson.Roots[0].ModSettings[0].WriteSchema.PublishHandleType -ne "uint64") {
+$usableSettings = @($reportJson.Roots[0].ModSettings | Where-Object { $_.WriteSchemaReady })
+if ($usableSettings.Count -ne 1) {
+    throw "Exactly one active load order should provide a reusable LSX write schema."
+}
+if ($usableSettings[0].Path -ne $Settings) {
+    throw "Discovery selected the wrong modsettings.lsx candidate."
+}
+if ($usableSettings[0].WriteSchema.ModOrderUuidType -ne "guid" -or
+    $usableSettings[0].WriteSchema.ModsUuidType -ne "guid" -or
+    -not $usableSettings[0].WriteSchema.HasPublishHandle -or
+    $usableSettings[0].WriteSchema.PublishHandleType -ne "uint64") {
     throw "Discovery did not preserve the donor modsettings.lsx schema."
 }
 
