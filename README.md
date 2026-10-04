@@ -29,7 +29,7 @@ Current candidate:
 
 The Xbox App build does not use the ordinary Steam/GOG mod path in the same way. The project therefore does **not** hard-code `C:\WpSystem` or assume one cache location.
 
-Release `v0.0.8-xbox-discovery-first` and newer includes `install-xbox-dev.ps1`.
+Release `v0.0.9-xbox-schema-mirror` and newer includes the schema-grounded `install-xbox-dev.ps1`.
 
 First establish ground truth by installing one small mod through BG3's built-in Mod Manager. Then run:
 
@@ -37,7 +37,7 @@ First establish ground truth by installing one small mod through BG3's built-in 
 powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
 ```
 
-This is read-only and creates `xbox-dev-environment.json`. Only when it finds one unambiguous cache containing both an existing PAK and a valid BG3 `modsettings.lsx` should installation be allowed:
+This is read-only and creates `xbox-dev-environment.json`. Only when it finds one unambiguous cache, an existing PAK, a valid BG3 `modsettings.lsx`, and one reusable schema written by an already-active in-game mod should installation be allowed:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
