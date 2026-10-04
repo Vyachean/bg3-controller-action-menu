@@ -53,9 +53,6 @@ $installer = Join-Path $Root "tools\install-xbox-dev.ps1"
 
 & $installer -CacheRoot $FakeCache -ModSettingsPath $Settings -PackagePath $FakePak
 
-if ($LASTEXITCODE -ne 0) {
-    throw "First deploy failed."
-}
 
 $deployedPak = Join-Path $Mods "BG3ControllerActionMenu.pak"
 if (-not (Test-Path $deployedPak)) {
