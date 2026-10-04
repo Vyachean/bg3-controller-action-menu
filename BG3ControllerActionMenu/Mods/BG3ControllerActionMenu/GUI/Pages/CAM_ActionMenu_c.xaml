@@ -208,7 +208,7 @@
                         BorderThickness="2"
                         Panel.ZIndex="20">
                     <StackPanel Width="320">
-                        <TextBlock Text="CAM 0.0.12-xbox-shape-probe Xbox diagnostic"
+                        <TextBlock Text="CAM 0.0.13-xbox-mods-only-order Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
