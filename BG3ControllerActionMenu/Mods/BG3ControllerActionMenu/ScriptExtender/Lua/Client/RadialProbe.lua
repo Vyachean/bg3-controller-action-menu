@@ -591,13 +591,39 @@ local function findPage(content, name)
     end)
 end
 
-local function persist()
-    report.Environment.GameState = gameState()
+local function updateSummary()
+    report.Summary.ControllerPressedCount = pressedCount
     report.Summary.DiagnosticsCompleteEnough =
         report.Summary.CustomPageSeen
         and report.Summary.DCHotBarSeen
         and report.Summary.ActionGroupsSeen
         and report.Summary.FocusedActionSeen
+
+    report.Summary.NeedsScriptExtenderRuntimeLog =
+        pressedCount > 0 and not report.Summary.CustomPageSeen
+
+    if not report.Summary.SessionLoaded then
+        report.Summary.FailureClass = "session-not-loaded"
+    elseif pressedCount == 0 then
+        report.Summary.FailureClass = "awaiting-controller-input"
+    elseif not report.Summary.CustomPageSeen and report.Summary.VanillaRadialSeen then
+        report.Summary.FailureClass = "actionradials-override-not-applied"
+    elseif not report.Summary.CustomPageSeen then
+        report.Summary.FailureClass = "custom-page-not-created-check-noesis-runtime-log"
+    elseif not report.Summary.DCHotBarSeen then
+        report.Summary.FailureClass = "custom-page-data-context-mismatch"
+    elseif not report.Summary.ActionGroupsSeen then
+        report.Summary.FailureClass = "native-action-groups-missing"
+    elseif not report.Summary.FocusedActionSeen then
+        report.Summary.FailureClass = "controller-focus-not-established"
+    else
+        report.Summary.FailureClass = "none"
+    end
+end
+
+local function persist()
+    report.Environment.GameState = gameState()
+    updateSummary()
 
     local json = safe("Ext.Json.Stringify", function()
         return Ext.Json.Stringify(report, {
@@ -765,6 +791,13 @@ function Diagnostics.Register(options)
     options = options or {}
 
     refreshEnvironment()
+    local noesisOk, noesisErr = pcall(function()
+        Ext.UI.EnableErrorReporting(true)
+    end)
+    report.Environment.NoesisErrorReportingEnabled = noesisOk
+    if not noesisOk then
+        recordError("Ext.UI.EnableErrorReporting", noesisErr)
+    end
     persist()
 
     pcall(function()
