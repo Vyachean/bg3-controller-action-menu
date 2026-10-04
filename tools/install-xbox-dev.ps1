@@ -550,7 +550,8 @@ foreach ($candidate in $report.Roots) {
     }
     foreach ($settings in $candidate.ModSettings) {
         Write-Host ("  Settings candidate: {0}" -f $settings.Path)
-        Write-Host ("    Valid order:       {0}" -f $settings.ValidShape)
+        Write-Host ("    Valid profile:     {0}" -f $settings.ValidShape)
+        Write-Host ("    Layout:            {0}" -f $settings.Layout)
         Write-Host ("    Writable schema:   {0}" -f $settings.WriteSchemaReady)
         if ($settings.ShapeSummary) {
             Write-Host ("    XML root:          {0}" -f $settings.ShapeSummary.DocumentElement)
@@ -569,7 +570,7 @@ if (-not $Apply) {
         Write-Host "Nothing was changed."
         Write-Host ""
         Write-Host "To install the mod, rerun:"
-        Write-Host "  powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply"
+        Write-Host "  powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply"
     } else {
         Write-Host "Nothing was changed."
         Write-Host ""
@@ -621,16 +622,26 @@ $destPak = Join-Path $targetMods "BG3ControllerActionMenu.pak"
 
 [xml]$settingsXml = Get-Content -Raw -LiteralPath $targetSettings
 $settingsRoot = $settingsXml.SelectSingleNode("//region[@id='ModuleSettings']/node[@id='root']")
-$modOrder = $settingsRoot.SelectSingleNode("children/node[@id='ModOrder']")
-$modsNode = $settingsRoot.SelectSingleNode("children/node[@id='Mods']")
+$modsNode = if ($settingsRoot) { $settingsRoot.SelectSingleNode("children/node[@id='Mods']") } else { $null }
+$modOrder = if ($settingsRoot) { $settingsRoot.SelectSingleNode("children/node[@id='ModOrder']") } else { $null }
 
-$modOrderChildren = Remove-ModEntriesByUuid -Document $settingsXml -Container $modOrder -ChildNodeId "Module" -Uuid $Mod.UUID
+if (-not $settingsRoot -or -not $modsNode) {
+    throw "Refusing to modify Xbox data: selected profile no longer has ModuleSettings/root/Mods."
+}
+$hasModOrder = [bool]$modOrder
+if (($schema.Layout -eq "ModsAndModOrder") -ne $hasModOrder) {
+    throw "Refusing to modify Xbox data: profile layout changed after discovery."
+}
+
 $modsChildren = Remove-ModEntriesByUuid -Document $settingsXml -Container $modsNode -ChildNodeId "ModuleShortDesc" -Uuid $Mod.UUID
 
-$orderEntry = $settingsXml.CreateElement("node")
-$orderEntry.SetAttribute("id", "Module")
-[void]$orderEntry.AppendChild((New-LsxAttribute -Document $settingsXml -Id "UUID" -Type $schema.ModOrderUuidType -Value $Mod.UUID))
-[void]$modOrderChildren.AppendChild($orderEntry)
+if ($modOrder) {
+    $modOrderChildren = Remove-ModEntriesByUuid -Document $settingsXml -Container $modOrder -ChildNodeId "Module" -Uuid $Mod.UUID
+    $orderEntry = $settingsXml.CreateElement("node")
+    $orderEntry.SetAttribute("id", "Module")
+    [void]$orderEntry.AppendChild((New-LsxAttribute -Document $settingsXml -Id "UUID" -Type $schema.ModOrderUuidType -Value $Mod.UUID))
+    [void]$modOrderChildren.AppendChild($orderEntry)
+}
 
 $descEntry = $settingsXml.CreateElement("node")
 $descEntry.SetAttribute("id", "ModuleShortDesc")
@@ -660,17 +671,23 @@ try {
     Write-XmlAtomically -Document $settingsXml -Path $targetSettings
 
     [xml]$verify = Get-Content -Raw -LiteralPath $targetSettings
-    $orderUuid = @(
-        $verify.SelectNodes("//node[@id='ModOrder']/children/node[@id='Module']/attribute[@id='UUID']") |
-            Where-Object { $_.GetAttribute("value") -eq $Mod.UUID }
-    )
     $descUuid = @(
         $verify.SelectNodes("//node[@id='Mods']/children/node[@id='ModuleShortDesc']/attribute[@id='UUID']") |
             Where-Object { $_.GetAttribute("value") -eq $Mod.UUID }
     )
+    if ($descUuid.Count -ne 1) {
+        throw "Written Xbox profile does not contain exactly one CAM ModuleShortDesc entry."
+    }
 
-    if ($orderUuid.Count -ne 1 -or $descUuid.Count -ne 1) {
-        throw "Written load order does not contain exactly one CAM entry in both required sections."
+    $orderUuid = @(
+        $verify.SelectNodes("//node[@id='ModOrder']/children/node[@id='Module']/attribute[@id='UUID']") |
+            Where-Object { $_.GetAttribute("value") -eq $Mod.UUID }
+    )
+    if ($schema.Layout -eq "ModsAndModOrder" -and $orderUuid.Count -ne 1) {
+        throw "Written legacy profile does not contain exactly one CAM ModOrder entry."
+    }
+    if ($schema.Layout -eq "ModsOnly" -and $orderUuid.Count -ne 0) {
+        throw "Mods-only Xbox profile unexpectedly gained a ModOrder entry."
     }
 } catch {
     Copy-Item -LiteralPath $settingsBackup -Destination $targetSettings -Force
