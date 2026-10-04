@@ -65,6 +65,7 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $patchActionPath) 
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ls="clr-namespace:ls;assembly=Code">
   <ListBox ItemsSource="{Binding PatchedControllerBars}"/>
+  <ItemsControl ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"/>
   <ls:LSInputBinding BoundEvent="UIAccept" Command="{Binding PatchedUseCommand}"/>
   <ls:LSButton BoundEvent="UICancel" Command="{Binding CustomEvent}" CommandParameter="CloseWidget"/>
 </ls:UIWidget>
@@ -95,9 +96,11 @@ if ($pakHashBefore -ne $pakHashAfter -or $patchHashBefore -ne $patchHashAfter) {
 $manifestPath = Join-Path $CaptureDir "capture-manifest.json"
 $summaryPath = Join-Path $CaptureDir "capture-summary.txt"
 $contractPath = Join-Path $CaptureDir "native-contract.json"
+$analysisPath = Join-Path $CaptureDir "native-contract-analysis.json"
+$analysisSummaryPath = Join-Path $CaptureDir "native-contract-analysis.txt"
 $zipPath = "$CaptureDir.zip"
 
-foreach ($required in @($manifestPath, $summaryPath, $contractPath, $zipPath)) {
+foreach ($required in @($manifestPath, $summaryPath, $contractPath, $analysisPath, $analysisSummaryPath, $zipPath)) {
     if (-not (Test-Path -LiteralPath $required)) {
         throw "Capture output missing: $required"
     }
@@ -199,6 +202,76 @@ if (@($preloadedContract[0].Contract.ControllerBindings | Where-Object {
     $_.BoundEvent -eq "UICancel" -and $_.Command -eq "{Binding CustomEvent}" -and $_.CommandParameter -eq "CloseWidget"
 }).Count -ne 1) {
     throw "PreloadedActionRadials close binding contract was not captured."
+}
+
+$analysis = Get-Content -Raw -LiteralPath $analysisPath | ConvertFrom-Json
+if (-not $analysis.CaptureComplete) {
+    throw "Fixture analysis should mark the capture complete."
+}
+if ($analysis.NativeFileCount -ne 3) {
+    throw "Fixture analysis should contain three native files."
+}
+if ($analysis.ConflictingDuplicateCount -ne 1) {
+    throw "Fixture analysis should preserve one conflicting duplicate radial path."
+}
+if (@($analysis.MainControllerSourceCandidates).Count -ne 2) {
+    throw "Fixture analysis should find both non-keyboard main source candidates."
+}
+foreach ($expected in @(
+    "{Binding CurrentPlayer.SelectedCharacter.HotBars}",
+    "{Binding PatchedControllerBars}"
+)) {
+    if (@($analysis.MainControllerSourceCandidates | Where-Object { $_.Value -eq $expected }).Count -ne 1) {
+        throw "Fixture analysis is missing main source candidate: $expected"
+    }
+}
+if (@($analysis.KeyboardOnlySources | Where-Object {
+    $_.Value -eq "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"
+}).Count -ne 1) {
+    throw "Fixture analysis did not isolate KeyboardHotBars as keyboard-only evidence."
+}
+if (@($analysis.NestedSources | Where-Object { $_.Value -eq "{Binding SingleHotBar.SlotList}" }).Count -ne 1) {
+    throw "Fixture analysis did not identify the nested SingleHotBar source."
+}
+if (@($analysis.UIAcceptBindings).Count -ne 2) {
+    throw "Fixture analysis should find both UIAccept bindings."
+}
+if (@($analysis.UICancelBindings).Count -ne 3) {
+    throw "Fixture analysis should find all three UICancel bindings."
+}
+if (@($analysis.FocusScrollBindings | Where-Object { $_.Value -eq "{Binding FocusedElement}" }).Count -ne 1) {
+    throw "Fixture analysis did not identify focus-driven ScrollToElement."
+}
+if (-not $analysis.Facts.HasKeyboardOnlySourceEvidence) {
+    throw "Fixture analysis should report keyboard-only source evidence."
+}
+if ($analysis.Facts.ControllerSourceUnambiguous) {
+    throw "Fixture analysis must not call conflicting base/patch controller sources unambiguous."
+}
+if ($analysis.ImplementationGate.Ready) {
+    throw "Fixture implementation gate must fail closed while controller sources conflict."
+}
+foreach ($expectedBlocker in @("controller-source-ambiguous")) {
+    if (@($analysis.ImplementationGate.Blockers) -notcontains $expectedBlocker) {
+        throw "Fixture analysis is missing expected blocker: $expectedBlocker"
+    }
+}
+
+$analysisSummary = Get-Content -Raw -LiteralPath $analysisSummaryPath
+foreach ($needle in @(
+    "Main controller source candidates",
+    "Keyboard-only sources",
+    "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars",
+    "SingleHotBar.SlotList",
+    "UIAccept",
+    "UICancel",
+    "Focus / scroll",
+    "Materialization",
+    "controller-source-ambiguous"
+)) {
+    if (-not $analysisSummary.Contains($needle)) {
+        throw "Contract analysis summary is missing expected evidence: $needle"
+    }
 }
 
 $summary = Get-Content -Raw -LiteralPath $summaryPath
