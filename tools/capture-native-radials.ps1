@@ -185,7 +185,7 @@ $scanErrors = @()
 
 # Capture loose files too, if the package happens to expose them outside PAKs.
 $loose = @(
-    Get-ChildItem -LiteralPath $GameInstallRoot -File -Recurse -Force -ErrorAction SilentlyContinue |
+    Get-ChildItem -LiteralPath $search.Root -File -Recurse -Force -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -like "*ActionRadials*.xaml" }
 )
 foreach ($file in $loose) {
