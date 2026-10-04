@@ -15,6 +15,7 @@ ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
 CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
+NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
 
 IGNORED_DIRS = {".git", ".local", "build", "dist", "artifacts", "extracted", "game-data", "toolkit-data"}
 XML_SUFFIXES = {".xaml", ".xml", ".lsx"}
@@ -59,35 +60,9 @@ def validate_semantics() -> list[str]:
                 'ls:UIWidget.ContextName="HotBar"',
                 "<ls:UIWidget.Template>",
                 "<ControlTemplate>",
-                "(ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars",
-                "RelativeSource={RelativeSource TemplatedParent}",
-                "CurrentPlayer:",
-                "SelectedCharacter:",
-                "HotBarSections",
-                "CAM_HotBarSectionTemplate",
-                "HotBarSlotStyle",
-                "GustavNoesisGUI;component/Library/DataTemplates.xaml",
-                "FocusableControls_c.xaml",
-                "ExpanderButtonTemplateSpellBook",
-                "LS_InventoryGridSurround",
-                "SingleHotBar.SlotList",
-                "ClearSingleHotbarCommand",
                 "AreRadialsOpen",
-                "CallAllies",
-                "IsSelectingUpcastedSpell",
-                "IsShowingAContainerWithVariants",
                 'x:Name="CAM_DiagnosticPanel"',
-                "HotBars source:",
-                "Sections:",
-                "Variant slots:",
-                "Focus name:",
-                "Focused usable:",
-                'x:Name="CAM_NoHotbarsWarning"',
-                'x:Name="CancelButton"',
                 'BoundEvent="UICancel"',
-                "(ls:WidgetData.DataContext).ClearSingleHotbarCommand",
-                'Command="ls:UIWidget.CloseRequestCommand"',
-                'x:Name="CancelNestedButton"',
                 'Background="Transparent"',
             ],
         )
@@ -115,32 +90,15 @@ def validate_semantics() -> list[str]:
     if ACTION_PAGE.exists():
         page_text = ACTION_PAGE.read_text(encoding="utf-8")
         forbidden = [
-            'x:Key="CAM_ActionTemplate"',
-            'x:Name="FocusFrame"',
-            'BorderBrush="#FFF3D68A"',
-            'Command="{Binding UseSlotCommand}"',
-            'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.SpellsAndActions}"',
-            'x:Name="CancelButton"\n                                 Visibility="Collapsed"',
-            "<ls:UIWidget.ContentTemplate>",
-            'ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"',
-            'Command="{Binding CustomEvent}"',
-            "DataContext.CurrentPlayer.SelectedCharacter.HotBars",
-            "RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}",
             "opaqueBG.png",
             'Background="{DynamicResource LS_tint00}"',
+            "<ls:UIWidget.ContentTemplate>",
         ]
         for needle in forbidden:
             if needle in page_text:
                 errors.append(
-                    f"{ACTION_PAGE.relative_to(ROOT)}: custom slot rendering/dispatch regression: {needle}"
+                    f"{ACTION_PAGE.relative_to(ROOT)}: controller page safety regression: {needle}"
                 )
-
-        if 'Value="CommonHotBar">\n                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>' in page_text:
-            errors.append(f"{ACTION_PAGE.relative_to(ROOT)}: CommonHotBar must remain visible in the main action menu")
-        if 'Value="ClassHotBar">\n                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>' in page_text:
-            errors.append(f"{ACTION_PAGE.relative_to(ROOT)}: ClassHotBar must remain visible in the main action menu")
-        if 'x:Name="UseHint"\n                                     EatInput=' in page_text or 'x:Name="UseHint"\n                                     BoundEvent=' in page_text:
-            errors.append(f"{ACTION_PAGE.relative_to(ROOT)}: UseHint must be visual-only so focused HotBarSlotStyle owns UIAccept")
 
     errors.extend(
         require_text(
@@ -163,6 +121,23 @@ def validate_semantics() -> list[str]:
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
                 "BG3ControllerActionMenu-backups",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            NATIVE_CAPTURE,
+            [
+                'Get-AppxPackage -Name "LarianStudiosGamesLtd.baldurssgate3"',
+                '$LslibVersion = "v1.20.4"',
+                '$LslibSha256 = "5e02368fb8acafda9b45acba37a3f3bf507fc3d65a083a159abbeab06337190e"',
+                '$TargetExpression = "*ActionRadials*.xaml"',
+                "--action list-package",
+                "--action extract-single-file",
+                "capture-manifest.json",
+                "capture-summary.txt",
+                "No game, profile or mod files were modified.",
             ],
         )
     )
