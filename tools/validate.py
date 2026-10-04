@@ -69,7 +69,6 @@ def validate_semantics() -> list[str]:
                 "FocusableControls_c.xaml",
                 "ExpanderButtonTemplateSpellBook",
                 "LS_InventoryGridSurround",
-                "UseSlotCommand",
                 "SingleHotBar.SlotList",
                 "ClearSingleHotbarCommand",
                 "AreRadialsOpen",
@@ -101,6 +100,7 @@ def validate_semantics() -> list[str]:
             'x:Key="CAM_ActionTemplate"',
             'x:Name="FocusFrame"',
             'BorderBrush="#FFF3D68A"',
+            'Command="{Binding UseSlotCommand}"',
         ]
         for needle in forbidden:
             if needle in page_text:
