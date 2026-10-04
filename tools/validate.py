@@ -126,6 +126,8 @@ def validate_semantics() -> list[str]:
                 "WriteSchemaReady",
                 "SelectedModSettings",
                 "Get-ChildItem -LiteralPath $root",
+                "Get-XmlShapeSummary",
+                "ShapeSummary",
                 "PublishHandle",
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
