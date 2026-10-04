@@ -359,7 +359,7 @@ if ($report.Roots.Count -eq 0) {
     Write-Host "2. Install one small mod through BG3's built-in Mod Manager."
     Write-Host "3. Exit BG3 normally."
     Write-Host "4. Run this script again with no parameters."
-    exit 0
+    return
 }
 
 foreach ($candidate in $report.Roots) {
@@ -391,7 +391,7 @@ if (-not $Apply) {
         Write-Host "The safest next step is to install one small mod through the in-game Mod Manager,"
         Write-Host "exit the game, then rerun this discovery check."
     }
-    exit 0
+    return
 }
 
 if (-not $report.ReadyForApply) {
