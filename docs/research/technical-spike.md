@@ -87,17 +87,32 @@ https://github.com/Norbyte/bg3se/issues/584
 
 This still does **not** prove the action collection or dispatch binding; those must be read from the current shipped XAML/view-model.
 
-## Current working hypothesis
+### Historical radial source correction
 
-The least risky implementation path is:
+The commonly referenced public file:
 
-1. inspect `PreloadedActionRadials_c.xaml` from the current installed game/Toolkit resources;
-2. identify its ItemsSource/view-model and confirm/select command;
-3. reproduce only the presentation layer with a simple list/grid while retaining those native bindings;
-4. prove focus-driven scrolling with the native gamepad focus mechanism;
-5. only after the proof, add tabs/category projections.
+`akintos/bg3-data/Public/Game/GUI/Widgets/ActionRadials.xaml`
 
-Do not introduce Script Extender as a dependency unless the official XAML/state-machine path cannot expose the required native bindings.
+is **not Patch 8**. Git history shows its latest update is commit `31f3e066e90d4d5ce2b43b4a32d5917547765750`, dated 2023-09-06, message `Patch2 Hotfix1`.
+
+It is useful only for historical concepts such as `HotBars`, `PagedList/PageView`, `SingleHotBar` and `UseSlotCommand`. It must not be used as proof that those exact bindings survive in Patch 8.
+
+Patch 8 `Controller.xaml` independently confirms that the state is still named `ActionRadials`, while a July 2026 runtime report independently confirms a shipped/preloaded controller file named `PreloadedActionRadials_c.xaml`. The exact relationship between source `ActionRadials.xaml` and the preloaded runtime page should be resolved from the installed game files.
+
+## Current working plan
+
+The next runtime candidate is blocked on current-file evidence, not on another game test.
+
+1. automatically locate the installed Microsoft/Xbox BG3 package;
+2. scan its PAKs read-only for `ActionRadials.xaml` and `PreloadedActionRadials_c.xaml`;
+3. extract only matching XAML files plus a machine-readable manifest;
+4. compare the current page against Patch 8 `Controller.xaml`, Patch 8 shared resources and the old Patch 2 page;
+5. identify the current action collection, materialization hierarchy, focus/scroll path, confirm command and cancel path;
+6. rebuild CAM by preserving those native seams and changing only slot layout/composition;
+7. run static/package checks that compare CAM against the captured contract where mechanically possible;
+8. request one in-game run only after all remaining questions are inherently runtime-only.
+
+Script Extender remains optional developer tooling and is not part of the shipping package.
 
 ## Deliverable
 

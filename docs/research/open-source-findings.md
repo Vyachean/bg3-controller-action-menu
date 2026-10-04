@@ -2,11 +2,13 @@
 
 ## Conclusion
 
-The project does **not** currently need a manual extraction of `PreloadedActionRadials_c.xaml` as a prerequisite.
+The project **does need current native radial-file evidence before another in-game candidate**.
 
-Public sources expose enough of BG3's hotbar model and the current Script Extender Noesis API to build a small runtime probe that discovers the remaining radial-specific bindings automatically.
+Public sources prove the Patch 8 state name, shared UI resources and the existence of the shipped/preloaded `PreloadedActionRadials_c.xaml`, but they do not publish that file's current action collection, materialization hierarchy or cancel/dispatch bindings.
 
-The exact current radial DataContext property names and dispatch command names are still unverified. They should be discovered from the live UI rather than guessed.
+The earlier public `ActionRadials.xaml` used as implementation evidence is Patch 2 Hotfix 1 from 2023-09-06. It is historical evidence only.
+
+Instead of asking for repeated gameplay tests, use a read-only extractor to scan the installed current game PAKs and capture the native radial XAML first.
 
 ## 1. Hotbar/radial data is publicly mapped
 
@@ -119,57 +121,42 @@ This supports using native gamepad focus movement for a future grid rather than 
 
 ## Revised technical plan
 
-### Phase A — automated radial probe
+### Phase A — current game-file capture
 
-Build a temporary diagnostic Script Extender module that activates only while the controller radial is visible.
+Use a read-only tool that:
 
-It should:
+1. resolves the installed BG3 package;
+2. scans package files with pinned LSLib;
+3. lists matches for `ActionRadials.xaml` and `PreloadedActionRadials_c.xaml`;
+4. extracts only those matching XAML files;
+5. records source PAK, packaged path, SHA-256 and BG3 package version;
+6. performs no write to the game install or profile.
 
-1. start at `ContentRoot`;
-2. locate nodes whose name/file/type suggests the radial page;
-3. record:
-   - widget name;
-   - `FileName`;
-   - runtime Noesis type;
-   - DataContext type;
-   - all DataContext property names;
-4. classify values:
-   - collections;
-   - commands;
-   - primitive state;
-   - nested viewmodels;
-5. for likely action collections, inspect a small number of entries and record their property names;
-6. never mutate or execute anything in the discovery pass.
+### Phase B — native contract audit
 
-### Phase B — dispatch proof
+From the captured current files, document:
 
-After the probe identifies likely commands:
+- root context and template structure;
+- exact action/hotbar collection;
+- nested slot hierarchy;
+- focus and scroll path;
+- `UIAccept` command + parameter;
+- top-level and nested `UICancel` behavior;
+- variant/upcast state.
 
-1. bind a temporary test control to the native action entry/command;
-2. call the same native command path the radial uses;
-3. verify one simple action enters BG3's normal targeting/execution flow.
+Then compare those facts with Patch 8 shared resources and state-machine files.
 
-### Phase C — grid
+### Phase C — minimal grid candidate
 
-Only after Phase B passes, replace the temporary presentation with tabs + grid.
+Only after Phase B:
 
-## Manual-test requirement
-
-This changes the expected manual workload.
-
-We should **not** ask the user to extract game XAML manually.
-
-The first useful manual test should be one instrumented build:
-
-1. open BG3 with a controller;
-2. open the normal action radial once;
-3. close it;
-4. provide the generated probe log.
-
-That single run should reveal the current radial DataContext, collections and command surface. If the data is sufficient, the next manual run can already test the first functional grid/dispatch proof.
+1. retain the current native data, focus, selection and cancel seams;
+2. alter only the geometry/composition necessary to replace radials with a compact grid;
+3. statically verify the packaged candidate against the captured contract;
+4. request one combined runtime test for rendering, focus, B and one simple A dispatch.
 
 ## Remaining unknown
 
-Open sources found so far do not publish the exact current property names for the action collection and selection command inside `PreloadedActionRadials_c.xaml`.
+Open sources found so far do not publish the exact current property names for the action collection and selection/cancel commands inside `PreloadedActionRadials_c.xaml`.
 
-That is now a small runtime-discovery problem, not an architectural blocker.
+This is now a **game-file inspection problem**, not a reason for another speculative gameplay build.

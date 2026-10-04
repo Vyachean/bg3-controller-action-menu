@@ -41,6 +41,10 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: ./build.ps1 -Configuration $env:VERSION
 
+      - name: Test native radial capture
+        shell: pwsh
+        run: ./tools/test-capture-native-radials.ps1
+
       - name: Verify packaged contents
         shell: pwsh
         env:
@@ -54,4 +58,5 @@ jobs:
           path: |
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
+            tools/capture-native-radials.ps1
           if-no-files-found: error

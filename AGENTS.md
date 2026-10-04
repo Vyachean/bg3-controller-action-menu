@@ -30,26 +30,31 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
    Add static validation, package round-trip verification and visible in-game diagnostics for everything that does not require a running game.
 
 8. **Milestone game tests only.**
-   In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically.
+   In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
-## Current architecture
+## Current evidence boundary
 
-The current candidate intentionally uses:
+Proven against Patch 8 / the real Xbox App build:
 
-- controller state `ActionRadials`;
-- `DCHotBar` context;
-- `SelectedCharacter.HotBars` as the normal controller action source;
-- native `SlotList` / `VMHotBarSlot` entries from those hotbars;
-- `SelectedCharacter.SpellsAndActions` only where BG3 itself uses it (slot assignment), not as the normal replacement-menu source;
-- native `HotBarSlotStyle`;
-- native Spell Book group chrome;
-- native `SingleHotBar` for variants/upcast;
-- native action dispatch owned by `HotBarSlotStyle`;
-- the native interactive widget contract: `UIWidget.Template/ControlTemplate`, not `UIWidget.ContentTemplate/DataTemplate`;
-- Patch 8 ControlTemplate data access through `(ls:WidgetData.DataContext)` + `TemplatedParent`;
-- native `UIWidget.CloseRequestCommand` for top-level controller cancel.
+- controller state `ActionRadials` is still present in Patch 8 `Controller.xaml`;
+- the state is reached by `OpenActionRadials` and removed by `CloseWidget` / `CloseRadials`;
+- the real Xbox App build loads CAM's state override and `HotBar` context;
+- current Patch 8 native resources still expose `HotBarSlotStyle`;
+- the shipped Patch 8 controller radial has a runtime/preloaded file named `PreloadedActionRadials_c.xaml`.
 
-Custom code owns only the page composition, grid geometry, section ordering and first-run diagnostic overlay. It must preserve the live gameplay view rather than adding a full-screen opaque/dim background.
+Not yet proven for the current Patch 8 radial page:
+
+- the exact action collection path;
+- the exact slot materialization hierarchy;
+- the exact `UIAccept` dispatch binding;
+- the exact top-level/nested `UICancel` path;
+- whether old `CurrentPlayer.SelectedCharacter.HotBars` / `SingleHotBar` bindings remain unchanged.
+
+The public `ActionRadials.xaml` dump used earlier is Patch 2 Hotfix 1 (2023-09-06), not Patch 8. It may be used only as historical/secondary evidence.
+
+Do not request another in-game test until the current installed game's native radial XAML has been captured and the candidate is rebuilt from that current contract.
+
+Custom code should own only page composition/layout and diagnostics, preserve the live gameplay view, and leave gameplay state/dispatch to BG3.
 
 ## Pull request expectations
 
