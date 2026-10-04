@@ -1,6 +1,7 @@
 param(
-    [switch]$DryRun,
-    [string]$CacheRoot,
+    [switch]$Apply,
+    [string]$PackageRoot,
+    [string]$ModsPath,
     [string]$ModSettingsPath
 )
 
@@ -17,4 +18,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $installer = Join-Path $RepoRoot "tools\install-xbox-dev.ps1"
-& $installer -PackagePath $Package -DryRun:$DryRun -CacheRoot $CacheRoot -ModSettingsPath $ModSettingsPath
+& $installer -Apply:$Apply -PackagePath $Package -PackageRoot $PackageRoot -ModsPath $ModsPath -ModSettingsPath $ModSettingsPath
