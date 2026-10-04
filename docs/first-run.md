@@ -4,23 +4,19 @@ Use **v0.0.6-xbox-app-candidate** or newer.
 
 This candidate intentionally contains **no Script Extender**.
 
-## Install
+## Install first
 
-1. Download the released `.pak`.
-2. Copy it to:
+Do **not** place the test `.pak` only in:
 
-   `%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
+`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`
 
-3. Launch the Xbox App version of Baldur's Gate 3.
-4. Open the in-game **Mod Manager**.
-5. Check **Installed** and make sure **BG3 Controller Action Menu** is present and enabled.
-6. Load a save with controller UI active.
+That is the normal Steam/GOG workflow and is not sufficient for the Xbox Play Anywhere build.
 
-Do not copy the mod into the Xbox App installation directory or `WpSystem`.
+Follow [xbox-app-installation.md](xbox-app-installation.md) and make sure the mod is actually present in the Xbox package cache and active in the Xbox profile load order before testing.
 
-## What the diagnostic panel means
+## Diagnostic panel
 
-The first candidate displays a small panel in the top-right corner when the custom action page loads.
+When the custom action page loads, a small panel appears in the top-right corner.
 
 It shows:
 
@@ -52,18 +48,8 @@ If action groups are zero, the panel also shows **NO ACTION GROUPS**.
 
 ## What to send back
 
-Prefer:
+- screenshots from the steps above;
+- a brief note for any failed step;
+- if the game crashes, the newest crash/gold log available.
 
-- the screenshots from the steps above;
-- a brief note for any step that failed;
-- if the game crashes, the newest crash/gold log available from the game installation/report location.
-
-If the mod does not appear in **Mod Manager → Installed**, send a screenshot of that screen and confirm the `.pak` is present in the Local AppData Mods folder.
-
-If the mod appears and is enabled but the vanilla radial still opens, that is a state-override/load-order failure.
-
-If the radial disappears or the page is blank, the diagnostic panel (or its absence) tells us whether the custom page reached the rendering/binding stage.
-
-## Why no automatic JSON log
-
-The Xbox App-compatible shipping package cannot depend on Script Extender. The previous SE-based JSON recorder is retained only under `dev/script-extender` for developer research and is not packaged.
+For the external-`.pak` Xbox workaround, use a disposable test save and avoid saving progress until save/reload behavior has been verified.
