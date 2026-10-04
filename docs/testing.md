@@ -116,9 +116,11 @@ Observed across 0.0.13 and 0.0.14:
 - the menu still remained empty and B still did not close it;
 - therefore delivery/caching was not the cause.
 
-Static comparison with native `ActionRadials.xaml` found that CAM alone used `UIWidget.ContentTemplate/DataTemplate` for an interactive controller widget, while BG3's controller widgets use `UIWidget.Template/ControlTemplate`. This became the next runtime hypothesis because BoundEvent/focus/data behavior lives inside that widget contract.
+0.0.15 switched CAM to the native `UIWidget.Template/ControlTemplate` shell, but the real Xbox run was unchanged. This rules out the outer template type as the primary cause.
 
-The next runtime test should validate populated HotBars and B close first; only after those pass should A dispatch and variants be tested.
+A comparison with a working controller state override showed the remaining mismatch: interactive controls inside the template explicitly bind back to the owning `ls:UIWidget.DataContext` with `RelativeSource AncestorType=ls:UIWidget`. CAM instead relied on implicit template DataContext for HotBars, SingleHotBar state and CustomEvent. The observed split is consistent with that: root-level DCHotBar bindings work, while template content and B do not.
+
+0.0.16 anchors all DCHotBar-dependent bindings inside the template to the owning UIWidget. The next runtime test should validate populated HotBars and B close first; only after those pass should A dispatch and variants be tested.
 
 ## Manual test report format
 
