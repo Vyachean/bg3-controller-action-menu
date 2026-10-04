@@ -1,131 +1,133 @@
-local RadialProbe = {}
+local Diagnostics = {}
 
-local OUTPUT_FILE = "BG3ControllerActionMenu/probe.json"
-local BUILD_ID = "0.0.2-grid-prototype"
-local MAX_DEPTH = 16
-local MAX_NODES = 2500
-local MAX_PROPERTIES = 300
-local MAX_COLLECTION_PREVIEW = 4
-local BURST_INTERVAL_MS = 100
-local BURST_TRIES = 14
+local OUTPUT_FILE = "BG3ControllerActionMenu/diagnostics.json"
+local BUILD_ID = "0.0.5-first-run-diagnostics"
+local MAX_ERRORS = 120
+local MAX_INPUTS = 160
+local MAX_SNAPSHOTS = 120
+local MAX_PROPERTY_NAMES = 500
+local MAX_COLLECTION_PREVIEW = 10
+local MAX_RELEVANT_NODES = 40
+local MAX_SCAN_NODES = 3500
+local MAX_SCAN_DEPTH = 18
+local AUTO_PRESSED_LIMIT = 36
 
-local records = {}
-local seenSignatures = {}
-local burstGeneration = 0
 local registered = false
+local pressedCount = 0
 
-local function safe(fn, ...)
-    local ok, result = pcall(fn, ...)
+local report = {
+    Build = BUILD_ID,
+    Environment = {},
+    Summary = {
+        SessionLoaded = false,
+        CustomPageSeen = false,
+        VanillaRadialSeen = false,
+        DCHotBarSeen = false,
+        ActionGroupsSeen = false,
+        FocusedActionSeen = false,
+        SingleHotBarSeen = false,
+        DiagnosticsCompleteEnough = false,
+    },
+    Inputs = {},
+    Snapshots = {},
+    Errors = {},
+}
+
+local function rawNow()
+    local ok, value = pcall(function()
+        return Ext.Timer.MonotonicTime()
+    end)
+    if ok and type(value) == "number" then
+        return value
+    end
+    return 0
+end
+
+local function recordError(context, err)
+    if #report.Errors >= MAX_ERRORS then
+        return
+    end
+    report.Errors[#report.Errors + 1] = {
+        T = rawNow(),
+        Context = context,
+        Error = tostring(err),
+    }
+end
+
+local function safe(context, fn)
+    local ok, result = pcall(fn)
     if ok then
         return result
     end
+    recordError(context, result)
     return nil
 end
 
-local function gameState()
-    local state = safe(Ext.Utils.GetGameState)
-    return state and tostring(state) or "Unknown"
-end
+local function stringify(value)
+    if value == nil then
+        return nil
+    end
 
-local function scanAllowed()
-    local state = gameState()
-    return state == "Running" or state == "Paused"
+    local kind = type(value)
+    if kind == "string" or kind == "number" or kind == "boolean" then
+        return value
+    end
+
+    local result = safe("stringify:" .. kind, function()
+        return tostring(value)
+    end)
+    return result or ("<" .. kind .. ">")
 end
 
 local function objectType(value)
-    local luaType = type(value)
-    if luaType ~= "userdata" then
-        return luaType
-    end
-
-    local noesisType = safe(function()
-        return value.Type
-    end)
-    if noesisType ~= nil then
-        return tostring(noesisType)
-    end
-
-    return "userdata"
-end
-
-local function nodeName(node)
-    local name = safe(function()
-        return node.Name
-    end)
-    return name and tostring(name) or ""
-end
-
-local function nodeFileName(node)
-    local fileName = safe(function()
-        return node.FileName
-    end)
-    return fileName and tostring(fileName) or ""
-end
-
-local function nodeRuntimeType(node)
-    local runtimeType = safe(function()
-        return node.Type
-    end)
-    return runtimeType and tostring(runtimeType) or ""
-end
-
-local function visualChildCount(node)
-    local count = safe(function()
-        return node.VisualChildrenCount
-    end)
-    return type(count) == "number" and count or 0
-end
-
-local function visualChild(node, index)
-    return safe(function()
-        return node:VisualChild(index)
-    end)
-end
-
-local function contentRoot()
-    local root = safe(Ext.UI.GetRoot)
-    if not root then
+    if value == nil then
         return nil
     end
-    return safe(function()
-        return root:Find("ContentRoot")
+
+    local kind = type(value)
+    if kind ~= "userdata" then
+        return kind
+    end
+
+    return stringify(safe("object.Type", function()
+        return value.Type
+    end)) or "userdata"
+end
+
+local function gameState()
+    return stringify(safe("GetGameState", function()
+        return Ext.Utils.GetGameState()
+    end)) or "Unknown"
+end
+
+local function countOf(value)
+    if value == nil then
+        return nil
+    end
+
+    local count = safe("count:#", function()
+        return #value
     end)
-end
-
-local function lower(value)
-    return string.lower(value or "")
-end
-
-local function candidateScore(name, fileName, runtimeType)
-    local score = 0
-    local n = lower(name)
-    local f = lower(fileName)
-    local t = lower(runtimeType)
-
-    if f:find("preloadedactionradials", 1, true) then
-        score = score + 1000
-    end
-    if n:find("radial", 1, true) then
-        score = score + 300
-    end
-    if f:find("radial", 1, true) then
-        score = score + 300
-    end
-    if t:find("radial", 1, true) then
-        score = score + 200
-    end
-    if n:find("action", 1, true) then
-        score = score + 50
-    end
-    if f:find("action", 1, true) then
-        score = score + 50
+    if type(count) == "number" then
+        return count
     end
 
-    return score
+    count = safe("count:.Count", function()
+        return value.Count
+    end)
+    if type(count) == "number" then
+        return count
+    end
+
+    return nil
 end
 
 local function sortedKeys(map)
     local keys = {}
+    if type(map) ~= "table" then
+        return keys
+    end
+
     for key in pairs(map) do
         keys[#keys + 1] = tostring(key)
     end
@@ -133,26 +135,119 @@ local function sortedKeys(map)
     return keys
 end
 
-local function propertyBag(object)
-    local props = safe(function()
-        return object:GetAllProperties()
-    end)
-    return type(props) == "table" and props or nil
-end
-
-local function collectionPreview(value)
-    local count = safe(function()
-        return #value
-    end)
-
-    if type(count) ~= "number" or count <= 0 then
-        count = safe(function()
-            return value.Count
-        end)
+local function propertyBag(object, context)
+    if object == nil then
+        return nil
     end
 
+    local props = safe(context .. ":GetAllProperties", function()
+        return object:GetAllProperties()
+    end)
+
+    if type(props) == "table" then
+        return props
+    end
+
+    return nil
+end
+
+local function propertyNames(object, context)
+    local props = propertyBag(object, context)
+    if not props then
+        return {}
+    end
+
+    local keys = sortedKeys(props)
+    if #keys > MAX_PROPERTY_NAMES then
+        local trimmed = {}
+        for i = 1, MAX_PROPERTY_NAMES do
+            trimmed[i] = keys[i]
+        end
+        return trimmed, true
+    end
+    return keys, false
+end
+
+local function commandInfo(value, parameter, context)
+    if value == nil then
+        return nil
+    end
+
+    local canExecuteMember = safe(context .. ":CanExecuteMember", function()
+        return value.CanExecute
+    end)
+    local executeMember = safe(context .. ":ExecuteMember", function()
+        return value.Execute
+    end)
+
+    if canExecuteMember == nil or executeMember == nil then
+        return nil
+    end
+
+    return {
+        Type = objectType(value),
+        CanExecute = safe(context .. ":CanExecute", function()
+            return value:CanExecute(parameter)
+        end),
+    }
+end
+
+local function simpleKnownProperties(object, context)
+    local result = {}
+    local names = {
+        "Name",
+        "FileName",
+        "Visibility",
+        "IsVisible",
+        "IsEnabled",
+        "ActualWidth",
+        "ActualHeight",
+        "Metadata",
+        "Layout",
+        "PanelContentType",
+        "AreRadialsOpen",
+        "IsShowingAContainerWithVariants",
+        "IsSelectingUpcastedSpell",
+        "CanUse",
+        "IsContainer",
+        "IsActive",
+        "SlotType",
+        "BoundEvent",
+        "ActionId",
+        "PrototypeID",
+        "PassiveName",
+        "SpellSlotLevel",
+        "HotBarType",
+    }
+
+    for _, name in ipairs(names) do
+        local value = safe(context .. ":" .. name, function()
+            return object[name]
+        end)
+        if value ~= nil then
+            result[name] = stringify(value)
+        end
+    end
+
+    return result
+end
+
+local function describeAction(action, context)
+    if action == nil then
+        return nil
+    end
+
+    return {
+        Type = objectType(action),
+        Values = simpleKnownProperties(action, context),
+        Properties = propertyNames(action, context),
+    }
+end
+
+local function collectionPreview(collection, context, itemDescriber)
+    local count = countOf(collection)
     local result = {
-        Count = type(count) == "number" and count or nil,
+        Count = count,
         Items = {},
     }
 
@@ -162,259 +257,534 @@ local function collectionPreview(value)
 
     local limit = math.min(count, MAX_COLLECTION_PREVIEW)
     for i = 1, limit do
-        local item = safe(function()
-            return value[i]
+        local item = safe(context .. ":item[" .. i .. "]", function()
+            return collection[i]
         end)
         if item ~= nil then
-            local itemInfo = {
-                Index = i,
-                Type = objectType(item),
-            }
-            local itemProps = propertyBag(item)
-            if itemProps then
-                itemInfo.Properties = sortedKeys(itemProps)
-            end
-            result.Items[#result.Items + 1] = itemInfo
+            result.Items[#result.Items + 1] = itemDescriber(item, context .. ":item[" .. i .. "]")
         end
     end
 
     return result
 end
 
-local function inspectDataContext(node)
-    local dc = safe(function()
+local function describeActionGroup(group, context)
+    if group == nil then
+        return nil
+    end
+
+    local actions = safe(context .. ":Actions", function()
+        return group.Actions
+    end)
+
+    return {
+        Type = objectType(group),
+        Name = stringify(safe(context .. ":Name", function()
+            return group.Name
+        end)),
+        Values = simpleKnownProperties(group, context),
+        Actions = collectionPreview(actions, context .. ":Actions", describeAction),
+    }
+end
+
+local function describeHotbar(bar, context)
+    if bar == nil then
+        return nil
+    end
+
+    local slots = safe(context .. ":SlotList", function()
+        return bar.SlotList
+    end)
+
+    return {
+        Type = objectType(bar),
+        Values = simpleKnownProperties(bar, context),
+        SlotList = collectionPreview(slots, context .. ":SlotList", describeAction),
+    }
+end
+
+local function nodeName(node)
+    return stringify(safe("node.Name", function()
+        return node.Name
+    end)) or ""
+end
+
+local function nodeFileName(node)
+    return stringify(safe("node.FileName", function()
+        return node.FileName
+    end)) or ""
+end
+
+local function nodeType(node)
+    return stringify(safe("node.Type", function()
+        return node.Type
+    end)) or objectType(node)
+end
+
+local function describeNodeShallow(node, context)
+    if node == nil then
+        return nil
+    end
+
+    local dc = safe(context .. ":DataContext", function()
         return node.DataContext
     end)
 
-    if not dc then
+    return {
+        Name = nodeName(node),
+        FileName = nodeFileName(node),
+        Type = nodeType(node),
+        Values = simpleKnownProperties(node, context),
+        DataContextType = objectType(dc),
+    }
+end
+
+local function describeFocused(page, context)
+    if page == nil then
+        return nil, nil
+    end
+
+    local focused = safe(context .. ":FocusedElement", function()
+        return page.FocusedElement
+    end)
+    if focused == nil then
+        return nil, nil
+    end
+
+    local dc = safe(context .. ":FocusedElement.DataContext", function()
+        return focused.DataContext
+    end)
+
+    if dc ~= nil then
+        report.Summary.FocusedActionSeen = true
+    end
+
+    return {
+        Node = describeNodeShallow(focused, context .. ":FocusedElement"),
+        DataContext = describeAction(dc, context .. ":FocusedDataContext"),
+    }, dc
+end
+
+local function namedChildInfo(page, name, context)
+    local child = safe(context .. ":Find(" .. name .. ")", function()
+        return page:Find(name)
+    end)
+    if child == nil then
+        return nil
+    end
+
+    local info = describeNodeShallow(child, context .. ":" .. name)
+    info.ItemsCount = safe(context .. ":" .. name .. ":Items.Count", function()
+        return child.Items.Count
+    end)
+    info.ItemsSourceCount = countOf(safe(context .. ":" .. name .. ":ItemsSource", function()
+        return child.ItemsSource
+    end))
+    return info
+end
+
+local function describeDCHotBar(dc, focusedParameter, context)
+    if dc == nil then
         return nil
     end
 
     local info = {
         Type = objectType(dc),
+        Values = simpleKnownProperties(dc, context),
         Properties = {},
+        PropertiesTruncated = false,
         Commands = {},
-        Collections = {},
     }
 
-    local props = propertyBag(dc)
-    if not props then
-        return info
+    info.Properties, info.PropertiesTruncated = propertyNames(dc, context)
+
+    if info.Type and string.lower(info.Type):find("dchotbar", 1, true) then
+        report.Summary.DCHotBarSeen = true
     end
 
-    local keys = sortedKeys(props)
-    for i, key in ipairs(keys) do
-        if i > MAX_PROPERTIES then
-            info.Truncated = true
-            break
+    local props = propertyBag(dc, context)
+    if props then
+        for key, value in pairs(props) do
+            local command = commandInfo(value, focusedParameter, context .. ":command:" .. tostring(key))
+            if command then
+                info.Commands[tostring(key)] = command
+            end
         end
+    end
 
-        local value = props[key]
-        local kind = objectType(value)
-        info.Properties[#info.Properties + 1] = {
-            Name = key,
-            Type = kind,
-        }
+    local currentPlayer = safe(context .. ":CurrentPlayer", function()
+        return dc.CurrentPlayer
+    end)
+    local selectedCharacter = currentPlayer and safe(context .. ":SelectedCharacter", function()
+        return currentPlayer.SelectedCharacter
+    end)
 
-        local canExecute = safe(function()
-            return value.CanExecute
+    if selectedCharacter then
+        local groups = safe(context .. ":SpellsAndActions", function()
+            return selectedCharacter.SpellsAndActions
         end)
-        local execute = safe(function()
-            return value.Execute
+        local hotbars = safe(context .. ":HotBars", function()
+            return selectedCharacter.HotBars
         end)
-        if canExecute ~= nil and execute ~= nil then
-            info.Commands[#info.Commands + 1] = key
+
+        info.SpellsAndActions = collectionPreview(groups, context .. ":SpellsAndActions", describeActionGroup)
+        info.HotBars = collectionPreview(hotbars, context .. ":HotBars", describeHotbar)
+
+        if info.SpellsAndActions.Count and info.SpellsAndActions.Count > 0 then
+            report.Summary.ActionGroupsSeen = true
         end
+    end
 
-        local preview = collectionPreview(value)
-        if preview.Count ~= nil then
-            info.Collections[key] = preview
+    local singleHotbar = safe(context .. ":SingleHotBar", function()
+        return dc.SingleHotBar
+    end)
+    if singleHotbar then
+        info.SingleHotBar = describeHotbar(singleHotbar, context .. ":SingleHotBar")
+        if info.SingleHotBar.SlotList.Count and info.SingleHotBar.SlotList.Count > 0 then
+            report.Summary.SingleHotBarSeen = true
         end
     end
 
     return info
 end
 
-local function signatureOf(candidate)
-    return table.concat({
-        candidate.Name or "",
-        candidate.FileName or "",
-        candidate.RuntimeType or "",
-        candidate.DataContext and candidate.DataContext.Type or "",
-    }, "|")
+local function rootAndContent()
+    local root = safe("Ext.UI.GetRoot", function()
+        return Ext.UI.GetRoot()
+    end)
+    if not root then
+        return nil, nil
+    end
+
+    local content = safe("root.Find(ContentRoot)", function()
+        return root:Find("ContentRoot")
+    end)
+    return root, content
+end
+
+local function relevantScore(node)
+    local name = string.lower(nodeName(node))
+    local fileName = string.lower(nodeFileName(node))
+    local runtimeType = string.lower(nodeType(node) or "")
+    local score = 0
+
+    if name == "cam_actionmenu" then score = score + 2000 end
+    if fileName:find("cam_actionmenu", 1, true) then score = score + 2000 end
+    if name:find("actionradial", 1, true) then score = score + 1400 end
+    if fileName:find("actionradial", 1, true) then score = score + 1400 end
+    if fileName:find("preloadedactionradials", 1, true) then score = score + 1600 end
+    if name:find("radial", 1, true) then score = score + 500 end
+    if fileName:find("radial", 1, true) then score = score + 500 end
+    if name:find("hotbar", 1, true) then score = score + 250 end
+    if fileName:find("hotbar", 1, true) then score = score + 250 end
+    if runtimeType:find("radial", 1, true) then score = score + 250 end
+    return score
+end
+
+local function scanRelevantNodes(content)
+    local result = {}
+    if not content then
+        return result
+    end
+
+    local queue = {
+        { Node = content, Depth = 0 },
+    }
+    local cursor = 1
+    local visited = 0
+
+    while cursor <= #queue and visited < MAX_SCAN_NODES do
+        local entry = queue[cursor]
+        cursor = cursor + 1
+        visited = visited + 1
+
+        local node = entry.Node
+        local score = relevantScore(node)
+        if score > 0 and #result < MAX_RELEVANT_NODES then
+            local info = describeNodeShallow(node, "scan")
+            info.Depth = entry.Depth
+            info.Score = score
+            result[#result + 1] = info
+        end
+
+        if entry.Depth < MAX_SCAN_DEPTH then
+            local count = safe("VisualChildrenCount", function()
+                return node.VisualChildrenCount
+            end)
+            if type(count) == "number" then
+                for i = 1, count do
+                    local child = safe("VisualChild(" .. i .. ")", function()
+                        return node:VisualChild(i)
+                    end)
+                    if child then
+                        queue[#queue + 1] = {
+                            Node = child,
+                            Depth = entry.Depth + 1,
+                        }
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(result, function(a, b)
+        return (a.Score or 0) > (b.Score or 0)
+    end)
+
+    return result, visited
+end
+
+local function findPage(content, name)
+    if not content then
+        return nil
+    end
+
+    return safe("content.Find(" .. name .. ")", function()
+        return content:Find(name)
+    end)
 end
 
 local function persist()
-    local payload = {
-        Build = BUILD_ID,
-        GameState = gameState(),
-        Captures = records,
-    }
+    report.Environment.GameState = gameState()
+    report.Summary.DiagnosticsCompleteEnough =
+        report.Summary.CustomPageSeen
+        and report.Summary.DCHotBarSeen
+        and report.Summary.ActionGroupsSeen
+        and report.Summary.FocusedActionSeen
 
-    local json = safe(function()
-        return Ext.Json.Stringify(payload, {
+    local json = safe("Ext.Json.Stringify", function()
+        return Ext.Json.Stringify(report, {
             Beautify = true,
             StringifyInternalTypes = true,
         })
     end)
 
     if type(json) ~= "string" then
-        json = safe(function()
-            return Ext.Json.Stringify(payload)
+        json = safe("Ext.Json.Stringify:fallback", function()
+            return Ext.Json.Stringify(report)
         end)
     end
 
     if type(json) == "string" then
-        safe(Ext.IO.SaveFile, OUTPUT_FILE, json)
+        local ok = safe("Ext.IO.SaveFile", function()
+            return Ext.IO.SaveFile(OUTPUT_FILE, json)
+        end)
+        if ok == false then
+            recordError("Ext.IO.SaveFile", "SaveFile returned false")
+        end
     end
 end
 
-local function inspectCandidate(node, depth, score)
-    local candidate = {
-        Depth = depth,
-        Score = score,
-        Name = nodeName(node),
-        FileName = nodeFileName(node),
-        RuntimeType = nodeRuntimeType(node),
-        DataContext = inspectDataContext(node),
-    }
-
-    local signature = signatureOf(candidate)
-    if seenSignatures[signature] then
-        return false
+local function capture(reason, forceScan)
+    if #report.Snapshots >= MAX_SNAPSHOTS then
+        return
     end
 
-    seenSignatures[signature] = true
-    records[#records + 1] = candidate
-    persist()
+    local root, content = rootAndContent()
+    local custom = findPage(content, "CAM_ActionMenu")
+    local vanilla = findPage(content, "ActionRadials")
 
-    Ext.Utils.Print(
+    local relevant = {}
+    local visited = nil
+    if forceScan or custom == nil then
+        relevant, visited = scanRelevantNodes(content)
+    end
+
+    if custom ~= nil then
+        report.Summary.CustomPageSeen = true
+    end
+    if vanilla ~= nil and custom == nil then
+        report.Summary.VanillaRadialSeen = true
+    end
+
+    local page = custom or vanilla
+    local focusedInfo, focusedParameter = describeFocused(page, "page")
+    local dc = page and safe("page.DataContext", function()
+        return page.DataContext
+    end) or nil
+
+    local snapshot = {
+        T = rawNow(),
+        Reason = reason,
+        GameState = gameState(),
+        RootFound = root ~= nil,
+        ContentRootFound = content ~= nil,
+        CustomPage = describeNodeShallow(custom, "custom"),
+        VanillaRadial = describeNodeShallow(vanilla, "vanilla"),
+        RelevantNodes = relevant,
+        ScannedNodes = visited,
+        Focused = focusedInfo,
+        DataContext = describeDCHotBar(dc, focusedParameter, "DCHotBar"),
+        NamedElements = {},
+    }
+
+    if custom then
+        local names = {
+            "ActionGroups",
+            "UtilityHotbars",
+            "MainHotbarListHolder",
+            "VariantHolder",
+            "VariantList",
+            "PanelTitle",
+            "CancelButton",
+        }
+        for _, name in ipairs(names) do
+            snapshot.NamedElements[name] = namedChildInfo(custom, name, "custom")
+        end
+    end
+
+    report.Snapshots[#report.Snapshots + 1] = snapshot
+    persist()
+end
+
+local function scheduleCapture(reason, delay, forceScan)
+    Ext.Timer.WaitForRealtime(delay, function()
+        capture(reason .. "+" .. tostring(delay) .. "ms", forceScan)
+    end)
+end
+
+local function recordInput(event)
+    if #report.Inputs >= MAX_INPUTS then
+        return
+    end
+
+    report.Inputs[#report.Inputs + 1] = {
+        T = rawNow(),
+        DeviceId = stringify(safe("input.DeviceId", function() return event.DeviceId end)),
+        Event = stringify(safe("input.Event", function() return event.Event end)),
+        Button = stringify(safe("input.Button", function() return event.Button end)),
+        Pressed = safe("input.Pressed", function() return event.Pressed end),
+    }
+end
+
+local function refreshEnvironment()
+    report.Environment.Build = BUILD_ID
+    report.Environment.GameVersion = stringify(safe("Ext.Utils.GameVersion", function()
+        return Ext.Utils.GameVersion()
+    end))
+    report.Environment.ScriptExtenderVersion = safe("Ext.Utils.Version", function()
+        return Ext.Utils.Version()
+    end)
+    report.Environment.GameState = gameState()
+end
+
+local function reset()
+    pressedCount = 0
+    report = {
+        Build = BUILD_ID,
+        Environment = {},
+        Summary = {
+            SessionLoaded = false,
+            CustomPageSeen = false,
+            VanillaRadialSeen = false,
+            DCHotBarSeen = false,
+            ActionGroupsSeen = false,
+            FocusedActionSeen = false,
+            SingleHotBarSeen = false,
+            DiagnosticsCompleteEnough = false,
+        },
+        Inputs = {},
+        Snapshots = {},
+        Errors = {},
+    }
+    refreshEnvironment()
+    persist()
+    Ext.Log.Print("[BG3ControllerActionMenu] diagnostics reset")
+end
+
+local function status()
+    persist()
+    Ext.Log.Print(
         string.format(
-            "[BG3ControllerActionMenu] radial candidate captured: name=%s file=%s type=%s score=%d",
-            candidate.Name,
-            candidate.FileName,
-            candidate.RuntimeType,
-            score
+            "[BG3ControllerActionMenu] diagnostics: custom=%s dchotbar=%s groups=%s focus=%s variants=%s snapshots=%d errors=%d",
+            tostring(report.Summary.CustomPageSeen),
+            tostring(report.Summary.DCHotBarSeen),
+            tostring(report.Summary.ActionGroupsSeen),
+            tostring(report.Summary.FocusedActionSeen),
+            tostring(report.Summary.SingleHotBarSeen),
+            #report.Snapshots,
+            #report.Errors
         )
     )
-    return true
 end
 
-local function scanOnce()
-    if not scanAllowed() then
-        return false
-    end
-
-    local root = contentRoot()
-    if not root then
-        return false
-    end
-
-    local queue = {
-        { Node = root, Depth = 0 },
-    }
-    local cursor = 1
-    local visited = 0
-    local captured = false
-
-    while cursor <= #queue and visited < MAX_NODES do
-        local entry = queue[cursor]
-        cursor = cursor + 1
-        visited = visited + 1
-
-        local node = entry.Node
-        local depth = entry.Depth
-        local name = nodeName(node)
-        local fileName = nodeFileName(node)
-        local runtimeType = nodeRuntimeType(node)
-        local score = candidateScore(name, fileName, runtimeType)
-
-        if score >= 200 then
-            if inspectCandidate(node, depth, score) then
-                captured = true
-            end
-        end
-
-        if depth < MAX_DEPTH then
-            local count = visualChildCount(node)
-            for i = 1, count do
-                local child = visualChild(node, i)
-                if child then
-                    queue[#queue + 1] = {
-                        Node = child,
-                        Depth = depth + 1,
-                    }
-                end
-            end
-        end
-    end
-
-    return captured
-end
-
-local function startBurst()
-    burstGeneration = burstGeneration + 1
-    local generation = burstGeneration
-
-    local function pass(remaining)
-        if generation ~= burstGeneration or remaining <= 0 then
-            return
-        end
-
-        if scanOnce() then
-            return
-        end
-
-        Ext.Timer.WaitForRealtime(BURST_INTERVAL_MS, function()
-            pass(remaining - 1)
-        end)
-    end
-
-    pass(BURST_TRIES)
-end
-
-local function resetProbe()
-    records = {}
-    seenSignatures = {}
-    persist()
-    Ext.Utils.Print("[BG3ControllerActionMenu] probe log reset")
-end
-
-function RadialProbe.Register(options)
+function Diagnostics.Register(options)
     if registered then
         return
     end
     registered = true
     options = options or {}
-    local auto = options.Auto ~= false
 
+    refreshEnvironment()
     persist()
 
     pcall(function()
-        Ext.RegisterConsoleCommand("cam_probe", startBurst)
+        Ext.RegisterConsoleCommand("cam_diag", function()
+            capture("manual", true)
+            status()
+        end)
+        Ext.RegisterConsoleCommand("cam_diag_reset", reset)
+        Ext.RegisterConsoleCommand("cam_diag_status", status)
+
+        -- Backward-compatible aliases from the early probe builds.
+        Ext.RegisterConsoleCommand("cam_probe", function()
+            capture("manual-probe-alias", true)
+            status()
+        end)
+        Ext.RegisterConsoleCommand("cam_probe_reset", reset)
     end)
+
     pcall(function()
-        Ext.RegisterConsoleCommand("cam_probe_reset", resetProbe)
+        Ext.Events.SessionLoaded:Subscribe(function()
+            report.Summary.SessionLoaded = true
+            refreshEnvironment()
+            persist()
+            scheduleCapture("session-loaded", 750, true)
+            scheduleCapture("session-loaded", 2500, true)
+        end)
     end)
 
-    if auto then
-        pcall(function()
-            Ext.Events.ControllerButtonInput:Subscribe(function()
-                startBurst()
-            end)
-        end)
+    pcall(function()
+        Ext.Events.ControllerButtonInput:Subscribe(function(event)
+            recordInput(event)
 
-        pcall(function()
-            Ext.Events.SessionLoaded:Subscribe(function()
-                burstGeneration = burstGeneration + 1
-                Ext.Timer.WaitForRealtime(1000, startBurst)
+            local pressed = safe("ControllerButtonInput.Pressed", function()
+                return event.Pressed
             end)
-        end)
-    end
 
-    Ext.Utils.Print(
-        "[BG3ControllerActionMenu] radial probe registered; use !cam_probe when diagnostics are needed"
+            if pressed == true and pressedCount < AUTO_PRESSED_LIMIT then
+                pressedCount = pressedCount + 1
+                local button = stringify(safe("ControllerButtonInput.Button", function()
+                    return event.Button
+                end)) or "unknown"
+                local reason = "controller:" .. button .. ":" .. tostring(pressedCount)
+
+                -- Immediate capture establishes pre-transition state; delayed captures
+                -- catch state creation, focus movement, variant/upcast transitions and close.
+                capture(reason .. "+0ms", not report.Summary.CustomPageSeen)
+                scheduleCapture(reason, 90, not report.Summary.CustomPageSeen)
+                scheduleCapture(reason, 320, false)
+                scheduleCapture(reason, 850, false)
+            else
+                persist()
+            end
+        end)
+    end)
+
+    pcall(function()
+        Ext.Events.ViewportResized:Subscribe(function(event)
+            report.Environment.LastViewportResize = {
+                T = rawNow(),
+                Width = stringify(safe("ViewportResized.Width", function() return event.Width end)),
+                Height = stringify(safe("ViewportResized.Height", function() return event.Height end)),
+            }
+            persist()
+        end)
+    end)
+
+    Ext.Log.Print(
+        "[BG3ControllerActionMenu] first-run diagnostics active; output: " .. OUTPUT_FILE
     )
 end
 
-return RadialProbe
+return Diagnostics
