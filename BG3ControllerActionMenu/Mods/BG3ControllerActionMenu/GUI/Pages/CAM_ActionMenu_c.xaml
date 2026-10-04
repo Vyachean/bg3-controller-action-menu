@@ -184,6 +184,16 @@
                                        Foreground="White"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="PlayerId: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.PlayerId, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Foreground="White"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Character: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.Name.Str, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Foreground="White"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
                             <TextBlock Text="SelectedCharacter: " Foreground="{DynamicResource LS_InfoColor1}"/>
                             <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
                                        Foreground="White"/>
