@@ -136,11 +136,39 @@ function Get-LsxAttributeInfo {
     }
 }
 
+function Get-XmlShapeSummary {
+    param([Parameter(Mandatory = $true)][xml]$Document)
+
+    $documentElement = $Document.DocumentElement
+    $regions = @($Document.SelectNodes("//*[local-name()='region']"))
+    $nodes = @($Document.SelectNodes("//*[local-name()='node']"))
+
+    return [pscustomobject]@{
+        DocumentElement = if ($documentElement) { $documentElement.LocalName } else { $null }
+        NamespaceUri = if ($documentElement) { $documentElement.NamespaceURI } else { $null }
+        RegionIds = @(
+            $regions |
+                ForEach-Object { $_.GetAttribute("id") } |
+                Where-Object { $_ } |
+                Select-Object -Unique -First 20
+        )
+        NodeIds = @(
+            $nodes |
+                ForEach-Object { $_.GetAttribute("id") } |
+                Where-Object { $_ } |
+                Select-Object -Unique -First 40
+        )
+        RegionCount = $regions.Count
+        NodeCount = $nodes.Count
+    }
+}
+
 function Test-ModSettingsShape {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     try {
         [xml]$xml = Get-Content -Raw -LiteralPath $Path
+        $shapeSummary = Get-XmlShapeSummary -Document $xml
         $root = $xml.SelectSingleNode("//region[@id='ModuleSettings']/node[@id='root']")
         $order = if ($root) { $root.SelectSingleNode("children/node[@id='ModOrder']") } else { $null }
         $mods = if ($root) { $root.SelectSingleNode("children/node[@id='Mods']") } else { $null }
@@ -151,6 +179,7 @@ function Test-ModSettingsShape {
                 Valid = $false
                 WriteSchemaReady = $false
                 WriteSchema = $null
+                ShapeSummary = $shapeSummary
                 Error = "Missing ModuleSettings/root/ModOrder/Mods structure."
             }
         }
@@ -213,6 +242,7 @@ function Test-ModSettingsShape {
                 Valid = $true
                 WriteSchemaReady = $false
                 WriteSchema = $null
+                ShapeSummary = $shapeSummary
                 Error = if ($schemaGroups.Count -eq 0) {
                     "No active non-CAM mod provides a reusable ModOrder/ModuleShortDesc schema."
                 } else {
@@ -225,6 +255,7 @@ function Test-ModSettingsShape {
             Valid = $true
             WriteSchemaReady = $true
             WriteSchema = $schemas[0]
+            ShapeSummary = $shapeSummary
             Error = $null
         }
     } catch {
@@ -232,6 +263,7 @@ function Test-ModSettingsShape {
             Valid = $false
             WriteSchemaReady = $false
             WriteSchema = $null
+            ShapeSummary = $null
             Error = $_.Exception.Message
         }
     }
@@ -306,6 +338,7 @@ function Find-Evidence {
             ValidShape = $shape.Valid
             WriteSchemaReady = $shape.WriteSchemaReady
             WriteSchema = $shape.WriteSchema
+            ShapeSummary = $shape.ShapeSummary
             Error = $shape.Error
         }
     }
@@ -493,6 +526,12 @@ foreach ($candidate in $report.Roots) {
         Write-Host ("  Settings candidate: {0}" -f $settings.Path)
         Write-Host ("    Valid order:       {0}" -f $settings.ValidShape)
         Write-Host ("    Writable schema:   {0}" -f $settings.WriteSchemaReady)
+        if ($settings.ShapeSummary) {
+            Write-Host ("    XML root:          {0}" -f $settings.ShapeSummary.DocumentElement)
+            Write-Host ("    Namespace:         {0}" -f $settings.ShapeSummary.NamespaceUri)
+            Write-Host ("    Regions:           {0}" -f ($settings.ShapeSummary.RegionIds -join ", "))
+            Write-Host ("    Nodes:             {0}" -f ($settings.ShapeSummary.NodeIds -join ", "))
+        }
     }
     Write-Host ("  Safe target: {0}" -f $candidate.ReadyForApply)
     Write-Host ""
