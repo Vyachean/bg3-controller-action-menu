@@ -49,7 +49,10 @@ The custom layer owns:
 - ordering native groups;
 - grid column count/spacing;
 - main-list vs `SingleHotBar` variant presentation;
+- a local menu panel over the live gameplay view;
 - temporary visible diagnostics in prerelease candidates.
+
+The custom page must not add a full-screen opaque/dim background; opening the action menu should preserve the gameplay view behind the local panel.
 
 The custom layer should not own:
 
@@ -74,7 +77,9 @@ The replacement page must follow BG3's controller-widget structure:
 
 Do not build the interactive controller page through `UIWidget.ContentTemplate/DataTemplate`. Runtime testing showed that this can render visuals while failing to behave like the native DCHotBar controller widget for input/focus/data composition.
 
-Inside the `ControlTemplate`, bindings that depend on `DCHotBar` must resolve explicitly through the owning `ls:UIWidget` (`DataContext.…` + `RelativeSource AncestorType=ls:UIWidget`). Do not assume that the template content inherits the runtime context in the same way as root-level interaction triggers.
+Inside the `ControlTemplate`, bindings that depend on `DCHotBar` must use the Patch 8 native template path `(ls:WidgetData.DataContext)…` with `RelativeSource TemplatedParent`. Runtime testing showed that both implicit template bindings and `AncestorType=ls:UIWidget` can render the shell while leaving CurrentPlayer/action data unresolved.
+
+Top-level cancel should use the game-owned `ls:UIWidget.CloseRequestCommand` so closing the action panel does not depend on a view-model command binding. Nested variant/upcast cancel continues to use `ClearSingleHotbarCommand`.
 
 ## Native UI reuse
 
