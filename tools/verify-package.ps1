@@ -55,7 +55,11 @@ $requiredPageSeams = @(
     "CurrentPlayer.SelectedCharacter.SpellsAndActions",
     "CurrentPlayer.SelectedCharacter.HotBars",
     "VMCharacterAction",
-    "UseSlotCommand",
+    "HotBarSlotStyle",
+    "GustavNoesisGUI;component/Library/DataTemplates.xaml",
+    "FocusableControls_c.xaml",
+    "ExpanderButtonTemplateSpellBook",
+    "LS_InventoryGridSurround",
     "SingleHotBar.SlotList",
     "ClearSingleHotbarCommand",
     "CallAllies"
@@ -84,3 +88,7 @@ if (-not $bootstrap.Contains("Probe.Register({ Auto = false })")) {
 }
 
 Write-Host "Package verification passed."
+
+if ($page.Contains('Command="{Binding UseSlotCommand}"')) {
+    throw "Packaged page bypasses native HotBarSlotStyle dispatch with a custom UseSlotCommand binding."
+}
