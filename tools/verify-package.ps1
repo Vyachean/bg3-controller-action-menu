@@ -56,8 +56,8 @@ $version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
 $requiredPageSeams = @(
     'ls:UIWidget.ContextName="HotBar"',
     "CurrentPlayer.SelectedCharacter.HotBars",
-    "HotbarSections",
-    "CAM_HotbarSectionTemplate",
+    "HotBarSections",
+    "CAM_HotBarSectionTemplate",
     "HotBarSlotStyle",
     "GustavNoesisGUI;component/Library/DataTemplates.xaml",
     "FocusableControls_c.xaml",
@@ -76,7 +76,7 @@ $requiredPageSeams = @(
     'x:Name="CancelButton"',
     'BoundEvent="UICancel"',
     'Command="{Binding ClearSingleHotbarCommand}"',
-    'CommandParameter="CloseWidget"'
+    'Property="CommandParameter" Value="CloseWidget"'
 )
 
 foreach ($needle in $requiredPageSeams) {
