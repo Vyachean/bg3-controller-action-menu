@@ -172,48 +172,58 @@ function Test-ModSettingsShape {
         $root = $xml.SelectSingleNode("//region[@id='ModuleSettings']/node[@id='root']")
         $order = if ($root) { $root.SelectSingleNode("children/node[@id='ModOrder']") } else { $null }
         $mods = if ($root) { $root.SelectSingleNode("children/node[@id='Mods']") } else { $null }
-        $validShape = [bool]($root -and $order -and $mods)
+
+        # Current BG3 Mod Manager generates ModuleSettings/root/Mods only.
+        # Older layouts may also contain ModOrder, so support it when present
+        # without requiring it for the Xbox cached profile.
+        $validShape = [bool]($root -and $mods)
+        $layout = if ($order) { "ModsAndModOrder" } else { "ModsOnly" }
 
         if (-not $validShape) {
             return [pscustomobject]@{
                 Valid = $false
+                Layout = $null
                 WriteSchemaReady = $false
                 WriteSchema = $null
                 ShapeSummary = $shapeSummary
-                Error = "Missing ModuleSettings/root/ModOrder/Mods structure."
+                Error = "Missing ModuleSettings/root/Mods structure."
             }
         }
 
-        # Do not invent LSX attribute types. The built-in Mod Manager has already
-        # written at least one active mod before Apply is allowed, so use that
-        # real entry as the schema donor for this exact Xbox build/profile.
+        # Mirror attribute types from an already-active mod in this exact profile.
+        # This avoids hard-coding LSX serialization details.
         $schemas = @()
         foreach ($desc in @($mods.SelectNodes("children/node[@id='ModuleShortDesc']"))) {
             $uuid = Get-LsxAttributeInfo -Node $desc -Id "UUID"
             if (-not $uuid -or -not $uuid.Value -or $uuid.Value -eq $Mod.UUID) { continue }
 
-            $matchingOrder = @()
-            foreach ($module in @($order.SelectNodes("children/node[@id='Module']"))) {
-                $candidateUuid = Get-LsxAttributeInfo -Node $module -Id "UUID"
-                if ($candidateUuid -and $candidateUuid.Value -eq $uuid.Value) {
-                    $matchingOrder += $module
-                }
-            }
-            if ($matchingOrder.Count -ne 1) { continue }
-
-            $orderUuid = Get-LsxAttributeInfo -Node $matchingOrder[0] -Id "UUID"
             $folder = Get-LsxAttributeInfo -Node $desc -Id "Folder"
             $md5 = Get-LsxAttributeInfo -Node $desc -Id "MD5"
             $name = Get-LsxAttributeInfo -Node $desc -Id "Name"
             $version64 = Get-LsxAttributeInfo -Node $desc -Id "Version64"
             $publishHandle = Get-LsxAttributeInfo -Node $desc -Id "PublishHandle"
+            $orderUuid = $null
 
-            $required = @($orderUuid, $folder, $md5, $name, $uuid, $version64)
+            if ($order) {
+                $matchingOrder = @()
+                foreach ($module in @($order.SelectNodes("children/node[@id='Module']"))) {
+                    $candidateUuid = Get-LsxAttributeInfo -Node $module -Id "UUID"
+                    if ($candidateUuid -and $candidateUuid.Value -eq $uuid.Value) {
+                        $matchingOrder += $module
+                    }
+                }
+                if ($matchingOrder.Count -ne 1) { continue }
+                $orderUuid = Get-LsxAttributeInfo -Node $matchingOrder[0] -Id "UUID"
+            }
+
+            $required = @($folder, $md5, $name, $uuid, $version64)
+            if ($order) { $required += $orderUuid }
             if (@($required | Where-Object { -not $_ -or -not $_.Type }).Count -gt 0) { continue }
             if ($publishHandle -and -not $publishHandle.Type) { continue }
 
             $schema = [pscustomobject]@{
-                ModOrderUuidType = $orderUuid.Type
+                Layout = $layout
+                ModOrderUuidType = if ($orderUuid) { $orderUuid.Type } else { $null }
                 FolderType = $folder.Type
                 Md5Type = $md5.Type
                 NameType = $name.Type
@@ -223,7 +233,8 @@ function Test-ModSettingsShape {
                 PublishHandleType = if ($publishHandle) { $publishHandle.Type } else { $null }
             }
             $schema | Add-Member -NotePropertyName Signature -NotePropertyValue (
-                "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}" -f
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}" -f
+                    $schema.Layout,
                     $schema.ModOrderUuidType,
                     $schema.FolderType,
                     $schema.Md5Type,
@@ -240,11 +251,12 @@ function Test-ModSettingsShape {
         if ($schemaGroups.Count -ne 1) {
             return [pscustomobject]@{
                 Valid = $true
+                Layout = $layout
                 WriteSchemaReady = $false
                 WriteSchema = $null
                 ShapeSummary = $shapeSummary
                 Error = if ($schemaGroups.Count -eq 0) {
-                    "No active non-CAM mod provides a reusable ModOrder/ModuleShortDesc schema."
+                    "No active non-CAM mod provides a reusable ModuleShortDesc schema."
                 } else {
                     "Active mods use multiple LSX schemas; automatic write is intentionally disabled."
                 }
@@ -253,6 +265,7 @@ function Test-ModSettingsShape {
 
         return [pscustomobject]@{
             Valid = $true
+            Layout = $layout
             WriteSchemaReady = $true
             WriteSchema = $schemas[0]
             ShapeSummary = $shapeSummary
@@ -261,6 +274,7 @@ function Test-ModSettingsShape {
     } catch {
         return [pscustomobject]@{
             Valid = $false
+            Layout = $null
             WriteSchemaReady = $false
             WriteSchema = $null
             ShapeSummary = $null
