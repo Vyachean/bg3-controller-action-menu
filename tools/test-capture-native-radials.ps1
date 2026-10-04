@@ -32,7 +32,13 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $actionPath) | Out
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ls="clr-namespace:ls;assembly=Code">
-  <ListBox ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}"/>
+  <ListBox ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}">
+    <ListBox.ItemTemplate>
+      <DataTemplate>
+        <ItemsControl ItemsSource="{Binding SlotList}"/>
+      </DataTemplate>
+    </ListBox.ItemTemplate>
+  </ListBox>
   <ls:LSInputBinding BoundEvent="UIAccept" Command="{Binding UseSlotCommand}"/>
   <ls:LSButton BoundEvent="UICancel" Command="{Binding ClearSingleHotbarCommand}"/>
 </ls:UIWidget>
@@ -173,7 +179,10 @@ if ($actionContract[0].Contract.Structure.LSInputBinding -ne 1) {
     throw "ActionRadials LSInputBinding structure count was not captured."
 }
 if (@($actionContract[0].Contract.ItemsSources | Where-Object { $_.Value -eq "{Binding CurrentPlayer.SelectedCharacter.HotBars}" }).Count -ne 1) {
-    throw "ActionRadials ItemsSource contract was not captured."
+    throw "ActionRadials root ItemsSource contract was not captured."
+}
+if (@($actionContract[0].Contract.ItemsSources | Where-Object { $_.Value -eq "{Binding SlotList}" }).Count -ne 1) {
+    throw "ActionRadials per-bar SlotList materialization was not captured."
 }
 if (@($actionContract[0].Contract.ControllerBindings | Where-Object {
     $_.BoundEvent -eq "UIAccept" -and $_.Command -eq "{Binding UseSlotCommand}"
@@ -215,7 +224,7 @@ if ($analysis.ConflictingDuplicateCount -ne 1) {
     throw "Fixture analysis should preserve one conflicting duplicate radial path."
 }
 if (@($analysis.MainControllerSourceCandidates).Count -ne 2) {
-    throw "Fixture analysis should find both non-keyboard main source candidates."
+    throw "Fixture analysis should find both non-keyboard root source candidates and must not promote SlotList."
 }
 foreach ($expected in @(
     "{Binding CurrentPlayer.SelectedCharacter.HotBars}",
@@ -229,6 +238,12 @@ if (@($analysis.KeyboardOnlySources | Where-Object {
     $_.Value -eq "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"
 }).Count -ne 1) {
     throw "Fixture analysis did not isolate KeyboardHotBars as keyboard-only evidence."
+}
+if (@($analysis.SlotMaterializationSources | Where-Object { $_.Value -eq "{Binding SlotList}" }).Count -ne 1) {
+    throw "Fixture analysis did not isolate per-bar SlotList from root controller source candidates."
+}
+if (-not $analysis.Facts.HasSlotMaterializationSource) {
+    throw "Fixture analysis should report per-bar slot materialization evidence."
 }
 if (@($analysis.NestedSources | Where-Object { $_.Value -eq "{Binding SingleHotBar.SlotList}" }).Count -ne 1) {
     throw "Fixture analysis did not identify the nested SingleHotBar source."
@@ -260,6 +275,7 @@ foreach ($expectedBlocker in @("controller-source-ambiguous")) {
 $analysisSummary = Get-Content -Raw -LiteralPath $analysisSummaryPath
 foreach ($needle in @(
     "Main controller source candidates",
+    "Slot materialization sources",
     "Keyboard-only sources",
     "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars",
     "SingleHotBar.SlotList",
@@ -277,6 +293,7 @@ foreach ($needle in @(
 $summary = Get-Content -Raw -LiteralPath $summaryPath
 foreach ($needle in @(
     "CurrentPlayer.SelectedCharacter.HotBars",
+    "SlotList",
     "UseSlotCommand",
     "ClearSingleHotbarCommand",
     "ScrollToElement",

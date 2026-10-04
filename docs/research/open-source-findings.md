@@ -185,6 +185,21 @@ Current BG3SE mappings expose:
 
 RadialHotbarCustomization v0.8.0.0 (tagged 2026-02-22) was rewritten specifically after its author identified how BG3 distinguishes keyboard/mouse hotbar state from controller radial state.
 
+The tagged v0.8.0.0 source makes that storage contract concrete:
+
+- its entity declarations map `HotbarContainer.Containers.DefaultBarContainer`;
+- its legacy bar field `field_1` is documented from observation as `0` for keyboard/mouse hotbars and `1` for controller radials;
+- its player persistence code reads, serializes and restores `DefaultBarContainer`, using that field to distinguish the two UI modes;
+- current BG3SE maps the same legacy `field_1` to the named `Bar.Controller` field.
+
+This is strong evidence for the persisted controller discriminator and shared storage container. It is **not** evidence for the current Noesis/XAML controller collection or for how persisted bars become visual radial wheels. That presentation seam still has to come from the native radial UI contract.
+
+Tagged-source references:
+
+- https://gitlab.com/saghm/RadialHotbarCustomization/-/blob/v0.8.0.0/src/entity.d.tl
+- https://gitlab.com/saghm/RadialHotbarCustomization/-/blob/v0.8.0.0/src/tl/Server/Player.tl
+- https://github.com/Norbyte/bg3se/blob/main/BG3Extender/GameDefinitions/Components/Hotbar.h
+
 A separate current mod, Auto-Sorting Hotbar v1.1.0.0/1.1.0.1 (August/September 2026), added controller radial support and its author documents behavior that differs from keyboard ordering:
 
 - one radial wheel contains 12 slots;
@@ -193,7 +208,9 @@ A separate current mod, Auto-Sorting Hotbar v1.1.0.0/1.1.0.1 (August/September 2
 
 These projects corroborate that the controller radial should be treated as its own persisted/ordered data surface, not as a visual projection of `KeyboardHotBars`.
 
-RadialHotbarCustomization's September 2026 author notes add an important architectural limit: keyboard hotbars and controller radials are stored in the same mapped hotbar area with a controller/radial marker, but the persisted memory layout does **not** map cleanly to the visual radial wheels. The author consequently moved current work toward the game's native Noesis controller UI instead of rebuilding radials directly from component memory.
+RadialHotbarCustomization's September 2026 author comments add an important architectural limit: keyboard hotbars and controller radials are stored in the same mapped hotbar area with a controller/radial marker, but the persisted memory layout does **not** map cleanly to the visual radial wheels. On 2026-09-27 the author described ongoing work toward interacting more directly with the native gamepad/Noesis UI.
+
+Those September comments describe **unreleased experimentation**, not additional code in the v0.8.0.0 release. They therefore corroborate the presentation-model direction but do not publish the controller collection/property path CAM still needs.
 
 That matches the current BG3SE mapping (`Bar.Controller`, `HotBarController`, `IsController`) and rules out using `HotbarContainer` as CAM's presentation model. CAM needs the native radial UI/view-model materialization, not just the underlying persisted slots.
 
@@ -201,6 +218,7 @@ References:
 
 - https://github.com/Norbyte/bg3se/blob/main/BG3Extender/GameDefinitions/Components/Hotbar.h
 - https://gitlab.com/saghm/RadialHotbarCustomization/-/tags/v0.8.0.0
+- https://www.nexusmods.com/baldursgate3/mods/18194?tab=posts
 - https://www.nexusmods.com/baldursgate3/mods/24369
 
 ## 9. Patch 8 gives two valid close patterns, but radial-specific nesting is still unknown
@@ -237,6 +255,7 @@ The capture tool performs the first audit automatically and emits `native-contra
 It must identify without guessing:
 
 - candidate main controller collection bindings;
+- per-bar `SlotList` materialization bindings separately from root collection candidates;
 - keyboard-only bindings separately;
 - nested `SingleHotBar` / variant state;
 - list/paging/grid/radial materialization structure;
