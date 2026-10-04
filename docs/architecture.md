@@ -2,137 +2,112 @@
 
 ## Objective
 
-Replace the controller action browsing experience without replacing Baldur's Gate 3 gameplay semantics.
+Replace Baldur's Gate 3 controller action radial browsing with a native-style grid while preserving BG3 gameplay semantics and supporting the Xbox App / Microsoft Store PC build.
 
-The intended architecture is:
+## Runtime architecture
 
 ```text
-BG3 native action/UI model
-          │
-          ▼
-  Action menu adapter
-          │
-          ├── category projection
-          ├── spell-level projection
-          └── presentation metadata only
-          │
-          ▼
- Controller grid / tabs
-          │
-          ▼
- native action dispatch / targeting flow
+BG3 controller ActionRadials state
+              |
+              v
+        DCHotBar context
+              |
+      +-------+--------+
+      |                |
+      v                v
+SpellsAndActions     HotBars
+ VMActionGroup       VMHotBarSlot
+      |                |
+      +-------+--------+
+              |
+              v
+     native BG3 UI resources
+ HotBarSlotStyle / SpellBook chrome
+              |
+              v
+      thin custom composition
+   groups + six-column LSGrid
+              |
+              v
+     native action execution
 ```
+
+The shipping `.pak` contains only ordinary BG3 mod resources. It has **no Script Extender, DLL, native loader or external runtime dependency**.
+
+## Primary target
+
+The primary runtime target includes:
+
+- Xbox App / Microsoft Store PC;
+- Steam PC;
+- GOG PC.
+
+A change that requires Script Extender is not acceptable for the primary package. Experimental SE-based tools may exist under `dev/` for developer research only.
 
 ## Boundary
 
-The custom layer should own:
+The custom layer owns:
 
-- category grouping;
-- ordering;
-- grid layout;
-- controller focus/navigation;
-- tab/filter state;
-- presentation-only persistence such as last selected tab.
+- replacing the `ActionRadials` page/state presentation;
+- ordering native groups;
+- grid column count/spacing;
+- main-list vs `SingleHotBar` variant presentation;
+- temporary visible diagnostics in prerelease candidates.
 
-The custom layer should not own unless unavoidable:
+The custom layer should not own:
 
-- whether an action is currently usable;
+- whether an action is usable;
 - spell slot/resource calculation;
 - upcast rules;
 - target validation;
 - range/LOS checks;
 - action execution;
 - recast semantics;
-- class resource semantics;
-- temporary action lifetime.
+- passive/class resource semantics;
+- item counts/state;
+- cell visuals already provided by native BG3 resources.
 
-## UI framework
+## Native UI reuse
 
-Larian documents BG3 UI modding as XAML-based. Controller mode loads a controller-specific library and controller state machine. Pages are connected through the state machine.
+The current implementation consumes game-owned resources including:
 
-Current official reference:
-https://mod.io/g/baldursgate3/r/ui-basic-setup
+- `DataTemplates.xaml`;
+- `FocusableControls_c.xaml`;
+- `Tooltips.xaml`;
+- `HotBarSlotStyle`;
+- `ExpanderButtonTemplateSpellBook`;
+- `LS_InventoryGridSurround`.
 
-Open-source ImprovedUI demonstrates the current mod folder shape and controller-specific XAML/state-machine files:
-https://github.com/TheRealDjmr/BG3ImprovedUI
+Action cells should remain native. Recreating focus frames, disabled overlays, item counters, upcast indicators or tooltip rendering is an architecture regression unless a native resource is proven insufficient.
 
-ImprovedUI is useful as a structural reference, but it does not currently expose a complete replacement implementation of the combat action radial in its public tree.
+## Controller data
 
-## Proposed logical model
+The main page uses:
 
-The UI should consume a normalized view of native action entries:
+- `CurrentPlayer.SelectedCharacter.SpellsAndActions` for native action/spell groups;
+- `CurrentPlayer.SelectedCharacter.HotBars` for item/passive utility sections;
+- `SingleHotBar.SlotList` for nested variants and upcast selections.
 
-```text
-ActionEntry
-  id/native identity
-  display name
-  icon
-  availability/disabled state
-  native category/type metadata
-  spell level (when applicable)
-  resource/cost presentation
-  variant relationship (when applicable)
-  native dispatch handle/binding
-```
+Selection remains in the game's native action path through the native hotbar/action templates.
 
-This is a conceptual contract, not a commitment to invent a new runtime data model. If BG3 bindings already expose a collection suitable for direct binding, prefer that.
+## First-run diagnostics without Script Extender
 
-## Navigation
+Because Xbox App cannot rely on Script Extender, the first Xbox candidate exposes a small on-screen diagnostic panel using ordinary XAML bindings.
 
-Initial target:
+It shows:
 
-- open action menu using the existing controller action-menu flow where possible;
-- LB/RB: top-level tabs;
-- D-pad / left stick: grid navigation;
-- A: select/activate;
-- B: back/close;
-- secondary button: details if the native UI exposes an equivalent action.
+- action-group count;
+- hotbar count;
+- nested variant count;
+- variant/upcast state;
+- `AreRadialsOpen`;
+- focused element name;
+- focused action usability.
 
-Focus must remain deterministic when:
-
-- switching tabs;
-- filtering changes the item count;
-- an action disappears;
-- returning from targeting/variant selection.
-
-## Tabs
-
-Initial categories:
-
-1. Actions
-2. Spells
-3. Items
-4. Class
-
-These are product-level categories. The exact mapping from native action metadata is part of the technical spike and must not be hard-coded before inspection of actual data.
-
-## Spells
-
-The preferred spell view is a grid with optional level filters:
-
-- All
-- Cantrip
-- I
-- II
-- III
-- ...
-
-Upcast must continue through the native mechanism. The grid should not synthesize independent upcast actions unless that is how the native action model already represents them.
+This does not replace full runtime introspection, but it makes the first Xbox run useful without introducing a third-party runtime dependency.
 
 ## Compatibility
 
-UI mods can conflict when they modify the same UI state/page. Compatibility strategy must be based on the smallest possible override/extension after the target state is identified.
+UI mods can conflict when they override the same state/page. The current mod overrides the controller `ActionRadials` state, so another mod replacing that state can conflict by load order.
 
-Do not copy whole vanilla pages unless the toolkit/API leaves no narrower extension point.
-
-## Open questions
-
-The technical spike must answer:
-
-1. Which controller state/page owns combat action browsing in the current build?
-2. Which view-model collection feeds radial entries?
-3. Can that collection be rebound to a different ItemsControl/ListBox-style presentation?
-4. How is a selected radial action dispatched?
-5. Are variants/upcasts separate entries, nested collections, or state transitions?
-6. What is the smallest state-machine change required?
-7. Can the mod coexist with ImprovedUI without both replacing the same state?
+Prefer reusing native dictionaries and the smallest custom state/page surface possible.
