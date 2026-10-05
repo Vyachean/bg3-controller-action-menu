@@ -150,13 +150,36 @@ Two runtime assertions failed:
 
 This means the captured **data/materialization contract is correct**, while CAM's custom input/navigation composition was not.
 
-The correction is architectural rather than another data-source experiment:
+The data/rendering result remains valid, but the first input correction was not.
 
-- remove root-level `FocusUp/Down/Left/Right=UI*` interception;
-- configure `LSGrid` with the native navigable-grid flags used by BG3 grids: `UseWidgetNavigation`, `WidgetChainedNavigation`, `AlwaysSelectFirst`, and `ls:MoveFocus.InternalFocusable`;
-- separate input capture from visual buttons with player-scoped `LSInputBinding` for `UIAccept` and `UICancel`.
+### 2026-10-05 — 0.0.19 input-routing regression
 
-The failed `0.0.18-native-controller-contract` build must not be tested again.
+`0.0.19-native-input-routing` regressed substantially in the real Xbox App build:
+
+- the Class / Actions / Items sections no longer rendered;
+- diagnostic values were empty;
+- controller inputs still did not work.
+
+That build replaced the captured radial `LSButton` input controls with custom player-scoped `LSInputBinding` and added grid flags taken from other BG3 screens. Because the regression crossed the data/template boundary, those changes are rejected rather than iterated further. `0.0.19` must not be tested again.
+
+A second audit of the **same captured Patch 8 `PreloadedActionRadials_c.xaml`** found a stronger native grid precedent that was already present in the installed game:
+
+```text
+LSListBox
+  -> focusable ListBoxItem
+  -> LSGrid(ActionUp=UIUp, ActionDown=UIDown,
+            ActionLeft=UILeft, ActionRight=UIRight)
+```
+
+The current radial uses this exact structure for its slot-assignment spell/action/passive grids. Therefore `0.0.20-patch8-list-grid`:
+
+- restores the proven `0.0.18` ControllerHotBars rendering and native `LSButton` A/B controls;
+- replaces only the non-navigable per-section `ItemsControl` with the captured Patch 8 `LSListBox + ListBoxItem + LSGrid` pattern;
+- keeps focus on the `ListBoxItem`, while the inner `HotBarSlotStyle` button is visual-only;
+- removes the speculative 0.0.19 grid flags and `LSInputBinding` replacement;
+- uses the current native ActionRadials root's `UITabPrev/UITabNext` left/right mapping instead of intercepting `UILeft/UIRight` at the root.
+
+No further data-source experimentation is justified.
 
 ## Manual test report format
 
