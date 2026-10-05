@@ -65,7 +65,8 @@ Runtime evidence additionally proves:
 - `0.0.23` failed at startup because a CAM-local secondary XAML URI was treated as a literal missing path;
 - `0.0.24` proved the native page and controller-library override load, but a hand-written full `ActionRadialWidgetTemplate_P8` still had dead interaction;
 - `0.0.25` attempted to override `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` from the mod PAK and produced no visible runtime change, so that resource-path strategy is rejected;
-- `0.0.27` proves the native slot-assignment grid focus model works inside ActionRadials: grids render and replace radial slot layouts. Remaining defects are presentation-only — grid content starts at the PageView's upper-left, the native radial backdrop ellipse remains visible, and the radial-specific context-menu hint remains in the footer.
+- `0.0.27` proves the native slot-assignment grid focus model works inside ActionRadials: grids render and replace radial slot layouts;
+- `0.0.28` centers the visible grids and removes the radial backdrop, but runtime proves the `LocalFocusSelector` visual stayed at the old upper-left coordinate origin because the list was centered independently from its selector. X/ContextMenu also remains functionally useful even though its hint was hidden.
 
 The current Patch 8 native XAML also proves a working controller grid inside radial slot assignment:
 
@@ -83,8 +84,9 @@ Current mandatory architecture:
 - generated library must preserve the exact native outer `ActionRadialWidgetTemplate_P8`, `RadialHotBarListItemContainer`, native A/B/nested/swap semantics;
 - only `BarPageViewStyle` and `SingleBarPageViewStyle` may replace their `ls:Radial` renderer with the proven slot-assignment-style `LSListBox + LocalFocusSelector + LSGrid` structure;
 - keep element names `HotBarRadial` and `SingleBar` so existing native bindings/triggers keep addressing the local-focus source;
-- grid presentation may center those replacement lists inside the existing PageView and collapse the obsolete radial backdrop ellipse;
-- the outer native button-hint commands remain intact, but radial-specific customization chrome must not be shown as part of the grid UI;
+- grid presentation must center a **shared focus root** containing both the replacement list and its `LocalFocusSelector`; never center the list independently from the selector;
+- the obsolete radial backdrop ellipse may be collapsed;
+- ContextMenu/X remains useful for editing the underlying hotbar slots and should stay active, but its visible label must be grid-neutral (`Customize`), not `Radial Customisation`;
 - no copied Larian XAML may be committed or published; generation is local-only;
 - fail closed if required native seams are absent.
 
