@@ -68,6 +68,30 @@ The current main radial list uses:
 
 `LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"`
 
+The current root `ActionRadials.xaml` maps only:
+
+- `FocusLeft="UITabPrev"`;
+- `FocusRight="UITabNext"`.
+
+It does **not** map `UILeft/UIRight/UIUp/UIDown` directly at the root.
+
+More importantly, the captured Patch 8 preloaded template already contains a working 2D controller grid in the radial slot-assignment UI. Its structure is:
+
+```text
+LSListBox (Focusable=False)
+  ItemContainerStyle -> focusable ListBoxItem
+  ItemsPanel         -> LSGrid
+                         ActionUpEvent    = UIUp
+                         ActionDownEvent  = UIDown
+                         ActionLeftEvent  = UILeft
+                         ActionRightEvent = UIRight
+                         AutoIndex        = True
+```
+
+The same preloaded file uses this pattern for spell/action, passive and metamagic slot grids.
+
+This is stronger evidence than importing navigation flags from unrelated screens. CAM's grid should therefore use `LSListBox + focusable ListBoxItem + LSGrid` and leave the four `UI*` directional events to that grid rather than intercepting them at the root.
+
 CAM should preserve the same focus-driven scroll model rather than script its own navigation.
 
 ## Normal A dispatch
