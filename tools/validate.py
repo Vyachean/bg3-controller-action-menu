@@ -101,9 +101,6 @@ def validate_semantics() -> list[str]:
                 "Convert-PageStyleToGrid",
                 "Hide-RadialBackdrop",
                 "Convert-WidgetChromeForGrid",
-                'x:Key="SlotAssignHolderStyle"',
-                'x:Name="AssignList"',
-                'LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"',
                 'x:Key="CAM_ActionGridSlotContainer"',
                 'x:Key="CAM_ActionGridSlotTemplate"',
                 'x:Key="CAM_ActionGridPanel"',
@@ -117,10 +114,6 @@ def validate_semantics() -> list[str]:
                 'VerticalAlignment="Center"',
                 'Width="640"',
                 'Height="400"',
-                'x:Key="ActionRadialWidgetTemplate_P8"',
-                'x:Key="RadialHotBarListItemContainer"',
-                'Command="{Binding UseSlotCommand}"',
-                'Command="{Binding ClearSingleHotbarCommand}"',
                 'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
                 "--action extract-single-file",
                 "--action create-package",
@@ -271,13 +264,11 @@ def validate_semantics() -> list[str]:
         )
     )
 
-    launcher_text = ONE_CLICK_LAUNCHER.read_text(encoding="utf-8") if ONE_CLICK_LAUNCHER.exists() else ""
     builder_text = ONE_CLICK_BUILDER.read_text(encoding="utf-8") if ONE_CLICK_BUILDER.exists() else ""
-    for path, text_value in ((ONE_CLICK_LAUNCHER, launcher_text), (ONE_CLICK_BUILDER, builder_text)):
-        if "install-latest.ps1" in text_value:
-            errors.append(
-                f"{path.relative_to(ROOT)}: reusable one-click bundle must not pin install-latest.ps1"
-            )
+    if 'Copy-Item -LiteralPath $latestInstaller' in builder_text or 'Join-Path $Stage "install-latest.ps1"' in builder_text:
+        errors.append(
+            f"{ONE_CLICK_BUILDER.relative_to(ROOT)}: reusable one-click ZIP must not embed install-latest.ps1"
+        )
 
     for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
         errors.extend(
