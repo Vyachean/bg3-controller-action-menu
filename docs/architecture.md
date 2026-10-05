@@ -140,7 +140,15 @@ UIAccept
 UseSlotCommand(Tag)
 ```
 
-CAM therefore reuses `HotBarSlotStyle` for cell visuals but neutralizes the cell-level controller command and mirrors the captured page-level `UIAccept -> UseSlotCommand(focused slot)` binding. Gameplay execution remains entirely BG3-owned.
+CAM therefore reuses `HotBarSlotStyle` for cell visuals but neutralizes the cell-level controller command. Runtime 0.0.18 proved that binding input to visual `LSButton` controls in the custom composition is not sufficient: the grid rendered and focused initially, but controller movement and B failed.
+
+The corrected input boundary is:
+
+- native `LSGrid` widget navigation owns directional movement;
+- player-scoped `LSInputBinding` owns `UIAccept` / `UICancel`;
+- those bindings still invoke the captured BG3 commands and parameters, so gameplay semantics remain BG3-owned.
+
+This changes only the input transport primitive, not the captured command contract.
 
 
 ## First-run diagnostics without Script Extender
