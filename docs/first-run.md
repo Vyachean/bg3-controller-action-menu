@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.23-native-page-library-override** or newer.
+Use **v0.0.24-inline-controller-library** or newer.
 
 The runtime mod contains no Script Extender.
 
