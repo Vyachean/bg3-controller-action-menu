@@ -11,7 +11,10 @@ on:
       - "tools/verify-package.ps1"
       - "tools/validate.py"
       - "tools/install-xbox-dev.ps1"
-      - "install-latest.cmd"
+      - "tools/install-latest.ps1"
+      - "tools/Install-BG3ControllerActionMenu.vbs"
+      - "tools/test-install-latest.ps1"
+      - "tools/build-one-click-installer.ps1"
       - "tools/deploy-xbox-dev.ps1"
       - "tools/test-deploy-xbox-dev.ps1"
   workflow_dispatch:
@@ -66,11 +69,10 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
-      - name: Test one-click launcher
-        shell: cmd
-        env:
-          CAM_ONE_CLICK_VALIDATE_ONLY: "1"
-        run: install-latest.cmd
+      - name: Test hidden one-click installer
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/test-install-latest.ps1
 
       - name: Test Xbox installer
         if: steps.existing.outputs.exists != 'true'
@@ -91,6 +93,11 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: ./tools/verify-package.ps1 -Package "./build/BG3ControllerActionMenu-$env:VERSION.pak"
 
+      - name: Build hidden one-click installer
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/build-one-click-installer.ps1
+
       - name: Create GitHub release
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
@@ -105,8 +112,8 @@ jobs:
           $installer = "tools/install-xbox-dev.ps1"
           if (-not (Test-Path $installer)) { throw "Missing Xbox installer: $installer" }
 
-          $oneClick = "install-latest.cmd"
-          if (-not (Test-Path $oneClick)) { throw "Missing one-click installer: $oneClick" }
+          $oneClick = "build/BG3ControllerActionMenu-OneClickInstaller.zip"
+          if (-not (Test-Path $oneClick)) { throw "Missing one-click installer bundle: $oneClick" }
 
           $args = @(
             "release", "create", $env:TAG, $pak, $installer, $oneClick,
