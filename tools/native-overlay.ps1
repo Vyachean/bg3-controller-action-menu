@@ -276,6 +276,48 @@ function Set-NamedElementAttribute {
         $Text.Substring($span.Start + $span.OpenLength)
 }
 
+function Assert-GridChromeContract {
+    param([Parameter(Mandatory = $true)][string]$Text)
+
+    $hint = (Get-ElementSpan -Text $Text -Tag "ls:AlignableWrapPanel" -AttributeName "x:Name" -AttributeValue "ButtonHintsContainer").OpenText
+    foreach ($required in @(
+        'HorizontalAlignment="Center"',
+        'HorizontalContentAlignment="Center"',
+        'VerticalAlignment="Bottom"',
+        'Width="Auto"',
+        'FlowDirection="LeftToRight"'
+    )) {
+        if (-not $hint.Contains($required)) {
+            throw "Grid button-hint container is missing required chrome seam: $required"
+        }
+    }
+
+    $context = (Get-ElementSpan -Text $Text -Tag "ls:LSButton" -AttributeName "x:Name" -AttributeValue "ShowContextMenu").OpenText
+    foreach ($required in @(
+        'Opacity="1"',
+        'Width="Auto"',
+        'Margin="0,0,20,0"',
+        'Tag="Customize"'
+    )) {
+        if (-not $context.Contains($required)) {
+            throw "Context-menu hint must remain active and be labeled Customize; missing: $required"
+        }
+    }
+
+    foreach ($buttonName in @(
+        "SelectButtonVisual",
+        "CancelConcentrationButton",
+        "ToggleWeaponSet",
+        "ToggleDualWield",
+        "CancelButton"
+    )) {
+        $button = (Get-ElementSpan -Text $Text -Tag "ls:LSButton" -AttributeName "x:Name" -AttributeValue $buttonName).OpenText
+        if (-not $button.Contains('Width="Auto"')) {
+            throw "Grid button '$buttonName' must use Width=Auto."
+        }
+    }
+}
+
 function Convert-WidgetChromeForGrid {
     param([Parameter(Mandatory = $true)][string]$WidgetText)
 
@@ -507,6 +549,8 @@ $widget
         throw "Generated action-browsing controller library must not dispatch AssignSlotCommand."
     }
 
+    Assert-GridChromeContract -Text $generated
+
     $parent = Split-Path -Parent $Destination
     if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
 
@@ -640,8 +684,6 @@ foreach ($required in @(
     'Height="400"',
     'x:Name="ButtonHintsContainer"',
     'x:Name="ShowContextMenu"',
-    'Opacity="0"',
-    'Width="0"',
     'x:Name="UseSlotBinding"',
     'x:Name="CancelButton"'
 )) {
@@ -649,6 +691,11 @@ foreach ($required in @(
         throw "Packed controller library is missing required seam: $required"
     }
 }
+
+# Use the same semantic chrome assertion after pack round-trip as before
+# packaging. This prevents the post-pack verifier from drifting behind the
+# generator when presentation contracts change.
+Assert-GridChromeContract -Text $verifiedText
 
 Write-Host "Native-derived CAM controller grid package created."
 Write-Host "  Game.pak:       $($gamePak.FullName)"
