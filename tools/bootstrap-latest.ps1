@@ -5,7 +5,8 @@ param(
     [string]$CacheRoot,
     [string]$LogPath,
     [string]$StatusPath,
-    [string]$ReportPath
+    [string]$ReportPath,
+    [switch]$BootstrapUpdated
 )
 
 $ErrorActionPreference = "Stop"
