@@ -71,7 +71,7 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $patchActionPath) 
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ls="clr-namespace:ls;assembly=Code">
-  <ListBox x:Name="HotBarList" ItemsSource="{Binding PatchedControllerBars}"/>
+  <ListBox x:Name="HotBarList" ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"/>
   <ItemsControl ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"/>
   <ItemsControl x:Name="ActionCostSummary" ItemsSource="{Binding DataContext.FocusedSlotTooltipData.CostSummary, ElementName=ActionRadials}"/>
   <ls:LSInputBinding BoundEvent="UIAccept" Command="{Binding PatchedUseCommand}"/>
@@ -171,7 +171,7 @@ $patchedContract = @(
         }
 )
 if ($patchedContract.Count -ne 1 -or
-    @($patchedContract[0].Contract.ItemsSources | Where-Object { $_.Value -eq "{Binding PatchedControllerBars}" }).Count -ne 1) {
+    @($patchedContract[0].Contract.ItemsSources | Where-Object { $_.Value -eq "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}" }).Count -ne 1) {
     throw "Patched duplicate ActionRadials contract was not preserved independently."
 }
 if ($actionContract[0].Contract.ContextName -ne "HotBar") {
@@ -230,7 +230,7 @@ if (@($analysis.MainControllerSourceCandidates).Count -ne 2) {
 }
 foreach ($expected in @(
     "{Binding CurrentPlayer.SelectedCharacter.HotBars}",
-    "{Binding PatchedControllerBars}"
+    "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"
 )) {
     if (@($analysis.MainControllerSourceCandidates | Where-Object { $_.Value -eq $expected }).Count -ne 1) {
         throw "Fixture analysis is missing main source candidate: $expected"
