@@ -1,13 +1,42 @@
 # Xbox App / Microsoft Store PC installation
 
-## Current development method
+## Recommended: one-click installer
 
-The project uses a **discovery-first** installer. It does not assume that `C:\WpSystem` exists and it does not write anything on its first run.
+Every prerelease now publishes:
 
-Each prerelease contains:
+- `BG3ControllerActionMenu-OneClickInstaller.zip`;
+- the versioned CAM `.pak`;
+- `install-xbox-dev.ps1` for manual/diagnostic use.
 
-- `BG3ControllerActionMenu-*.pak`;
-- `install-xbox-dev.ps1`.
+For normal use:
+
+1. download `BG3ControllerActionMenu-OneClickInstaller.zip`;
+2. extract it once anywhere;
+3. double-click `Install-BG3ControllerActionMenu.vbs`.
+
+The launcher does **not** open a visible PowerShell or Command Prompt window. It waits in the background and then shows one normal Windows dialog with success or failure.
+
+On every run it:
+
+1. queries the repository's GitHub Releases list, including prereleases;
+2. selects the newest published release and refuses to silently fall back if that release is malformed;
+3. downloads the exact versioned `.pak` and that release's `install-xbox-dev.ps1`;
+4. requires and verifies each asset's GitHub `sha256:` digest;
+5. runs the downloaded installer with `-Apply`;
+6. preserves the existing fail-closed discovery/schema checks and backups.
+
+This means the extracted one-click bundle can be kept and reused: double-clicking it later installs the newest published CAM release rather than the version that originally contained the bundle.
+
+Installer state is stored under:
+
+`%LOCALAPPDATA%\BG3ControllerActionMenu`
+
+Useful files:
+
+- `install-latest.log`;
+- `install-status.txt`;
+- `xbox-dev-environment.json`;
+- downloaded verified release assets under `installer-cache\<tag>`.
 
 ## One-time preparation on the gaming PC
 
@@ -16,7 +45,11 @@ Each prerelease contains:
 3. Install **one small mod from the built-in catalog** and enable it.
 4. Exit BG3 normally.
 
-The existing in-game-installed PAK becomes ground-truth evidence for the directory that this particular Xbox build actually uses. Its active load-order entry also becomes a **schema donor**: CAM will reuse the LSX attribute types/fields actually written on this machine instead of assuming the Steam/GOG or test-fixture format.
+The existing in-game-installed PAK becomes ground-truth evidence for the directory that this particular Xbox build actually uses. Its active load-order entry also becomes a **schema donor**: CAM reuses the LSX attribute types/fields actually written on this machine instead of assuming the Steam/GOG or test-fixture format.
+
+## Manual/diagnostic workflow
+
+The lower-level `install-xbox-dev.ps1` remains available when troubleshooting is needed.
 
 ## Phase 1 — discover only
 
