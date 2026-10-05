@@ -14,24 +14,24 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Captured Patch 8 list-grid correction candidate.**
+**Native page + controller-library override candidate.**
 
-A read-only capture of the installed Xbox App build 1.8.910.0 established the current Patch 8 radial contract. The candidate now uses:
+Runtime evidence now separates the problem clearly:
 
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars` as the controller source;
-- each bar's native `SlotList`;
-- `SingleHotBar.SlotList` for nested variants/upcasts/containers;
-- focus-driven scrolling following the page's `FocusedElement`;
-- the native radial A seam: `UIAccept -> UseSlotCommand(focused slot)`;
-- the native radial B switch: nested `ClearSingleHotbarCommand`, top-level `CustomEvent("CloseWidget")`.
+- `0.0.18` proved the captured `ControllerHotBars` data path, section rendering, native slot visuals and tooltips, but directional navigation and B were dead;
+- `0.0.19` changed input transport and regressed both rendering and bindings;
+- `0.0.20` restored rendering and used the captured LSListBox/LSGrid hierarchy, but controller focus/input was still completely dead;
+- `0.0.21` and `0.0.22` changed installation UX only and did not change runtime behavior.
 
-`0.0.18-native-controller-contract` proved the controller data path and rendering in-game, but directional navigation and B failed. `0.0.19-native-input-routing` then regressed rendering/data and is rejected.
+The common failure was architectural: CAM replaced the game's `ActionRadials` state/page and then tried to reconstruct the radial widget's lifecycle, focus and input contract.
 
-`0.0.20-patch8-list-grid` returns to the proven 0.0.18 rendering/input base and changes the slot container to the exact current Patch 8 controller-grid hierarchy already present in `PreloadedActionRadials_c.xaml`: `LSListBox -> focusable ListBoxItem -> LSGrid`. Native radial `LSButton` A/B controls are retained.
+`0.0.23-native-page-library-override` removes that replacement. BG3 now owns the original state and original `Mods/MainUI/GUI/Pages/ActionRadials.xaml` page. CAM contributes only a controller resource-library override for the page's `ActionRadialWidgetTemplate_P8` resource.
 
-`0.0.22-hidden-one-click` keeps that same runtime candidate and changes installation UX only (plus the visible diagnostic version marker).
+That preserves the native page name (`ActionRadials`), HotBar context, page-level focus lifecycle, automation identity and state-machine close events. The custom resource still presents the already-proven `ControllerHotBars` data as a compact grid and keeps the captured native `UseSlotBinding` / `CancelButton` command seams.
 
-It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
+If the library override is not selected by BG3, the fallback is the game's normal radial page rather than a dead custom state.
+
+The package remains an ordinary Script-Extender-free `.pak`.
 
 ## Xbox App installation
 
@@ -64,25 +64,22 @@ See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App researc
 ## Architecture
 
 ```text
-BG3 ActionRadials state
+native BG3 ActionRadials state
         |
         v
-   HotBar context
+native MainUI/Pages/ActionRadials.xaml
         |
         v
-PlayerCharacterProperties.ControllerHotBars
+ActionRadialWidgetTemplate_P8 resource
+        ^
+        |
+CAM Lib_Controller.xaml override
         |
         v
-per-bar SlotList / SingleHotBar.SlotList
+ControllerHotBars / SlotList grid
         |
         v
-native HotBarSlotStyle visuals
-        |
-        v
-thin custom grid composition
-        |
-        v
-UIAccept -> native UseSlotCommand(focused slot)
+native UseSlotCommand / CloseWidget seams
 ```
 
 See:
