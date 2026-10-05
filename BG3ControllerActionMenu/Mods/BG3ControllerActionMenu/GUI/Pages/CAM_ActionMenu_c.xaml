@@ -139,7 +139,6 @@
                     <DataTrigger Binding="{Binding SlotType}" Value="Empty">
                         <Setter TargetName="NativeSlotButton" Property="Visibility" Value="Collapsed"/>
                         <Setter TargetName="NativeSlotButton" Property="Focusable" Value="False"/>
-                        <Setter TargetName="NativeSlotButton" Property="ls:MoveFocus.Focusable" Value="False"/>
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
