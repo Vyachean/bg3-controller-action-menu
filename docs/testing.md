@@ -237,6 +237,44 @@ The package verifier now fails if either:
 
 This makes the 0.0.23 startup failure structurally impossible to reproduce from the same mechanism.
 
+### 2026-10-05 — 0.0.24 full-template runtime result
+
+`0.0.24-inline-controller-library` starts successfully and activates the native `ActionRadials` page: the user hears the normal radial movement/click sounds. However, the replacement window still has no effective interaction and cannot be closed with B.
+
+This is high-value negative evidence:
+
+- native state/page lifecycle is active;
+- CAM's controller resource override is selected;
+- replacing the whole `ActionRadialWidgetTemplate_P8` is still outside the safe ownership boundary.
+
+No further full-template reconstruction is justified.
+
+### 0.0.25 architecture — native Radial remains the input engine
+
+The next candidate is derived locally from the exact installed `PreloadedActionRadials_c.xaml` instead of shipping a reconstructed template.
+
+The deterministic patch:
+
+1. leaves the native `ActionRadialWidgetTemplate_P8` intact;
+2. leaves the native `PageView`, `HotBarRadial`, `SingleBar`, `UseSlotBinding`, `CancelButton`, nested/swap and state-machine logic intact;
+3. makes only the native radial artwork transparent;
+4. inserts a non-focusable, non-hit-test grid mirror next to each native radial;
+5. mirrors `SelectedIndex` one-way from the native radial's `LocalFocus.Index`;
+6. derives and packages both normal and Clairmont radial dictionaries locally from the current `Game.pak`.
+
+The GitHub release does not contain Larian XAML.
+
+Before asking for a runtime test, CI must prove:
+
+- source XAML is not modified by patch-only fixture mode;
+- native `ls:Radial` controls remain present;
+- native A/B commands remain present;
+- exactly two visual mirrors are inserted;
+- native radial controls are hidden with opacity rather than removed/collapsed by CAM;
+- the published base PAK contains no runtime/native XAML;
+- one-click release resolution requires and verifies the native-overlay builder;
+- Xbox apply builds the derived PAK before touching the installed mod package/load order.
+
 ## Manual test report format
 
 A useful report is:
