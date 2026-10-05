@@ -98,18 +98,25 @@ def validate_semantics() -> list[str]:
                 '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"',
                 '"Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml"',
                 '"Game.pak"',
-                "Patch-NativeRadialXaml",
-                "Add-VisualMirror",
-                '-RadialName "HotBarRadial"',
-                '-RadialName "SingleBar"',
-                'Opacity="0"',
-                "CAM_HotBarRadialGrid",
-                "CAM_SingleBarGrid",
-                'SelectedIndex="{Binding LocalFocus.Index, ElementName=__RADIAL__, Mode=OneWay}"',
-                'Style="{StaticResource HotBarSlotStyle}"',
-                'Command="{x:Null}"',
-                'Focusable="False"',
-                'IsHitTestVisible="False"',
+                "New-ControllerLibraryFromNative",
+                "Convert-PageStyleToGrid",
+                'x:Key="SlotAssignHolderStyle"',
+                'x:Name="AssignList"',
+                'LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"',
+                'x:Key="CAM_ActionGridSlotContainer"',
+                'x:Key="CAM_ActionGridSlotTemplate"',
+                'x:Key="CAM_ActionGridPanel"',
+                'KeyboardNavigation.DirectionalNavigation="Contained"',
+                'ActionUpEvent="UIUp"',
+                'ActionDownEvent="UIDown"',
+                'ActionRightEvent="UIRight"',
+                'ActionLeftEvent="UILeft"',
+                'LocalFocusSelector="{Binding ElementName=$selectorName,Mode=OneWay}"',
+                'x:Key="ActionRadialWidgetTemplate_P8"',
+                'x:Key="RadialHotBarListItemContainer"',
+                'Command="{Binding UseSlotCommand}"',
+                'Command="{Binding ClearSingleHotbarCommand}"',
+                'Mods\BG3ControllerActionMenu\GUI\Library\Lib_Controller.xaml',
                 "--action extract-single-file",
                 "--action create-package",
                 "-PatchOnlySourceXaml",
@@ -122,14 +129,17 @@ def validate_semantics() -> list[str]:
             NATIVE_OVERLAY_TEST,
             [
                 "PatchOnlySourceXaml",
-                "CAM_HotBarRadialGrid",
-                "CAM_SingleBarGrid",
-                'x:Name="UseSlotBinding"',
+                'x:Key="CAM_ActionGridPanel"',
+                '<ls:LSListBox x:Name="HotBarRadial"',
+                '<ls:LSListBox x:Name="SingleBar"',
+                'LocalFocusSelector="{Binding ElementName=CAM_HotBarRadialSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_SingleBarSelector,Mode=OneWay}"',
+                'x:Key="UseSlotBinding"',
                 'x:Name="CancelButton"',
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
-                'Opacity="0"',
-                "Native Radial controls must remain present as the input/focus engine.",
+                "Action grid must not execute slot-assignment commands.",
+                "outer native template/A/B/swap seams preserved",
             ],
         )
     )
@@ -316,7 +326,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "native-derived overlay contract present; published package contains no proprietary native XAML; "
+        "native-derived slot-assignment grid contract present; published package contains no proprietary native XAML; "
         "runtime remains Script-Extender-free)."
     )
     return 0
