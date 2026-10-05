@@ -156,17 +156,34 @@ Their captured differences are presentation-only:
 
 Those differences do not change CAM's runtime contract.
 
+## Resource-library hook
+
+Official BG3 UI documentation states that:
+
+- `Lib_Controller.xaml` is the library loaded in controller mode;
+- mod Resources/Libraries are loaded before mod StateMachines;
+- libraries are the supported place for reusable `ControlTemplate` and `Style` resources.
+
+Reference: https://docs.baldursgate3.game/index.php?title=UI
+
+Runtime 0.0.18–0.0.20 showed that replacing the entire `ActionRadials` state/page leaves controller focus/input dead even when the data and rendering are correct. The preferred hook is therefore the controller resource library, while BG3 retains its native state and `MainUI/Pages/ActionRadials.xaml`.
+
+This also gives a safer failure mode: if CAM's `ActionRadialWidgetTemplate_P8` resource does not win resource lookup, BG3 still has a valid native state/page and should fall back to the vanilla radial UI.
+
 ## Implementation consequence
 
-The first candidate built from this evidence is `0.0.18-native-controller-contract`.
+The first candidate built from the captured data evidence was `0.0.18-native-controller-contract`.
 
-Its implementation gate is:
+The current implementation gate for `0.0.23-native-page-library-override` is:
 
-1. source from `ControllerHotBars`;
-2. render per-bar `SlotList`;
-3. render nested `SingleHotBar.SlotList`;
-4. use focus-driven scroll;
-5. use page-level `UIAccept -> UseSlotCommand(focused slot)`;
-6. mirror the native nested/main B switch;
-7. keep the gameplay view visible;
-8. remain Script-Extender-free.
+1. do **not** package a CAM `ActionRadials` StateMachine override;
+2. do **not** package a CAM replacement Page;
+3. load CAM through `GUI/Library/Lib_Controller.xaml`;
+4. override the `ActionRadialWidgetTemplate_P8` resource consumed by the native page;
+5. source from `ControllerHotBars`;
+6. render per-bar `SlotList`;
+7. render nested `SingleHotBar.SlotList`;
+8. update native `ActionRadials.Tag` from grid focus;
+9. keep captured `UIAccept -> UseSlotCommand(Tag)` and native main/nested B semantics;
+10. keep the gameplay view visible;
+11. remain Script-Extender-free.
