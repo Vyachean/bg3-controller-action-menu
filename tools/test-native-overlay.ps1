@@ -303,7 +303,8 @@ if (-not $overlaySource.Contains('Assert-GridChromeContract -Text $generated') -
     -not $overlaySource.Contains('Assert-GridChromeContract -Text $verifiedText')) {
     throw "Generator and packed-package verification must share Assert-GridChromeContract."
 }
-if ($overlaySource -match "'Opacity=\"0\"',\s*'Width=\"0\"'") {
+$stalePackedChromePattern = "'Opacity=`"0`"',\s*'Width=`"0`"'"
+if ($overlaySource -match $stalePackedChromePattern) {
     throw "Stale hidden-context-menu packed verifier contract reappeared."
 }
 
