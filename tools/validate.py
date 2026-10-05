@@ -102,6 +102,9 @@ def validate_semantics() -> list[str]:
                 "Convert-PageStyleToGrid",
                 "Hide-RadialBackdrop",
                 "Convert-WidgetChromeForGrid",
+                "Assert-GridChromeContract",
+                "Assert-GridChromeContract -Text $generated",
+                "Assert-GridChromeContract -Text $verifiedText",
                 'x:Key="SlotAssignHolderStyle"',
                 'x:Name="AssignList"',
                 'LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"',
@@ -134,6 +137,13 @@ def validate_semantics() -> list[str]:
             ],
         )
     )
+
+    if NATIVE_OVERLAY.exists():
+        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
+        if re.search(r"'Opacity=\"0\"',\s*'Width=\"0\"'", overlay_text):
+            errors.append(
+                f"{NATIVE_OVERLAY.relative_to(ROOT)}: stale 0.0.28 hidden context-menu post-pack contract is forbidden"
+            )
 
     errors.extend(
         require_text(
