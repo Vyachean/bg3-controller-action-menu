@@ -84,30 +84,35 @@ This means our desired menu is not a foreign UI concept; it is essentially a com
 
 The old public radial page is Patch 2 Hotfix 1 and is no longer treated as a current data-source specification.
 
-Current Patch 8 / 2026 evidence establishes the parts that matter independently:
+The installed Xbox App build 1.8.910.0 now establishes the current radial contract directly:
 
 - controller state/context: `ActionRadials` / `HotBar`;
-- current native slot template: `HotBarSlotStyle`;
-- native dispatch: owning `UIWidget.DataContext.UseSlotCommand`;
-- dispatch parameter: the current slot object;
-- current nested-state property: `CurrentSingleHotbarFilter`;
-- current Patch 8 variant state: `IsShowingAContainerWithVariants`;
-- current focus-scroll mechanism: `LSScrollViewer.ScrollToElement` following `FocusedElement`.
+- root collection: `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
+- per-bar collection: `SlotList`;
+- nested collection: `SingleHotBar.SlotList`;
+- nested-state property: `CurrentSingleHotbarFilter`;
+- variant/upcast state: `IsShowingAContainerWithVariants` / `IsSelectingUpcastedSpell`;
+- focus-scroll mechanism: `LSScrollViewer.ScrollToElement` following `FocusedElement`;
+- normal controller A: a page-level `UIAccept` binding invokes `UseSlotCommand` with the focused slot stored in the page `Tag`;
+- B: `ClearSingleHotbarCommand` for nested state, dynamically changed to `CustomEvent("CloseWidget")` at the top level.
 
-The exact controller-radial collection is still not published. A September-2026 production mod exposes `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`, but engine mappings prove keyboard/controller state is distinct, so this cannot be used as the controller source.
+Current `HotBarSlotStyle` remains useful for square native cell visuals, but its generic per-slot `BoundEvent` is not the captured radial-specific A-input mechanism.
 
 ## Architecture implication
 
 Prefer:
 
 ```text
-DCHotBar / selected-character native view models
+DCHotBar / ControllerHotBars
+                  |
+                  v
+          per-bar SlotList
                   |
                   v
        native-style grid presentation
                   |
                   v
-           native UseSlotCommand
+   UIAccept -> UseSlotCommand(focused slot)
 ```
 
 Do not implement spell execution, targeting, resource checks, upcast rules, recasts, or passive semantics ourselves.
@@ -128,7 +133,7 @@ Only after that proof should categorisation be made more sophisticated.
 
 The runtime probe remains useful as a compatibility/debug tool, but it is no longer considered a hard prerequisite.
 
-Open-source evidence is now enough to lock state, native slot rendering/dispatch and focus strategy, but not enough to name the controller collection. Do not build another gameplay candidate until that remaining collection/materialization seam is proven by a modern source or one read-only native-file capture.
+The read-only installed-game capture has now closed the collection/materialization/cancel seam. The next candidate may be tested, but only as one combined milestone run after static/package verification.
 
 ## Visual policy
 
