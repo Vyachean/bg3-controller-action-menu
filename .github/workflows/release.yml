@@ -73,12 +73,12 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
-      - name: Test self-updating bootstrap
+      - name: Test minimal installer bootstrap
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
         run: ./tools/test-bootstrap-latest.ps1
 
-      - name: Test canonical latest-release installer
+      - name: Test latest-release install flow
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
         run: ./tools/test-install-latest.ps1
