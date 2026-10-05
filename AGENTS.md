@@ -81,6 +81,8 @@ Do not reintroduce CAM `Controller.xaml`, `CAM_ActionMenu_c.xaml`, `Lib_Controll
 
 The next in-game test is justified only after CI proves the patcher preserves native radial controls and A/B seams on a fixture, the published base PAK contains no runtime XAML, and the one-click installer derives the final PAK locally.
 
+Installer reliability is also a release gate. The reusable VBS bundle must contain only a stable self-updating bootstrap, not a frozen version-specific `install-latest.ps1`. Every release must publish exactly one `bootstrap-latest.ps1` and one canonical `install-latest.ps1` with GitHub SHA-256 digests. The bundled bootstrap must update/handoff to the verified release bootstrap before invoking the canonical installer, and must never silently fall back to an older release.
+
 ## Pull request expectations
 
 Every PR must state:
