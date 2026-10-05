@@ -14,24 +14,24 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native page + controller-library override candidate.**
+**Native-radial visual-mirror candidate.**
 
-Runtime evidence now separates the problem clearly:
+Runtime evidence through `0.0.24` established that replacing either the page or the whole `ActionRadialWidgetTemplate_P8` breaks the native controller focus/input graph even when the grid renders correctly. In `0.0.24`, the native page was active — radial movement sounds played — but the replacement template still had no usable focus, A or B.
 
-- `0.0.18` proved the captured `ControllerHotBars` data path, section rendering, native slot visuals and tooltips, but directional navigation and B were dead;
-- `0.0.19` changed input transport and regressed both rendering and bindings;
-- `0.0.20` restored rendering and used the captured LSListBox/LSGrid hierarchy, but controller focus/input was still completely dead;
-- `0.0.21` and `0.0.22` changed installation UX only and did not change runtime behavior.
+`0.0.25-native-radial-visual-mirror` stops reconstructing that input graph.
 
-The common failure was architectural: CAM replaced the game's `ActionRadials` state/page and then tried to reconstruct the radial widget's lifecycle, focus and input contract.
+At install time, CAM now reads the exact `PreloadedActionRadials_c.xaml` files from the user's installed `Game.pak`, preserves the native page/template/PageView/Radial/A/B/nested/swap logic, and applies only a local presentation patch:
 
-`0.0.23-native-page-library-override` removes that replacement. BG3 now owns the original state and original `Mods/MainUI/GUI/Pages/ActionRadials.xaml` page. CAM contributes only a controller resource-library override for the page's `ActionRadialWidgetTemplate_P8` resource.
+- the original native `HotBarRadial` and `SingleBar` controls remain present and continue to own input/focus;
+- those native radial visuals are made transparent;
+- a non-interactive grid mirrors the same items;
+- grid selection mirrors the native radial's `LocalFocus.Index`.
 
-That preserves the native page name (`ActionRadials`), HotBar context, page-level focus lifecycle, automation identity and state-machine close events. The custom resource still presents the already-proven `ControllerHotBars` data as a compact grid and keeps the captured native `UseSlotBinding` / `CancelButton` command seams.
+The modified native files are generated locally and packed into the installed CAM PAK. **Larian XAML is not committed to this repository or distributed in the GitHub release.**
 
-If the library override is not selected by BG3, the fallback is the game's normal radial page rather than a dead custom state.
+The published release PAK is therefore metadata/bootstrap only. The one-click installer downloads a pinned overlay builder, verifies its GitHub SHA-256 digest, derives the installable PAK from the locally installed BG3 version, then installs it through the existing fail-closed Xbox path.
 
-The package remains an ordinary Script-Extender-free `.pak`.
+The runtime remains Script-Extender/DLL/native-loader free.
 
 ## Xbox App installation
 
@@ -47,9 +47,10 @@ Every run:
 
 - checks GitHub Releases, including prereleases;
 - selects the newest published release;
-- downloads that release's exact CAM `.pak` and current `install-xbox-dev.ps1`;
-- verifies both files against GitHub's SHA-256 digests;
-- runs the existing fail-closed Xbox installer.
+- downloads that release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
+- verifies all three files against GitHub's SHA-256 digests;
+- extracts the exact current radial XAML from the installed BG3 `Game.pak` and applies the presentation-only mirror patch locally;
+- packs that locally derived result and runs the existing fail-closed Xbox installer.
 
 So the extracted one-click installer can be kept and reused for future CAM updates.
 
@@ -64,23 +65,22 @@ See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App researc
 ## Architecture
 
 ```text
-native BG3 ActionRadials state
+installed BG3 Game.pak
         |
         v
-native MainUI/Pages/ActionRadials.xaml
+native PreloadedActionRadials_c.xaml
+        |
+        | local install-time patch
+        v
+native Radial stays as invisible input/focus engine
+        +
+non-interactive grid mirrors Radial.LocalFocus.Index
         |
         v
-ActionRadialWidgetTemplate_P8 resource
-        ^
-        |
-CAM Lib_Controller.xaml override
-        |
-        v
-ControllerHotBars / SlotList grid
-        |
-        v
-native UseSlotCommand / CloseWidget seams
+locally derived CAM .pak
 ```
+
+The native `ActionRadials` state/page, `ActionRadialWidgetTemplate_P8`, A/B commands, nested/swap behavior and PageView focus lifecycle are not reconstructed by CAM.
 
 See:
 
