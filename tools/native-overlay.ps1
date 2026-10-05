@@ -255,8 +255,13 @@ function Set-NamedElementAttribute {
             1
         )
     } else {
-        $patchedOpen = $open.Substring(0, $open.Length - 1) +
-            ' ' + $Attribute + '="' + $Value + '">'
+        if ($open.EndsWith("/>", [System.StringComparison]::Ordinal)) {
+            $patchedOpen = $open.Substring(0, $open.Length - 2) +
+                ' ' + $Attribute + '="' + $Value + '"/>'
+        } else {
+            $patchedOpen = $open.Substring(0, $open.Length - 1) +
+                ' ' + $Attribute + '="' + $Value + '">'
+        }
     }
 
     return $Text.Substring(0, $span.Start) +
