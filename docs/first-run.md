@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.20-patch8-list-grid** or newer.
+Use **v0.0.22-hidden-one-click** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -10,34 +10,24 @@ The runtime mod contains no Script Extender.
 
 Launch BG3 from Xbox App and install one small mod through the **built-in Mod Manager**. Enable it, then exit BG3 normally. That mod supplies both path evidence and the real `modsettings.lsx` schema for this Xbox build.
 
-### 2. Download the CAM candidate
+### 2. Install/update CAM
 
-Download both release assets into the same folder:
+Download `BG3ControllerActionMenu-OneClickInstaller.zip` from the newest GitHub release and extract it once.
 
-- `BG3ControllerActionMenu-0.0.20-patch8-list-grid.pak`
-- `install-xbox-dev.ps1`
+Double-click:
 
-### 3. Run the read-only discovery
+`Install-BG3ControllerActionMenu.vbs`
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
-```
+No console window is shown. The launcher automatically downloads the newest published CAM release, verifies the GitHub SHA-256 digests for both the PAK and the current Xbox installer, then runs the fail-closed installation.
 
-Nothing in BG3 is modified. The script produces `xbox-dev-environment.json`.
+On success a normal Windows dialog shows the installed version.
 
-### 4. If the target is proven, install
+On failure, inspect:
 
-If the script says:
+- `%LOCALAPPDATA%\BG3ControllerActionMenu\install-latest.log`;
+- `%LOCALAPPDATA%\BG3ControllerActionMenu\xbox-dev-environment.json`.
 
-`A unique, evidence-backed Xbox mod target was found.`
-
-run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
-```
-
-If it says anything else, do not manually copy files. Send `xbox-dev-environment.json` instead.
+Do not manually copy files when the installer refuses the target.
 
 ## Single milestone UI test
 

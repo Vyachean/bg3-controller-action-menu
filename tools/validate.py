@@ -15,7 +15,10 @@ ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
 CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
-ONE_CLICK_INSTALLER = ROOT / "install-latest.cmd"
+LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
+ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
+ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
+RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
 
 IGNORED_DIRS = {".git", ".local", "build", "dist", "artifacts", "extracted", "game-data", "toolkit-data"}
@@ -167,18 +170,57 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
-            ONE_CLICK_INSTALLER,
+            LATEST_INSTALLER,
             [
-                'https://api.github.com/repos/$Repository/releases?per_page=20',
-                'Where-Object { -not $_.draft -and $_.published_at }',
-                'BG3ControllerActionMenu-*.pak',
+                "releases?per_page=20",
+                "Sort-Object { [DateTimeOffset]$_.published_at } -Descending",
+                "Never silently fall back to an older release",
+                'BG3ControllerActionMenu-$version.pak',
                 'install-xbox-dev.ps1',
-                'Get-FileHash -Algorithm SHA256',
-                'browser_download_url',
-                'digest',
-                'CAM_ONE_CLICK_VALIDATE_ONLY',
-                '-Apply -PackagePath $pakPath -ReportPath $reportPath',
-                'pause',
+                "browser_download_url",
+                "^sha256:([0-9a-fA-F]{64})$",
+                "Refusing unexpected release asset URL",
+                "Save-VerifiedReleaseAsset",
+                "& $installerPath -Apply -PackagePath $pakPath",
+                "install-status.txt",
+                "xbox-dev-environment.json",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            ONE_CLICK_LAUNCHER,
+            [
+                "install-latest.ps1",
+                "shell.Run(command, 0, True)",
+                "install-latest.log",
+                "install-status.txt",
+                "Installation completed.",
+                "--self-test",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            ONE_CLICK_BUILDER,
+            [
+                "Install-BG3ControllerActionMenu.vbs",
+                "install-latest.ps1",
+                "BG3ControllerActionMenu-OneClickInstaller.zip",
+                "Compress-Archive",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            RELEASE_WORKFLOW,
+            [
+                "Test hidden one-click installer",
+                "build-one-click-installer.ps1",
+                "BG3ControllerActionMenu-OneClickInstaller.zip",
             ],
         )
     )

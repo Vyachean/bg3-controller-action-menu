@@ -241,7 +241,7 @@
                         BorderThickness="2"
                         Panel.ZIndex="20">
                     <StackPanel Width="360">
-                        <TextBlock Text="CAM 0.0.21-one-click-installer Xbox diagnostic"
+                        <TextBlock Text="CAM 0.0.22-hidden-one-click Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
