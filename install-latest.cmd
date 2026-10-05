@@ -21,11 +21,16 @@ if "%CAM_EXIT%"=="0" (
   echo no BG3 files were modified.
 )
 echo.
-pause
+if not "%CAM_ONE_CLICK_VALIDATE_ONLY%"=="1" pause
 exit /b %CAM_EXIT%
 
 #__POWERSHELL__
 $ErrorActionPreference = "Stop"
+
+if ($env:CAM_ONE_CLICK_VALIDATE_ONLY -eq "1") {
+    Write-Host "One-click launcher PowerShell payload parsed successfully."
+    return
+}
 
 $Repository = "Vyachean/bg3-controller-action-menu"
 $ApiUrl = "https://api.github.com/repos/$Repository/releases?per_page=20"
