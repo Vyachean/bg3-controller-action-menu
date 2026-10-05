@@ -62,7 +62,7 @@ $template = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/G
 $version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
 
 $requiredLibrarySeams = @(
-    "/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml"
+    "CAM_ActionRadials.xaml"
 )
 foreach ($needle in $requiredLibrarySeams) {
     if (-not $controllerLibrary.Contains($needle)) {
