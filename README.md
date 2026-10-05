@@ -14,24 +14,19 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Captured Patch 8 list-grid correction candidate.**
+**Native ActionRadials shell correction candidate.**
 
-A read-only capture of the installed Xbox App build 1.8.910.0 established the current Patch 8 radial contract. The candidate now uses:
+Runtime evidence now isolates the remaining problem:
 
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars` as the controller source;
-- each bar's native `SlotList`;
-- `SingleHotBar.SlotList` for nested variants/upcasts/containers;
-- focus-driven scrolling following the page's `FocusedElement`;
-- the native radial A seam: `UIAccept -> UseSlotCommand(focused slot)`;
-- the native radial B switch: nested `ClearSingleHotbarCommand`, top-level `CustomEvent("CloseWidget")`.
+- `0.0.18` proved `ControllerHotBars` data/materialization and populated Class / Actions / Items, but navigation/B failed;
+- `0.0.19` was a rejected input-routing regression;
+- `0.0.20` again rendered `Controller bars: 5` and all sections, but reported no widget/slot focus and all controller input remained dead.
 
-`0.0.18-native-controller-contract` proved the controller data path and rendering in-game, but directional navigation and B failed. `0.0.19-native-input-routing` then regressed rendering/data and is rejected.
+`0.0.23-native-shell-focus` stops iterating on the fully custom `CAM_ActionMenu_c.xaml` root. It uses a native-named `ActionRadials.xaml` and preserves the captured Patch 8 root identity/lifecycle. Only the presentation template is custom.
 
-`0.0.20-patch8-list-grid` returns to the proven 0.0.18 rendering/input base and changes the slot container to the exact current Patch 8 controller-grid hierarchy already present in `PreloadedActionRadials_c.xaml`: `LSListBox -> focusable ListBoxItem -> LSGrid`. Native radial `LSButton` A/B controls are retained.
+Its focus tree mirrors the installed game's slot-assignment UI: outer `LSListBox` focus root with `SelectedIndex`, `LocalFocusSelector`, `ActionNext/ActionPrev`; focusable outer items; nested `LSListBox` grids; `LSGrid ContainerData="{Binding}"`; and native radial `LSButton` A/B primitives.
 
-`0.0.22-hidden-one-click` keeps that same runtime candidate and changes installation UX only (plus the visible diagnostic version marker).
-
-It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
+The one-click installer introduced in `0.0.22-hidden-one-click` is retained unchanged. This runtime candidate remains Script-Extender-free and is not claimed working until the next combined milestone proof.
 
 ## Xbox App installation
 
