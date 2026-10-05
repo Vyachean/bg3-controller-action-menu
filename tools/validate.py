@@ -11,8 +11,11 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "BG3ControllerActionMenu"
 MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
-ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
-CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
+CONTROLLER_LIBRARY = MOD_ROOT / "GUI/Library/Lib_Controller.xaml"
+KEYBOARD_LIBRARY = MOD_ROOT / "GUI/Library/Lib_Keyboard.xaml"
+ACTION_TEMPLATE = MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml"
+LEGACY_ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
+LEGACY_CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
@@ -59,53 +62,61 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
-            ACTION_PAGE,
+            CONTROLLER_LIBRARY,
             [
-                'ls:UIWidget.ContextName="HotBar"',
-                "<ls:UIWidget.Template>",
-                "<ControlTemplate>",
-                "AreRadialsOpen",
-                'x:Name="CAM_DiagnosticPanel"',
-                "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars",
-                'ItemsSource="{Binding SlotList}"',
-                'ItemsSource="{Binding SingleHotBar.SlotList}"',
-                'x:Key="CAM_SlotContainer"',
-                'TargetType="{x:Type ListBoxItem}"',
-                '<ls:LSListBox ItemsSource="{Binding SlotList}"',
-                'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
-                'ItemsPanel="{StaticResource CAM_NativeGrid}"',
-                'ActionUpEvent="UIUp"',
-                'ActionDownEvent="UIDown"',
-                'ActionLeftEvent="UILeft"',
-                'ActionRightEvent="UIRight"',
-                'FocusLeft="UITabPrev"',
-                'FocusRight="UITabNext"',
-                '<ls:LSButton x:Name="UseSlotBinding"',
-                'Command="{Binding UseSlotCommand}"',
-                'CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"',
-                'BoundEvent="UIAccept"',
-                '<ls:LSButton x:Name="CancelButton"',
-                'Command="{Binding ClearSingleHotbarCommand}"',
-                'Property="CommandParameter" Value="CloseWidget"',
-                'ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"',
-                'x:Name="NativeSlotButton"',
-                'Command="{x:Null}"',
-                'EatInput="False"',
-                'BoundEvent="UICancel"',
-                'Background="Transparent"',
+                "ResourceDictionary",
+                "/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml",
             ],
         )
     )
 
     errors.extend(
         require_text(
-            CONTROLLER_STATE,
+            KEYBOARD_LIBRARY,
             [
-                'Name="ActionRadials"',
-                'ModType="Override"',
-                'Filename="CAM_ActionMenu_c.xaml"',
-                'Name="CloseWidget"',
-                'Name="ToggleShortcutMenu"',
+                "ResourceDictionary",
+                "CAM is controller-only",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            ACTION_TEMPLATE,
+            [
+                'x:Key="ActionRadialWidgetTemplate_P8"',
+                'x:Name="CAM_DiagnosticPanel"',
+                "native ActionRadials page + Lib_Controller template override",
+                "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars",
+                'ItemsSource="{Binding SlotList}"',
+                'ItemsSource="{Binding SingleHotBar.SlotList}"',
+                'x:Key="CAM_SlotContainer"',
+                'TargetType="{x:Type ListBoxItem}"',
+                'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
+                'ItemsPanel="{StaticResource CAM_NativeGrid}"',
+                'ActionUpEvent="UIUp"',
+                'ActionDownEvent="UIDown"',
+                'ActionLeftEvent="UILeft"',
+                'ActionRightEvent="UIRight"',
+                'TargetName="ActionRadials"',
+                'PropertyName="Tag"',
+                'Value="{Binding LocalFocus.DataContext, ElementName=SectionSlots}"',
+                'TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1"',
+                'TargetName="HotBarList"',
+                'FocusElement="{Binding ElementName=HotBarList, Path=Tag}"',
+                '<ls:LSButton x:Name="UseSlotBinding"',
+                'Command="{Binding UseSlotCommand}"',
+                'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
+                'BoundEvent="UIAccept"',
+                '<ls:LSButton x:Name="CancelButton"',
+                'Command="{Binding ClearSingleHotbarCommand}"',
+                'Property="CommandParameter" Value="CloseWidget"',
+                'ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"',
+                'x:Name="NativeSlotButton"',
+                'Command="{x:Null}"',
+                'EatInput="False"',
+                'BoundEvent="UICancel"',
+                'Background="Transparent"',
             ],
         )
     )
@@ -116,19 +127,22 @@ def validate_semantics() -> list[str]:
             f"{script_extender.relative_to(ROOT)}: runtime package must not contain Script Extender files"
         )
 
-    if ACTION_PAGE.exists():
-        page_text = ACTION_PAGE.read_text(encoding="utf-8")
+    # Runtime ownership must stay with the base game. Reintroducing either file
+    # recreates the dead-input architecture proven by 0.0.18-0.0.20.
+    for legacy in (LEGACY_ACTION_PAGE, LEGACY_CONTROLLER_STATE):
+        if legacy.exists():
+            errors.append(
+                f"{legacy.relative_to(ROOT)}: native ActionRadials state/page must not be overridden"
+            )
+
+    if ACTION_TEMPLATE.exists():
+        template_text = ACTION_TEMPLATE.read_text(encoding="utf-8")
         forbidden = [
             "opaqueBG.png",
             'Background="{DynamicResource LS_tint00}"',
-            "<ls:UIWidget.ContentTemplate>",
             "CurrentPlayer.SelectedCharacter.HotBars",
             'Command="ls:UIWidget.CloseRequestCommand"',
             'x:Name="CancelNestedButton"',
-            'FocusUp="UIUp"',
-            'FocusDown="UIDown"',
-            'FocusLeft="UILeft"',
-            'FocusRight="UIRight"',
             '<ls:LSInputBinding x:Name="UseSlotBinding"',
             '<ls:LSInputBinding x:Name="CancelBinding"',
             'UseWidgetNavigation="True"',
@@ -136,11 +150,12 @@ def validate_semantics() -> list[str]:
             'ls:MoveFocus.InternalFocusable="True"',
             'AlwaysSelectFirst="True"',
             'ls:MoveFocus.IsMoveFocusScope="True"',
+            'ElementName=CAM_ActionMenu',
         ]
         for needle in forbidden:
-            if needle in page_text:
+            if needle in template_text:
                 errors.append(
-                    f"{ACTION_PAGE.relative_to(ROOT)}: controller page safety regression: {needle}"
+                    f"{ACTION_TEMPLATE.relative_to(ROOT)}: controller template safety regression: {needle}"
                 )
 
     errors.extend(
@@ -257,11 +272,11 @@ def validate_semantics() -> list[str]:
         version = VERSION.read_text(encoding="utf-8").strip()
         if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?", version):
             errors.append(f"VERSION: invalid SemVer-like value: {version!r}")
-        elif ACTION_PAGE.exists():
+        elif ACTION_TEMPLATE.exists():
             expected_diagnostic = f"CAM {version} Xbox diagnostic"
-            if expected_diagnostic not in ACTION_PAGE.read_text(encoding="utf-8"):
+            if expected_diagnostic not in ACTION_TEMPLATE.read_text(encoding="utf-8"):
                 errors.append(
-                    f"{ACTION_PAGE.relative_to(ROOT)}: diagnostic build marker must match VERSION: "
+                    f"{ACTION_TEMPLATE.relative_to(ROOT)}: diagnostic build marker must match VERSION: "
                     f"{expected_diagnostic!r}"
                 )
 

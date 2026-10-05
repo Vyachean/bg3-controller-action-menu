@@ -181,6 +181,40 @@ The current radial uses this exact structure for its slot-assignment spell/actio
 
 No further data-source experimentation is justified.
 
+### 2026-10-05 — 0.0.20 list-grid runtime result
+
+`0.0.20-patch8-list-grid` again rendered the Class / Actions / Items sections and showed `Controller bars: 5`, but the diagnostic overlay reported no focused element/slot and every controller input remained dead, including B.
+
+That result closes the custom-page line of investigation. The common denominator across 0.0.18 and 0.0.20 is the CAM-owned replacement `ActionRadials` state/page. Changing child focus containers is no longer justified.
+
+`0.0.21` and `0.0.22` changed installation UX only and did not change this runtime candidate.
+
+### Next runtime boundary — native page/library override
+
+`0.0.23-native-page-library-override` removes the CAM `ActionRadials` StateMachine override and removes `CAM_ActionMenu_c.xaml` from the package.
+
+BG3 owns:
+
+- the native `ActionRadials` state;
+- the native `MainUI/Pages/ActionRadials.xaml` root;
+- the `ActionRadials` widget name;
+- the `HotBar` context;
+- native page Loaded/Unloaded/WidgetClosing/focus lifecycle;
+- native state events such as `CloseWidget`.
+
+CAM now participates only through `GUI/Library/Lib_Controller.xaml`, the documented controller-mode library hook, and overrides the `ActionRadialWidgetTemplate_P8` resource consumed by the native page.
+
+Automatic proof for this candidate must establish:
+
+- no packaged CAM controller StateMachine;
+- no packaged CAM replacement page;
+- controller library merges the CAM radial resource;
+- override key is exactly `ActionRadialWidgetTemplate_P8`;
+- captured ControllerHotBars / SingleHotBar / focus / A / B seams are present;
+- package remains Script-Extender-free.
+
+Only after those checks pass is one combined in-game test justified. If the resource override is not selected by BG3, the expected fallback is the vanilla radial page rather than a trapped/dead custom state.
+
 ## Manual test report format
 
 A useful report is:

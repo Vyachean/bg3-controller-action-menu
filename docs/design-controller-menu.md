@@ -103,17 +103,21 @@ Current `HotBarSlotStyle` remains useful for square native cell visuals, but its
 Prefer:
 
 ```text
-DCHotBar / ControllerHotBars
-                  |
-                  v
-          per-bar SlotList
-                  |
-                  v
-       native-style grid presentation
-                  |
-                  v
-   UIAccept -> UseSlotCommand(focused slot)
+native ActionRadials state
+          |
+native MainUI/Pages/ActionRadials.xaml
+          |
+ActionRadialWidgetTemplate_P8
+          ^
+          |
+CAM Lib_Controller.xaml resource override
+          |
+ControllerHotBars / SlotList grid
+          |
+native UIAccept -> UseSlotCommand(Tag)
 ```
+
+The state and page are no longer CAM-owned. The resource library is the customization boundary.
 
 Do not implement spell execution, targeting, resource checks, upcast rules, recasts, or passive semantics ourselves.
 
@@ -133,7 +137,7 @@ Only after that proof should categorisation be made more sophisticated.
 
 The runtime probe remains useful as a compatibility/debug tool, but it is no longer considered a hard prerequisite.
 
-The read-only installed-game capture has now closed the collection/materialization/cancel seam. The next candidate may be tested, but only as one combined milestone run after static/package verification.
+The read-only installed-game capture closed the collection/materialization/cancel seam. Runtime 0.0.18–0.0.20 then proved that reconstructing the whole state/page leaves controller input dead even when rendering is correct. The next candidate therefore preserves the native page/state and changes only the controller library template resource. It may be tested only after static/package verification proves that ownership boundary.
 
 ## Visual policy
 
