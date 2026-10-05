@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native-contract grid milestone candidate.**
+**Native input-routing correction candidate.**
 
 A read-only capture of the installed Xbox App build 1.8.910.0 established the current Patch 8 radial contract. The candidate now uses:
 
@@ -25,7 +25,9 @@ A read-only capture of the installed Xbox App build 1.8.910.0 established the cu
 - the native radial A seam: `UIAccept -> UseSlotCommand(focused slot)`;
 - the native radial B switch: nested `ClearSingleHotbarCommand`, top-level `CustomEvent("CloseWidget")`.
 
-The candidate still needs one combined in-game milestone proof for rendering, directional focus/scroll, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
+`0.0.18-native-controller-contract` proved the controller data path and rendering in-game, but directional navigation and B failed. `0.0.19-native-input-routing` keeps the proven data path and replaces the custom input layer with BG3's navigable-grid flags plus player-scoped `LSInputBinding`.
+
+It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
 
 ## Xbox App local development
 
