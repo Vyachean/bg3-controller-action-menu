@@ -12,7 +12,7 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
    Do not reimplement spell availability, action costs, targeting, upcasting, recasts, cooldowns, resources, or execution rules if the existing UI/action model can provide them.
 
 2. **Thin UI composition.**
-   Reuse BG3-owned view models, templates, styles and commands wherever possible. The mod should primarily change composition/layout. The `ActionRadials` state and native `MainUI/Pages/ActionRadials.xaml` page are BG3-owned and must not be replaced by CAM; runtime customization belongs in controller resource libraries.
+   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` state/page/template, PageView focus lifecycle and native Radial input engine are BG3-owned. CAM may only apply a deterministic presentation patch to native radial resources extracted locally from the user's installed game.
 
 3. **No Script Extender dependency in the shipping package.**
    `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` must not contain a `ScriptExtender` directory. Script Extender experiments may live under `dev/`, but they are not part of the runtime package or required workflow.
@@ -61,14 +61,25 @@ Runtime evidence additionally proves:
 
 - `0.0.18` had the correct controller data/rendering path but dead navigation/B;
 - `0.0.19` regressed the page by changing input transport;
-- `0.0.20` restored rendering and the captured list-grid hierarchy but controller focus/input was still fully dead;
-- `0.0.21` and `0.0.22` changed installer UX only.
+- `0.0.20` restored rendering but controller focus/input was still dead;
+- `0.0.23` failed at startup because a CAM-local component URI was interpreted as a missing literal XAML path;
+- `0.0.24` loaded the native page and CAM template override far enough to emit native radial movement sounds, but replacing the full `ActionRadialWidgetTemplate_P8` still left the custom window without usable focus/A/B.
 
-Do not reintroduce a CAM-owned `ActionRadials` state or custom replacement page. The next runtime candidate must keep the native state and native `ActionRadials.xaml` root and contribute only controller resource-library presentation. Runtime 0.0.23 additionally proves that a CAM-local merged XAML dictionary must not be referenced from `Lib_Controller.xaml`; CAM radial resources must stay inline in that library unless a different path mechanism is proven in-game.
+These results reject all CAM-owned page/template/input reconstructions.
 
-The next in-game test is allowed only after package validation proves there is no CAM StateMachine/Page override and the native template resource override contains the captured ControllerHotBars, focus, A and B seams. It must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
+Current mandatory architecture:
 
-Custom code owns only resource-level composition/layout and diagnostics, preserves the live gameplay view, and leaves page/state lifecycle plus gameplay dispatch to BG3.
+- published source/release PAK contains no native BG3 XAML;
+- installer extracts the exact current normal + Clairmont `PreloadedActionRadials_c.xaml` from local `Game.pak`;
+- patcher verifies expected Patch 8 seams and fails closed on mismatch;
+- native `HotBarRadial` and `SingleBar` remain present as the input/focus engines;
+- CAM only hides their artwork and adds non-interactive grid mirrors;
+- grid selection is one-way from native `Radial.LocalFocus.Index`;
+- native A/B/nested/swap/PageView/state-machine logic remains untouched.
+
+Do not reintroduce CAM `Controller.xaml`, `CAM_ActionMenu_c.xaml`, `Lib_Controller.xaml`, a hand-written `ActionRadialWidgetTemplate_P8`, or committed copies of Larian XAML.
+
+The next in-game test is justified only after CI proves the patcher preserves native radial controls and A/B seams on a fixture, the published base PAK contains no runtime XAML, and the one-click installer derives the final PAK locally.
 
 ## Pull request expectations
 
