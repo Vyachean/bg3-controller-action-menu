@@ -63,23 +63,28 @@ Runtime evidence additionally proves:
 - `0.0.19` regressed the page by changing input transport;
 - `0.0.20` restored rendering but controller focus/input was still dead;
 - `0.0.23` failed at startup because a CAM-local component URI was interpreted as a missing literal XAML path;
-- `0.0.24` loaded the native page and CAM template override far enough to emit native radial movement sounds, but replacing the full `ActionRadialWidgetTemplate_P8` still left the custom window without usable focus/A/B.
+- `0.0.24` proved the standard controller library hook and native page are active, but a full replacement `ActionRadialWidgetTemplate_P8` still lost usable A/B/focus;
+- `0.0.25` packaged a local copy of the current native `PreloadedActionRadials_c.xaml` under `Public/Game/GUI/...`, but produced no visible in-game change.
 
-These results reject all CAM-owned page/template/input reconstructions.
+No runtime architecture is currently accepted.
 
-Current mandatory architecture:
+In particular, do **not** treat any of these as established:
 
-- published source/release PAK contains no native BG3 XAML;
-- installer extracts the exact current normal + Clairmont `PreloadedActionRadials_c.xaml` from local `Game.pak`;
-- patcher verifies expected Patch 8 seams and fails closed on mismatch;
-- native `HotBarRadial` and `SingleBar` remain present as the input/focus engines;
-- CAM only hides their artwork and adds non-interactive grid mirrors;
-- grid selection is one-way from native `Radial.LocalFocus.Index`;
-- native A/B/nested/swap/PageView/state-machine logic remains untouched.
+- CAM-owned replacement page/state;
+- hand-written full ActionRadials template replacement;
+- raw `Public/Game/GUI` resource-path overrides inside a normal mod PAK;
+- install-time extraction/repacking of native XAML as a solution by itself.
 
-Do not reintroduce CAM `Controller.xaml`, `CAM_ActionMenu_c.xaml`, `Lib_Controller.xaml`, a hand-written `ActionRadialWidgetTemplate_P8`, or committed copies of Larian XAML.
+Research gate before the next candidate:
 
-The next in-game test is justified only after CI proves the patcher preserves native radial controls and A/B seams on a fixture, the published base PAK contains no runtime XAML, and the one-click installer derives the final PAK locally.
+1. inspect current 2025–2026 controller-radial mods for concrete data/UI hooks;
+2. finish the RadialHotbarCustomization v0.8.0.0 source audit;
+3. inspect Auto-Sorting Hotbar controller support and Sticky Temporaries where source/implementation is available;
+4. reconcile those findings with Larian's supported UI mod model (controller Library, Pages, StateMachines, restyling);
+5. choose the smallest hook that keeps the exact native `ActionRadials` behavior;
+6. only then implement one milestone candidate.
+
+The next in-game test must not be requested until that research gate is complete. It must combine rendering, focus/navigation, top-level B and one simple A dispatch.
 
 ## Pull request expectations
 
