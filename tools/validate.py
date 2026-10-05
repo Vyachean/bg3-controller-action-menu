@@ -125,7 +125,7 @@ def validate_semantics() -> list[str]:
                 'x:Key="RadialHotBarListItemContainer"',
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
-                'Mods\BG3ControllerActionMenu\GUI\Library\Lib_Controller.xaml',
+                'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
                 "--action extract-single-file",
                 "--action create-package",
                 "-PatchOnlySourceXaml",
