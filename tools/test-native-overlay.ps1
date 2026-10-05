@@ -216,6 +216,8 @@ foreach ($needle in @(
     '<ls:LSListBox x:Name="SingleBar"',
     'LocalFocusSelector="{Binding ElementName=CAM_HotBarRadialSelector,Mode=OneWay}"',
     'LocalFocusSelector="{Binding ElementName=CAM_SingleBarSelector,Mode=OneWay}"',
+    'x:Name="CAM_HotBarRadialFocusRoot"',
+    'x:Name="CAM_SingleBarFocusRoot"',
     'HorizontalAlignment="Center"',
     'VerticalAlignment="Center"',
     'Width="640"',
@@ -238,8 +240,8 @@ foreach ($needle in @(
     'x:Name="ButtonHintsContainer"',
     'FlowDirection="LeftToRight"',
     'x:Name="ShowContextMenu"',
-    'Opacity="0"',
-    'Width="0"'
+    'Opacity="1"',
+    'Tag="Customize"'
 )) {
     if (-not $text.Contains($needle)) {
         throw "Generated controller library is missing: $needle"
@@ -255,6 +257,15 @@ if ($text.Contains('Command="{Binding AssignSlotCommand}"')) {
 
 if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="(HotBarRadial|SingleBar)"').Count -ne 2) {
     throw "Expected exactly two assignment-style action grids."
+}
+
+foreach ($name in @("HotBarRadial", "SingleBar")) {
+    $rootName = "CAM_" + $name + "FocusRoot"
+    $selectorName = "CAM_" + $name + "Selector"
+    $rootPattern = '<Grid\b[^>]*x:Name="' + [regex]::Escape($rootName) + '"[^>]*>[\s\S]*?<ls:LSListBox\b[^>]*x:Name="' + [regex]::Escape($name) + '"[\s\S]*?<Control\b[^>]*x:Name="' + [regex]::Escape($selectorName) + '"'
+    if (-not [regex]::IsMatch($text, $rootPattern)) {
+        throw "Focus selector and grid list must share the centered focus-root coordinate space for $name."
+    }
 }
 
 if ([regex]::Matches($text, '<Ellipse\s+(?=[^>]*Margin="0,36,0,0")(?=[^>]*Height="1260")(?=[^>]*Width="1260")[^>]*Visibility="Collapsed"').Count -ne 2) {
@@ -275,4 +286,16 @@ if (-not $hintMatch.Success -or
     throw "Grid button hints are not centered/compact."
 }
 
-Write-Host "Native assignment-grid presentation fixture passed: grids centered, radial backdrops hidden, radial-specific customization hint visually removed, native focus/A/B/swap seams preserved."
+$contextMatch = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="ShowContextMenu"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $contextMatch.Success -or
+    -not $contextMatch.Value.Contains('Opacity="1"') -or
+    -not $contextMatch.Value.Contains('Width="Auto"') -or
+    -not $contextMatch.Value.Contains('Tag="Customize"')) {
+    throw "Context-menu hint must remain active and be labeled Customize."
+}
+
+Write-Host "Native assignment-grid focus-origin fixture passed: grid and selector share the centered coordinate space, X remains Customize, native focus/A/B/swap seams preserved."
