@@ -14,23 +14,18 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Runtime contract reconstruction after the first Xbox App proof.**
+**Native-contract grid milestone candidate.**
 
-The Xbox App build has already proven that CAM's `ActionRadials` override loads, but the early grid prototype does not yet materialize the current controller action collection correctly. It is therefore **not a usable release candidate**.
+A read-only capture of the installed Xbox App build 1.8.910.0 established the current Patch 8 radial contract. The candidate now uses:
 
-Current proven seams:
+- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars` as the controller source;
+- each bar's native `SlotList`;
+- `SingleHotBar.SlotList` for nested variants/upcasts/containers;
+- focus-driven scrolling following the page's `FocusedElement`;
+- the native radial A seam: `UIAccept -> UseSlotCommand(focused slot)`;
+- the native radial B switch: nested `ClearSingleHotbarCommand`, top-level `CustomEvent("CloseWidget")`.
 
-- Patch 8 still owns the controller `ActionRadials` state and `HotBar` context;
-- Patch 8 `HotBarSlotStyle` still renders native slot types and dispatches through `UseSlotCommand` with the slot object;
-- current UI code still exposes the live `HotBar.DataContext`, nested-hotbar state and per-bar `SlotList` objects;
-- controller and keyboard hotbar state are distinct.
-
-Current research target:
-
-- identify the exact Patch 8 controller-radial collection/materialization path;
-- preserve its native focus/paging/cancel behavior;
-- change only presentation to a compact grid;
-- request no further gameplay test until that contract is grounded in current evidence.
+The candidate still needs one combined in-game milestone proof for rendering, directional focus/scroll, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
 
 ## Xbox App local development
 
@@ -61,16 +56,19 @@ BG3 ActionRadials state
    HotBar context
         |
         v
-current controller slot collection
+PlayerCharacterProperties.ControllerHotBars
         |
         v
-native HotBarSlotStyle
+per-bar SlotList / SingleHotBar.SlotList
+        |
+        v
+native HotBarSlotStyle visuals
         |
         v
 thin custom grid composition
         |
         v
-native UseSlotCommand(slot)
+UIAccept -> native UseSlotCommand(focused slot)
 ```
 
 See:
