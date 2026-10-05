@@ -90,10 +90,10 @@ foreach ($needle in @(
 if ([regex]::Matches($text, '<ls:Radial\b').Count -ne 2) {
     throw "Native Radial controls must remain present as the input/focus engine."
 }
-if ([regex]::Matches($text, '<ls:LSListBox\b').Count -ne 2) {
-    throw "Expected exactly two CAM visual mirror grids."
+if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="CAM_(HotBarRadial|SingleBar)Grid"').Count -ne 2) {
+    throw "Expected exactly two named CAM visual mirror grids."
 }
-if ([regex]::Matches($text, '<ls:Radial\b[^>]*Opacity="0"').Count -ne 2) {
+if ([regex]::Matches($text, '<ls:Radial\b[^>]*x:Name="(HotBarRadial|SingleBar)"[^>]*Opacity="0"').Count -ne 2) {
     throw "Native Radial controls must be hidden visually, not removed."
 }
 
