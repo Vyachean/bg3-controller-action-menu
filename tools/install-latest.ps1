@@ -182,7 +182,7 @@ try {
         New-Item -ItemType Directory -Force -Path $logParent | Out-Null
     }
     try {
-        Start-Transcript -LiteralPath $LogPath -Force | Out-Null
+        Start-Transcript -Path $LogPath -Force | Out-Null
         $transcriptStarted = $true
     } catch {
         # Installation remains usable even when transcript creation is unavailable.
