@@ -1,32 +1,41 @@
 # Xbox App / Microsoft Store PC installation
 
-## Normal installation: one file, double click
+## Normal installation: double click, no console
 
-Download **`install-latest.cmd`** from any current GitHub Release and keep it anywhere convenient.
+Download **`BG3ControllerActionMenu-OneClickInstaller.zip`** from any current GitHub Release and extract it once.
 
 For every install or update:
 
 1. exit Baldur's Gate 3;
-2. double-click `install-latest.cmd`;
-3. wait for the window to report success;
-4. press any key to close it.
+2. double-click `Install-BG3ControllerActionMenu.vbs`;
+3. wait for the normal Windows result dialog.
 
-The launcher always selects the newest **published** GitHub Release, including prereleases. You do not need to download a new `.pak` or PowerShell installer for each build.
+No PowerShell or Command Prompt window is shown.
 
-The launcher:
+The launcher is reusable across releases. Every run:
 
-1. queries the repository's GitHub Releases;
-2. selects the most recently published non-draft release;
-3. downloads that release's `BG3ControllerActionMenu-*.pak` and `install-xbox-dev.ps1`;
-4. verifies both downloads against the SHA-256 digests published by GitHub;
-5. runs the existing fail-closed Xbox installer with `-Apply`;
-6. leaves the console window open so the result can be read.
+1. queries the repository's GitHub Releases list, including prereleases;
+2. selects the newest published non-draft release;
+3. requires that exact release's `BG3ControllerActionMenu-<version>.pak` and `install-xbox-dev.ps1`;
+4. downloads both files;
+5. verifies both against the SHA-256 digests published by GitHub;
+6. runs the downloaded fail-closed Xbox installer with `-Apply`.
 
-Downloaded files and the diagnostic report are cached under:
+It deliberately does **not** silently fall back to an older version when the newest release is malformed.
 
-`%LOCALAPPDATA%\BG3ControllerActionMenu\installer-cache\<release-tag>`
+Installer state is stored under:
 
-The `install-latest.cmd` file itself is evergreen: future releases are picked up automatically.
+`%LOCALAPPDATA%\BG3ControllerActionMenu`
+
+Useful files:
+
+- `install-latest.log`;
+- `install-status.txt`;
+- `xbox-dev-environment.json`;
+- verified downloads under `installer-cache\<release-tag>`.
+
+The old console launcher is no longer the recommended path. The release ZIP is the normal user-facing installer.
+
 
 ## One-time preparation on the gaming PC
 
@@ -38,7 +47,7 @@ Before the first CAM installation:
 2. open the built-in Mod Manager;
 3. install **one small mod from the built-in catalog** and enable it;
 4. exit BG3 normally;
-5. double-click `install-latest.cmd`.
+5. double-click `Install-BG3ControllerActionMenu.vbs`.
 
 That existing in-game-installed PAK proves which Mods cache this machine actually uses. Its active load-order entry also supplies the LSX schema that CAM mirrors instead of guessing a Steam/GOG or test-fixture layout.
 
@@ -94,7 +103,7 @@ Install a specific PAK:
 powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply -PackagePath .\BG3ControllerActionMenu-<version>.pak
 ```
 
-Normal users should use `install-latest.cmd` instead.
+Normal users should use the extracted one-click ZIP instead.
 
 ## Why this approach
 
