@@ -1,0 +1,9 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Controller-mode libraries are loaded by BG3 before mod StateMachines.
+         Keep CAM out of the ActionRadials state/page and override only the
+         presentation resource consumed by the native page. -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>
