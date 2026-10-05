@@ -66,6 +66,12 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
+      - name: Test one-click launcher
+        shell: cmd
+        env:
+          CAM_ONE_CLICK_VALIDATE_ONLY: "1"
+        run: install-latest.cmd
+
       - name: Test Xbox installer
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
