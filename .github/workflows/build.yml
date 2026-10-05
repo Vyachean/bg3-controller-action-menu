@@ -31,7 +31,11 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
-      - name: Test hidden one-click installer
+      - name: Test self-updating bootstrap
+        shell: pwsh
+        run: ./tools/test-bootstrap-latest.ps1
+
+      - name: Test canonical latest-release installer
         shell: pwsh
         run: ./tools/test-install-latest.ps1
 
@@ -71,6 +75,8 @@ jobs:
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
             tools/native-overlay.ps1
+            tools/bootstrap-latest.ps1
+            tools/install-latest.ps1
             build/BG3ControllerActionMenu-OneClickInstaller.zip
             tools/capture-native-radials.ps1
           if-no-files-found: error

@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.25-native-radial-visual-mirror** or newer.
+Use **v0.0.26-self-updating-installer** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -18,7 +18,9 @@ Double-click:
 
 `Install-BG3ControllerActionMenu.vbs`
 
-No console window is shown. The launcher downloads the newest published CAM release, verifies the GitHub SHA-256 digests for the base PAK, Xbox installer and native-overlay builder, then derives the installable PAK locally from this machine's exact BG3 `Game.pak`.
+No console window is shown. The bundled bootstrap first updates itself and the canonical installer from the newest published release when necessary, verifying GitHub SHA-256 digests. The current canonical installer then verifies the base PAK, Xbox installer and native-overlay builder and derives the installable PAK locally from this machine's exact BG3 `Game.pak`.
+
+After this self-updating OneClickInstaller has been extracted once, future installer-internal changes should not require replacing the folder.
 
 On success a normal Windows dialog shows the installed version.
 

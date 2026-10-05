@@ -14,7 +14,7 @@ Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
 baseDir = fso.GetParentFolderName(WScript.ScriptFullName)
-bootstrap = fso.BuildPath(baseDir, "install-latest.ps1")
+bootstrap = fso.BuildPath(baseDir, "bootstrap-latest.ps1")
 
 If Not fso.FileExists(bootstrap) Then
     MsgBox "Installer component is missing:" & vbCrLf & bootstrap, vbCritical, "BG3 Controller Action Menu"
@@ -41,6 +41,9 @@ command = "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File " & Q
           " -StatusPath " & QuoteArg(statusPath) & _
           " -ReportPath " & QuoteArg(reportPath)
 
+shell.Popup "Checking for installer updates and installing the newest release..." & vbCrLf & _
+            "This may take a minute.", 2, "BG3 Controller Action Menu", 64
+
 exitCode = shell.Run(command, 0, True)
 
 state = ""
@@ -58,7 +61,7 @@ End If
 If exitCode = 0 And UCase(state) = "SUCCESS" Then
     MsgBox "Installation completed." & vbCrLf & vbCrLf & _
            "Installed version: " & version & vbCrLf & _
-           "The newest published GitHub release was downloaded and verified automatically.", _
+           "The launcher updated itself if needed, then installed the newest verified release.", _
            vbInformation, "BG3 Controller Action Menu"
     WScript.Quit 0
 End If

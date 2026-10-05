@@ -12,16 +12,18 @@ For every install or update:
 
 No PowerShell or Command Prompt window is shown.
 
-The launcher is reusable across releases. Every run:
+The launcher is reusable across releases. Every run is two-stage:
 
-1. queries the repository's GitHub Releases list, including prereleases;
-2. selects the newest published non-draft release;
-3. requires that exact release's `BG3ControllerActionMenu-<version>.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-4. downloads all three files;
-5. verifies both against the SHA-256 digests published by GitHub;
-6. runs the downloaded fail-closed Xbox installer with `-Apply`.
+1. the bundled stable `bootstrap-latest.ps1` selects the newest published non-draft release;
+2. it requires that exact release's `bootstrap-latest.ps1` and `install-latest.ps1`;
+3. it downloads both and verifies their GitHub SHA-256 digests;
+4. if the release bootstrap differs from the bundled copy, control is transferred to the verified newer bootstrap automatically;
+5. the verified canonical `install-latest.ps1` then resolves the same newest release and downloads the version-specific base PAK, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
+6. those assets are SHA-256 verified and installation proceeds through the fail-closed Xbox installer.
 
-It deliberately does **not** silently fall back to an older version when the newest release is malformed.
+This separates the stable update protocol from the version-specific installer contract. A stale extracted folder therefore cannot silently pair an old `install-latest.ps1` with a newer release.
+
+Neither stage silently falls back to an older release when the newest published release is malformed.
 
 Installer state is stored under:
 
@@ -67,7 +69,7 @@ The installer refuses to write when:
 - more than one profile/load-order file is plausible;
 - more than one package cache is independently plausible;
 - the BG3 XML structure is unexpected;
-- the newest GitHub Release does not contain exactly one expected CAM PAK and installer;
+- the newest GitHub Release does not contain exactly one bootstrap, canonical installer, expected CAM PAK, Xbox installer, or native-overlay builder;
 - a downloaded release asset does not match GitHub's SHA-256 digest.
 
 In these cases the launcher reports failure and pauses. The underlying Xbox installer remains fail-closed; ambiguous cache/load-order discovery does not become an automatic write.

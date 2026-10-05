@@ -14,6 +14,8 @@ MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
 VERSION = ROOT / "VERSION"
 
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
+BOOTSTRAP_INSTALLER = ROOT / "tools/bootstrap-latest.ps1"
+BOOTSTRAP_TEST = ROOT / "tools/test-bootstrap-latest.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
@@ -157,6 +159,37 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
+            BOOTSTRAP_INSTALLER,
+            [
+                "releases?per_page=20",
+                "Never silently fall back to an older release",
+                'bootstrap-latest.ps1',
+                'install-latest.ps1',
+                "BootstrapUpdated",
+                "Save-VerifiedReleaseAsset",
+                "^sha256:([0-9a-fA-F]{64})$",
+                "Refusing unexpected release asset URL",
+                "Get-FileHash -Algorithm SHA256",
+                "& $cachedBootstrap @forward",
+                "& $cachedInstaller @installerArgs",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            BOOTSTRAP_TEST,
+            [
+                "Self-updating installer bootstrap fixture tests passed.",
+                "Updated bootstrap was not invoked with -BootstrapUpdated.",
+                "Canonical installer was not invoked.",
+                "Malformed newest release silently fell back to an older release.",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
             LATEST_INSTALLER,
             [
                 "releases?per_page=20",
@@ -180,7 +213,8 @@ def validate_semantics() -> list[str]:
         require_text(
             ONE_CLICK_LAUNCHER,
             [
-                "install-latest.ps1",
+                "bootstrap-latest.ps1",
+                "Checking for installer updates and installing the newest release",
                 "shell.Run(command, 0, True)",
                 "install-latest.log",
                 "install-status.txt",
@@ -195,18 +229,28 @@ def validate_semantics() -> list[str]:
             ONE_CLICK_BUILDER,
             [
                 "Install-BG3ControllerActionMenu.vbs",
-                "install-latest.ps1",
+                "bootstrap-latest.ps1",
                 "BG3ControllerActionMenu-OneClickInstaller.zip",
                 "Compress-Archive",
             ],
         )
     )
 
+    launcher_text = ONE_CLICK_LAUNCHER.read_text(encoding="utf-8") if ONE_CLICK_LAUNCHER.exists() else ""
+    builder_text = ONE_CLICK_BUILDER.read_text(encoding="utf-8") if ONE_CLICK_BUILDER.exists() else ""
+    for path, text_value in ((ONE_CLICK_LAUNCHER, launcher_text), (ONE_CLICK_BUILDER, builder_text)):
+        if "install-latest.ps1" in text_value:
+            errors.append(
+                f"{path.relative_to(ROOT)}: reusable one-click bundle must not pin install-latest.ps1"
+            )
+
     for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
         errors.extend(
             require_text(
                 workflow,
                 [
+                    "Test self-updating bootstrap",
+                    "test-bootstrap-latest.ps1",
                     "Test native radial visual overlay",
                     "test-native-overlay.ps1",
                 ],
@@ -218,8 +262,12 @@ def validate_semantics() -> list[str]:
             RELEASE_WORKFLOW,
             [
                 '"tools/native-overlay.ps1"',
+                '"tools/bootstrap-latest.ps1"',
+                '"tools/install-latest.ps1"',
                 '$overlay = "tools/native-overlay.ps1"',
-                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay',
+                '$bootstrap = "tools/bootstrap-latest.ps1"',
+                '$latestInstaller = "tools/install-latest.ps1"',
+                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay, $bootstrap, $latestInstaller',
             ],
         )
     )

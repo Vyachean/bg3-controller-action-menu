@@ -275,6 +275,36 @@ Before asking for a runtime test, CI must prove:
 - one-click release resolution requires and verifies the native-overlay builder;
 - Xbox apply builds the derived PAK before touching the installed mod package/load order.
 
+### 0.0.26 installer reliability boundary
+
+The 0.0.25 runtime package itself was not the cause of the reported one-click failure. The uploaded installation log proved the VBS launcher executed correctly, selected 0.0.25, and then paired a **stale bundled `install-latest.ps1`** with the newer release's `install-xbox-dev.ps1`. The newer Xbox installer required `-NativeOverlayPath`, which the stale bootstrap did not know to pass.
+
+This is an installer architecture defect: an extracted folder must not embed version-specific release knowledge.
+
+The replacement protocol is:
+
+```text
+VBS
+ |
+stable bootstrap-latest.ps1
+ |
+latest GitHub Release
+ |-- verified latest bootstrap-latest.ps1
+ |-- verified latest install-latest.ps1
+ |
+canonical version-specific release resolution
+```
+
+Automatic proof must cover:
+
+- current bootstrap downloads itself and `install-latest.ps1` by stable asset names;
+- both files require GitHub SHA-256 digests;
+- a stale bundled bootstrap transfers control to the verified newer bootstrap;
+- canonical installer execution is proven by fixture;
+- malformed newest release never falls back to an older release;
+- bootstrap digest mismatch fails closed;
+- the OneClickInstaller ZIP contains `bootstrap-latest.ps1`, not a frozen `install-latest.ps1`.
+
 ## Manual test report format
 
 A useful report is:
