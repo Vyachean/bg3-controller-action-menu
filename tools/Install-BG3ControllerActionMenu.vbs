@@ -41,7 +41,7 @@ command = "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File " & Q
           " -StatusPath " & QuoteArg(statusPath) & _
           " -ReportPath " & QuoteArg(reportPath)
 
-shell.Popup "Checking for installer updates and installing the newest release..." & vbCrLf & _
+shell.Popup "Installing the newest BG3 Controller Action Menu release..." & vbCrLf & _
             "This may take a minute.", 2, "BG3 Controller Action Menu", 64
 
 exitCode = shell.Run(command, 0, True)
@@ -61,7 +61,7 @@ End If
 If exitCode = 0 And UCase(state) = "SUCCESS" Then
     MsgBox "Installation completed." & vbCrLf & vbCrLf & _
            "Installed version: " & version & vbCrLf & _
-           "The launcher updated itself if needed, then installed the newest verified release.", _
+           "The newest published release was installed.", _
            vbInformation, "BG3 Controller Action Menu"
     WScript.Quit 0
 End If
