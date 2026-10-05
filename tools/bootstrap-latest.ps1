@@ -77,7 +77,7 @@ function Get-ReleaseList {
         return @(Get-Content -Raw -LiteralPath $ReleaseMetadataPath | ConvertFrom-Json)
     }
 
-    return @(Invoke-RestMethod -UseBasicParsing -Uri $ReleaseApiUrl -Headers $headers)
+    return @(Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers)
 }
 
 function Resolve-LatestInstallerRelease {
