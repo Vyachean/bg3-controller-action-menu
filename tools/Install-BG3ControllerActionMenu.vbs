@@ -41,6 +41,9 @@ command = "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File " & Q
           " -StatusPath " & QuoteArg(statusPath) & _
           " -ReportPath " & QuoteArg(reportPath)
 
+shell.Popup "Checking for installer updates and installing the newest release..." & vbCrLf & _
+            "This may take a minute.", 2, "BG3 Controller Action Menu", 64
+
 exitCode = shell.Run(command, 0, True)
 
 state = ""
