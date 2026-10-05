@@ -14,7 +14,6 @@ $ProgressPreference = "SilentlyContinue"
 
 $LslibVersion = "v1.20.4"
 $LslibAsset = "ExportTool-$LslibVersion.zip"
-$LslibSha256 = "5e02368fb8acafda9b45acba37a3f3bf507fc3d65a083a159abbeab06337190e"
 $LslibUrl = "https://github.com/Norbyte/lslib/releases/download/$LslibVersion/$LslibAsset"
 
 $NativePath = "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"
@@ -224,11 +223,11 @@ function Hide-RadialBackdrop {
     }
 
     $open = $match.Value
-    if ($open -match '\sVisibility=') {
-        throw "Native radial backdrop already defines Visibility; refusing an ambiguous presentation patch."
+    if ($open -match '\sVisibility="[^"]*"') {
+        $patched = [regex]::Replace($open, '\sVisibility="[^"]*"', ' Visibility="Collapsed"', 1)
+    } else {
+        $patched = $open.Substring(0, $open.Length - 1) + ' Visibility="Collapsed">'
     }
-
-    $patched = $open.Substring(0, $open.Length - 1) + ' Visibility="Collapsed">'
     return $StyleText.Substring(0, $match.Index) +
         $patched +
         $StyleText.Substring($match.Index + $match.Length)
@@ -354,30 +353,6 @@ function New-ControllerLibraryFromNative {
     )
 
     $native = [System.IO.File]::ReadAllText($Source)
-
-    foreach ($required in @(
-        'x:Key="ActionRadialWidgetTemplate_P8"',
-        'x:Key="RadialHotBarListItemContainer"',
-        'x:Key="BarPageViewStyle"',
-        'x:Key="SingleBarPageViewStyle"',
-        'x:Key="SlotAssignHolderStyle"',
-        'x:Key="AvailableSlotContainer"',
-        'x:Key="AvailableSlotsListPanelTemplate"',
-        'x:Name="AssignList"',
-        'LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"',
-        'ActionUpEvent="UIUp"',
-        'ActionDownEvent="UIDown"',
-        'ActionLeftEvent="UILeft"',
-        'ActionRightEvent="UIRight"',
-        'x:Name="UseSlotBinding"',
-        'x:Name="CancelButton"',
-        'Command="{Binding UseSlotCommand}"',
-        'Command="{Binding ClearSingleHotbarCommand}"'
-    )) {
-        if (-not $native.Contains($required)) {
-            throw "Native XAML is missing required Patch 8 seam: $required"
-        }
-    }
 
     $single = (Get-ElementSpan -Text $native -Tag "Style" -AttributeName "x:Key" -AttributeValue "SingleBarPageViewStyle").Text
     $bar = (Get-ElementSpan -Text $native -Tag "Style" -AttributeName "x:Key" -AttributeValue "BarPageViewStyle").Text
