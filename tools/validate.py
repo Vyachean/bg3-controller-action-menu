@@ -15,6 +15,7 @@ ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
 CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
+ONE_CLICK_INSTALLER = ROOT / "install-latest.cmd"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
 
 IGNORED_DIRS = {".git", ".local", "build", "dist", "artifacts", "extracted", "game-data", "toolkit-data"}
@@ -160,6 +161,23 @@ def validate_semantics() -> list[str]:
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
                 "BG3ControllerActionMenu-backups",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            ONE_CLICK_INSTALLER,
+            [
+                'https://api.github.com/repos/$Repository/releases?per_page=20',
+                'Where-Object { -not $_.draft -and $_.published_at }',
+                'BG3ControllerActionMenu-*.pak',
+                'install-xbox-dev.ps1',
+                'Get-FileHash -Algorithm SHA256',
+                'browser_download_url',
+                'digest',
+                '-Apply -PackagePath $pakPath -ReportPath $reportPath',
+                'pause',
             ],
         )
     )
