@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.26-self-updating-installer** or newer.
+Use **v0.0.27-native-slot-assignment-grid** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -39,14 +39,14 @@ After a successful install, perform **one combined run**:
 2. use a disposable/pre-mod save;
 3. switch to controller UI and open the normal action menu;
 4. confirm the gameplay view remains visible behind the local panel;
-5. confirm a grid is visible instead of the radial artwork;
-6. move the controller exactly as you normally move through the vanilla radial and confirm the highlighted grid cell follows the native selection;
+5. confirm each action page is rendered as a square grid rather than a radial wheel;
+6. move with D-pad/stick in all four directions and confirm selection moves cell-to-cell using the same controller behavior as the native “choose action for radial slot” screen;
 7. press B from the top level and confirm the menu closes;
 8. reopen the menu and use A on one simple non-container action (for example Jump) and confirm BG3 enters its normal action/targeting path;
 9. if a nested variant/upcast/container opens naturally, press B once and confirm native nested cancel behavior still works.
 
 Do not perform separate runs for each assertion. If something fails, one screenshot (or a short video if focus/scroll is the failure) plus the visible diagnostic overlay is sufficient.
 
-There is deliberately no CAM-owned input/focus diagnostic page in this build. The native radial remains the actual input/focus engine; CAM only mirrors its selected index visually.
+There is deliberately no CAM-owned page or gameplay input dispatcher. The generated controller library preserves BG3's native outer ActionRadials template and A/B commands; only the per-page slot renderer uses the game's own slot-assignment grid focus pattern.
 
 Do not overwrite an important campaign save during this external-PAK development test.

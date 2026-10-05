@@ -305,6 +305,70 @@ Automatic proof must cover:
 - bootstrap digest mismatch fails closed;
 - the OneClickInstaller ZIP contains `bootstrap-latest.ps1`, not a frozen `install-latest.ps1`.
 
+### 2026-10-05 — 0.0.25 no-op runtime result
+
+`0.0.25-native-radial-visual-mirror` installed without the earlier startup error, but the action UI was indistinguishable from vanilla: no grid appeared and the mod produced no visible runtime change.
+
+That rejects the `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` override-from-mod-PAK strategy for this Xbox/App path. It must not be retried.
+
+The useful observation from the user is also supported directly by the current captured XAML: BG3 already contains a working controller grid in the radial **slot-assignment** UI. Its contract is stronger than the previous generic list/grid experiments:
+
+```text
+AssignList
+  SelectedIndex=0
+  LocalFocusSelector=SelectorAssign
+  KeyboardNavigation.DirectionalNavigation=Contained
+  ActionNextEvent=UIDown
+  ActionPrevEvent=UIUp
+        |
+        v
+nested LSListBox
+        |
+        v
+LSGrid
+  ActionUpEvent=UIUp
+  ActionDownEvent=UIDown
+  ActionLeftEvent=UILeft
+  ActionRightEvent=UIRight
+  AutoIndex=True
+```
+
+### 0.0.27 architecture — native slot-assignment grid
+
+The next candidate returns to the controller-library hook proven to load in 0.0.24, but it does **not** hand-write the outer ActionRadials template.
+
+At install time it extracts the exact current native dictionary and locally copies these native resources into `Lib_Controller.xaml`:
+
+- `ActionRadialWidgetTemplate_P8`;
+- `RadialHotBarListItemContainer`;
+- `BarPageViewStyle`;
+- `SingleBarPageViewStyle`.
+
+The outer template/container are byte-derived from the installed game and remain structurally native. Only the two `ls:Radial` renderer blocks inside the page styles are replaced with assignment-style `LSListBox + LocalFocusSelector + LSGrid` renderers while keeping the original element names `HotBarRadial` and `SingleBar`.
+
+This preserves all existing native references to:
+
+- `LocalFocus.Index`;
+- `LocalFocus.DataContext`;
+- delayed `ActionRadials.Tag` updates;
+- swap-slot binding;
+- context-menu slot index;
+- `UseSlotBinding`;
+- `CancelButton`;
+- nested/main cancel switching.
+
+Before the next runtime request CI must prove:
+
+- the source fixture remains unchanged;
+- generated XAML parses;
+- both radial renderers are absent from the generated library;
+- exactly two assignment-style LSListBox grids replace them under the original element names;
+- `ActionRadialWidgetTemplate_P8` and `RadialHotBarListItemContainer` remain present;
+- native A/B/swap/local-focus seams remain present;
+- `AssignSlotCommand` is absent from action browsing;
+- release PAK still contains no proprietary XAML;
+- final installed PAK is generated locally.
+
 ## Manual test report format
 
 A useful report is:
