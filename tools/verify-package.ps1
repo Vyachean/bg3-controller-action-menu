@@ -61,13 +61,18 @@ $requiredPageSeams = @(
     'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars',
     'ItemsSource="{Binding SlotList}"',
     'ItemsSource="{Binding SingleHotBar.SlotList}"',
-    'x:Name="UseSlotBinding"',
+    '<ls:LSInputBinding x:Name="UseSlotBinding"',
+    'PlayerId="{Binding CurrentPlayer.PlayerId}"',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"',
     'BoundEvent="UIAccept"',
-    'x:Name="CancelButton"',
+    '<ls:LSInputBinding x:Name="CancelBinding"',
     'Command="{Binding ClearSingleHotbarCommand}"',
     'Property="CommandParameter" Value="CloseWidget"',
+    'UseWidgetNavigation="True"',
+    'WidgetChainedNavigation="True"',
+    'ls:MoveFocus.InternalFocusable="True"',
+    'AlwaysSelectFirst="True"',
     'ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"',
     'x:Name="NativeSlotButton"',
     'Command="{x:Null}"',
@@ -104,11 +109,16 @@ if ($page.Contains("<ls:UIWidget.ContentTemplate>")) {
 if ($page.Contains("CurrentPlayer.SelectedCharacter.HotBars")) {
     throw "Packaged controller page regressed to the obsolete pre-capture HotBars source."
 }
-if ($page.Contains('Command="ls:UIWidget.CloseRequestCommand"') -or $page.Contains('x:Name="CancelNestedButton"')) {
-    throw "Packaged controller page regressed from the captured radial UICancel switch."
+if ($page.Contains('Command="ls:UIWidget.CloseRequestCommand"') -or
+    $page.Contains('x:Name="CancelNestedButton"') -or
+    $page.Contains('FocusUp="UIUp"') -or
+    $page.Contains('FocusDown="UIDown"') -or
+    $page.Contains('FocusLeft="UILeft"') -or
+    $page.Contains('FocusRight="UIRight"')) {
+    throw "Packaged controller page regressed from the captured/native input-routing contract."
 }
 if ($page.Contains("opaqueBG.png") -or $page.Contains('Background="{DynamicResource LS_tint00}"')) {
     throw "Packaged controller page regressed to a full-screen opaque/dimmed background."
 }
 
-Write-Host "Package verification passed: captured ControllerHotBars/A/B/focus seams present; no Script Extender dependency or full-screen dim regression."
+Write-Host "Package verification passed: ControllerHotBars plus player-scoped A/B and native grid-navigation seams present; no Script Extender dependency or full-screen dim regression."
