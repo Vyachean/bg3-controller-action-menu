@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.22-hidden-one-click** or newer.
+Use **v0.0.23-native-page-library-override** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -37,7 +37,7 @@ After a successful install, perform **one combined run**:
 2. use a disposable/pre-mod save;
 3. switch to controller UI and open the normal action menu;
 4. confirm the gameplay view remains visible behind the local panel;
-5. confirm the grid is populated and the diagnostic overlay reports a non-zero `Controller bars` / `Sections` count;
+5. confirm the CAM diagnostic overlay is visible and `Controller bars` is non-zero; if the overlay is absent and the vanilla radial appears, stop there — that means the library override did not win, but the native state/page remained safe;
 6. move focus in all four directions far enough to require scrolling and confirm the scroll view follows focus;
 7. press B from the top level and confirm the menu closes;
 8. reopen the menu and use A on one simple non-container action (for example Jump or another ordinary action) and confirm BG3 enters its normal action/targeting path;
@@ -45,6 +45,6 @@ After a successful install, perform **one combined run**:
 
 Do not perform separate runs for each assertion. If something fails, one screenshot (or a short video if focus/scroll is the failure) plus the visible diagnostic overlay is sufficient.
 
-The prerelease includes an on-screen diagnostic panel so this single run can distinguish page-load, controller-source, focus and nested-state failures without Script Extender.
+The prerelease includes an on-screen diagnostic panel inside the controller-library template. The native BG3 state/page are no longer replaced, so failure to apply the resource override should fall back to the normal radial rather than trap the player in a dead custom page.
 
 Do not overwrite an important campaign save during this external-PAK development test.
