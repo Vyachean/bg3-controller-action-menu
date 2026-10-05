@@ -275,6 +275,27 @@ Before asking for a runtime test, CI must prove:
 - one-click release resolution requires and verifies the native-overlay builder;
 - Xbox apply builds the derived PAK before touching the installed mod package/load order.
 
+### 2026-10-05 — 0.0.25 native-resource mirror runtime result
+
+`0.0.25-native-radial-visual-mirror` installed and the game ran, but CAM produced **no visible UI change**.
+
+This invalidates the assumption behind the 0.0.25 runtime architecture:
+
+- packaging locally derived files under `Public/Game/GUI/Library/...` and the Clairmont counterpart is not proven to override those base-game UI resources from a normal CAM mod PAK;
+- static/package checks proved only that the files existed in the generated PAK, not that the BG3 mod UI loader consumes those paths as overrides;
+- therefore the install-time native-overlay machinery is not an accepted UI hook.
+
+Combined with 0.0.24, the evidence boundary is now:
+
+- the normal mod controller-library route is definitely loaded;
+- the native `ActionRadials` page/state is definitely active;
+- a hand-written replacement of the whole native template is too broad and breaks behavior;
+- a raw `Public/Game/GUI` file override in the mod PAK demonstrates no effect.
+
+**No new in-game build should be requested until a supported, narrower restyling hook is proven from current sources or a concrete working mod.**
+
+The next work returns to source research: current controller-radial mods plus Larian's Library / Pages / StateMachines / restyling model.
+
 ### 0.0.26 installer reliability boundary
 
 The 0.0.25 runtime package itself was not the cause of the reported one-click failure. The uploaded installation log proved the VBS launcher executed correctly, selected 0.0.25, and then paired a **stale bundled `install-latest.ps1`** with the newer release's `install-xbox-dev.ps1`. The newer Xbox installer required `-NativeOverlayPath`, which the stale bootstrap did not know to pass.
