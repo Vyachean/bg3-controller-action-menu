@@ -557,7 +557,7 @@ function Convert-WidgetToAutomaticCatalog {
     return $WidgetText
 }
 
-function Convert-PageStyleToGrid {function Convert-PageStyleToGrid {
+function Convert-PageStyleToGrid {
     param(
         [Parameter(Mandatory = $true)][string]$StyleText,
         [Parameter(Mandatory = $true)][ValidateSet("HotBarRadial","SingleBar")][string]$Name
@@ -721,7 +721,7 @@ $widget
     [System.IO.File]::WriteAllText($Destination, $generated, $utf8NoBom)
 }
 
-if ($PatchOnlySourceXaml) {if ($PatchOnlySourceXaml) {
+if ($PatchOnlySourceXaml) {
     if (-not $PatchOnlyDestinationXaml) {
         throw "-PatchOnlyDestinationXaml is required with -PatchOnlySourceXaml."
     }
