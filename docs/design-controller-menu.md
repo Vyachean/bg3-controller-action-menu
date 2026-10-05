@@ -100,7 +100,7 @@ Current `HotBarSlotStyle` remains useful for square native cell visuals, but its
 
 ## Architecture implication
 
-Prefer:
+The data/dispatch chain remains:
 
 ```text
 DCHotBar / ControllerHotBars
@@ -115,7 +115,29 @@ DCHotBar / ControllerHotBars
    UIAccept -> UseSlotCommand(focused slot)
 ```
 
-Do not implement spell execution, targeting, resource checks, upcast rules, recasts, or passive semantics ourselves.
+Runtime 0.0.18–0.0.20 showed that the **page root and focus lifecycle are also part of the native contract**. The implementation boundary is therefore narrower than the original design:
+
+```text
+native ActionRadials state
+          |
+          v
+native-named ActionRadials.xaml
+(native root lifecycle/focus)
+          |
+          v
+custom presentation template only
+          |
+          v
+ControllerHotBars / SlotList
+          |
+          v
+captured AssignList-style focus tree
+          |
+          v
+native UseSlotCommand / cancel commands
+```
+
+Do not ship a separately invented controller page root when the native root can be preserved. Do not implement spell execution, targeting, resource checks, upcast rules, recasts, or passive semantics ourselves.
 
 ## First functional target
 
