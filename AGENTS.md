@@ -12,7 +12,7 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
    Do not reimplement spell availability, action costs, targeting, upcasting, recasts, cooldowns, resources, or execution rules if the existing UI/action model can provide them.
 
 2. **Thin UI composition.**
-   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` state/page/template, PageView focus lifecycle and native Radial input engine are BG3-owned. CAM may only apply a deterministic presentation patch to native radial resources extracted locally from the user's installed game.
+   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` behavior is BG3-owned. No specific restyling hook is currently accepted; it must be proven from current BG3 UI documentation or a concrete working modern mod before another runtime implementation.
 
 3. **No Script Extender dependency in the shipping package.**
    `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` must not contain a `ScriptExtender` directory. Script Extender experiments may live under `dev/`, but they are not part of the runtime package or required workflow.
@@ -63,23 +63,28 @@ Runtime evidence additionally proves:
 - `0.0.19` regressed the page by changing input transport;
 - `0.0.20` restored rendering but controller focus/input was still dead;
 - `0.0.23` failed at startup because a CAM-local component URI was interpreted as a missing literal XAML path;
-- `0.0.24` loaded the native page and CAM template override far enough to emit native radial movement sounds, but replacing the full `ActionRadialWidgetTemplate_P8` still left the custom window without usable focus/A/B.
+- `0.0.24` proved the standard controller library hook and native page are active, but a full replacement `ActionRadialWidgetTemplate_P8` still lost usable A/B/focus;
+- `0.0.25` packaged locally derived current native `PreloadedActionRadials_c.xaml` under `Public/Game/GUI/...`, but produced no visible in-game change.
 
-These results reject all CAM-owned page/template/input reconstructions.
+No runtime restyling architecture is currently accepted.
 
-Current mandatory architecture:
+Do **not** treat any of these as established solutions:
 
-- published source/release PAK contains no native BG3 XAML;
-- installer extracts the exact current normal + Clairmont `PreloadedActionRadials_c.xaml` from local `Game.pak`;
-- patcher verifies expected Patch 8 seams and fails closed on mismatch;
-- native `HotBarRadial` and `SingleBar` remain present as the input/focus engines;
-- CAM only hides their artwork and adds non-interactive grid mirrors;
-- grid selection is one-way from native `Radial.LocalFocus.Index`;
-- native A/B/nested/swap/PageView/state-machine logic remains untouched.
+- CAM-owned replacement page/state;
+- hand-written full `ActionRadialWidgetTemplate_P8` replacement;
+- raw `Public/Game/GUI` resource-path overrides inside a normal mod PAK;
+- install-time extraction/repacking of native XAML as a UI hook by itself.
 
-Do not reintroduce CAM `Controller.xaml`, `CAM_ActionMenu_c.xaml`, `Lib_Controller.xaml`, a hand-written `ActionRadialWidgetTemplate_P8`, or committed copies of Larian XAML.
+Research gate before the next candidate:
 
-The next in-game test is justified only after CI proves the patcher preserves native radial controls and A/B seams on a fixture, the published base PAK contains no runtime XAML, and the one-click installer derives the final PAK locally.
+1. inspect current 2025–2026 controller-radial mods for concrete data/UI hooks;
+2. finish the RadialHotbarCustomization v0.8.0.0 source audit;
+3. inspect Auto-Sorting Hotbar controller support and Sticky Temporaries where implementation is available;
+4. reconcile findings with Larian's supported controller Library / Pages / StateMachines / restyling model;
+5. choose the smallest hook that keeps exact native `ActionRadials` behavior;
+6. only then implement one milestone candidate.
+
+The next in-game test must not be requested until that research gate is complete. It must combine rendering, focus/navigation, top-level B and one simple A dispatch.
 
 Installer reliability is also a release gate. The reusable VBS bundle must contain only a stable self-updating bootstrap, not a frozen version-specific `install-latest.ps1`. Every release must publish exactly one `bootstrap-latest.ps1` and one canonical `install-latest.ps1` with GitHub SHA-256 digests. The bundled bootstrap must update/handoff to the verified release bootstrap before invoking the canonical installer, and must never silently fall back to an older release.
 
