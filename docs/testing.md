@@ -120,7 +120,19 @@ Important correction:
 - the public `ActionRadials.xaml` used for several design decisions is Patch 2 Hotfix 1 (2023-09-06), not Patch 8;
 - therefore the 0.0.14–0.0.17 sequence contained too much inference from stale/native-adjacent evidence.
 
-No further in-game run should be requested until the current installed Patch 8/Xbox radial XAML is captured and the next candidate is rebuilt from that current contract.
+### 2026-10-05 — native radial capture from Xbox App 1.8.910.0
+
+The read-only installed-game capture closed the remaining static seams:
+
+- root controller collection is `PlayerCharacterProperties.ControllerHotBars`;
+- per-bar materialization is `SlotList`;
+- nested materialization is `SingleHotBar.SlotList`;
+- focus scrolling follows `FocusedElement`;
+- normal controller A is page-level `UIAccept -> UseSlotCommand(focused slot)`;
+- B defaults to `ClearSingleHotbarCommand` and switches to `CustomEvent("CloseWidget")` at the main level;
+- swap mode uses `UseSlotCommand(null)` for B.
+
+The next in-game run is therefore justified, but it must combine M1–M3 into one milestone run: populated rendering, directional focus/scroll, top-level B, nested B if naturally encountered, and one simple A dispatch.
 
 ## Manual test report format
 
