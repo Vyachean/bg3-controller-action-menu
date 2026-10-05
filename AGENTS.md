@@ -12,7 +12,7 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
    Do not reimplement spell availability, action costs, targeting, upcasting, recasts, cooldowns, resources, or execution rules if the existing UI/action model can provide them.
 
 2. **Thin UI composition.**
-   Reuse BG3-owned view models, templates, styles and commands wherever possible. The mod should primarily change composition/layout.
+   Reuse BG3-owned view models, templates, styles and commands wherever possible. The mod should primarily change composition/layout. The `ActionRadials` state and native `MainUI/Pages/ActionRadials.xaml` page are BG3-owned and must not be replaced by CAM; runtime customization belongs in controller resource libraries.
 
 3. **No Script Extender dependency in the shipping package.**
    `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` must not contain a `ScriptExtender` directory. Script Extender experiments may live under `dev/`, but they are not part of the runtime package or required workflow.
@@ -37,8 +37,9 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:
 
 - controller state `ActionRadials` still uses the `HotBar` context;
-- the real Xbox App build loads CAM's state override;
+- historical runtime builds proved CAM can replace the state/page, but those replacements left controller focus/input dead and are now rejected;
 - the native page uses `ActionRadialWidgetTemplate_P8` from `PreloadedActionRadials_c.xaml`;
+- official BG3 UI documentation confirms `Lib_Controller.xaml` is loaded in controller mode before mod StateMachines, making a controller resource-library override the preferred hook;
 - the exact main controller collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
 - each controller bar exposes `SlotList` and native materialization uses `PagedList`;
 - nested variants/upcasts/containers use `SingleHotBar.SlotList`;
@@ -56,11 +57,18 @@ Do not reconstruct the visible grid from `HotbarContainer` component memory. Com
 
 The public `ActionRadials.xaml` dump from 2023-09-06 is Patch 2 Hotfix 1 and is historical evidence only.
 
-Runtime evidence additionally proves that `0.0.18` had the correct controller data/rendering path but the wrong focus container, while `0.0.19` regressed the page by replacing native radial input controls and adding unrelated grid flags. Do not reuse the 0.0.19 input-routing design.
+Runtime evidence additionally proves:
 
-The next in-game test is allowed only for a candidate that preserves the proven 0.0.18 data/rendering path and uses the captured Patch 8 `LSListBox + ListBoxItem + LSGrid` focus hierarchy. It must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
+- `0.0.18` had the correct controller data/rendering path but dead navigation/B;
+- `0.0.19` regressed the page by changing input transport;
+- `0.0.20` restored rendering and the captured list-grid hierarchy but controller focus/input was still fully dead;
+- `0.0.21` and `0.0.22` changed installer UX only.
 
-Custom code owns only page composition/layout and diagnostics, preserves the live gameplay view, and leaves gameplay state/dispatch to BG3.
+Do not reintroduce a CAM-owned `ActionRadials` state or custom replacement page. The next runtime candidate must keep the native state and native `ActionRadials.xaml` root and contribute only controller resource-library presentation.
+
+The next in-game test is allowed only after package validation proves there is no CAM StateMachine/Page override and the native template resource override contains the captured ControllerHotBars, focus, A and B seams. It must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
+
+Custom code owns only resource-level composition/layout and diagnostics, preserves the live gameplay view, and leaves page/state lifecycle plus gameplay dispatch to BG3.
 
 ## Pull request expectations
 
