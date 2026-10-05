@@ -44,12 +44,15 @@ A change that requires Script Extender is not acceptable for the primary package
 
 The custom layer owns:
 
-- replacing the `ActionRadials` page/state presentation;
+- overriding the `ActionRadials` state only to resolve a mod-owned, native-named `ActionRadials.xaml`;
+- replacing the native radial template body with a grid while preserving the captured native root widget identity/lifecycle;
 - ordering native groups;
 - grid column count/spacing;
 - main-list vs `SingleHotBar` variant presentation;
 - a local menu panel over the live gameplay view;
 - temporary visible diagnostics in prerelease candidates.
+
+The project no longer ships a separately invented `CAM_ActionMenu_c.xaml` root. Runtime 0.0.18–0.0.20 showed that recreating enough of the root lifecycle/focus semantics was a larger and less reliable surface than replacing only the presentation template.
 
 The custom page must not add a full-screen opaque/dim background; opening the action menu should preserve the gameplay view behind the local panel.
 
@@ -142,10 +145,11 @@ UseSlotCommand(Tag)
 
 CAM reuses `HotBarSlotStyle` for cell visuals while keeping gameplay dispatch page-level.
 
-The first two runtime candidates clarified the focus/input boundary:
+The first three runtime candidates clarified the focus/input boundary:
 
-- `0.0.18` proved `ControllerHotBars`, section materialization, native visuals, tooltip data and initial focus, but its raw `ItemsControl + LSGrid` composition did not navigate and B did not close;
-- `0.0.19` replaced native radial `LSButton` input controls with `LSInputBinding` and added grid flags from unrelated screens; it regressed rendering/data bindings and is rejected.
+- `0.0.18` proved `ControllerHotBars`, section materialization and native visuals/tooltips, but navigation and B did not work;
+- `0.0.19` replaced native radial `LSButton` input controls with `LSInputBinding` and added grid flags from unrelated screens; it regressed rendering/data bindings and is rejected;
+- `0.0.20` restored the populated grid but still reported no widget/slot focus and no controller input, proving that the failure remained at the custom root/focus lifecycle boundary.
 
 The installed Patch 8 radial itself contains the required 2D controller-grid precedent in its slot-assignment UI:
 
@@ -161,9 +165,16 @@ LSGrid
   ActionRightEvent = UIRight
 ```
 
-CAM therefore follows that exact container hierarchy. Focus belongs to the `ListBoxItem`; the nested `HotBarSlotStyle` button is non-focusable and visual-only. Normal A and B return to the **captured native radial LSButton pattern** (`UseSlotBinding` and `CancelButton`) rather than a custom input transport.
+The captured slot-assignment grid adds two details that are now architecture requirements, not optional hints:
 
-This keeps both navigation and action dispatch inside mechanisms proven in the current installed game's own `PreloadedActionRadials_c.xaml`.
+- the outer `LSListBox` is the focus root: `SelectedIndex=0`, `LocalFocusSelector`, `ActionNextEvent=UIDown`, `ActionPrevEvent=UIUp`, `KeyboardNavigation.DirectionalNavigation=Contained`;
+- the inner `LSGrid` sets `ContainerData="{Binding}"`.
+
+CAM mirrors that hierarchy. Outer section `ListBoxItem` containers remain focusable; each inner slot list uses a focusable `ListBoxItem` plus `LSGrid`; the nested `HotBarSlotStyle` button is non-focusable and visual-only.
+
+The page root is now also the native `ActionRadials` root contract: same element name, HotBar context, root focus mappings, Loaded/GotKeyboardFocus/WidgetClosing lifecycle, Layout refocus behavior and automation-id shape. Normal A and B use the captured native radial `LSButton` pattern (`UseSlotBinding` and `CancelButton`).
+
+This reduces custom ownership to template composition while keeping navigation and dispatch inside mechanisms proven in the installed game's own current XAML.
 
 
 ## First-run diagnostics without Script Extender
