@@ -14,24 +14,27 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native-radial visual-mirror candidate.**
+**Research reset — there is currently no runtime candidate worth testing.**
 
-Runtime evidence through `0.0.24` established that replacing either the page or the whole `ActionRadialWidgetTemplate_P8` breaks the native controller focus/input graph even when the grid renders correctly. In `0.0.24`, the native page was active — radial movement sounds played — but the replacement template still had no usable focus, A or B.
+Runtime results through `0.0.25` invalidate the last implementation directions:
 
-`0.0.25-native-radial-visual-mirror` stops reconstructing that input graph.
+- CAM-owned page/state replacements can render controller data but lose the native focus/input lifecycle;
+- replacing the whole `ActionRadialWidgetTemplate_P8` through the standard controller library hook activates the native page but still loses usable A/B/focus inside the replacement;
+- `0.0.25-native-radial-visual-mirror` derives the installed game's native radial XAML and packages it under `Public/Game/GUI/...`, but produced **no visible in-game change**. Therefore that raw base-game resource-path override is not a proven mod UI hook.
 
-At install time, CAM now reads the exact `PreloadedActionRadials_c.xaml` files from the user's installed `Game.pak`, preserves the native page/template/PageView/Radial/A/B/nested/swap logic, and applies only a local presentation patch:
+Do not ask for another in-game run yet.
 
-- the original native `HotBarRadial` and `SingleBar` controls remain present and continue to own input/focus;
-- those native radial visuals are made transparent;
-- a non-interactive grid mirrors the same items;
-- grid selection mirrors the native radial's `LocalFocus.Index`.
+The captured Xbox App 1.8.910.0 controller contract remains valid: `ControllerHotBars`, `SlotList`, `SingleHotBar.SlotList`, native focus-driven scrolling, page-level A dispatch, and the native main/nested B switch are known. The unresolved problem is narrower: **which supported BG3 UI hook can restyle the existing controller radial without replacing its behavior**.
 
-The modified native files are generated locally and packed into the installed CAM PAK. **Larian XAML is not committed to this repository or distributed in the GitHub release.**
+Next work is research-first:
 
-The published release PAK is therefore metadata/bootstrap only. The one-click installer downloads a pinned overlay builder, verifies its GitHub SHA-256 digest, derives the installable PAK from the locally installed BG3 version, then installs it through the existing fail-closed Xbox path.
+1. finish the source audit of current controller-radial mods, especially RadialHotbarCustomization v0.8.0.0;
+2. inspect current Auto-Sorting Hotbar controller support, Sticky Temporaries, and other 2026 implementations for concrete hooks;
+3. reconcile those findings with Larian's supported UI model: controller Library, Pages, StateMachines, and restyling;
+4. select the smallest hook that preserves the exact native `ActionRadials` behavior;
+5. only then build one combined runtime milestone.
 
-The runtime remains Script-Extender/DLL/native-loader free.
+The shipping target remains an ordinary Script-Extender/DLL/native-loader-free BG3 `.pak`.
 
 ## Xbox App installation
 
