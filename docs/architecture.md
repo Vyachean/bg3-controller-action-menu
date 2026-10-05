@@ -140,15 +140,30 @@ UIAccept
 UseSlotCommand(Tag)
 ```
 
-CAM therefore reuses `HotBarSlotStyle` for cell visuals but neutralizes the cell-level controller command. Runtime 0.0.18 proved that binding input to visual `LSButton` controls in the custom composition is not sufficient: the grid rendered and focused initially, but controller movement and B failed.
+CAM reuses `HotBarSlotStyle` for cell visuals while keeping gameplay dispatch page-level.
 
-The corrected input boundary is:
+The first two runtime candidates clarified the focus/input boundary:
 
-- native `LSGrid` widget navigation owns directional movement;
-- player-scoped `LSInputBinding` owns `UIAccept` / `UICancel`;
-- those bindings still invoke the captured BG3 commands and parameters, so gameplay semantics remain BG3-owned.
+- `0.0.18` proved `ControllerHotBars`, section materialization, native visuals, tooltip data and initial focus, but its raw `ItemsControl + LSGrid` composition did not navigate and B did not close;
+- `0.0.19` replaced native radial `LSButton` input controls with `LSInputBinding` and added grid flags from unrelated screens; it regressed rendering/data bindings and is rejected.
 
-This changes only the input transport primitive, not the captured command contract.
+The installed Patch 8 radial itself contains the required 2D controller-grid precedent in its slot-assignment UI:
+
+```text
+LSListBox
+    |
+focusable ListBoxItem
+    |
+LSGrid
+  ActionUpEvent    = UIUp
+  ActionDownEvent  = UIDown
+  ActionLeftEvent  = UILeft
+  ActionRightEvent = UIRight
+```
+
+CAM therefore follows that exact container hierarchy. Focus belongs to the `ListBoxItem`; the nested `HotBarSlotStyle` button is non-focusable and visual-only. Normal A and B return to the **captured native radial LSButton pattern** (`UseSlotBinding` and `CancelButton`) rather than a custom input transport.
+
+This keeps both navigation and action dispatch inside mechanisms proven in the current installed game's own `PreloadedActionRadials_c.xaml`.
 
 
 ## First-run diagnostics without Script Extender
