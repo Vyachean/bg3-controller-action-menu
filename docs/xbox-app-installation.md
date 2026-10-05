@@ -76,6 +76,20 @@ In these cases the launcher reports failure and pauses. The underlying Xbox inst
 
 The generated `xbox-dev-environment.json` in the installer cache is the diagnostic artifact to inspect if installation is refused.
 
+## Installation verification philosophy
+
+The one-click installer is intentionally simple. It is not a second CI test suite.
+
+At install time it verifies only what is required for a safe write:
+
+- GitHub SHA-256 for downloaded release assets;
+- a unique writable Xbox mod target;
+- the minimum native source seams needed before applying the transformation;
+- generated XAML is valid XML;
+- LSLib package creation succeeds and produces a non-empty PAK.
+
+Grid layout, focus, A/B, chrome and other generated-UI semantics are validated in CI before release and are not re-asserted on the user's machine after packing.
+
 ## What the underlying installer still does
 
 After a unique target is proven, `install-xbox-dev.ps1`:
