@@ -109,6 +109,16 @@ function Get-ElementSpan {
         throw "Element <$Tag $AttributeName='$AttributeValue'> was not found."
     }
 
+    if ($open.Value.EndsWith("/>", [System.StringComparison]::Ordinal)) {
+        return [pscustomobject]@{
+            Start = $open.Index
+            End = $open.Index + $open.Length
+            OpenLength = $open.Length
+            OpenText = $open.Value
+            Text = $open.Value
+        }
+    }
+
     $tokenRegex = [regex]::new(
         '</?' + $tagEscaped + '\b[^>]*?/?>',
         [System.Text.RegularExpressions.RegexOptions]::Singleline
