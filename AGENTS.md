@@ -92,6 +92,8 @@ Current mandatory architecture:
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
+Installer/runtime-generation verification must not duplicate presentation contracts independently. `0.0.29` proved that the generator can intentionally change chrome to `ShowContextMenu Opacity=1 / Width=Auto / Tag=Customize` while a stale post-pack check still expects `Opacity=0 / Width=0`. Generator output and packed round-trip verification must share the same semantic assertion function for mutable presentation seams.
+
 The next in-game test is justified only after CI proves on a representative fixture that the generated library preserves native focus/A/B/swap seams, centers both assignment-style grids, collapses both radial backdrop ellipses, and removes the radial-specific customization prompt from visible grid chrome.
 
 ## Pull request expectations

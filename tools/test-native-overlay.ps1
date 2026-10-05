@@ -298,4 +298,14 @@ if (-not $contextMatch.Success -or
     throw "Context-menu hint must remain active and be labeled Customize."
 }
 
-Write-Host "Native assignment-grid focus-origin fixture passed: grid and selector share the centered coordinate space, X remains Customize, native focus/A/B/swap seams preserved."
+$overlaySource = Get-Content -Raw -LiteralPath $Script
+if (-not $overlaySource.Contains('Assert-GridChromeContract -Text $generated') -or
+    -not $overlaySource.Contains('Assert-GridChromeContract -Text $verifiedText')) {
+    throw "Generator and packed-package verification must share Assert-GridChromeContract."
+}
+$stalePackedChromePattern = "'Opacity=`"0`"',\s*'Width=`"0`"'"
+if ($overlaySource -match $stalePackedChromePattern) {
+    throw "Stale hidden-context-menu packed verifier contract reappeared."
+}
+
+Write-Host "Native assignment-grid focus-origin fixture passed: grid and selector share the centered coordinate space, X remains Customize, generator/packed verifier share one chrome contract, native focus/A/B/swap seams preserved."

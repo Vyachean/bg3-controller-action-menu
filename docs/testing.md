@@ -420,6 +420,38 @@ Root cause is now concrete: in 0.0.28 the `LSListBox` was centered inside the 15
 - keep X/ContextMenu active because it still customizes the underlying hotbar slots;
 - restore its hint with grid-neutral label `Customize`.
 
+### 2026-10-05 — 0.0.29 installer post-pack verifier failure
+
+The reusable bootstrap/update path worked correctly in the user's real environment:
+
+- it selected `v0.0.29-focus-origin-fix`;
+- downloaded and SHA-256 verified the current PAK, Xbox installer and native-overlay builder;
+- discovered the Xbox BG3 1.8.910.0 target and reached `ReadyForApply`;
+- entered native-derived package generation.
+
+Installation then failed before writing the mod because the **post-pack verifier in `native-overlay.ps1` still required the obsolete 0.0.28 chrome state**:
+
+```text
+Opacity="0"
+Width="0"
+```
+
+while 0.0.29 intentionally generates and validates:
+
+```text
+Opacity="1"
+Width="Auto"
+Tag="Customize"
+```
+
+This is not a game/runtime mismatch; it is an internal verifier drift defect.
+
+### 0.0.30 verifier correction
+
+The generator and post-pack round-trip now call the same semantic `Assert-GridChromeContract` function. The final verifier no longer carries independent stale visibility/width literals.
+
+CI additionally rejects reintroduction of the old `Opacity="0" + Width="0"` packed verification pair.
+
 ## Manual test report format
 
 A useful report is:
