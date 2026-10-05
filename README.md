@@ -14,24 +14,42 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native-radial visual-mirror candidate.**
+**Native slot-assignment grid candidate.**
 
-Runtime evidence through `0.0.24` established that replacing either the page or the whole `ActionRadialWidgetTemplate_P8` breaks the native controller focus/input graph even when the grid renders correctly. In `0.0.24`, the native page was active — radial movement sounds played — but the replacement template still had no usable focus, A or B.
+Runtime evidence through `0.0.25` now rules out three earlier approaches:
 
-`0.0.25-native-radial-visual-mirror` stops reconstructing that input graph.
+- CAM-owned replacement page: rendered data but controller focus/B stayed dead;
+- hand-written replacement `ActionRadialWidgetTemplate_P8`: native page loaded but interaction still died;
+- `Public/Game/GUI/...` resource override from the mod PAK: `0.0.25` produced no visible change at all.
 
-At install time, CAM now reads the exact `PreloadedActionRadials_c.xaml` files from the user's installed `Game.pak`, preserves the native page/template/PageView/Radial/A/B/nested/swap logic, and applies only a local presentation patch:
+The current Patch 8 `PreloadedActionRadials_c.xaml` already contains the controller grid we need: the UI used when choosing an action to insert into a radial. It uses `LSListBox + LocalFocusSelector + focusable ListBoxItem + LSGrid` with `UIUp/UIDown/UILeft/UIRight`.
 
-- the original native `HotBarRadial` and `SingleBar` controls remain present and continue to own input/focus;
-- those native radial visuals are made transparent;
-- a non-interactive grid mirrors the same items;
-- grid selection mirrors the native radial's `LocalFocus.Index`.
+`0.0.27-native-slot-assignment-grid` reuses that exact focus/navigation pattern for action browsing.
 
-The modified native files are generated locally and packed into the installed CAM PAK. **Larian XAML is not committed to this repository or distributed in the GitHub release.**
+At install time CAM extracts the exact native radial dictionary from the user's installed `Game.pak` and locally generates `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`.
 
-The published release PAK is therefore metadata/bootstrap only. The one-click installer downloads a pinned overlay builder, verifies its GitHub SHA-256 digest, derives the installable PAK from the locally installed BG3 version, then installs it through the existing fail-closed Xbox path.
+The generated library preserves the exact native:
 
-The runtime remains Script-Extender/DLL/native-loader free.
+- `ActionRadialWidgetTemplate_P8`;
+- `RadialHotBarListItemContainer`;
+- A/B bindings;
+- nested/upcast/container switching;
+- swap-slot semantics;
+- PageView and state-machine lifecycle.
+
+Only the two page-view slot renderers are transformed:
+
+```text
+ls:Radial
+   ↓
+LSListBox + LocalFocusSelector
+   ↓
+LSGrid(UIUp / UIDown / UILeft / UIRight)
+```
+
+The focused slot still updates `ActionRadials.Tag`, and A remains BG3's native `UseSlotCommand(Tag)`. B remains BG3's native top-level/nested switch.
+
+No Larian XAML is committed to or distributed by this repository. The generated controller library exists only on the user's machine. Runtime remains Script-Extender/DLL/native-loader free.
 
 ## Xbox App installation
 
@@ -50,7 +68,7 @@ Every run:
 - downloads and SHA-256 verifies that release's current `bootstrap-latest.ps1` and `install-latest.ps1`;
 - automatically hands off to the newer bootstrap first if the bundled bootstrap is stale;
 - the current canonical installer then downloads and verifies the release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-- extracts the exact current radial XAML from the installed BG3 `Game.pak`, applies the presentation-only mirror patch locally, packs the derived result, and runs the fail-closed Xbox installer.
+- extracts the exact current radial XAML from the installed BG3 `Game.pak`, derives a controller library whose action pages use the native slot-assignment grid focus pattern, packs it locally, and runs the fail-closed Xbox installer.
 
 After installing the self-updating launcher once, the extracted folder is intended to remain reusable even when the internal installer contract changes.
 
@@ -65,22 +83,24 @@ See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App researc
 ## Architecture
 
 ```text
-installed BG3 Game.pak
-        |
-        v
+installed Game.pak
+      |
+      v
 native PreloadedActionRadials_c.xaml
-        |
-        | local install-time patch
-        v
-native Radial stays as invisible input/focus engine
-        +
-non-interactive grid mirrors Radial.LocalFocus.Index
-        |
-        v
-locally derived CAM .pak
+      |
+      | local extraction
+      v
+exact native ActionRadialWidgetTemplate_P8
+      |
+      +-- native A / B / nested / swap unchanged
+      |
+      +-- page slot renderer:
+            native assignment-grid focus pattern
+            LSListBox -> LocalFocusSelector -> LSGrid
+      |
+      v
+locally generated Lib_Controller.xaml
 ```
-
-The native `ActionRadials` state/page, `ActionRadialWidgetTemplate_P8`, A/B commands, nested/swap behavior and PageView focus lifecycle are not reconstructed by CAM.
 
 See:
 
