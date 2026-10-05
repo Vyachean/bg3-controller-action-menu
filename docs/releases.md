@@ -17,9 +17,14 @@ The workflow:
 
 1. reads and validates `VERSION`;
 2. checks whether GitHub Release `v<VERSION>` already exists;
-3. builds the mod with pinned LSLib;
-4. creates the tag and GitHub Release;
-5. uploads the versioned `.pak`.
+3. runs the Xbox installer and one-click bootstrap fixtures;
+4. builds the mod with pinned LSLib;
+5. verifies the packaged `.pak`;
+6. builds `BG3ControllerActionMenu-OneClickInstaller.zip`;
+7. creates the tag and GitHub Release;
+8. uploads the versioned `.pak`, the diagnostic/manual installer, and the reusable one-click installer bundle.
+
+The one-click bundle is intentionally version-independent from the user's point of view: its bootstrap queries GitHub Releases on every run and downloads both the newest published CAM package and that release's current fail-closed installer after verifying GitHub SHA-256 digests.
 
 Published versions are immutable. If `v<VERSION>` already exists, the workflow does not overwrite the asset or move the tag.
 
