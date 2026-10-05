@@ -34,33 +34,29 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 
 ## Current evidence boundary
 
-Proven against Patch 8 / the real Xbox App build:
+Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:
 
-- controller state `ActionRadials` is still present in Patch 8 `Controller.xaml`;
-- the state is reached by `OpenActionRadials` and removed by `CloseWidget` / `CloseRadials`;
-- the real Xbox App build loads CAM's state override and `HotBar` context;
-- current Patch 8 native resources still expose `HotBarSlotStyle`;
-- Patch 8 `HotBarSlotStyle` binds its command to the owning `UIWidget.DataContext.UseSlotCommand` and passes the current slot as `CommandParameter`;
-- a 2026-09-27 production mod confirms the live top-level `HotBar.DataContext`, `CurrentSingleHotbarFilter`, `PlayerCharacterProperties.KeyboardHotBars[*].SlotList` and `UseSlotCommand:Execute(slot)`;
-- current BG3SE data mappings prove keyboard and controller hotbar state are distinct;
-- the shipped Patch 8 controller radial has a runtime/preloaded file named `PreloadedActionRadials_c.xaml`.
+- controller state `ActionRadials` still uses the `HotBar` context;
+- the real Xbox App build loads CAM's state override;
+- the native page uses `ActionRadialWidgetTemplate_P8` from `PreloadedActionRadials_c.xaml`;
+- the exact main controller collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
+- each controller bar exposes `SlotList` and native materialization uses `PagedList`;
+- nested variants/upcasts/containers use `SingleHotBar.SlotList`;
+- `CurrentSingleHotbarFilter`, `IsShowingAContainerWithVariants` and `IsSelectingUpcastedSpell` are current;
+- focus-driven scrolling is `LSScrollViewer.ScrollToElement <- FocusedElement`;
+- normal controller A dispatch is page-level: `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+- default B dispatch is `ClearSingleHotbarCommand`; when `SingleHotBar.SlotList.Count == 0` and items-to-throw is false, native triggers switch B to `CustomEvent("CloseWidget")`;
+- swap-slot mode switches B to `UseSlotCommand(null)`;
+- current `HotBarSlotStyle` is still suitable for native square slot visuals;
+- `KeyboardHotBars` remains a separate keyboard/mouse collection and must never be substituted for `ControllerHotBars`.
 
-Not yet proven for the current Patch 8 radial page:
+Do not reconstruct the visible grid from `HotbarContainer` component memory. Component data is useful corroborating/storage evidence, but the presentation source is the captured native controller UI/view-model contract.
 
-- the exact current **controller-radial collection** path;
-- the exact slot materialization/paging hierarchy;
-- the exact top-level/nested `UICancel` path;
-- whether the historical `SingleHotBar` collection path itself is unchanged.
+The public `ActionRadials.xaml` dump from 2023-09-06 is Patch 2 Hotfix 1 and is historical evidence only.
 
-Do not use the proven current `PlayerCharacterProperties.KeyboardHotBars` collection as a controller substitute: current engine mappings prove the two modes carry distinct state.
+The next in-game test is allowed only for a candidate rebuilt from the captured contract, and it must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
 
-Do not reconstruct the visible radial/grid directly from `HotbarContainer` component memory. Current RadialHotbarCustomization research reports that the persisted hotbar/radial storage does not map cleanly to the visual radial layout. Component data is useful corroborating evidence, but the presentation source must come from the current native radial UI/view-model contract.
-
-The public `ActionRadials.xaml` dump used earlier is Patch 2 Hotfix 1 (2023-09-06), not Patch 8. It may be used only as historical/secondary evidence.
-
-Do not request another in-game test until the current installed game's native radial XAML has been captured and the candidate is rebuilt from that current contract.
-
-Custom code should own only page composition/layout and diagnostics, preserve the live gameplay view, and leave gameplay state/dispatch to BG3.
+Custom code owns only page composition/layout and diagnostics, preserves the live gameplay view, and leaves gameplay state/dispatch to BG3.
 
 ## Pull request expectations
 
