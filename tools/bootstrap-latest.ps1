@@ -1,6 +1,7 @@
 param(
     [string]$Repository = "Vyachean/bg3-controller-action-menu",
     [string]$ReleaseApiUrl,
+    [string]$ReleaseMetadataPath,
     [string]$CacheRoot,
     [string]$LogPath,
     [string]$StatusPath,
@@ -33,7 +34,11 @@ $headers = @{
     "Accept" = "application/vnd.github+json"
 }
 
-$releases = @(Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers)
+$releases = if ($ReleaseMetadataPath) {
+    @(Get-Content -Raw -LiteralPath $ReleaseMetadataPath | ConvertFrom-Json)
+} else {
+    @(Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers)
+}
 $release = @(
     $releases |
         Where-Object { -not $_.draft -and $_.published_at } |
@@ -50,7 +55,21 @@ if (-not $asset) {
 }
 
 $installer = Join-Path $CacheRoot "install-latest.ps1"
-Invoke-WebRequest -UseBasicParsing -Uri $asset.browser_download_url -OutFile $installer
+if ($ReleaseMetadataPath -and (Test-Path -LiteralPath ([string]$asset.browser_download_url))) {
+    Copy-Item -LiteralPath ([string]$asset.browser_download_url) -Destination $installer -Force
+} else {
+    Invoke-WebRequest -UseBasicParsing -Uri $asset.browser_download_url -OutFile $installer
+}
 
-& $installer -Repository $Repository -ReleaseApiUrl $ReleaseApiUrl -LogPath $LogPath -StatusPath $StatusPath -ReportPath $ReportPath
+$installerArgs = @{
+    Repository = $Repository
+    ReleaseApiUrl = $ReleaseApiUrl
+    LogPath = $LogPath
+    StatusPath = $StatusPath
+    ReportPath = $ReportPath
+}
+if ($ReleaseMetadataPath) {
+    $installerArgs.ReleaseMetadataPath = $ReleaseMetadataPath
+}
+& $installer @installerArgs
 exit $LASTEXITCODE
