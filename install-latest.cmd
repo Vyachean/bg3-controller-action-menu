@@ -47,11 +47,11 @@ function Get-SingleReleaseAsset {
         [Parameter(Mandatory = $true)][string]$Description
     )
 
-    $matches = @($Release.assets | Where-Object $Predicate)
-    if ($matches.Count -ne 1) {
-        throw "Latest release '$($Release.tag_name)' must contain exactly one $Description asset; found $($matches.Count)."
+    $assetMatches = @($Release.assets | Where-Object $Predicate)
+    if ($assetMatches.Count -ne 1) {
+        throw "Latest release '$($Release.tag_name)' must contain exactly one $Description asset; found $($assetMatches.Count)."
     }
-    return $matches[0]
+    return $assetMatches[0]
 }
 
 function Save-VerifiedReleaseAsset {
@@ -63,71 +63,9 @@ function Save-VerifiedReleaseAsset {
     if (-not $Asset.browser_download_url) {
         throw "Release asset '$($Asset.name)' has no download URL."
     }
-    $digestMatch = [regex]::Match([string]$Asset.digest, '^sha256:([0-9a-fA-F]{64})
-    $temp = "$Destination.download"
 
-    try {
-        Invoke-WebRequest -UseBasicParsing -Uri $Asset.browser_download_url -Headers $Headers -OutFile $temp
-        $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $temp).Hash.ToLowerInvariant()
-        if ($actual -ne $expected) {
-            throw "SHA-256 mismatch for '$($Asset.name)'. Expected $expected, got $actual."
-        }
-        Move-Item -LiteralPath $temp -Destination $Destination -Force
-    } finally {
-        if (Test-Path -LiteralPath $temp) {
-            Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
-        }
-    }
-}
-
-Write-Host "Checking GitHub Releases..."
-$releases = @(Invoke-RestMethod -UseBasicParsing -Uri $ApiUrl -Headers $Headers)
-$release = @(
-    $releases |
-        Where-Object { -not $_.draft -and $_.published_at } |
-        Sort-Object { [DateTimeOffset]$_.published_at } -Descending
-) | Select-Object -First 1
-
-if (-not $release) {
-    throw "No published BG3 Controller Action Menu release was found."
-}
-
-$pakAsset = Get-SingleReleaseAsset -Release $release -Description "BG3ControllerActionMenu-*.pak" -Predicate {
-    $_.name -like "BG3ControllerActionMenu-*.pak"
-}
-$installerAsset = Get-SingleReleaseAsset -Release $release -Description "install-xbox-dev.ps1" -Predicate {
-    $_.name -eq "install-xbox-dev.ps1"
-}
-
-$cacheRoot = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\installer-cache"
-$releaseDir = Join-Path $cacheRoot ([string]$release.tag_name)
-New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
-
-$pakPath = Join-Path $releaseDir ([string]$pakAsset.name)
-$installerPath = Join-Path $releaseDir "install-xbox-dev.ps1"
-$reportPath = Join-Path $releaseDir "xbox-dev-environment.json"
-
-Write-Host ("Latest release: {0}" -f $release.tag_name)
-Write-Host ("Published:      {0}" -f $release.published_at)
-Write-Host ("Cache:          {0}" -f $releaseDir)
-Write-Host ""
-Write-Host "Downloading and verifying release assets..."
-
-Save-VerifiedReleaseAsset -Asset $pakAsset -Destination $pakPath
-Save-VerifiedReleaseAsset -Asset $installerAsset -Destination $installerPath
-
-Write-Host "Verified:"
-Write-Host ("  {0}" -f $pakAsset.name)
-Write-Host "  install-xbox-dev.ps1"
-Write-Host ""
-Write-Host "Running fail-closed Xbox installer..."
-
-& $installerPath -Apply -PackagePath $pakPath -ReportPath $reportPath
-
-Write-Host ""
-Write-Host ("Installed release: {0}" -f $release.tag_name)
-Write-Host ("Diagnostic report: {0}" -f $reportPath)
-)
+    $digestText = [string]$Asset.digest
+    $digestMatch = [regex]::Match($digestText, "^sha256:([0-9a-fA-F]{64})$")
     if (-not $digestMatch.Success) {
         throw "Release asset '$($Asset.name)' has no usable GitHub SHA-256 digest."
     }
