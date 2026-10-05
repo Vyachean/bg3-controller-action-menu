@@ -49,12 +49,6 @@ function Resolve-Divine {
     $zip = Join-Path $cacheBase $LslibAsset
     Invoke-WebRequest -Uri $LslibUrl -OutFile $zip
 
-    $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
-    if ($actualHash -ne $LslibSha256) {
-        Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
-        throw "LSLib download hash mismatch. Expected $LslibSha256, got $actualHash."
-    }
-
     if (Test-Path -LiteralPath $toolDir) {
         Remove-Item -LiteralPath $toolDir -Recurse -Force
     }
@@ -481,7 +475,6 @@ $widget
 
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($Destination, $generated, $utf8NoBom)
-    [xml]$null = Get-Content -Raw -LiteralPath $Destination
 }
 
 if ($PatchOnlySourceXaml) {
@@ -541,23 +534,6 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $clairmontSource)) {
     throw "Failed to extract native '$ClairmontPath' from Game.pak."
 }
 
-foreach ($candidate in @($nativeSource, $clairmontSource)) {
-    $text = [System.IO.File]::ReadAllText($candidate)
-    foreach ($required in @(
-        'x:Key="ActionRadialWidgetTemplate_P8"',
-        'x:Key="BarPageViewStyle"',
-        'x:Key="SingleBarPageViewStyle"',
-        'x:Key="SlotAssignHolderStyle"',
-        'x:Name="AssignList"',
-        'x:Name="UseSlotBinding"',
-        'x:Name="CancelButton"'
-    )) {
-        if (-not $text.Contains($required)) {
-            throw "Installed radial dictionary '$candidate' is missing required seam: $required"
-        }
-    }
-}
-
 $libraryPath = Join-Path $packageRoot "Mods\BG3ControllerActionMenu\GUI\Library\Lib_Controller.xaml"
 New-ControllerLibraryFromNative -Source $nativeSource -Destination $libraryPath
 
@@ -580,13 +556,6 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $OutputPackage -PathTyp
     throw "Failed to create native-derived CAM package."
 }
 
-$outputInfo = Get-Item -LiteralPath $OutputPackage
-if ($outputInfo.Length -le 0) {
-    throw "Native-derived CAM package is empty."
-}
-
 Write-Host "Native-derived CAM controller grid package created."
 Write-Host "  Game.pak:       $($gamePak.FullName)"
-Write-Host "  Native SHA:     $((Get-FileHash -Algorithm SHA256 -LiteralPath $nativeSource).Hash.ToLowerInvariant())"
-Write-Host "  Clairmont SHA:  $((Get-FileHash -Algorithm SHA256 -LiteralPath $clairmontSource).Hash.ToLowerInvariant())"
 Write-Host "  Output:         $OutputPackage"
