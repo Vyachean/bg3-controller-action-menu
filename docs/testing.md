@@ -275,6 +275,27 @@ Before asking for a runtime test, CI must prove:
 - one-click release resolution requires and verifies the native-overlay builder;
 - Xbox apply builds the derived PAK before touching the installed mod package/load order.
 
+### 2026-10-05 — 0.0.25 native-resource mirror runtime result
+
+`0.0.25-native-radial-visual-mirror` installed and the game ran, but the mod produced **no visible change** to the radial UI.
+
+That result invalidates the assumption behind 0.0.25:
+
+- packaging locally derived files under `Public/Game/GUI/Library/...` and the Clairmont counterpart is **not proven to override those base-game UI resources from a normal CAM mod PAK**;
+- CI/package verification only proved that those files existed in the PAK, not that the BG3 mod UI loader consumes that path as a mod override;
+- therefore the install-time native-overlay machinery is not an accepted runtime architecture.
+
+Combined with 0.0.24, the evidence boundary is now:
+
+- the standard mod UI route (`Lib_Controller.xaml`) is definitely loaded;
+- the native `ActionRadials` page/state is definitely active;
+- a hand-written replacement of the whole native template is too broad and breaks behavior;
+- a raw `Public/Game/GUI` file override inside the mod PAK does not currently demonstrate any effect.
+
+**No new in-game build should be requested until a supported, narrower restyling hook is proven from current sources or a concrete working mod.**
+
+Research priority returns to the previously documented plan: inspect current controller-radial implementations and Larian's Library/Pages/StateMachines/restyling mechanisms before writing another XAML candidate.
+
 ## Manual test report format
 
 A useful report is:
