@@ -134,6 +134,30 @@ The read-only installed-game capture closed the remaining static seams:
 
 The next in-game run is therefore justified, but it must combine M1–M3 into one milestone run: populated rendering, directional focus/scroll, top-level B, nested B if naturally encountered, and one simple A dispatch.
 
+### 2026-10-05 — 0.0.18 native-contract runtime result
+
+The first candidate built from the captured data contract produced a populated grid in the real Xbox App build:
+
+- `Controller bars: 5`;
+- Class / Actions / Items sections rendered;
+- native icons and tooltip details rendered;
+- initial focus reached a real spell slot.
+
+Two runtime assertions failed:
+
+- directional controller navigation did not move focus;
+- B did not close the window.
+
+This means the captured **data/materialization contract is correct**, while CAM's custom input/navigation composition was not.
+
+The correction is architectural rather than another data-source experiment:
+
+- remove root-level `FocusUp/Down/Left/Right=UI*` interception;
+- configure `LSGrid` with the native navigable-grid flags used by BG3 grids: `UseWidgetNavigation`, `WidgetChainedNavigation`, `AlwaysSelectFirst`, and `ls:MoveFocus.InternalFocusable`;
+- separate input capture from visual buttons with player-scoped `LSInputBinding` for `UIAccept` and `UICancel`.
+
+The failed `0.0.18-native-controller-contract` build must not be tested again.
+
 ## Manual test report format
 
 A useful report is:
