@@ -31,6 +31,12 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
+      - name: Test one-click launcher
+        shell: cmd
+        env:
+          CAM_ONE_CLICK_VALIDATE_ONLY: "1"
+        run: install-latest.cmd
+
       - name: Test Xbox installer
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
@@ -58,5 +64,6 @@ jobs:
           path: |
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
+            install-latest.cmd
             tools/capture-native-radials.ps1
           if-no-files-found: error

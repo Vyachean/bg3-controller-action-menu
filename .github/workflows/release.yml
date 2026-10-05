@@ -11,6 +11,7 @@ on:
       - "tools/verify-package.ps1"
       - "tools/validate.py"
       - "tools/install-xbox-dev.ps1"
+      - "install-latest.cmd"
       - "tools/deploy-xbox-dev.ps1"
       - "tools/test-deploy-xbox-dev.ps1"
   workflow_dispatch:
@@ -65,6 +66,12 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
+      - name: Test one-click launcher
+        shell: cmd
+        env:
+          CAM_ONE_CLICK_VALIDATE_ONLY: "1"
+        run: install-latest.cmd
+
       - name: Test Xbox installer
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
@@ -98,8 +105,11 @@ jobs:
           $installer = "tools/install-xbox-dev.ps1"
           if (-not (Test-Path $installer)) { throw "Missing Xbox installer: $installer" }
 
+          $oneClick = "install-latest.cmd"
+          if (-not (Test-Path $oneClick)) { throw "Missing one-click installer: $oneClick" }
+
           $args = @(
-            "release", "create", $env:TAG, $pak, $installer,
+            "release", "create", $env:TAG, $pak, $installer, $oneClick,
             "--repo", $env:GITHUB_REPOSITORY,
             "--target", $env:GITHUB_SHA,
             "--title", "BG3 Controller Action Menu $env:TAG",
