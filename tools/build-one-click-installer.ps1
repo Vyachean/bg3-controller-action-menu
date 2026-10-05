@@ -18,7 +18,7 @@ if (Test-Path -LiteralPath $Stage) {
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
 
 $launcher = Join-Path $Root "tools\Install-BG3ControllerActionMenu.vbs"
-$bootstrap = Join-Path $Root "tools\install-latest.ps1"
+$bootstrap = Join-Path $Root "tools\bootstrap-latest.ps1"
 
 foreach ($path in @($launcher, $bootstrap)) {
     if (-not (Test-Path -LiteralPath $path)) {
@@ -27,7 +27,7 @@ foreach ($path in @($launcher, $bootstrap)) {
 }
 
 Copy-Item -LiteralPath $launcher -Destination (Join-Path $Stage "Install-BG3ControllerActionMenu.vbs") -Force
-Copy-Item -LiteralPath $bootstrap -Destination (Join-Path $Stage "install-latest.ps1") -Force
+Copy-Item -LiteralPath $bootstrap -Destination (Join-Path $Stage "bootstrap-latest.ps1") -Force
 
 @"
 BG3 Controller Action Menu - One-click installer
@@ -35,9 +35,10 @@ BG3 Controller Action Menu - One-click installer
 1. Extract this ZIP once.
 2. Double-click Install-BG3ControllerActionMenu.vbs.
 3. No PowerShell/console window is shown.
-4. The launcher always selects the newest published GitHub release, including prereleases.
-5. It downloads the current base PAK, fail-closed Xbox installer, and native-overlay builder and verifies all GitHub SHA-256 digests.
-6. On your PC it reads the exact installed BG3 Game.pak, patches only the radial presentation locally, and builds the installable PAK. Native game XAML is never shipped in the GitHub release.
+4. The launcher first checks the newest published release for an updated bootstrap and canonical installer, verifies their GitHub SHA-256 digests, and hands off automatically.
+5. The canonical installer then downloads the current base PAK, fail-closed Xbox installer, and native-overlay builder and verifies all GitHub SHA-256 digests.
+6. Future installer changes do not require re-extracting this ZIP as long as the stable bootstrap protocol remains valid.
+7. On your PC it reads the exact installed BG3 Game.pak, patches only the radial presentation locally, and builds the installable PAK. Native game XAML is never shipped in the GitHub release.
 
 One-time prerequisite:
 BG3's built-in Mod Manager must already have at least one enabled mod so the installer can prove the Xbox Mods cache and reuse the real modsettings.lsx schema.
