@@ -355,16 +355,7 @@ function New-ControllerLibraryFromNative {
         'x:Name="UseSlotBinding"',
         'x:Name="CancelButton"',
         'Command="{Binding UseSlotCommand}"',
-        'Command="{Binding ClearSingleHotbarCommand}"',
-        'HorizontalAlignment="Center"',
-        'VerticalAlignment="Center"',
-        'Width="640"',
-        'Height="400"',
-        'Visibility="Collapsed">',
-        'x:Name="ButtonHintsContainer"',
-        'x:Name="ShowContextMenu"',
-        'Opacity="0"',
-        'Width="0"'
+        'Command="{Binding ClearSingleHotbarCommand}"'
     )) {
         if (-not $native.Contains($required)) {
             throw "Native XAML is missing required Patch 8 seam: $required"
@@ -469,7 +460,15 @@ $widget
         'x:Name="UseSlotBinding"',
         'x:Name="CancelButton"',
         'Command="{Binding UseSlotCommand}"',
-        'Command="{Binding ClearSingleHotbarCommand}"'
+        'Command="{Binding ClearSingleHotbarCommand}"',
+        'HorizontalAlignment="Center"',
+        'VerticalAlignment="Center"',
+        'Width="640"',
+        'Height="400"',
+        'x:Name="ButtonHintsContainer"',
+        'x:Name="ShowContextMenu"',
+        'Opacity="0"',
+        'Width="0"'
     )) {
         if (-not $generated.Contains($required)) {
             throw "Generated controller library is missing required seam: $required"
@@ -610,6 +609,14 @@ foreach ($required in @(
     'ActionDownEvent="UIDown"',
     'ActionLeftEvent="UILeft"',
     'ActionRightEvent="UIRight"',
+    'HorizontalAlignment="Center"',
+    'VerticalAlignment="Center"',
+    'Width="640"',
+    'Height="400"',
+    'x:Name="ButtonHintsContainer"',
+    'x:Name="ShowContextMenu"',
+    'Opacity="0"',
+    'Width="0"',
     'x:Name="UseSlotBinding"',
     'x:Name="CancelButton"'
 )) {
