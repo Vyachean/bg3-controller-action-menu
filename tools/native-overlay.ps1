@@ -109,6 +109,16 @@ function Get-ElementSpan {
         throw "Element <$Tag $AttributeName='$AttributeValue'> was not found."
     }
 
+    if ($open.Value.EndsWith("/>", [System.StringComparison]::Ordinal)) {
+        return [pscustomobject]@{
+            Start = $open.Index
+            End = $open.Index + $open.Length
+            OpenLength = $open.Length
+            OpenText = $open.Value
+            Text = $open.Value
+        }
+    }
+
     $tokenRegex = [regex]::new(
         '</?' + $tagEscaped + '\b[^>]*?/?>',
         [System.Text.RegularExpressions.RegexOptions]::Singleline
@@ -173,6 +183,13 @@ function New-GridRenderer {
                                           IsEnabled="$IsEnabled"
                                           Visibility="Collapsed"
                                           SelectedIndex="0"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center"
+                                          Width="640"
+                                          Height="400"
+                                          Background="Transparent"
                                           KeyboardNavigation.DirectionalNavigation="Contained"
                                           ActionNextEvent="UIDown"
                                           ActionPrevEvent="UIUp"
@@ -190,6 +207,103 @@ $interaction
                                      Template="{StaticResource SelectorTemplate}"
                                      Visibility="{Binding Visibility, ElementName=$Name}"/>
 "@
+}
+
+function Hide-RadialBackdrop {
+    param([Parameter(Mandatory = $true)][string]$StyleText)
+
+    $pattern = '<Ellipse\s+(?=[^>]*Margin="0,36,0,0")(?=[^>]*Height="1260")(?=[^>]*Width="1260")[^>]*>'
+    $match = [regex]::Match(
+        $StyleText,
+        $pattern,
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    if (-not $match.Success) {
+        throw "Native PageView style is missing the radial backdrop ellipse."
+    }
+
+    $open = $match.Value
+    if ($open -match '\sVisibility=') {
+        throw "Native radial backdrop already defines Visibility; refusing an ambiguous presentation patch."
+    }
+
+    $patched = $open.Substring(0, $open.Length - 1) + ' Visibility="Collapsed">'
+    return $StyleText.Substring(0, $match.Index) +
+        $patched +
+        $StyleText.Substring($match.Index + $match.Length)
+}
+
+function Set-NamedElementAttribute {
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [Parameter(Mandatory = $true)][string]$Tag,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Attribute,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+
+    $span = Get-ElementSpan -Text $Text -Tag $Tag -AttributeName "x:Name" -AttributeValue $Name
+    $open = $span.OpenText
+    $escapedAttribute = [regex]::Escape($Attribute)
+    $attributePattern = '\s' + $escapedAttribute + '="[^"]*"'
+
+    if ([regex]::IsMatch($open, $attributePattern)) {
+        $patchedOpen = [regex]::Replace(
+            $open,
+            $attributePattern,
+            ' ' + $Attribute + '="' + $Value + '"',
+            1
+        )
+    } else {
+        if ($open.EndsWith("/>", [System.StringComparison]::Ordinal)) {
+            $patchedOpen = $open.Substring(0, $open.Length - 2) +
+                ' ' + $Attribute + '="' + $Value + '"/>'
+        } else {
+            $patchedOpen = $open.Substring(0, $open.Length - 1) +
+                ' ' + $Attribute + '="' + $Value + '">'
+        }
+    }
+
+    return $Text.Substring(0, $span.Start) +
+        $patchedOpen +
+        $Text.Substring($span.Start + $span.OpenLength)
+}
+
+function Convert-WidgetChromeForGrid {
+    param([Parameter(Mandatory = $true)][string]$WidgetText)
+
+    foreach ($change in @(
+        @("HorizontalAlignment", "Center"),
+        @("HorizontalContentAlignment", "Center"),
+        @("VerticalAlignment", "Bottom"),
+        @("Width", "Auto"),
+        @("FlowDirection", "LeftToRight"),
+        @("Margin", "0,0,0,56")
+    )) {
+        $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:AlignableWrapPanel" -Name "ButtonHintsContainer" -Attribute $change[0] -Value $change[1]
+    }
+
+    foreach ($buttonName in @(
+        "SelectButtonVisual",
+        "ShowContextMenu",
+        "CancelConcentrationButton",
+        "ToggleWeaponSet",
+        "ToggleDualWield",
+        "CancelButton"
+    )) {
+        $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name $buttonName -Attribute "Width" -Value "Auto"
+    }
+
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "SelectButtonVisual" -Attribute "Margin" -Value "0,0,20,0"
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "CancelButton" -Attribute "Margin" -Value "0"
+
+    # The ContextMenu command remains wired for compatibility, but its radial-specific
+    # "Radial Customisation" prompt is not part of the grid chrome.
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Opacity" -Value "0"
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Width" -Value "0"
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Margin" -Value "0"
+
+    return $WidgetText
 }
 
 function Convert-PageStyleToGrid {
@@ -210,9 +324,11 @@ function Convert-PageStyleToGrid {
 
     $replacement = New-GridRenderer -Name $Name -ItemsSource $items -IsEnabled $isEnabled -OriginalRadialText $span.Text
 
-    return $StyleText.Substring(0, $span.Start) +
+    $StyleText = $StyleText.Substring(0, $span.Start) +
         $replacement +
         $StyleText.Substring($span.End)
+
+    return Hide-RadialBackdrop -StyleText $StyleText
 }
 
 function Get-RootOpenTag {
@@ -268,6 +384,7 @@ function New-ControllerLibraryFromNative {
 
     $single = Convert-PageStyleToGrid -StyleText $single -Name "SingleBar"
     $bar = Convert-PageStyleToGrid -StyleText $bar -Name "HotBarRadial"
+    $widget = Convert-WidgetChromeForGrid -WidgetText $widget
 
     $root = Get-RootOpenTag -Text $native
 
@@ -319,6 +436,10 @@ function New-ControllerLibraryFromNative {
                    ActionLeftEvent="UILeft"
                    AutoIndex="True"
                    ContainerData="{Binding}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Width="632"
+                   Height="376"
                    Columns="5"
                    CellWidth="120"
                    CellHeight="120"
@@ -354,7 +475,15 @@ $widget
         'x:Name="UseSlotBinding"',
         'x:Name="CancelButton"',
         'Command="{Binding UseSlotCommand}"',
-        'Command="{Binding ClearSingleHotbarCommand}"'
+        'Command="{Binding ClearSingleHotbarCommand}"',
+        'HorizontalAlignment="Center"',
+        'VerticalAlignment="Center"',
+        'Width="640"',
+        'Height="400"',
+        'x:Name="ButtonHintsContainer"',
+        'x:Name="ShowContextMenu"',
+        'Opacity="0"',
+        'Width="0"'
     )) {
         if (-not $generated.Contains($required)) {
             throw "Generated controller library is missing required seam: $required"
@@ -495,6 +624,14 @@ foreach ($required in @(
     'ActionDownEvent="UIDown"',
     'ActionLeftEvent="UILeft"',
     'ActionRightEvent="UIRight"',
+    'HorizontalAlignment="Center"',
+    'VerticalAlignment="Center"',
+    'Width="640"',
+    'Height="400"',
+    'x:Name="ButtonHintsContainer"',
+    'x:Name="ShowContextMenu"',
+    'Opacity="0"',
+    'Width="0"',
     'x:Name="UseSlotBinding"',
     'x:Name="CancelButton"'
 )) {

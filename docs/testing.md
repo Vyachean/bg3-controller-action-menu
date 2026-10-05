@@ -369,6 +369,35 @@ Before the next runtime request CI must prove:
 - release PAK still contains no proprietary XAML;
 - final installed PAK is generated locally.
 
+### 2026-10-05 — 0.0.27 runtime result
+
+`0.0.27-native-slot-assignment-grid` is the first build that proves the new architectural direction in-game:
+
+- radial slot layouts are replaced by square grids;
+- the native ActionRadials page still loads;
+- the slot-assignment-derived grid focus model is active.
+
+The screenshot exposes three presentation defects rather than another input/data failure:
+
+1. each grid is anchored to the upper-left of its 1560×1560 native PageView instead of being centered;
+2. the native radial backdrop ellipse remains visible as a dark circular shadow behind the grid;
+3. the native radial footer still exposes radial-specific chrome, notably `Radial Customisation`.
+
+No navigation/A/B architecture change is justified by this result.
+
+### 0.0.28 presentation-only correction
+
+`0.0.28-grid-presentation-cleanup` changes only presentation:
+
+- replacement `LSListBox` is centered in the native PageView with a bounded 640×400 viewport;
+- the 5-column `LSGrid` itself is centered in that viewport;
+- the native 1260×1260 radial backdrop ellipse is collapsed in both main and nested PageView styles;
+- the button-hint strip is centered/compact;
+- the radial-specific context-menu prompt is visually suppressed while its command remains wired;
+- `LocalFocus`, `ActionRadials.Tag`, A, B, swap and paging semantics are unchanged.
+
+CI must prove these presentation seams in addition to all 0.0.27 focus/dispatch seams before another in-game run.
+
 ## Manual test report format
 
 A useful report is:

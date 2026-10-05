@@ -100,6 +100,8 @@ def validate_semantics() -> list[str]:
                 '"Game.pak"',
                 "New-ControllerLibraryFromNative",
                 "Convert-PageStyleToGrid",
+                "Hide-RadialBackdrop",
+                "Convert-WidgetChromeForGrid",
                 'x:Key="SlotAssignHolderStyle"',
                 'x:Name="AssignList"',
                 'LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"',
@@ -112,11 +114,18 @@ def validate_semantics() -> list[str]:
                 'ActionRightEvent="UIRight"',
                 'ActionLeftEvent="UILeft"',
                 'LocalFocusSelector="{Binding ElementName=$selectorName,Mode=OneWay}"',
+                'HorizontalAlignment="Center"',
+                'VerticalAlignment="Center"',
+                'Width="640"',
+                'Height="400"',
+                'x:Name="ButtonHintsContainer"',
+                'x:Name="ShowContextMenu"',
+                'Opacity="0"',
                 'x:Key="ActionRadialWidgetTemplate_P8"',
                 'x:Key="RadialHotBarListItemContainer"',
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
-                'Mods\BG3ControllerActionMenu\GUI\Library\Lib_Controller.xaml',
+                'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
                 "--action extract-single-file",
                 "--action create-package",
                 "-PatchOnlySourceXaml",
@@ -139,7 +148,9 @@ def validate_semantics() -> list[str]:
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
                 "Action grid must not execute slot-assignment commands.",
-                "outer native template/A/B/swap seams preserved",
+                "Both native radial shadow/backdrop ellipses must be collapsed.",
+                "Grid button hints are not centered/compact.",
+                "Native assignment-grid presentation fixture passed",
             ],
         )
     )
@@ -261,7 +272,7 @@ def validate_semantics() -> list[str]:
                 [
                     "Test self-updating bootstrap",
                     "test-bootstrap-latest.ps1",
-                    "Test native radial visual overlay",
+                    "Test native slot-assignment grid presentation",
                     "test-native-overlay.ps1",
                 ],
             )
@@ -326,7 +337,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "native-derived slot-assignment grid contract present; published package contains no proprietary native XAML; "
+        "native-derived centered slot-assignment grid contract present; published package contains no proprietary native XAML; "
         "runtime remains Script-Extender-free)."
     )
     return 0

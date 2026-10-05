@@ -23,7 +23,12 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
     <Setter Property="Focusable" Value="True"/>
   </Style>
   <ItemsPanelTemplate x:Key="AvailableSlotsListPanelTemplate">
-    <ls:LSGrid ActionUpEvent="UIUp" ActionDownEvent="UIDown" ActionRightEvent="UIRight" ActionLeftEvent="UILeft" AutoIndex="True"/>
+    <ls:LSGrid ActionUpEvent="UIUp"
+               ActionDownEvent="UIDown"
+               ActionRightEvent="UIRight"
+               ActionLeftEvent="UILeft"
+               AutoIndex="True"
+               Columns="5"/>
   </ItemsPanelTemplate>
   <Style x:Key="SlotAssignHolderStyle" TargetType="Control">
     <Setter Property="Template">
@@ -44,10 +49,14 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
 
   <Style x:Key="SingleBarPageViewStyle" TargetType="{x:Type ls:PageView}">
     <Setter Property="ls:MoveFocus.Focusable" Value="True"/>
+    <Setter Property="Margin" Value="-320,0"/>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="{x:Type ls:PageView}">
-          <Grid>
+          <Grid x:Name="radialRoot" Width="1560" Height="1560">
+            <Ellipse Margin="0,36,0,0" Opacity="0.9" Height="1260" Width="1260">
+              <Ellipse.Fill><SolidColorBrush Color="Black"/></Ellipse.Fill>
+            </Ellipse>
             <ls:Radial x:Name="SingleBar"
                        ItemsSource="{Binding ItemsSource,RelativeSource={RelativeSource TemplatedParent}}"
                        Visibility="Collapsed"
@@ -61,11 +70,6 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                 </b:TimerTrigger>
               </b:Interaction.Triggers>
             </ls:Radial>
-            <b:Interaction.Triggers>
-              <b:DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="False">
-                <b:ChangePropertyAction PropertyName="LocalFocus" TargetName="SingleBar" Value="{x:Null}"/>
-              </b:DataTrigger>
-            </b:Interaction.Triggers>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="ls:MoveFocus.IsFocused" Value="True">
@@ -79,11 +83,15 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
 
   <Style x:Key="BarPageViewStyle" TargetType="{x:Type ls:PageView}">
     <Setter Property="ls:MoveFocus.Focusable" Value="True"/>
+    <Setter Property="Margin" Value="-320,0"/>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="{x:Type ls:PageView}">
-          <Border>
-            <Grid>
+          <Border Width="1560" Height="1560">
+            <Grid x:Name="radialRoot" Visibility="Collapsed">
+              <Ellipse Margin="0,36,0,0" Opacity="0.9" Height="1260" Width="1260">
+                <Ellipse.Fill><SolidColorBrush Color="Black"/></Ellipse.Fill>
+              </Ellipse>
               <ls:Radial x:Name="HotBarRadial"
                          ItemsSource="{TemplateBinding ItemsSource}"
                          IsEnabled="{Binding Path=(ls:MoveFocus.IsFocused), RelativeSource={RelativeSource Mode=TemplatedParent}}"
@@ -98,7 +106,9 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                   <b:DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
                 </b:Interaction.Triggers>
               </ls:Radial>
-              <ls:LSInputBinding x:Name="swapSlotBinding" BoundEvent="UIAccept" Command="{Binding RequestAssignSlotCommand}">
+              <ls:LSInputBinding x:Name="swapSlotBinding"
+                                 BoundEvent="UIAccept"
+                                 Command="{Binding RequestAssignSlotCommand}">
                 <ls:LSInputBinding.CommandParameter>
                   <MultiBinding>
                     <Binding Path="LocalFocus.Index" ElementName="HotBarRadial"/>
@@ -131,6 +141,7 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
           </ControlTemplate>
         </Control.Template>
       </Control>
+
       <ListBox x:Name="HotBarList">
         <ListBox.ItemContainerStyle>
           <Style TargetType="{x:Type ListBoxItem}">
@@ -138,13 +149,39 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
           </Style>
         </ListBox.ItemContainerStyle>
       </ListBox>
-      <ls:LSButton x:Name="UseSlotBinding"
-                   BoundEvent="UIAccept"
-                   Command="{Binding UseSlotCommand}"
-                   CommandParameter="{Binding Tag, ElementName=ActionRadials}"/>
-      <ls:LSButton x:Name="CancelButton"
-                   BoundEvent="UICancel"
-                   Command="{Binding ClearSingleHotbarCommand}"/>
+
+      <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
+                             HorizontalAlignment="Right"
+                             HorizontalContentAlignment="Right"
+                             IsEnabled="{Binding AssigningSlot}"
+                             Width="1000"
+                             FlowDirection="RightToLeft"
+                             Margin="26,0,26,56">
+        <ls:LSButton x:Name="SelectButtonVisual"
+                     BoundEvent="UIAccept"
+                     Width="1000"/>
+        <ls:LSButton x:Name="ShowContextMenu"
+                     BoundEvent="ContextMenu"
+                     Width="1000"/>
+        <ls:LSButton x:Name="CancelConcentrationButton"
+                     BoundEvent="UIEndTurn"
+                     Width="1000"/>
+        <ls:LSButton x:Name="ToggleWeaponSet"
+                     BoundEvent="UISelectionLeft"
+                     Width="1000"/>
+        <ls:LSButton x:Name="ToggleDualWield"
+                     BoundEvent="UISelectionRight"
+                     Width="1000"/>
+        <ls:LSButton x:Name="UseSlotBinding"
+                     BoundEvent="UIAccept"
+                     Command="{Binding UseSlotCommand}"
+                     CommandParameter="{Binding Tag, ElementName=ActionRadials}"/>
+        <ls:LSButton x:Name="CancelButton"
+                     BoundEvent="UICancel"
+                     Command="{Binding ClearSingleHotbarCommand}"
+                     Width="1000"/>
+      </ls:AlignableWrapPanel>
+
       <ControlTemplate.Triggers>
         <MultiDataTrigger>
           <MultiDataTrigger.Conditions>
@@ -179,6 +216,10 @@ foreach ($needle in @(
     '<ls:LSListBox x:Name="SingleBar"',
     'LocalFocusSelector="{Binding ElementName=CAM_HotBarRadialSelector,Mode=OneWay}"',
     'LocalFocusSelector="{Binding ElementName=CAM_SingleBarSelector,Mode=OneWay}"',
+    'HorizontalAlignment="Center"',
+    'VerticalAlignment="Center"',
+    'Width="640"',
+    'Height="400"',
     'KeyboardNavigation.DirectionalNavigation="Contained"',
     'ActionUpEvent="UIUp"',
     'ActionDownEvent="UIDown"',
@@ -193,7 +234,12 @@ foreach ($needle in @(
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
     'Property="CommandParameter" Value="CloseWidget"',
     'Binding Path="LocalFocus.Index" ElementName="HotBarRadial"',
-    'Binding Path="LocalFocus.DataContext" ElementName="HotBarRadial"'
+    'Binding Path="LocalFocus.DataContext" ElementName="HotBarRadial"',
+    'x:Name="ButtonHintsContainer"',
+    'FlowDirection="LeftToRight"',
+    'x:Name="ShowContextMenu"',
+    'Opacity="0"',
+    'Width="0"'
 )) {
     if (-not $text.Contains($needle)) {
         throw "Generated controller library is missing: $needle"
@@ -206,8 +252,27 @@ if ($text.Contains("<ls:Radial ")) {
 if ($text.Contains('Command="{Binding AssignSlotCommand}"')) {
     throw "Action grid must not execute slot-assignment commands."
 }
+
 if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="(HotBarRadial|SingleBar)"').Count -ne 2) {
     throw "Expected exactly two assignment-style action grids."
 }
 
-Write-Host "Native slot-assignment grid fixture passed: outer native template/A/B/swap seams preserved; only the two radial slot renderers became LSListBox+LSGrid."
+if ([regex]::Matches($text, '<Ellipse\s+(?=[^>]*Margin="0,36,0,0")(?=[^>]*Height="1260")(?=[^>]*Width="1260")[^>]*Visibility="Collapsed"').Count -ne 2) {
+    throw "Both native radial shadow/backdrop ellipses must be collapsed."
+}
+
+$hintMatch = [regex]::Match(
+    $text,
+    '<ls:AlignableWrapPanel\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $hintMatch.Success -or
+    -not $hintMatch.Value.Contains('HorizontalAlignment="Center"') -or
+    -not $hintMatch.Value.Contains('HorizontalContentAlignment="Center"') -or
+    -not $hintMatch.Value.Contains('VerticalAlignment="Bottom"') -or
+    -not $hintMatch.Value.Contains('Width="Auto"') -or
+    -not $hintMatch.Value.Contains('FlowDirection="LeftToRight"')) {
+    throw "Grid button hints are not centered/compact."
+}
+
+Write-Host "Native assignment-grid presentation fixture passed: grids centered, radial backdrops hidden, radial-specific customization hint visually removed, native focus/A/B/swap seams preserved."

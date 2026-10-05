@@ -36,16 +36,18 @@ At install time CAM extracts the exact current `PreloadedActionRadials_c.xaml` f
 - `BarPageViewStyle`;
 - `SingleBarPageViewStyle`.
 
-Only the two page-view styles are transformed: their `ls:Radial` slot renderer is replaced with the controller-grid pattern proven by the native slot-assignment UI:
+Only the two page-view styles are transformed: their `ls:Radial` slot renderer is replaced with the controller-grid pattern proven by the native slot-assignment UI. Runtime 0.0.27 proved this focus model works. The presentation layer then centers the grid within the existing PageView and collapses the obsolete circular radial backdrop:
 
 - `LSListBox`;
 - `LocalFocusSelector`;
 - focusable `ListBoxItem` cells;
 - `LSGrid ActionUpEvent/ActionDownEvent/ActionLeftEvent/ActionRightEvent`;
 - `KeyboardNavigation.DirectionalNavigation="Contained"`;
-- native `LocalFocusChanged` / delayed `ActionRadials.Tag` update semantics.
+- native `LocalFocusChanged` / delayed `ActionRadials.Tag` update semantics;
+- centered 640×400 grid viewport inside the native 1560×1560 page;
+- radial background ellipse collapsed without changing PageView focus/lifecycle.
 
-The copied outer template remains native. Therefore `UseSlotBinding`, `CancelButton`, top-level vs nested B switching, swap-slot commands, split-screen close behavior, `PagedList`, context menu and state-machine lifecycle are not reimplemented.
+The copied outer template remains native. Therefore `UseSlotBinding`, `CancelButton`, top-level vs nested B switching, swap-slot commands, split-screen close behavior, `PagedList`, context menu and state-machine lifecycle are not reimplemented. CAM only adjusts the visible hint strip for the common grid layout: it centers the strip and suppresses the obsolete “Radial Customisation” prompt while leaving the underlying context-menu command wired.
 
 The grid cells are visual-only slot representations. The focused VM still reaches the native page through `ActionRadials.Tag`, and normal A remains `UIAccept -> UseSlotCommand(Tag)`.
 
@@ -68,7 +70,8 @@ CAM owns only:
 - install-time extraction and contract verification of the current native radial dictionary;
 - local generation of a controller library from native resources already present in the user's game;
 - replacement of the **slot renderer inside the two native PageView styles** with the proven slot-assignment `LSListBox + LSGrid` focus pattern;
-- compact grid cell presentation.
+- compact centered grid cell presentation;
+- removal of obsolete radial-only visual chrome (circular backdrop and radial-specific customization prompt).
 
 CAM must not own or reimplement:
 
