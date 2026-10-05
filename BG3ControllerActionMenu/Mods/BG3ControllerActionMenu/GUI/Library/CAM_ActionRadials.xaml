@@ -107,12 +107,9 @@
                               KeyboardNavigation.DirectionalNavigation="Continue">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="LocalFocusChanged">
-                            <b:ChangePropertyAction TargetName="ActionRadials"
+                            <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                     PropertyName="Tag"
                                                     Value="{Binding LocalFocus.DataContext, ElementName=SectionSlots}"/>
-                            <b:ChangePropertyAction TargetName="HotBarList"
-                                                    PropertyName="Tag"
-                                                    Value="{Binding FocusedElement, ElementName=ActionRadials}"/>
                             <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                    CommandParameter="{Binding LocalFocus.DataContext, ElementName=SectionSlots}"/>
                             <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -268,7 +265,7 @@
                                       KeyboardNavigation.DirectionalNavigation="Continue">
                             <b:Interaction.Triggers>
                                 <b:EventTrigger EventName="LocalFocusChanged">
-                                    <b:ChangePropertyAction TargetName="ActionRadials"
+                                    <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=VariantList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -306,7 +303,9 @@
                             <b:EventTrigger EventName="LSButtonReleased">
                                 <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
                                 <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                       FocusElement="{Binding ElementName=HotBarList, Path=Tag}"/>
+                                                       DirectionFocus="Left"
+                                                       JumpFocus="First"
+                                                       DeferFocusAction="True"/>
                             </b:EventTrigger>
                         </b:Interaction.Triggers>
                     </ls:LSButton>
