@@ -9,7 +9,7 @@
                   TutorialLayer="ActionRadials"
                   ModType="Override">
             <ls:State.Widgets>
-                <ls:StateWidget Filename="CAM_ActionMenu_c.xaml"
+                <ls:StateWidget Filename="ActionRadials.xaml"
                                 Layer="PopupPanels"
                                 AllowCreationDelay="True"/>
             </ls:State.Widgets>
