@@ -65,7 +65,7 @@ def validate_semantics() -> list[str]:
             CONTROLLER_LIBRARY,
             [
                 "ResourceDictionary",
-                "CAM_ActionRadials.xaml",
+                "/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml",
             ],
         )
     )
