@@ -16,8 +16,8 @@ The launcher is reusable across releases. Every run:
 
 1. queries the repository's GitHub Releases list, including prereleases;
 2. selects the newest published non-draft release;
-3. requires that exact release's `BG3ControllerActionMenu-<version>.pak` and `install-xbox-dev.ps1`;
-4. downloads both files;
+3. requires that exact release's `BG3ControllerActionMenu-<version>.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
+4. downloads all three files;
 5. verifies both against the SHA-256 digests published by GitHub;
 6. runs the downloaded fail-closed Xbox installer with `-Apply`.
 
