@@ -31,23 +31,15 @@ A read-only capture of the installed Xbox App build 1.8.910.0 established the cu
 
 It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
 
-## Xbox App local development
+## Xbox App installation
 
-The Xbox App build does not use the ordinary Steam/GOG mod path in the same way. The project therefore does **not** hard-code `C:\WpSystem` or assume one cache location.
+For normal use, download **`install-latest.cmd` once** and run it by double-clicking it.
 
-Release `v0.0.9-xbox-schema-mirror` and newer includes the schema-grounded `install-xbox-dev.ps1`.
+It always finds the newest published GitHub Release (including prereleases), downloads the matching CAM PAK and PowerShell installer, verifies both SHA-256 digests, and runs the existing fail-closed Xbox installation automatically.
 
-First establish ground truth by installing one small mod through BG3's built-in Mod Manager. Then run:
+The first installation still requires one small mod to have been installed and enabled through BG3's built-in Mod Manager so CAM can prove the real Xbox cache and mirror the machine's actual load-order schema. After that, the same `install-latest.cmd` can be reused for every CAM update.
 
-```powershell
-powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
-```
-
-This is read-only and creates `xbox-dev-environment.json`. Only when it finds one unambiguous cache, an existing PAK, a valid BG3 `modsettings.lsx`, and one reusable schema written by an already-active in-game mod should installation be allowed:
-
-```powershell
-powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
-```
+The Xbox App build does not use the ordinary Steam/GOG mod path in the same way, so CAM still does **not** hard-code `C:\WpSystem` or assume one cache location.
 
 See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
 
