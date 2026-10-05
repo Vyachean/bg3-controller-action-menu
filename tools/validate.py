@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "BG3ControllerActionMenu"
 MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
-ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
+ACTION_PAGE = MOD_ROOT / "GUI/Pages/ActionRadials.xaml"
 CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
@@ -61,37 +61,47 @@ def validate_semantics() -> list[str]:
         require_text(
             ACTION_PAGE,
             [
+                'x:Name="ActionRadials"',
                 'ls:UIWidget.ContextName="HotBar"',
-                "<ls:UIWidget.Template>",
-                "<ControlTemplate>",
-                "AreRadialsOpen",
-                'x:Name="CAM_DiagnosticPanel"',
-                "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars",
-                'ItemsSource="{Binding SlotList}"',
-                'ItemsSource="{Binding SingleHotBar.SlotList}"',
+                'FocusLeft="UITabPrev"',
+                'FocusRight="UITabNext"',
+                'CanCacheFocusSurroundingElements="True"',
+                'Template="{StaticResource CAM_ActionRadialWidgetTemplate}"',
+                'EventName="GotKeyboardFocus"',
+                'EventName="WidgetClosing"',
+                'Binding="{Binding Layout}"',
+                'x:Key="CAM_ActionRadialWidgetTemplate"',
+                'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars',
+                'x:Name="HotBarList"',
+                'SelectedIndex="0"',
+                'ActionNextEvent="UIDown"',
+                'ActionPrevEvent="UIUp"',
+                'KeyboardNavigation.DirectionalNavigation="Contained"',
+                'LocalFocusSelector="{Binding ElementName=GridSelector, Mode=OneWay}"',
+                'x:Name="GridSelector"',
+                'Template="{StaticResource SelectorTemplate}"',
                 'x:Key="CAM_SlotContainer"',
                 'TargetType="{x:Type ListBoxItem}"',
-                '<ls:LSListBox ItemsSource="{Binding SlotList}"',
+                '<ls:LSListBox x:Name="SlotList"',
+                'ItemsSource="{Binding SlotList}"',
                 'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
                 'ItemsPanel="{StaticResource CAM_NativeGrid}"',
                 'ActionUpEvent="UIUp"',
                 'ActionDownEvent="UIDown"',
                 'ActionLeftEvent="UILeft"',
                 'ActionRightEvent="UIRight"',
-                'FocusLeft="UITabPrev"',
-                'FocusRight="UITabNext"',
+                'ContainerData="{Binding}"',
+                'ItemsSource="{Binding SingleHotBar.SlotList}"',
                 '<ls:LSButton x:Name="UseSlotBinding"',
                 'Command="{Binding UseSlotCommand}"',
-                'CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"',
+                'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
                 'BoundEvent="UIAccept"',
                 '<ls:LSButton x:Name="CancelButton"',
+                'BoundEvent="UICancel"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
                 'Property="CommandParameter" Value="CloseWidget"',
-                'ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"',
-                'x:Name="NativeSlotButton"',
-                'Command="{x:Null}"',
-                'EatInput="False"',
-                'BoundEvent="UICancel"',
+                'ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"',
+                'x:Name="CAM_DiagnosticPanel"',
                 'Background="Transparent"',
             ],
         )
@@ -103,12 +113,18 @@ def validate_semantics() -> list[str]:
             [
                 'Name="ActionRadials"',
                 'ModType="Override"',
-                'Filename="CAM_ActionMenu_c.xaml"',
+                'Filename="ActionRadials.xaml"',
                 'Name="CloseWidget"',
                 'Name="ToggleShortcutMenu"',
             ],
         )
     )
+
+    old_action_page = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
+    if old_action_page.exists():
+        errors.append(
+            f"{old_action_page.relative_to(ROOT)}: superseded custom page must not ship; use native-named ActionRadials.xaml"
+        )
 
     script_extender = MOD_ROOT / "ScriptExtender"
     if script_extender.exists():
@@ -125,10 +141,7 @@ def validate_semantics() -> list[str]:
             "CurrentPlayer.SelectedCharacter.HotBars",
             'Command="ls:UIWidget.CloseRequestCommand"',
             'x:Name="CancelNestedButton"',
-            'FocusUp="UIUp"',
-            'FocusDown="UIDown"',
-            'FocusLeft="UILeft"',
-            'FocusRight="UIRight"',
+            'x:Name="CAM_ActionMenu"',
             '<ls:LSInputBinding x:Name="UseSlotBinding"',
             '<ls:LSInputBinding x:Name="CancelBinding"',
             'UseWidgetNavigation="True"',
