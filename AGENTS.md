@@ -64,7 +64,7 @@ Runtime evidence additionally proves:
 - `0.0.20` restored rendering and the captured list-grid hierarchy but controller focus/input was still fully dead;
 - `0.0.21` and `0.0.22` changed installer UX only.
 
-Do not reintroduce a CAM-owned `ActionRadials` state or custom replacement page. The next runtime candidate must keep the native state and native `ActionRadials.xaml` root and contribute only controller resource-library presentation.
+Do not reintroduce a CAM-owned `ActionRadials` state or custom replacement page. The next runtime candidate must keep the native state and native `ActionRadials.xaml` root and contribute only controller resource-library presentation. Runtime 0.0.23 additionally proves that a CAM-local merged XAML dictionary must not be referenced from `Lib_Controller.xaml`; CAM radial resources must stay inline in that library unless a different path mechanism is proven in-game.
 
 The next in-game test is allowed only after package validation proves there is no CAM StateMachine/Page override and the native template resource override contains the captured ControllerHotBars, focus, A and B seams. It must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
 
