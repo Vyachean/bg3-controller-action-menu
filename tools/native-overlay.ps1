@@ -339,24 +339,7 @@ function Convert-SpellGroupTemplateForCatalog {
         "{StaticResource CAM_AvailableSlotsListPanelTemplate}"
     )
 
-    $closing = "</b:Interaction.Triggers>"
-    $index = $TemplateText.IndexOf($closing, [System.StringComparison]::Ordinal)
-    if ($index -lt 0) {
-        throw "Native SpellGroupListTemplate has no interaction-trigger block."
-    }
-
-    $dispatch = @'
-                <b:EventTrigger EventName="LocalFocusChanged">
-                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                </b:EventTrigger>
-                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=ListBox}"/>
-                </b:TimerTrigger>
-'@
-
-    return $TemplateText.Substring(0, $index) +
-        $dispatch +
-        $TemplateText.Substring($index)
+    return $TemplateText
 }
 
 function New-AutomaticActionCatalog {
@@ -453,12 +436,6 @@ function New-AutomaticActionCatalog {
                                     <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_PassivesListbox}">
                                         <ls:LSPlaySound Sound="UI_Shared_Hover"/>
                                     </b:PropertyChangedTrigger>
-                                    <b:EventTrigger EventName="LocalFocusChanged">
-                                        <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    </b:EventTrigger>
-                                    <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                        <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=CAM_PassivesListbox}"/>
-                                    </b:TimerTrigger>
                                 </b:Interaction.Triggers>
                             </ls:LSListBox>
                         </ls:LSListBoxItem>
@@ -481,12 +458,6 @@ function New-AutomaticActionCatalog {
                                     <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_MetamagicListbox}">
                                         <ls:LSPlaySound Sound="UI_Shared_Hover"/>
                                     </b:PropertyChangedTrigger>
-                                    <b:EventTrigger EventName="LocalFocusChanged">
-                                        <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    </b:EventTrigger>
-                                    <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                        <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=CAM_MetamagicListbox}"/>
-                                    </b:TimerTrigger>
                                 </b:Interaction.Triggers>
                             </ls:LSListBox>
                         </ls:LSListBoxItem>
@@ -504,10 +475,7 @@ function New-AutomaticActionCatalog {
                                     <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_InventoryListbox}">
                                         <ls:LSPlaySound Sound="UI_Shared_Hover"/>
                                     </b:PropertyChangedTrigger>
-                                    <b:EventTrigger EventName="LocalFocusChanged">
-                                        <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    </b:EventTrigger>
-                                    <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="80" TotalTicks="1">
                                         <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"/>
                                     </b:TimerTrigger>
                                 </b:Interaction.Triggers>
@@ -522,7 +490,13 @@ function New-AutomaticActionCatalog {
                                 <b:InvokeCommandAction IsEnabled="{Binding LocalFocus, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
                                                        Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                        CommandParameter="{Binding ., ElementName=HotBarList}"/>
+                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                             </b:EventTrigger>
+                            <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                <b:ChangePropertyAction TargetName="ActionRadials"
+                                                        PropertyName="Tag"
+                                                        Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                            </b:TimerTrigger>
                         </b:Interaction.Triggers>
                     </ls:LSListBox>
 
