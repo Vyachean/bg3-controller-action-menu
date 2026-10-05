@@ -1,74 +1,54 @@
 # Xbox App / Microsoft Store PC installation
 
-## Current development method
+## Normal installation: one file, double click
 
-The project uses a **discovery-first** installer. It does not assume that `C:\WpSystem` exists and it does not write anything on its first run.
+Download **`install-latest.cmd`** from any current GitHub Release and keep it anywhere convenient.
 
-Each prerelease contains:
+For every install or update:
 
-- `BG3ControllerActionMenu-*.pak`;
-- `install-xbox-dev.ps1`.
+1. exit Baldur's Gate 3;
+2. double-click `install-latest.cmd`;
+3. wait for the window to report success;
+4. press any key to close it.
+
+The launcher always selects the newest **published** GitHub Release, including prereleases. You do not need to download a new `.pak` or PowerShell installer for each build.
+
+The launcher:
+
+1. queries the repository's GitHub Releases;
+2. selects the most recently published non-draft release;
+3. downloads that release's `BG3ControllerActionMenu-*.pak` and `install-xbox-dev.ps1`;
+4. verifies both downloads against the SHA-256 digests published by GitHub;
+5. runs the existing fail-closed Xbox installer with `-Apply`;
+6. leaves the console window open so the result can be read.
+
+Downloaded files and the diagnostic report are cached under:
+
+`%LOCALAPPDATA%\BG3ControllerActionMenu\installer-cache\<release-tag>`
+
+The `install-latest.cmd` file itself is evergreen: future releases are picked up automatically.
 
 ## One-time preparation on the gaming PC
 
-1. Launch Baldur's Gate 3 from Xbox App.
-2. Open the built-in Mod Manager.
-3. Install **one small mod from the built-in catalog** and enable it.
-4. Exit BG3 normally.
+The safe Xbox installer still needs evidence from the game's own mod system.
 
-The existing in-game-installed PAK becomes ground-truth evidence for the directory that this particular Xbox build actually uses. Its active load-order entry also becomes a **schema donor**: CAM will reuse the LSX attribute types/fields actually written on this machine instead of assuming the Steam/GOG or test-fixture format.
+Before the first CAM installation:
 
-## Phase 1 — discover only
+1. launch Baldur's Gate 3 from Xbox App;
+2. open the built-in Mod Manager;
+3. install **one small mod from the built-in catalog** and enable it;
+4. exit BG3 normally;
+5. double-click `install-latest.cmd`.
 
-Put the CAM `.pak` and `install-xbox-dev.ps1` in the same folder and run:
+That existing in-game-installed PAK proves which Mods cache this machine actually uses. Its active load-order entry also supplies the LSX schema that CAM mirrors instead of guessing a Steam/GOG or test-fixture layout.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
-```
+This is a one-time prerequisite. Later CAM updates use the same one-click launcher.
 
-This writes only `xbox-dev-environment.json` next to the script. It does not touch BG3 files.
+## Fail-closed behavior
 
-The report contains:
+Double-click installation does **not** remove the existing safety checks.
 
-- Windows BG3 package name, PackageFamilyName and version when available;
-- game `InstallLocation` reported by Windows;
-- package-data roots discovered under `%LOCALAPPDATA%\Packages`;
-- any `WpSystem` candidate only as a fallback;
-- actual `LocalCache\Local` paths;
-- discovered `Mods` directories;
-- number/names of existing `.pak` files;
-- discovered `modsettings.lsx` files and whether their expected BG3 XML shape is valid;
-- whether an active non-CAM mod provides one unambiguous reusable `ModOrder` / `ModuleShortDesc` write schema;
-- the donor schema types that would be mirrored during installation;
-- whether there is exactly one evidence-backed target safe enough for automatic installation.
-
-## Phase 2 — install
-
-Only if phase 1 prints:
-
-`A unique, evidence-backed Xbox mod target was found.`
-
-run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
-```
-
-The installer then:
-
-1. uses only the previously provable cache shape;
-2. backs up `modsettings.lsx`;
-3. backs up an existing CAM PAK if present;
-4. copies the current CAM PAK into the proven Mods directory;
-5. removes only stale entries for CAM UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
-6. adds exactly one CAM entry to `ModOrder` and one to `Mods`, mirroring the proven donor mod's LSX types and optional `PublishHandle` field;
-7. writes through a temporary XML file;
-8. reopens and validates the resulting load order;
-9. restores the original `modsettings.lsx` if verification fails.
-
-## Fail-closed cases
-
-The script refuses to write when:
+The installer refuses to write when:
 
 - no BG3 Xbox package data can be found;
 - no existing PAK proves which Mods directory the built-in manager uses;
@@ -77,18 +57,47 @@ The script refuses to write when:
 - active mods expose conflicting LSX schemas;
 - more than one profile/load-order file is plausible;
 - more than one package cache is independently plausible;
-- the BG3 XML structure is unexpected.
+- the BG3 XML structure is unexpected;
+- the newest GitHub Release does not contain exactly one expected CAM PAK and installer;
+- a downloaded release asset does not match GitHub's SHA-256 digest.
 
-In those cases send `xbox-dev-environment.json`; no manual `WpSystem` editing is required.
+In these cases the launcher reports failure and pauses. The underlying Xbox installer remains fail-closed; ambiguous cache/load-order discovery does not become an automatic write.
+
+The generated `xbox-dev-environment.json` in the installer cache is the diagnostic artifact to inspect if installation is refused.
+
+## What the underlying installer still does
+
+After a unique target is proven, `install-xbox-dev.ps1`:
+
+1. backs up `modsettings.lsx`;
+2. backs up an existing CAM PAK if present;
+3. copies the selected release PAK into the proven Mods directory;
+4. removes only stale entries for CAM UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
+5. writes exactly one CAM load-order/module entry using the proven donor schema;
+6. writes through a temporary XML file;
+7. reopens and validates the result;
+8. restores the original `modsettings.lsx` if verification fails.
+
+## Advanced/manual mode
+
+The PowerShell installer remains available in each release for diagnostics and development:
+
+Discovery only:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
+```
+
+Install a specific PAK:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply -PackagePath .\BG3ControllerActionMenu-<version>.pak
+```
+
+Normal users should use `install-latest.cmd` instead.
 
 ## Why this approach
 
 Microsoft documents modern PC GDK games as flat-file installs under a configurable `[drive]:\XboxGames`, so `C:\WpSystem` is not a universal game location. Microsoft also documents package-scoped user data under `%LOCALAPPDATA%\Packages\<PackageFamilyName>` for GDK storage scenarios.
 
-Nexus Mods App currently documents BG3 support for Steam/GOG rather than Xbox App. A separate experimental Xbox-PC BG3 manager is available as community source and describes a Microsoft mod cache / cached Xbox profile plus `Export Order to Game`. Its current 0.2.3 prerelease accepts Microsoft package 1.8.907.0+ and has a maintainer launch confirmation on 1.8.910.0, but its Nexus page is under moderation and 0.2.3 has no fresh gameplay/save-load pass. It is evidence, not a CAM dependency.
-
-See [research/xbox-app-modding.md](research/xbox-app-modding.md) for the evidence and source list.
-
-## Subsequent development builds
-
-Once the target has been proven on the machine, the same command with `-Apply` can be reused for later CAM packages. The UUID stays stable, so the installer replaces only CAM's PAK and refreshes its two load-order entries.
+CAM therefore discovers the real Xbox cache/profile on the machine and keeps that evidence-based, fail-closed write path. The one-click launcher changes only how the latest release is acquired and invoked.
