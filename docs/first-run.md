@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.22-hidden-one-click** or newer.
+Use **v0.0.23-native-shell-focus** or newer.
 
 The runtime mod contains no Script Extender.
 
