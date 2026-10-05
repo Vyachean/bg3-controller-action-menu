@@ -9,7 +9,7 @@ echo verifies its SHA-256 digests, and installs it into the proven Xbox App mod 
 echo.
 
 set "CAM_SELF=%~f0"
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$lines = Get-Content -LiteralPath $env:CAM_SELF; $marker = [Array]::IndexOf($lines, '#__POWERSHELL__'); if ($marker -lt 0) { throw 'PowerShell payload marker not found.' }; & ([ScriptBlock]::Create(($lines[($marker + 1)..($lines.Length - 1)] -join [Environment]::NewLine))"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$lines = Get-Content -LiteralPath $env:CAM_SELF; $marker = [Array]::IndexOf($lines, '#__POWERSHELL__'); if ($marker -lt 0) { throw 'PowerShell payload marker not found.' }; & ([ScriptBlock]::Create(($lines[($marker + 1)..($lines.Length - 1)] -join [Environment]::NewLine)))"
 
 set "CAM_EXIT=%ERRORLEVEL%"
 echo.
