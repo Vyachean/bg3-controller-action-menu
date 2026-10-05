@@ -13,7 +13,8 @@ PACKAGE_ROOT = ROOT / "BG3ControllerActionMenu"
 MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
 CONTROLLER_LIBRARY = MOD_ROOT / "GUI/Library/Lib_Controller.xaml"
 KEYBOARD_LIBRARY = MOD_ROOT / "GUI/Library/Lib_Keyboard.xaml"
-ACTION_TEMPLATE = MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml"
+ACTION_TEMPLATE = CONTROLLER_LIBRARY
+EXTERNAL_ACTION_TEMPLATE = MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml"
 LEGACY_ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
 LEGACY_CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
@@ -65,7 +66,8 @@ def validate_semantics() -> list[str]:
             CONTROLLER_LIBRARY,
             [
                 "ResourceDictionary",
-                "/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml",
+                'x:Key="ActionRadialWidgetTemplate_P8"',
+                'x:Name="CAM_DiagnosticPanel"',
             ],
         )
     )
@@ -135,9 +137,19 @@ def validate_semantics() -> list[str]:
                 f"{legacy.relative_to(ROOT)}: native ActionRadials state/page must not be overridden"
             )
 
+    # 0.0.23 proved that a CAM-local merged dictionary path is not resolved by
+    # the Xbox/App Noesis loader: it is treated as a literal missing XAML path.
+    # Keep the ActionRadials template inline in Lib_Controller.xaml.
+    if EXTERNAL_ACTION_TEMPLATE.exists():
+        errors.append(
+            f"{EXTERNAL_ACTION_TEMPLATE.relative_to(ROOT)}: controller template must be inline in Lib_Controller.xaml"
+        )
+
     if ACTION_TEMPLATE.exists():
         template_text = ACTION_TEMPLATE.read_text(encoding="utf-8")
         forbidden = [
+            "CAM_ActionRadials.xaml",
+            ";component/Library/CAM_ActionRadials.xaml",
             "opaqueBG.png",
             'Background="{DynamicResource LS_tint00}"',
             "CurrentPlayer.SelectedCharacter.HotBars",
