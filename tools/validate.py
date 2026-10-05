@@ -134,7 +134,7 @@ def validate_semantics() -> list[str]:
                 '<ls:LSListBox x:Name="SingleBar"',
                 'LocalFocusSelector="{Binding ElementName=CAM_HotBarRadialSelector,Mode=OneWay}"',
                 'LocalFocusSelector="{Binding ElementName=CAM_SingleBarSelector,Mode=OneWay}"',
-                'x:Key="UseSlotBinding"',
+                'x:Name="UseSlotBinding"',
                 'x:Name="CancelButton"',
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
