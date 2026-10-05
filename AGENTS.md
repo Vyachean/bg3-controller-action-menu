@@ -12,7 +12,7 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
    Do not reimplement spell availability, action costs, targeting, upcasting, recasts, cooldowns, resources, or execution rules if the existing UI/action model can provide them.
 
 2. **Thin UI composition.**
-   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` state/page and outer native template semantics are BG3-owned. CAM may replace only the radial slot renderer inside the native PageView styles, using the controller-grid focus contract already proven by the current slot-assignment UI.
+   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` state/page and outer native template semantics are BG3-owned. The main CAM surface is an automatically populated action catalog derived from the same current native collections used by radial slot assignment; the user must not have to maintain radial slots for CAM. `SingleHotBar` remains BG3-owned for nested/upcast/variant choices.
 
 3. **No Script Extender dependency in the shipping package.**
    `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` must not contain a `ScriptExtender` directory. Script Extender experiments may live under `dev/`, but they are not part of the runtime package or required workflow.
@@ -66,7 +66,8 @@ Runtime evidence additionally proves:
 - `0.0.24` proved the native page and controller-library override load, but a hand-written full `ActionRadialWidgetTemplate_P8` still had dead interaction;
 - `0.0.25` attempted to override `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` from the mod PAK and produced no visible runtime change, so that resource-path strategy is rejected;
 - `0.0.27` proves the native slot-assignment grid focus model works inside ActionRadials: grids render and replace radial slot layouts;
-- `0.0.28` centers the visible grids and removes the radial backdrop, but runtime proves the `LocalFocusSelector` visual stayed at the old upper-left coordinate origin because the list was centered independently from its selector. X/ContextMenu also remains functionally useful even though its hint was hidden.
+- `0.0.28` centers the visible grids and removes the radial backdrop, but runtime proves the `LocalFocusSelector` visual stayed at the old upper-left coordinate origin because the list was centered independently from its selector;
+- `0.0.29` fixes the focus-selector coordinate origin in-game. The remaining architectural mismatch is now explicit: the main grid still mirrors user-configured `ControllerHotBars[*].SlotList`, so it cannot satisfy CAM's original “all available actions automatically” goal. X/ContextMenu radial customization also behaves poorly against the grid and is no longer part of the product.
 
 The current Patch 8 native XAML also proves a working controller grid inside radial slot assignment:
 
@@ -81,20 +82,24 @@ Current mandatory architecture:
 - do not ship a hand-written replacement ActionRadials page/template;
 - installer must extract the exact current native radial dictionary from local `Game.pak`;
 - installer must locally generate `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`;
-- generated library must preserve the exact native outer `ActionRadialWidgetTemplate_P8`, `RadialHotBarListItemContainer`, native A/B/nested/swap semantics;
-- only `BarPageViewStyle` and `SingleBarPageViewStyle` may replace their `ls:Radial` renderer with the proven slot-assignment-style `LSListBox + LocalFocusSelector + LSGrid` structure;
-- keep element names `HotBarRadial` and `SingleBar` so existing native bindings/triggers keep addressing the local-focus source;
-- grid presentation must center a **shared focus root** containing both the replacement list and its `LocalFocusSelector`; never center the list independently from the selector;
-- the obsolete radial backdrop ellipse may be collapsed;
-- ContextMenu/X remains useful for editing the underlying hotbar slots and should stay active, but its visible label must be grid-neutral (`Customize`), not `Radial Customisation`;
+- the main CAM surface must **not** use `ControllerHotBars[*].SlotList` as its data source;
+- the main catalog must reuse the current native radial-assignment collections:
+  - `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions`;
+  - `CurrentPlayer.SelectedCharacter.Stats.Passives` filtered by `Data.TogglablePassivePredicate`;
+  - the same passives collection filtered by `Data.TogglableMetaMagicPassivePredicate`;
+  - `CurrentPlayer.SelectedCharacter.Inventory.Slots` for the Items section;
+- the catalog must reuse the proven `AssignList + LocalFocusSelector + LSGrid` controller-focus hierarchy rather than rebuild navigation;
+- focus changes must feed the selected native candidate into the existing `ActionRadials.Tag -> UseSlotCommand` path; no custom gameplay dispatch;
+- `SingleHotBar.SlotList` remains the native nested/upcast/variant surface and may keep the already-proven grid renderer;
+- X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must be unreachable from CAM;
 - no copied Larian XAML may be committed or published; generation is local-only;
-- fail closed if required native seams are absent.
+- install-time compatibility checks remain operational/minimal; detailed semantics belong in CI.
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
 The end-user installer is not a verifier. `0.0.29` proved that duplicating release semantics inside the install path creates stale false failures. Detailed generated-XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer performs only the operations required to download, derive and install the package; it should fail only when an operation itself cannot be completed.
 
-The next in-game test is justified only after CI proves on a representative fixture that the generated library preserves native focus/A/B/swap seams, centers both assignment-style grids, collapses both radial backdrop ellipses, and removes the radial-specific customization prompt from visible grid chrome.
+The next in-game test is justified only after CI proves that the main surface no longer binds `ControllerHotBars`, contains the native automatic catalog sources and focus hierarchy, disables radial customization completely, preserves B and nested `SingleHotBar`, and routes A through the existing `UseSlotCommand` command. The runtime-only proof is whether `UseSlotCommand` accepts the focused native catalog candidates exactly as the current UI model exposes them.
 
 ## Installer boundary
 
