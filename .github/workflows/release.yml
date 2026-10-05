@@ -12,6 +12,8 @@ on:
       - "tools/validate.py"
       - "tools/install-xbox-dev.ps1"
       - "tools/install-latest.ps1"
+      - "tools/native-overlay.ps1"
+      - "tools/test-native-overlay.ps1"
       - "tools/Install-BG3ControllerActionMenu.vbs"
       - "tools/test-install-latest.ps1"
       - "tools/build-one-click-installer.ps1"
@@ -79,6 +81,11 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
+      - name: Test native radial visual overlay
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/test-native-overlay.ps1
+
       - name: Build package
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
@@ -115,8 +122,11 @@ jobs:
           $oneClick = "build/BG3ControllerActionMenu-OneClickInstaller.zip"
           if (-not (Test-Path $oneClick)) { throw "Missing one-click installer bundle: $oneClick" }
 
+          $overlay = "tools/native-overlay.ps1"
+          if (-not (Test-Path $overlay)) { throw "Missing native overlay builder: $overlay" }
+
           $args = @(
-            "release", "create", $env:TAG, $pak, $installer, $oneClick,
+            "release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay,
             "--repo", $env:GITHUB_REPOSITORY,
             "--target", $env:GITHUB_SHA,
             "--title", "BG3 Controller Action Menu $env:TAG",
