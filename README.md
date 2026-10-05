@@ -31,23 +31,28 @@ A read-only capture of the installed Xbox App build 1.8.910.0 established the cu
 
 It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
 
-## Xbox App local development
+## Xbox App installation
 
-The Xbox App build does not use the ordinary Steam/GOG mod path in the same way. The project therefore does **not** hard-code `C:\WpSystem` or assume one cache location.
+The recommended path is now the **one-click installer** published with every release:
 
-Release `v0.0.9-xbox-schema-mirror` and newer includes the schema-grounded `install-xbox-dev.ps1`.
+1. download `BG3ControllerActionMenu-OneClickInstaller.zip`;
+2. extract it once;
+3. double-click `Install-BG3ControllerActionMenu.vbs`.
 
-First establish ground truth by installing one small mod through BG3's built-in Mod Manager. Then run:
+No PowerShell/console window is shown. The launcher:
 
-```powershell
-powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1
-```
+- checks GitHub Releases every run;
+- selects the newest published release, including prereleases;
+- downloads both the current CAM `.pak` and the current `install-xbox-dev.ps1`;
+- verifies the SHA-256 digests published by GitHub before using either file;
+- runs the existing fail-closed Xbox installer;
+- shows a normal Windows success/error dialog.
 
-This is read-only and creates `xbox-dev-environment.json`. Only when it finds one unambiguous cache, an existing PAK, a valid BG3 `modsettings.lsx`, and one reusable schema written by an already-active in-game mod should installation be allowed:
+One-time prerequisite: enable at least one small mod through BG3's built-in Mod Manager and exit BG3 normally. That existing mod proves the real Xbox Mods cache and supplies the actual `modsettings.lsx` schema.
 
-```powershell
-powershell -NoExit -ExecutionPolicy Bypass -File .\install-xbox-dev.ps1 -Apply
-```
+Detailed logs and diagnostics are stored under `%LOCALAPPDATA%\BG3ControllerActionMenu`.
+
+The manual `install-xbox-dev.ps1` workflow remains available for diagnosis and development.
 
 See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
 
