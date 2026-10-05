@@ -92,7 +92,7 @@ Current mandatory architecture:
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
-Installer/runtime-generation verification must not duplicate presentation contracts independently. `0.0.29` proved that the generator can intentionally change chrome to `ShowContextMenu Opacity=1 / Width=Auto / Tag=Customize` while a stale post-pack check still expects `Opacity=0 / Width=0`. Generator output and packed round-trip verification must share the same semantic assertion function for mutable presentation seams.
+Installer/runtime-generation verification must stay minimal. `0.0.29` proved that duplicating presentation semantics inside the end-user install path creates stale verifier failures. Detailed generated-XAML semantics (grid/focus/chrome/A/B) belong in CI fixtures only. Runtime installation may fail closed on release hashes, unsafe target discovery, incompatible native source seams, invalid generated XML, or failed/empty PAK creation, but must not run a second semantic post-pack verifier.
 
 The next in-game test is justified only after CI proves on a representative fixture that the generated library preserves native focus/A/B/swap seams, centers both assignment-style grids, collapses both radial backdrop ellipses, and removes the radial-specific customization prompt from visible grid chrome.
 
