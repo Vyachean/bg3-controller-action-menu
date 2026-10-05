@@ -6,43 +6,50 @@ Replace Baldur's Gate 3 controller action radial browsing with a native-style gr
 
 ## Runtime architecture
 
-The accepted runtime ownership boundary is:
+The accepted runtime boundary is now:
 
 ```text
-installed BG3 Game.pak
+native ActionRadials state/page
           |
           v
-native PreloadedActionRadials_c.xaml
+native ActionRadialWidgetTemplate_P8
+  (copied locally from this installed Game.pak)
           |
-          | local, fail-closed presentation patch
-          v
-native ActionRadials template/PageViews/Radials preserved
+          +-- native outer lifecycle / A / B / nested / swap unchanged
           |
-          +-- native Radial: invisible input/focus engine
-          |
-          +-- CAM grid: non-interactive visual mirror
-                         SelectedIndex <- Radial.LocalFocus.Index
-          |
-          v
-locally derived CAM PAK
+          +-- BarPageViewStyle / SingleBarPageViewStyle
+                |
+                v
+         LSListBox + LocalFocusSelector
+                |
+                v
+             LSGrid
+      UIUp / UIDown / UILeft / UIRight
 ```
 
-The installed Xbox App build 1.8.910.0 supplied the current Patch 8 radial contract directly. The root collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`; each bar exposes `SlotList`; nested variants use `SingleHotBar.SlotList`.
+The key correction is that CAM no longer tries to make `ls:Radial` behave like a grid, and no longer keeps a hidden radial as the navigation engine. The installed Patch 8 XAML already contains a working controller grid in the **slot-assignment UI** (`AssignList` / `AvailableSlotsListPanelTemplate`). CAM reuses that focus/navigation contract for action browsing.
 
-Runtime builds 0.0.18–0.0.24 established progressively that CAM must not reconstruct the native focus/input lifecycle:
+At install time CAM extracts the exact current `PreloadedActionRadials_c.xaml` from the user's `Game.pak`. It locally derives a `GUI/Library/Lib_Controller.xaml` containing the exact native:
 
-- 0.0.18/0.0.20 could render correct data but had dead navigation/B;
-- 0.0.19 regressed bindings while changing input transport;
-- 0.0.23 proved the controller-library secondary-XAML path assumption wrong at startup;
-- 0.0.24 proved the native page and CAM resource override were active (native radial movement sounds played), yet a full replacement `ActionRadialWidgetTemplate_P8` still had no usable focus/A/B.
+- `ActionRadialWidgetTemplate_P8`;
+- `RadialHotBarListItemContainer`;
+- `BarPageViewStyle`;
+- `SingleBarPageViewStyle`.
 
-Therefore CAM no longer ships a page, StateMachine, controller library, replacement ActionRadials template, or copied native XAML.
+Only the two page-view styles are transformed: their `ls:Radial` slot renderer is replaced with the controller-grid pattern proven by the native slot-assignment UI:
 
-The one-click installer downloads only CAM-authored code plus a metadata-only base PAK. On the user's PC, `tools/native-overlay.ps1` extracts the two current `PreloadedActionRadials_c.xaml` resources from that installation's `Game.pak`, verifies required native seams, modifies only the two radial visual locations, and packs the derived files under their original `Public/Game/GUI/...` resource paths.
+- `LSListBox`;
+- `LocalFocusSelector`;
+- focusable `ListBoxItem` cells;
+- `LSGrid ActionUpEvent/ActionDownEvent/ActionLeftEvent/ActionRightEvent`;
+- `KeyboardNavigation.DirectionalNavigation="Contained"`;
+- native `LocalFocusChanged` / delayed `ActionRadials.Tag` update semantics.
 
-The original `ls:Radial` elements remain in the XAML and keep native `LocalFocus`, `UseSlotBinding`, `CancelButton`, nested/swap behavior, PageView focus transitions and state-machine lifecycle. CAM makes those radial visuals transparent and adds a non-focusable/non-hit-test grid that mirrors the same items and selected native index.
+The copied outer template remains native. Therefore `UseSlotBinding`, `CancelButton`, top-level vs nested B switching, swap-slot commands, split-screen close behavior, `PagedList`, context menu and state-machine lifecycle are not reimplemented.
 
-No Larian XAML is committed to or distributed by this repository. The runtime remains a normal BG3 `.pak` with **no Script Extender, DLL or native loader dependency**.
+The grid cells are visual-only slot representations. The focused VM still reaches the native page through `ActionRadials.Tag`, and normal A remains `UIAccept -> UseSlotCommand(Tag)`.
+
+No Larian XAML is committed to or distributed by this repository. The derived `Lib_Controller.xaml` is produced only on the user's machine from their installed game. The runtime remains a normal BG3 `.pak` with **no Script Extender, DLL or native loader dependency**.
 
 ## Primary target
 
@@ -58,23 +65,22 @@ A change that requires Script Extender is not acceptable for the primary package
 
 CAM owns only:
 
-- install-time extraction/verification of the current native radial resources;
-- a deterministic presentation patch that hides native radial artwork without removing the native radial control;
-- a non-interactive grid mirror using native slot visuals;
-- local packaging of those derived resources.
+- install-time extraction and contract verification of the current native radial dictionary;
+- local generation of a controller library from native resources already present in the user's game;
+- replacement of the **slot renderer inside the two native PageView styles** with the proven slot-assignment `LSListBox + LSGrid` focus pattern;
+- compact grid cell presentation.
 
-CAM must not own or replace:
+CAM must not own or reimplement:
 
-- the `ActionRadials` state or native page;
-- `ActionRadialWidgetTemplate_P8` as a hand-written replacement;
-- PageView focus lifecycle;
-- radial `LocalFocus` calculation;
-- A/B input routing;
-- nested/upcast/swap state transitions;
-- whether an action is usable;
-- spell/resource/targeting/execution rules.
+- the `ActionRadials` state or page;
+- outer `ActionRadialWidgetTemplate_P8` lifecycle;
+- A/B input commands;
+- nested/upcast/container switching;
+- swap-slot semantics;
+- targeting/execution/resource rules;
+- controller action source data.
 
-The patcher is fail-closed: if expected current Patch 8 seams are missing, it must refuse to build an installable package rather than guess against a changed game version.
+The patcher is fail-closed. If the installed game's current radial or slot-assignment seams no longer match the known contract, installation must stop before replacing the active CAM package.
 
 ## Native widget contract
 
@@ -126,27 +132,44 @@ Current installed-game UI evidence:
 
 A separate September-2026 production mod still proves `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`. The names are now directly symmetrical and must remain distinct: CAM renders `ControllerHotBars`, never `KeyboardHotBars`.
 
-## Native slot rendering and dispatch
+## Native grid focus and action dispatch
 
-The captured native controller radial owns the gameplay seams:
+The installed Patch 8 slot-assignment UI already proves the controller-grid mechanics CAM needs:
 
 ```text
-native Radial.LocalFocus
-        |
-        v
-ActionRadials.Tag
-        |
-UIAccept
-        |
-        v
-UseSlotCommand(Tag)
+AssignList
+  LocalFocusSelector -> SelectorAssign
+  KeyboardNavigation.DirectionalNavigation = Contained
+          |
+          v
+nested LSListBox
+          |
+          v
+LSGrid
+  ActionUpEvent    = UIUp
+  ActionDownEvent  = UIDown
+  ActionLeftEvent  = UILeft
+  ActionRightEvent = UIRight
+  AutoIndex        = True
 ```
 
-Top-level/nested B remains the native `CancelButton` command switch; swap-slot behavior remains native as well.
+CAM adapts that mechanism to each native controller `SlotList`. The list keeps the existing element names `HotBarRadial` / `SingleBar` deliberately so the untouched native triggers, swap bindings and context-menu bindings continue to address the same local-focus source.
 
-CAM's visual mirror does **not** receive focus or input. Its cells reuse `HotBarSlotStyle` with command disabled and hit testing/focus disabled. The grid's selected index is a one-way mirror of the still-running native radial's `LocalFocus.Index`.
+The native delayed dispatch seam remains:
 
-This is intentionally different from the failed 0.0.18–0.0.24 approaches: input is no longer reconstructed, forwarded or emulated by CAM.
+```text
+grid LocalFocusChanged
+        |
+        v
+ActionRadials.Tag = LocalFocus.DataContext
+        |
+        v
+UIAccept -> UseSlotCommand(Tag)
+```
+
+Top-level/nested B remains the untouched native `CancelButton` command switch.
+
+This is distinct from the failed 0.0.18–0.0.25 approaches: CAM is no longer reconstructing the page/template lifecycle and no longer attempting to mirror a radial. It substitutes the radial **slot renderer** with a grid using a controller-focus pattern already working in the same current native XAML file.
 
 ## First-run diagnostics without Script Extender
 
@@ -166,8 +189,8 @@ This does not replace full runtime introspection, but it makes the first Xbox ru
 
 ## Compatibility
 
-The derived PAK overrides the exact native `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` and Clairmont counterpart from the user's installed version. This is inherently a UI-resource conflict surface: another mod overriding the same files can conflict by load order.
+The installed package contains a locally generated `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`. It is derived from the user's exact current `PreloadedActionRadials_c.xaml`, so the native outer template and control semantics track the installed game version.
 
-Because CAM derives from the installed files rather than bundling a fixed copy, game updates are handled fail-closed: the patcher re-reads the current `Game.pak` and refuses to patch if the required native seams no longer match.
+Another UI mod overriding the same ActionRadials resource keys can still conflict by load order. The installer therefore remains fail-closed and records the native source hash used to derive the library.
 
 No proprietary native XAML is stored in GitHub or release assets.
