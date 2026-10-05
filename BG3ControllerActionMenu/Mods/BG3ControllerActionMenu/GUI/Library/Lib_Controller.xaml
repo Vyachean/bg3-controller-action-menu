@@ -4,6 +4,6 @@
          Keep CAM out of the ActionRadials state/page and override only the
          presentation resource consumed by the native page. -->
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="CAM_ActionRadials.xaml"/>
+        <ResourceDictionary Source="/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
