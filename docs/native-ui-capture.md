@@ -70,6 +70,8 @@ The capture also analyzes the contract automatically. `native-contract-analysis.
 
 The gate does not claim the mod works in-game. It only answers whether the captured native evidence is internally complete and unambiguous enough to rebuild the next candidate without guessing.
 
+The first real Xbox App capture (package 1.8.910.0, 2026-10-05) exposed one analyzer defect: auxiliary tooltip/cost bindings referenced `ElementName=ActionRadials` and the earlier broad classifier incorrectly treated the word `ActionRadials` as controller-source evidence. Root-source classification is therefore intentionally limited to actual hotbar/radial collection names; unrelated `ItemsSource` bindings are reported under `AuxiliaryItemsSources`.
+
 The text summary renders the important parts of that structured contract and also selects source lines relevant to:
 
 - `ContextName`
@@ -84,8 +86,29 @@ The text summary renders the important parts of that structured contract and als
 - `ClearSingleHotbarCommand`
 - `CustomEvent` / `CloseRequestCommand`
 
+## Captured 1.8.910.0 contract
+
+The first installed-game capture found:
+
+- `Mods/MainUI/GUI/Pages/ActionRadials.xaml`;
+- `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml`;
+- `Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml`.
+
+The gameplay/control seams are:
+
+- root controller source: `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
+- per-bar materialization: `SlotList`;
+- nested materialization: `SingleHotBar.SlotList`;
+- focus scroll: `FocusedElement -> LSScrollViewer.ScrollToElement`;
+- normal A: `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+- nested/default B: `ClearSingleHotbarCommand`;
+- top-level B: `CustomEvent("CloseWidget")` when no nested slots are present and items-to-throw is false;
+- swap-mode B: `UseSlotCommand(null)`.
+
+The normal and Clairmont preloaded dictionaries agree on these seams.
+
 ## Development fixture
 
-`tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, and verifies the parsed ItemsSource/UIAccept/UICancel/ScrollToElement contract. The fixture deliberately nests a per-bar `SlotList` under the root hotbar collection and proves that the analyzer records it as materialization rather than a second controller source. It also verifies keyboard-only source classification, fail-closed ambiguity handling, and that the source PAK is byte-identical before and after capture.
+`tools/test-capture-native-radials.ps1` creates a fake BG3 PAK containing both radial filenames, runs the capture tool against it, verifies both files and hashes, and verifies the parsed ItemsSource/UIAccept/UICancel/ScrollToElement contract. The fixture deliberately nests a per-bar `SlotList` under the root hotbar collection and proves that the analyzer records it as materialization rather than a second controller source. It also includes auxiliary tooltip-style `ItemsSource` bindings that mention `ActionRadials` and proves they are not promoted to root candidates. The fixture additionally verifies keyboard-only source classification, fail-closed ambiguity handling, and that the source PAK is byte-identical before and after capture.
 
 The Windows build CI must pass that fixture before the capture tool is considered ready for use against a real install. The fixture also simulates a patched game by placing a second `ActionRadials.xaml` at the same packaged path in a patch PAK; the report must retain both copies and flag the duplicate path.
