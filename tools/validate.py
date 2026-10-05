@@ -176,6 +176,7 @@ def validate_semantics() -> list[str]:
                 'Get-FileHash -Algorithm SHA256',
                 'browser_download_url',
                 'digest',
+                'CAM_ONE_CLICK_VALIDATE_ONLY',
                 '-Apply -PackagePath $pakPath -ReportPath $reportPath',
                 'pause',
             ],
