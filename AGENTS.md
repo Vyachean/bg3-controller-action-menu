@@ -12,7 +12,7 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
    Do not reimplement spell availability, action costs, targeting, upcasting, recasts, cooldowns, resources, or execution rules if the existing UI/action model can provide them.
 
 2. **Thin UI composition.**
-   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` state/page/template, PageView focus lifecycle and native Radial input engine are BG3-owned. CAM may only apply a deterministic presentation patch to native radial resources extracted locally from the user's installed game.
+   Reuse BG3-owned view models, templates, styles and commands wherever possible. The `ActionRadials` state/page and outer native template semantics are BG3-owned. CAM may replace only the radial slot renderer inside the native PageView styles, using the controller-grid focus contract already proven by the current slot-assignment UI.
 
 3. **No Script Extender dependency in the shipping package.**
    `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` must not contain a `ScriptExtender` directory. Script Extender experiments may live under `dev/`, but they are not part of the runtime package or required workflow.
@@ -62,26 +62,32 @@ Runtime evidence additionally proves:
 - `0.0.18` had the correct controller data/rendering path but dead navigation/B;
 - `0.0.19` regressed the page by changing input transport;
 - `0.0.20` restored rendering but controller focus/input was still dead;
-- `0.0.23` failed at startup because a CAM-local component URI was interpreted as a missing literal XAML path;
-- `0.0.24` loaded the native page and CAM template override far enough to emit native radial movement sounds, but replacing the full `ActionRadialWidgetTemplate_P8` still left the custom window without usable focus/A/B.
+- `0.0.23` failed at startup because a CAM-local secondary XAML URI was treated as a literal missing path;
+- `0.0.24` proved the native page and controller-library override load, but a hand-written full `ActionRadialWidgetTemplate_P8` still had dead interaction;
+- `0.0.25` attempted to override `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` from the mod PAK and produced no visible runtime change, so that resource-path strategy is rejected.
 
-These results reject all CAM-owned page/template/input reconstructions.
+The current Patch 8 native XAML also proves a working controller grid inside radial slot assignment:
+
+- outer `AssignList` uses `LocalFocusSelector`, `KeyboardNavigation.DirectionalNavigation="Contained"`, `ActionNextEvent="UIDown"` and `ActionPrevEvent="UIUp"`;
+- child lists use `LSGrid(ActionUp/Down/Left/Right = UIUp/UIDown/UILeft/UIRight)`;
+- `AvailableSlotContainer` uses focusable `ListBoxItem` cells;
+- A in assignment mode consumes `AssignList.LocalFocus.DataContext`.
 
 Current mandatory architecture:
 
-- published source/release PAK contains no native BG3 XAML;
-- installer extracts the exact current normal + Clairmont `PreloadedActionRadials_c.xaml` from local `Game.pak`;
-- patcher verifies expected Patch 8 seams and fails closed on mismatch;
-- native `HotBarRadial` and `SingleBar` remain present as the input/focus engines;
-- CAM only hides their artwork and adds non-interactive grid mirrors;
-- grid selection is one-way from native `Radial.LocalFocus.Index`;
-- native A/B/nested/swap/PageView/state-machine logic remains untouched.
+- do not override `Public/Game/GUI/...` from the CAM PAK;
+- do not ship a hand-written replacement ActionRadials page/template;
+- installer must extract the exact current native radial dictionary from local `Game.pak`;
+- installer must locally generate `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`;
+- generated library must preserve the exact native outer `ActionRadialWidgetTemplate_P8`, `RadialHotBarListItemContainer`, native A/B/nested/swap semantics;
+- only `BarPageViewStyle` and `SingleBarPageViewStyle` may replace their `ls:Radial` renderer with the proven slot-assignment-style `LSListBox + LocalFocusSelector + LSGrid` structure;
+- keep element names `HotBarRadial` and `SingleBar` so existing native bindings/triggers keep addressing the local-focus source;
+- no copied Larian XAML may be committed or published; generation is local-only;
+- fail closed if required native seams are absent.
 
-Do not reintroduce CAM `Controller.xaml`, `CAM_ActionMenu_c.xaml`, `Lib_Controller.xaml`, a hand-written `ActionRadialWidgetTemplate_P8`, or committed copies of Larian XAML.
+Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
-The next in-game test is justified only after CI proves the patcher preserves native radial controls and A/B seams on a fixture, the published base PAK contains no runtime XAML, and the one-click installer derives the final PAK locally.
-
-Installer reliability is also a release gate. The reusable VBS bundle must contain only a stable self-updating bootstrap, not a frozen version-specific `install-latest.ps1`. Every release must publish exactly one `bootstrap-latest.ps1` and one canonical `install-latest.ps1` with GitHub SHA-256 digests. The bundled bootstrap must update/handoff to the verified release bootstrap before invoking the canonical installer, and must never silently fall back to an older release.
+The next in-game test is justified only after CI proves on a representative fixture that the generated library preserves the native outer template/A/B/swap seams while replacing only the two radial renderers with assignment-style grids.
 
 ## Pull request expectations
 
