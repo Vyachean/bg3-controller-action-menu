@@ -35,6 +35,10 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
+      - name: Test one-click installer
+        shell: pwsh
+        run: ./tools/test-install-latest.ps1
+
       - name: Build .pak
         shell: pwsh
         env:
@@ -51,6 +55,10 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: ./tools/verify-package.ps1 -Package "./build/BG3ControllerActionMenu-$env:VERSION.pak"
 
+      - name: Build one-click installer
+        shell: pwsh
+        run: ./tools/build-one-click-installer.ps1
+
       - name: Upload package and installer
         uses: actions/upload-artifact@v4
         with:
@@ -59,4 +67,5 @@ jobs:
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
             tools/capture-native-radials.ps1
+            build/BG3ControllerActionMenu-OneClickInstaller.zip
           if-no-files-found: error
