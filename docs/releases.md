@@ -19,7 +19,8 @@ The workflow:
 2. checks whether GitHub Release `v<VERSION>` already exists;
 3. builds the mod with pinned LSLib;
 4. creates the tag and GitHub Release;
-5. uploads the versioned `.pak`, the advanced PowerShell installer, and the evergreen `install-latest.cmd` launcher.
+5. builds `BG3ControllerActionMenu-OneClickInstaller.zip`;
+6. uploads the versioned `.pak`, the advanced PowerShell installer, and the reusable hidden one-click installer bundle.
 
 Published versions are immutable. If `v<VERSION>` already exists, the workflow does not overwrite the asset or move the tag.
 
@@ -38,10 +39,12 @@ Release packaging verifies that the extracted `.pak` contains no `ScriptExtender
 The primary artifact is intended to remain compatible with the Xbox App / Microsoft Store PC build and therefore must not acquire DLL/native-loader/SE dependencies.
 
 
-## Evergreen one-click installer
+## Reusable hidden one-click installer
 
-Every release publishes `install-latest.cmd`.
+Every release publishes `BG3ControllerActionMenu-OneClickInstaller.zip`.
 
-Unlike the versioned PAK, this launcher is intentionally reusable across releases. On each run it queries the GitHub Releases API, selects the newest published non-draft release (including prereleases), downloads that release's PAK and `install-xbox-dev.ps1`, verifies their GitHub SHA-256 digests, and invokes the fail-closed Xbox installer.
+After extracting it once, the user launches `Install-BG3ControllerActionMenu.vbs` by double-clicking it. WScript starts the PowerShell bootstrap with window style 0, so no console is shown. A normal Windows dialog reports success or failure.
 
-Users therefore do not need to download a new installer for every development build.
+The bundle is intentionally reusable across releases. On every run its bootstrap queries GitHub Releases, selects the newest published release (including prereleases), downloads that release's exact PAK plus current `install-xbox-dev.ps1`, verifies GitHub SHA-256 digests, and invokes the fail-closed Xbox installer.
+
+The bootstrap refuses malformed newest releases instead of silently installing an older one.
