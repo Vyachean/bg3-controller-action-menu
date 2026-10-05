@@ -225,6 +225,8 @@ function Hide-RadialBackdrop {
     $open = $match.Value
     if ($open -match '\sVisibility="[^"]*"') {
         $patched = [regex]::Replace($open, '\sVisibility="[^"]*"', ' Visibility="Collapsed"', 1)
+    } elseif ($open.EndsWith("/>", [System.StringComparison]::Ordinal)) {
+        $patched = $open.Substring(0, $open.Length - 2) + ' Visibility="Collapsed"/>'
     } else {
         $patched = $open.Substring(0, $open.Length - 1) + ' Visibility="Collapsed">'
     }
