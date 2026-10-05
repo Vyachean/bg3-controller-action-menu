@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.28-grid-presentation-cleanup** or newer.
+Use **v0.0.34-auto-action-catalog** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -18,7 +18,7 @@ Double-click:
 
 `Install-BG3ControllerActionMenu.vbs`
 
-No console window is shown. The bundled bootstrap first updates itself and the canonical installer from the newest published release when necessary, verifying GitHub SHA-256 digests. The current canonical installer then verifies the base PAK, Xbox installer and native-overlay builder and derives the installable PAK locally from this machine's exact BG3 `Game.pak`.
+No console window is shown. The bundled bootstrap resolves the newest published release and hands off to its canonical installer. The current installer downloads the required release files and derives the installable PAK locally from this machine's exact BG3 `Game.pak`.
 
 After this self-updating OneClickInstaller has been extracted once, future installer-internal changes should not require replacing the folder.
 
@@ -38,16 +38,17 @@ After a successful install, perform **one combined run**:
 1. launch BG3 normally through Xbox App;
 2. use a disposable/pre-mod save;
 3. switch to controller UI and open the normal action menu;
-4. confirm the gameplay view remains visible behind the local panel;
-5. confirm each action page is rendered as a square grid centered on the native page position;
-6. confirm there is no dark circular radial backdrop behind the grid and no visible “Radial Customisation” hint;
-7. move with D-pad/stick in all four directions and confirm selection moves cell-to-cell using the same controller behavior as the native “choose action for radial slot” screen;
-8. press B from the top level and confirm the menu closes;
-9. reopen the menu and use A on one simple non-container action (for example Jump) and confirm BG3 enters its normal action/targeting path;
-10. if a nested variant/upcast/container opens naturally, press B once and confirm native nested cancel behavior still works.
+4. confirm the main menu is one automatically populated grid/catalog rather than a set of user-configured radial pages;
+5. confirm actions that were **not manually placed into radial wheels** are present (for example compare against the native “choose action for radial slot” screen);
+6. confirm spells/actions, relevant passive/metamagic entries and inventory items populate from the selected character automatically;
+7. confirm there is **no X / Customize / Radial Customisation** prompt and pressing X does not enter radial editing;
+8. move with D-pad/stick through several rows/groups and confirm focus remains aligned with the selected cell and the view follows focus;
+9. press A on one simple direct action (for example Jump) and confirm BG3 enters its normal action/targeting path;
+10. press B from the top level and confirm the menu closes;
+11. if A naturally opens an upcast/variant/container choice, confirm the nested `SingleHotBar` grid appears and B returns from it correctly.
 
-Do not perform separate runs for each assertion. If something fails, one screenshot (or a short video if focus/scroll is the failure) plus the visible diagnostic overlay is sufficient.
+This run is intentionally focused on the remaining runtime-only seam: whether BG3's existing `UseSlotCommand` accepts the same native action candidates that the radial-assignment catalog exposes. Everything else in this candidate is checked in CI.
 
-There is deliberately no CAM-owned page or gameplay input dispatcher. The generated controller library preserves BG3's native outer ActionRadials template and A/B commands; only the per-page slot renderer uses the game's own slot-assignment grid focus pattern.
+There is deliberately no CAM-owned gameplay execution logic and no radial customization workflow. BG3 remains responsible for availability, costs, targeting, variants/upcasts and execution.
 
 Do not overwrite an important campaign save during this external-PAK development test.
