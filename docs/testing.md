@@ -398,6 +398,28 @@ No navigation/A/B architecture change is justified by this result.
 
 CI must prove these presentation seams in addition to all 0.0.27 focus/dispatch seams before another in-game run.
 
+### 2026-10-05 — 0.0.28 runtime result
+
+`0.0.28-grid-presentation-cleanup` fixes the main visual placement: action cells are centered and the old circular radial backdrop is gone.
+
+One coordinate-space defect remains:
+
+- the focus selector frame still renders at the old upper-left origin instead of on top of the centered cell;
+- the focused data/navigation itself is not reported broken;
+- X/ContextMenu still works even though 0.0.28 hid its hint;
+- visible footer hints are therefore only A and B.
+
+Root cause is now concrete: in 0.0.28 the `LSListBox` was centered inside the 1560×1560 PageView, while its `LocalFocusSelector` control remained a separate sibling anchored to the PageView's top-left. The native slot-assignment UI keeps `AssignList` and `SelectorAssign` in the **same Grid coordinate space**.
+
+### 0.0.29 focus-origin correction
+
+- wrap each replacement list and selector in one centered 640×400 `Grid`;
+- stretch the list inside that shared root;
+- keep the selector at top-left **of that same root**, matching native `AssignList + SelectorAssign`;
+- do not change `LocalFocus`, directional events, `ActionRadials.Tag`, A/B, paging or swap;
+- keep X/ContextMenu active because it still customizes the underlying hotbar slots;
+- restore its hint with grid-neutral label `Customize`.
+
 ## Manual test report format
 
 A useful report is:

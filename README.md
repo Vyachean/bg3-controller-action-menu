@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native slot-assignment grid, presentation cleanup candidate.**
+**Native slot-assignment grid, focus-origin correction candidate.**
 
 Runtime evidence through `0.0.25` now rules out three earlier approaches:
 
@@ -26,7 +26,9 @@ The current Patch 8 `PreloadedActionRadials_c.xaml` already contains the control
 
 `0.0.27-native-slot-assignment-grid` proved that exact focus/navigation pattern works in-game. It rendered real grids, but they inherited radial-page positioning/chrome: upper-left anchoring, circular radial shadows and the “Radial Customisation” hint.
 
-`0.0.28-grid-presentation-cleanup` keeps the proven 0.0.27 focus/input path unchanged and fixes only that presentation: grids are centered in their PageViews, radial backdrop ellipses are collapsed, and the visible hint strip is converted to compact grid chrome without the radial-specific customization prompt.
+`0.0.28-grid-presentation-cleanup` centered the grids and removed the radial backdrop. Runtime then exposed a narrower layout bug: the focus selector stayed in the PageView's old upper-left coordinate space because it was no longer colocated with the centered list.
+
+`0.0.29-focus-origin-fix` centers a shared focus root containing both the action list and its `LocalFocusSelector`, matching the native `AssignList + SelectorAssign` arrangement. X/ContextMenu remains active for editing the underlying slots and its hint is restored as the grid-neutral `Customize`.
 
 At install time CAM extracts the exact native radial dictionary from the user's installed `Game.pak` and locally generates `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`.
 
