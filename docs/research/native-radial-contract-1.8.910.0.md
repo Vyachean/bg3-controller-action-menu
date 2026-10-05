@@ -78,19 +78,29 @@ It does **not** map `UILeft/UIRight/UIUp/UIDown` directly at the root.
 More importantly, the captured Patch 8 preloaded template already contains a working 2D controller grid in the radial slot-assignment UI. Its structure is:
 
 ```text
-LSListBox (Focusable=False)
-  ItemContainerStyle -> focusable ListBoxItem
-  ItemsPanel         -> LSGrid
-                         ActionUpEvent    = UIUp
-                         ActionDownEvent  = UIDown
-                         ActionLeftEvent  = UILeft
-                         ActionRightEvent = UIRight
-                         AutoIndex        = True
+outer LSListBox (AssignList)
+  SelectedIndex      = 0
+  LocalFocusSelector = SelectorAssign
+  ActionNextEvent    = UIDown
+  ActionPrevEvent    = UIUp
+  DirectionalNavigation = Contained
+  |
+  +-- focusable LSListBoxItem
+       |
+       +-- nested LSListBox
+            ItemContainerStyle -> focusable ListBoxItem
+            ItemsPanel         -> LSGrid
+                                  ActionUpEvent    = UIUp
+                                  ActionDownEvent  = UIDown
+                                  ActionLeftEvent  = UILeft
+                                  ActionRightEvent = UIRight
+                                  AutoIndex        = True
+                                  ContainerData    = current binding
 ```
 
-The same preloaded file uses this pattern for spell/action, passive and metamagic slot grids.
+The same preloaded file uses this pattern for spell/action, passive and metamagic slot grids. The outer `AssignList.LocalFocus.DataContext` is also the command parameter for the native assign action, proving that the outer list aggregates focus from its nested grids.
 
-This is stronger evidence than importing navigation flags from unrelated screens. CAM's grid should therefore use `LSListBox + focusable ListBoxItem + LSGrid` and leave the four `UI*` directional events to that grid rather than intercepting them at the root.
+This is stronger evidence than importing navigation flags from unrelated screens. CAM's grid should therefore reproduce the full outer-list focus root plus nested grid hierarchy, including `ContainerData="{Binding}"`, and leave the four `UI*` directional events to the nested grids rather than intercepting them at the widget root.
 
 CAM should preserve the same focus-driven scroll model rather than script its own navigation.
 
@@ -158,7 +168,7 @@ Those differences do not change CAM's runtime contract.
 
 ## Implementation consequence
 
-The first candidate built from this evidence is `0.0.18-native-controller-contract`.
+The first candidate built from the data contract was `0.0.18-native-controller-contract`; runtime results through `0.0.20` subsequently proved that the native root/focus lifecycle must also be preserved.
 
 Its implementation gate is:
 
