@@ -7,12 +7,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              d:DesignWidth="3840"
              d:DesignHeight="2160"
-             FocusUp="UIUp"
-             FocusDown="UIDown"
-             FocusLeft="UILeft"
-             FocusRight="UIRight"
+             FocusLeft="UITabPrev"
+             FocusRight="UITabNext"
              KeyboardNavigation.DirectionalNavigation="Continue"
-             ls:MoveFocus.FocusMovementMode="Closest"
              CanCacheFocusSurroundingElements="True"
              ls:TooltipExtender.Owner="{Binding CurrentPlayer.SelectedCharacter}">
 
@@ -21,22 +18,55 @@
             <b:ChangePropertyAction TargetName="CAM_ActionMenu"
                                     PropertyName="Tag"
                                     Value="{Binding Path=FocusedElement.DataContext, ElementName=CAM_ActionMenu}"/>
-            <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElement}"
+            <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, ElementName=CAM_ActionMenu}"
                                    CommandParameter="{Binding Path=FocusedElement, ElementName=CAM_ActionMenu}"/>
+            <b:InvokeCommandAction Command="{Binding CreateFocusedTooltipDataCommand}"
+                                   CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"/>
             <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
             <b:InvokeCommandAction Command="{Binding HighlightResourcesCommand}"
                                    CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"/>
         </b:EventTrigger>
 
         <b:EventTrigger EventName="Loaded">
-            <b:InvokeCommandAction Command="{Binding EnableTooltipOnUIElement}"/>
+            <b:InvokeCommandAction Command="{Binding EnableTooltipOnUIElementCommand, ElementName=CAM_ActionMenu}"/>
             <b:ChangePropertyAction TargetObject="{Binding CurrentPlayer.UIData}"
                                     PropertyName="AreRadialsOpen"
                                     Value="True"/>
             <b:InvokeCommandAction Command="{Binding TutorialEvent}"
                                    CommandParameter="f651618e-d396-4d4a-ba5a-8f50c3697708"/>
             <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_Open"/>
-            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
+        </b:EventTrigger>
+
+        <b:EventTrigger EventName="Loaded">
+            <b:Interaction.Behaviors>
+                <b:ConditionBehavior>
+                    <b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding Metadata, ElementName=CAM_ActionMenu}"
+                                               Operator="NotEqual"
+                                               RightOperand="MoveToEnd"/>
+                    </b:ConditionalExpression>
+                </b:ConditionBehavior>
+            </b:Interaction.Behaviors>
+            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"
+                                   DirectionFocus="Left"
+                                   JumpFocus="First"
+                                   DeferFocusAction="True"/>
+        </b:EventTrigger>
+
+        <b:EventTrigger EventName="Loaded">
+            <b:Interaction.Behaviors>
+                <b:ConditionBehavior>
+                    <b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding Metadata, ElementName=CAM_ActionMenu}"
+                                               Operator="Equal"
+                                               RightOperand="MoveToEnd"/>
+                    </b:ConditionalExpression>
+                </b:ConditionBehavior>
+            </b:Interaction.Behaviors>
+            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"
+                                   DirectionFocus="Right"
+                                   JumpFocus="Last"
+                                   DeferFocusAction="True"/>
         </b:EventTrigger>
 
         <b:EventTrigger EventName="Loaded">
@@ -54,7 +84,10 @@
 
         <b:DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
                        Value="True">
-            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
+            <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"
+                                   DirectionFocus="Left"
+                                   JumpFocus="First"
+                                   DeferFocusAction="True"/>
         </b:DataTrigger>
 
         <b:EventTrigger EventName="Unloaded">
@@ -62,7 +95,6 @@
         </b:EventTrigger>
 
         <b:EventTrigger EventName="WidgetClosing">
-            <b:InvokeCommandAction Command="{Binding HideTooltipOnUIElement}"/>
             <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
             <b:ChangePropertyAction TargetObject="{Binding CurrentPlayer.UIData}"
                                     PropertyName="AreRadialsOpen"
@@ -81,29 +113,62 @@
     <ls:UIWidget.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Native Patch 8 game UI resources.  Do not duplicate the hotbar cell visuals. -->
                 <ResourceDictionary Source="pack://application:,,,/GustavNoesisGUI;component/Library/DataTemplates.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/GustavNoesisGUI;component/Library/FocusableControls_c.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/MainUI;component/Library/Tooltips.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- HotBarSlotStyle owns slot visuals and UseSlotCommand dispatch.
-                 CAM only composes the game's VMHotBarSlot entries into a grid. -->
+            <!-- Controller radials do their normal A dispatch through a page-level
+                 UIAccept -> UseSlotCommand(focused slot) binding. HotBarSlotStyle is
+                 reused here for native slot visuals only. -->
             <DataTemplate x:Key="CAM_NativeHotbarButton">
                 <ls:LSButton x:Name="NativeSlotButton"
                              Style="{StaticResource HotBarSlotStyle}"
                              Content="{Binding Content}"
                              BoundEvent="UIAccept"
-                             Focusable="True"
-                             ls:MoveFocus.Focusable="True"
+                             Command="{x:Null}"
+                             CommandParameter="{x:Null}"
+                             EatInput="False"
+                             Focusable="False"
+                             ls:MoveFocus.Focusable="False"
                              Margin="8"/>
-                <DataTemplate.Triggers>
-                    <DataTrigger Binding="{Binding SlotType}" Value="Empty">
-                        <Setter TargetName="NativeSlotButton" Property="Visibility" Value="Collapsed"/>
-                        <Setter TargetName="NativeSlotButton" Property="Focusable" Value="False"/>
-                    </DataTrigger>
-                </DataTemplate.Triggers>
             </DataTemplate>
+
+            <!-- Current Patch 8 PreloadedActionRadials_c.xaml uses
+                 LSListBox + focusable ListBoxItem + LSGrid for 2D controller grids. -->
+            <Style x:Key="CAM_SlotContainer" TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="Focusable" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                            <Border x:Name="FocusBorder"
+                                    Background="Transparent"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="ls:MoveFocus.IsFocused" Value="True">
+                                    <Setter TargetName="FocusBorder" Property="BorderBrush" Value="{DynamicResource LS_PrimaryColor}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding SlotType}" Value="Empty">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Setter Property="Focusable" Value="False"/>
+                    </DataTrigger>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
 
             <ItemsPanelTemplate x:Key="CAM_NativeGrid">
                 <ls:LSGrid ActionUpEvent="UIUp"
@@ -111,7 +176,7 @@
                            ActionLeftEvent="UILeft"
                            ActionRightEvent="UIRight"
                            AutoIndex="True"
-                           Columns="6"
+                           Columns="8"
                            CellWidth="{StaticResource HotBarSlotWidth}"
                            CellHeight="{StaticResource HotBarSlotHeight}"
                            HorizontalSpacing="16"
@@ -120,32 +185,40 @@
             </ItemsPanelTemplate>
 
             <DataTemplate x:Key="CAM_HotBarSectionTemplate">
-                <StackPanel x:Name="SectionRoot" Margin="0,0,0,12">
-                    <Expander x:Name="SectionExpander"
-                              IsExpanded="True"
-                              Template="{StaticResource ExpanderButtonTemplateSpellBook}"
-                              Header="{Binding HotBarType}">
-                        <Border BorderThickness="4"
-                                BorderBrush="{StaticResource LS_InventoryGridSurround}">
-                            <ItemsControl ItemsSource="{Binding SlotList}"
-                                          ItemTemplate="{StaticResource CAM_NativeHotbarButton}"
-                                          ItemsPanel="{StaticResource CAM_NativeGrid}"/>
-                        </Border>
-                    </Expander>
+                <StackPanel x:Name="SectionRoot" Margin="0,0,0,26">
+                    <TextBlock x:Name="SectionTitle"
+                               Text="{Binding HotBarType}"
+                               Foreground="{DynamicResource LS_PrimaryColor}"
+                               FontSize="{DynamicResource DefaultFontSize}"
+                               FontWeight="DemiBold"
+                               Margin="8,0,8,10"/>
+                    <Border BorderThickness="2"
+                            Padding="8"
+                            BorderBrush="{StaticResource LS_InventoryGridSurround}">
+                        <ls:LSListBox ItemsSource="{Binding SlotList}"
+                                      Focusable="False"
+                                      Template="{StaticResource ScrolllessListBox}"
+                                      ItemContainerStyle="{StaticResource CAM_SlotContainer}"
+                                      ItemTemplate="{StaticResource CAM_NativeHotbarButton}"
+                                      ItemsPanel="{StaticResource CAM_NativeGrid}"
+                                      KeyboardNavigation.DirectionalNavigation="Continue"/>
+                    </Border>
                 </StackPanel>
 
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HotBarType}" Value="CommonHotBar">
-                        <Setter TargetName="SectionExpander" Property="Header" Value="Common"/>
+                        <Setter TargetName="SectionTitle" Property="Text" Value="Actions"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ClassHotBar">
-                        <Setter TargetName="SectionExpander" Property="Header" Value="Class"/>
+                        <Setter TargetName="SectionTitle" Property="Text" Value="Class"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="ItemHotBar">
-                        <Setter TargetName="SectionExpander" Property="Header" Value="Items"/>
+                        <Setter TargetName="SectionTitle" Property="Text" Value="Items"/>
                     </DataTrigger>
+                    <!-- Native Patch 8 HotBarList does not materialize these two
+                         bar types as ordinary radial pages. -->
                     <DataTrigger Binding="{Binding HotBarType}" Value="PassivesHotBar">
-                        <Setter TargetName="SectionExpander" Property="Header" Value="Passives"/>
+                        <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding HotBarType}" Value="FixedSideBar">
                         <Setter TargetName="SectionRoot" Property="Visibility" Value="Collapsed"/>
@@ -158,10 +231,6 @@
     <ls:UIWidget.Template>
         <ControlTemplate>
             <Grid Background="Transparent">
-
-                <!-- Xbox App / no-Script-Extender first-run diagnostics.
-                     This panel uses ordinary BG3 bindings only, so a screenshot is enough
-                     to distinguish most data/focus/variant failures. -->
                 <Border x:Name="CAM_DiagnosticPanel"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
@@ -171,83 +240,66 @@
                         BorderBrush="{StaticResource LS_InventoryGridSurround}"
                         BorderThickness="2"
                         Panel.ZIndex="20">
-                    <StackPanel Width="320">
-                        <TextBlock Text="CAM 0.0.17-widgetdata-native-close Xbox diagnostic"
+                    <StackPanel Width="360">
+                        <TextBlock Text="CAM 0.0.20-patch8-list-grid Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
                                    Margin="0,0,0,8"/>
 
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="CurrentPlayer: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
+                            <TextBlock Text="Controller source: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars, Converter={StaticResource NullToBoolFalseConverter}}"
                                        Foreground="White"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="PlayerId: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.PlayerId, RelativeSource={RelativeSource TemplatedParent}}"
+                            <TextBlock Text="Controller bars: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars.Count}"
                                        Foreground="White"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Character: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.Name.Str, RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="White"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="SelectedCharacter: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
-                                       Foreground="White"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="HotBars source: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NullToBoolFalseConverter}}"
-                                       Foreground="White"/>
-                        </StackPanel>
-
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Sections: " Foreground="{DynamicResource LS_InfoColor1}"/>
                             <TextBlock Text="{Binding Items.Count, ElementName=HotBarSections}"
                                        Foreground="White"/>
                         </StackPanel>
-
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Variant slots: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList.Count, RelativeSource={RelativeSource TemplatedParent}}"
+                            <TextBlock Text="Nested slots: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding SingleHotBar.SlotList.Count}"
                                        Foreground="White"/>
                         </StackPanel>
-
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Nested filter: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}"
+                                       Foreground="White"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Variants open: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).IsShowingAContainerWithVariants, RelativeSource={RelativeSource TemplatedParent}}"
+                            <TextBlock Text="{Binding IsShowingAContainerWithVariants}"
                                        Foreground="White"/>
                         </StackPanel>
-
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Upcast open: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).IsSelectingUpcastedSpell, RelativeSource={RelativeSource TemplatedParent}}"
+                            <TextBlock Text="{Binding IsSelectingUpcastedSpell}"
                                        Foreground="White"/>
                         </StackPanel>
-
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Radials flag: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.AreRadialsOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                            <TextBlock Text="{Binding CurrentPlayer.UIData.AreRadialsOpen}"
                                        Foreground="White"/>
                         </StackPanel>
-
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Focus name: " Foreground="{DynamicResource LS_InfoColor1}"/>
                             <TextBlock Text="{Binding Path=FocusedElement.Name, ElementName=CAM_ActionMenu}"
                                        Foreground="White"/>
                         </StackPanel>
-
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Focused usable: " Foreground="{DynamicResource LS_InfoColor1}"/>
-                            <TextBlock Text="{Binding Path=Tag.CanUse, ElementName=CAM_ActionMenu}"
+                            <TextBlock Text="Focused slot: " Foreground="{DynamicResource LS_InfoColor1}"/>
+                            <TextBlock Text="{Binding Path=Tag.SlotType, ElementName=CAM_ActionMenu, FallbackValue='none'}"
                                        Foreground="White"/>
                         </StackPanel>
 
                         <TextBlock x:Name="CAM_NoHotbarsWarning"
-                                   Text="NO HOTBAR SECTIONS"
+                                   Text="NO CONTROLLER HOTBARS"
                                    Foreground="#FFFF8A80"
                                    FontWeight="Bold"
                                    Margin="0,8,0,0"
@@ -255,11 +307,11 @@
                     </StackPanel>
                 </Border>
 
-                <Grid Width="1120"
-                      MaxHeight="1900"
+                <Grid Width="1160"
+                      MaxHeight="1840"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center"
-                      Background="#CC111318">
+                      Background="#E6111318">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -270,35 +322,34 @@
                                Grid.Row="0"
                                Text="Actions"
                                HorizontalAlignment="Center"
-                               Margin="0,20,0,14"
+                               Margin="0,24,0,18"
                                FontSize="{DynamicResource LargeFontSize}"
                                FontWeight="DemiBold"
                                Foreground="{DynamicResource LS_PrimaryColor}"/>
 
                     <Grid Grid.Row="1">
                         <ls:LSScrollViewer x:Name="MainHotbarListHolder"
-                                           Margin="24,0"
+                                           Margin="36,0"
                                            VerticalScrollBarVisibility="Auto"
                                            HorizontalScrollBarVisibility="Disabled"
-                                           ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220"
-                                           ls:MoveFocus.IsMoveFocusScope="True">
+                                           ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"
+                                           ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220">
                             <ItemsControl x:Name="HotBarSections"
-                                          ItemsSource="{Binding (ls:WidgetData.DataContext).CurrentPlayer.SelectedCharacter.HotBars, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ItemTemplate="{StaticResource CAM_HotBarSectionTemplate}">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger EventName="Loaded">
-                                        <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                            </ItemsControl>
+                                          ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"
+                                          ItemTemplate="{StaticResource CAM_HotBarSectionTemplate}"
+                                          KeyboardNavigation.DirectionalNavigation="Continue"/>
                         </ls:LSScrollViewer>
 
-                        <Grid x:Name="VariantHolder"
-                              Visibility="Collapsed"
-                              Margin="24"
-                              ls:MoveFocus.IsMoveFocusScope="True">
+                        <ls:LSScrollViewer x:Name="VariantScrollViewer"
+                                           Visibility="Collapsed"
+                                           Margin="36,0"
+                                           VerticalScrollBarVisibility="Auto"
+                                           HorizontalScrollBarVisibility="Disabled"
+                                           ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"
+                                           ls:ScrollViewerHelper.VerticalScrollOffsetMargin="220">
                             <ls:LSListBox x:Name="VariantList"
-                                          ItemsSource="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList, RelativeSource={RelativeSource TemplatedParent}}"
+                                          ItemsSource="{Binding SingleHotBar.SlotList}"
+                                          ItemContainerStyle="{StaticResource CAM_SlotContainer}"
                                           ItemTemplate="{StaticResource CAM_NativeHotbarButton}"
                                           ItemsPanel="{StaticResource CAM_NativeGrid}"
                                           Template="{StaticResource ScrolllessListBox}"
@@ -306,38 +357,45 @@
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           KeyboardNavigation.DirectionalNavigation="Continue"/>
-                        </Grid>
+                        </ls:LSScrollViewer>
                     </Grid>
 
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Center"
-                                Margin="0,14,0,22">
+                                Margin="0,16,0,24">
                         <ls:LSButton x:Name="UseHint"
                                      IsHitTestVisible="False"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UIAccept'}"
+                                     Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UIAccept'}"
                                      Margin="12,0"/>
                         <ls:LSButton x:Name="CancelButton"
                                      BoundEvent="UICancel"
-                                     Command="ls:UIWidget.CloseRequestCommand"
+                                     Command="{Binding ClearSingleHotbarCommand}"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
-                                     Margin="12,0"/>
-                        <ls:LSButton x:Name="CancelNestedButton"
-                                     Visibility="Collapsed"
-                                     BoundEvent="UICancel"
-                                     Command="{Binding (ls:WidgetData.DataContext).ClearSingleHotbarCommand, RelativeSource={RelativeSource TemplatedParent}}"
-                                     ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding (ls:WidgetData.DataContext).CurrentPlayer.UIData.InputEvents, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
+                                     Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
                                      Margin="12,0">
                             <b:Interaction.Triggers>
                                 <b:EventTrigger EventName="LSButtonReleased">
-                                    <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"/>
+                                    <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
+                                    <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"
+                                                           DirectionFocus="Left"
+                                                           JumpFocus="First"
+                                                           DeferFocusAction="True"/>
                                 </b:EventTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSButton>
                     </StackPanel>
+
+                    <!-- Patch 8 radial normal dispatch: UIAccept invokes the native
+                         UseSlotCommand with the currently focused slot VM. -->
+                    <ls:LSButton x:Name="UseSlotBinding"
+                                 Command="{Binding UseSlotCommand}"
+                                 CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"
+                                 Height="0"
+                                 Width="0"
+                                 BoundEvent="UIAccept"
+                                 HorizontalAlignment="Left"/>
                 </Grid>
 
                 <ControlTemplate.Triggers>
@@ -345,28 +403,79 @@
                         <Setter TargetName="CAM_NoHotbarsWarning" Property="Visibility" Value="Visible"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList.Count, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
+                    <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}"
                                  Value="True">
                         <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
-                        <Setter TargetName="VariantHolder" Property="Visibility" Value="Visible"/>
+                        <Setter TargetName="VariantScrollViewer" Property="Visibility" Value="Visible"/>
                         <Setter TargetName="PanelTitle" Property="Text" Value="Select"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).IsShowingAContainerWithVariants, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                    <DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
+                        <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="VariantScrollViewer" Property="Visibility" Value="Visible"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
                         <Setter TargetName="PanelTitle"
                                 Property="Text"
                                 Value="{Binding Source='h79b6dc4egf450g4037gad34g8bfd57289b9a', Converter={StaticResource TranslatedStringConverter}}"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).IsSelectingUpcastedSpell, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                    <DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
                         <Setter TargetName="PanelTitle"
                                 Property="Text"
                                 Value="{Binding Source='hcc0de24fgee83g49cdgb15fg2fa9b96203c9', Converter={StaticResource TranslatedStringConverter}}"/>
                     </DataTrigger>
 
-                    <DataTrigger Binding="{Binding (ls:WidgetData.DataContext).SingleHotBar.SlotList.Count, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="True">
-                        <Setter TargetName="CancelButton" Property="Visibility" Value="Collapsed"/>
-                        <Setter TargetName="CancelNestedButton" Property="Visibility" Value="Visible"/>
+                    <DataTrigger Binding="{Binding Path=Tag.SlotType, ElementName=CAM_ActionMenu, FallbackValue='Empty'}" Value="Empty">
+                        <Setter TargetName="UseSlotBinding" Property="IsEnabled" Value="False"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding Path=Tag.CanUse, ElementName=CAM_ActionMenu}" Value="False">
+                        <Setter TargetName="UseSlotBinding"
+                                Property="IsEnabled"
+                                Value="{Binding Tag.Content.IsContainer, ElementName=CAM_ActionMenu, FallbackValue=False}"/>
+                    </DataTrigger>
+
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding Tag.Content.SpellModifier, ElementName=CAM_ActionMenu, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"/>
+                            <Condition Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolTrueConverter}, ConverterParameter='EmptyString'}" Value="True"/>
+                        </MultiDataTrigger.Conditions>
+                        <Setter TargetName="UseSlotBinding" Property="IsEnabled" Value="True"/>
+                    </MultiDataTrigger>
+
+                    <!-- Native Patch 8 B semantics: nested menus clear SingleHotBar;
+                         the top-level menu asks the state machine to CloseWidget. -->
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding SingleHotBar.SlotList.Count}" Value="0"/>
+                            <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                        </MultiDataTrigger.Conditions>
+                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                    </MultiDataTrigger>
+
+                    <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.IsShapeShifted}" Value="True">
+                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.CharacterType}" Value="Summon">
+                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.CharacterType}" Value="Follower">
+                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                    </DataTrigger>
+
+                    <DataTrigger Binding="{Binding InSwapSlotState}" Value="True">
+                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding UseSlotCommand}"/>
+                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="{x:Null}"/>
+                        <Setter TargetName="UseSlotBinding" Property="Command" Value="{x:Null}"/>
+                        <Setter TargetName="UseSlotBinding" Property="EatInput" Value="False"/>
                     </DataTrigger>
                 </ControlTemplate.Triggers>
             </Grid>

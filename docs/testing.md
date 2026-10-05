@@ -120,7 +120,66 @@ Important correction:
 - the public `ActionRadials.xaml` used for several design decisions is Patch 2 Hotfix 1 (2023-09-06), not Patch 8;
 - therefore the 0.0.14–0.0.17 sequence contained too much inference from stale/native-adjacent evidence.
 
-No further in-game run should be requested until the current installed Patch 8/Xbox radial XAML is captured and the next candidate is rebuilt from that current contract.
+### 2026-10-05 — native radial capture from Xbox App 1.8.910.0
+
+The read-only installed-game capture closed the remaining static seams:
+
+- root controller collection is `PlayerCharacterProperties.ControllerHotBars`;
+- per-bar materialization is `SlotList`;
+- nested materialization is `SingleHotBar.SlotList`;
+- focus scrolling follows `FocusedElement`;
+- normal controller A is page-level `UIAccept -> UseSlotCommand(focused slot)`;
+- B defaults to `ClearSingleHotbarCommand` and switches to `CustomEvent("CloseWidget")` at the main level;
+- swap mode uses `UseSlotCommand(null)` for B.
+
+The next in-game run is therefore justified, but it must combine M1–M3 into one milestone run: populated rendering, directional focus/scroll, top-level B, nested B if naturally encountered, and one simple A dispatch.
+
+### 2026-10-05 — 0.0.18 native-contract runtime result
+
+The first candidate built from the captured data contract produced a populated grid in the real Xbox App build:
+
+- `Controller bars: 5`;
+- Class / Actions / Items sections rendered;
+- native icons and tooltip details rendered;
+- initial focus reached a real spell slot.
+
+Two runtime assertions failed:
+
+- directional controller navigation did not move focus;
+- B did not close the window.
+
+This means the captured **data/materialization contract is correct**, while CAM's custom input/navigation composition was not.
+
+The data/rendering result remains valid, but the first input correction was not.
+
+### 2026-10-05 — 0.0.19 input-routing regression
+
+`0.0.19-native-input-routing` regressed substantially in the real Xbox App build:
+
+- the Class / Actions / Items sections no longer rendered;
+- diagnostic values were empty;
+- controller inputs still did not work.
+
+That build replaced the captured radial `LSButton` input controls with custom player-scoped `LSInputBinding` and added grid flags taken from other BG3 screens. Because the regression crossed the data/template boundary, those changes are rejected rather than iterated further. `0.0.19` must not be tested again.
+
+A second audit of the **same captured Patch 8 `PreloadedActionRadials_c.xaml`** found a stronger native grid precedent that was already present in the installed game:
+
+```text
+LSListBox
+  -> focusable ListBoxItem
+  -> LSGrid(ActionUp=UIUp, ActionDown=UIDown,
+            ActionLeft=UILeft, ActionRight=UIRight)
+```
+
+The current radial uses this exact structure for its slot-assignment spell/action/passive grids. Therefore `0.0.20-patch8-list-grid`:
+
+- restores the proven `0.0.18` ControllerHotBars rendering and native `LSButton` A/B controls;
+- replaces only the non-navigable per-section `ItemsControl` with the captured Patch 8 `LSListBox + ListBoxItem + LSGrid` pattern;
+- keeps focus on the `ListBoxItem`, while the inner `HotBarSlotStyle` button is visual-only;
+- removes the speculative 0.0.19 grid flags and `LSInputBinding` replacement;
+- uses the current native ActionRadials root's `UITabPrev/UITabNext` left/right mapping instead of intercepting `UILeft/UIRight` at the root.
+
+No further data-source experimentation is justified.
 
 ## Manual test report format
 

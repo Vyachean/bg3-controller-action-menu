@@ -27,16 +27,17 @@ It did **not** prove:
 - its B/cancel implementation is correct;
 - its controller focus graph is correct.
 
-## Current implementation gate
+## Superseded gate result
 
-Before another runtime candidate:
+The 2026-10-05 installed-game capture closed the gate:
 
-1. identify the current controller-radial collection/materialization path;
-2. keep Patch 8 `HotBarSlotStyle` for slot rendering and `UseSlotCommand(slot)` dispatch;
-3. preserve native focus-driven scrolling;
-4. ground radial-specific cancel behavior in current evidence;
-5. change only composition/layout;
-6. statically/package-verify those seams;
-7. combine rendering, focus, B and one simple A dispatch into one milestone game test.
+- root source: `PlayerCharacterProperties.ControllerHotBars`;
+- per-bar source: `SlotList`;
+- nested source: `SingleHotBar.SlotList`;
+- focus scroll: native `FocusedElement -> ScrollToElement`;
+- normal A: page-level `UIAccept -> UseSlotCommand(focused slot)`;
+- B: native nested/main command switch.
+
+The successor candidate is `0.0.18-native-controller-contract`. It must be evaluated in one combined milestone run rather than a sequence of speculative builds.
 
 See `docs/research/open-source-findings.md` and `docs/native-ui-capture.md`.

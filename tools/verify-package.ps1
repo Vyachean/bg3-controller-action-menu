@@ -58,6 +58,31 @@ $requiredPageSeams = @(
     "<ls:UIWidget.Template>",
     "<ControlTemplate>",
     'x:Name="CAM_DiagnosticPanel"',
+    'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars',
+    'ItemsSource="{Binding SlotList}"',
+    'ItemsSource="{Binding SingleHotBar.SlotList}"',
+    'x:Key="CAM_SlotContainer"',
+    'TargetType="{x:Type ListBoxItem}"',
+    '<ls:LSListBox ItemsSource="{Binding SlotList}"',
+    'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
+    'ItemsPanel="{StaticResource CAM_NativeGrid}"',
+    'ActionUpEvent="UIUp"',
+    'ActionDownEvent="UIDown"',
+    'ActionLeftEvent="UILeft"',
+    'ActionRightEvent="UIRight"',
+    'FocusLeft="UITabPrev"',
+    'FocusRight="UITabNext"',
+    '<ls:LSButton x:Name="UseSlotBinding"',
+    'Command="{Binding UseSlotCommand}"',
+    'CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"',
+    'BoundEvent="UIAccept"',
+    '<ls:LSButton x:Name="CancelButton"',
+    'Command="{Binding ClearSingleHotbarCommand}"',
+    'Property="CommandParameter" Value="CloseWidget"',
+    'ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"',
+    'x:Name="NativeSlotButton"',
+    'Command="{x:Null}"',
+    'EatInput="False"',
     'Background="Transparent"'
 )
 
@@ -87,8 +112,26 @@ foreach ($needle in $requiredStateSeams) {
 if ($page.Contains("<ls:UIWidget.ContentTemplate>")) {
     throw "Packaged controller page regressed to the rejected ContentTemplate shell."
 }
+if ($page.Contains("CurrentPlayer.SelectedCharacter.HotBars")) {
+    throw "Packaged controller page regressed to the obsolete pre-capture HotBars source."
+}
+if ($page.Contains('Command="ls:UIWidget.CloseRequestCommand"') -or
+    $page.Contains('x:Name="CancelNestedButton"') -or
+    $page.Contains('FocusUp="UIUp"') -or
+    $page.Contains('FocusDown="UIDown"') -or
+    $page.Contains('FocusLeft="UILeft"') -or
+    $page.Contains('FocusRight="UIRight"') -or
+    $page.Contains('<ls:LSInputBinding x:Name="UseSlotBinding"') -or
+    $page.Contains('<ls:LSInputBinding x:Name="CancelBinding"') -or
+    $page.Contains('UseWidgetNavigation="True"') -or
+    $page.Contains('WidgetChainedNavigation="True"') -or
+    $page.Contains('ls:MoveFocus.InternalFocusable="True"') -or
+    $page.Contains('AlwaysSelectFirst="True"') -or
+    $page.Contains('ls:MoveFocus.IsMoveFocusScope="True"')) {
+    throw "Packaged controller page regressed from the captured Patch 8 LSListBox/LSGrid focus contract."
+}
 if ($page.Contains("opaqueBG.png") -or $page.Contains('Background="{DynamicResource LS_tint00}"')) {
     throw "Packaged controller page regressed to a full-screen opaque/dimmed background."
 }
 
-Write-Host "Package verification passed: required files/state/diagnostics present; no Script Extender dependency or full-screen dim regression."
+Write-Host "Package verification passed: ControllerHotBars plus captured Patch 8 LSListBox/LSGrid and native LSButton A/B seams present; no Script Extender dependency or full-screen dim regression."

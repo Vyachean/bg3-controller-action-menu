@@ -296,6 +296,7 @@ function Get-NativeContractAnalysis {
     $keyboardSources = @()
     $nestedSources = @()
     $slotMaterializationSources = @()
+    $auxiliarySources = @()
     $acceptBindings = @()
     $cancelBindings = @()
     $focusBindings = @()
@@ -327,12 +328,17 @@ function Get-NativeContractAnalysis {
                 $keyboardSources += $record
             } elseif ($source.Value -match "(?i)SingleHotBar") {
                 $nestedSources += $record
-            } elseif ($source.Value -match "(?i)SlotList") {
+            } elseif ($source.Value -match "(?i)(?:^|[.\s])SlotList(?:[}\s,]|$)") {
                 # A per-bar SlotList describes slot materialization inside an already
                 # selected bar. It is not an independent root controller collection.
                 $slotMaterializationSources += $record
-            } elseif ($source.Value -match "(?i)(HotBar|Radial|Controller)") {
+            } elseif ($source.Value -match "(?i)(Controller(?:Hot)?Bars|Radial(?:Hot)?Bars|(?:^|[.\s])HotBars(?:[}\s,]|$))") {
+                # Root candidates must name a hotbar/radial collection itself.
+                # Do not classify unrelated bindings merely because ElementName
+                # references the ActionRadials widget.
                 $mainSources += $record
+            } else {
+                $auxiliarySources += $record
             }
         }
 
@@ -448,7 +454,7 @@ function Get-NativeContractAnalysis {
     if (-not $hasNested) { $blockers += "nested-state-not-found" }
 
     return [pscustomobject]([ordered]@{
-        SchemaVersion = 2
+        SchemaVersion = 3
         CaptureComplete = $captureComplete
         NativeFileCount = @($NativeMatches).Count
         DuplicatePackagedPathCount = @($DuplicatePackagedPaths).Count
@@ -458,6 +464,7 @@ function Get-NativeContractAnalysis {
         KeyboardOnlySources = $keyboardSources
         NestedSources = $nestedSources
         SlotMaterializationSources = $slotMaterializationSources
+        AuxiliaryItemsSources = $auxiliarySources
         DistinctMainControllerSourceValues = $distinctMainValues
         UIAcceptBindings = $acceptBindings
         UICancelBindings = $cancelBindings
@@ -510,6 +517,16 @@ function Format-NativeContractAnalysis {
         $lines += "(none)"
     } else {
         foreach ($source in @($Analysis.SlotMaterializationSources)) {
+            $lines += "[$([System.IO.Path]::GetFileName($source.SourcePackage)) :: $($source.PackagedPath) :: $($source.Element) $($source.Name)] $($source.Value)"
+        }
+    }
+    $lines += ""
+
+    $lines += "=== Auxiliary ItemsSource bindings ==="
+    if (@($Analysis.AuxiliaryItemsSources).Count -eq 0) {
+        $lines += "(none)"
+    } else {
+        foreach ($source in @($Analysis.AuxiliaryItemsSources)) {
             $lines += "[$([System.IO.Path]::GetFileName($source.SourcePackage)) :: $($source.PackagedPath) :: $($source.Element) $($source.Name)] $($source.Value)"
         }
     }
