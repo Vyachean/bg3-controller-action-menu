@@ -249,7 +249,7 @@
                    BasedOn="{StaticResource {x:Type ListBoxItem}}">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="Focusable" Value="True"/>
                 <Setter Property="Template" Value="{StaticResource CAM_HotBarSectionTemplate}"/>
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding HotBarType}" Value="PassivesHotBar">
@@ -340,17 +340,27 @@
                                 <Grid>
                                     <ls:LSListBox x:Name="HotBarList"
                                                   ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"
-                                                  Focusable="False"
                                                   SelectedIndex="0"
                                                   ActionNextEvent="UIDown"
                                                   ActionPrevEvent="UIUp"
                                                   KeyboardNavigation.DirectionalNavigation="Contained"
+                                                  LocalFocusSelector="{Binding ElementName=GridSelector, Mode=OneWay}"
                                                   Template="{StaticResource ScrolllessListBox}"
-                                                  ItemContainerStyle="{StaticResource CAM_HotBarSectionContainer}"/>
+                                                  ItemContainerStyle="{StaticResource CAM_HotBarSectionContainer}">
+                                        <b:Interaction.Triggers>
+                                            <b:EventTrigger EventName="LocalFocusChanged">
+                                                <b:ChangePropertyAction TargetName="ActionRadials"
+                                                                        PropertyName="Tag"
+                                                                        Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                            </b:EventTrigger>
+                                        </b:Interaction.Triggers>
+                                    </ls:LSListBox>
                                     <Control x:Name="GridSelector"
                                              IsHitTestVisible="False"
-                                             Visibility="Collapsed"
-                                             Template="{StaticResource SelectorTemplate}"/>
+                                             VerticalAlignment="Top"
+                                             HorizontalAlignment="Left"
+                                             Template="{StaticResource SelectorTemplate}"
+                                             Visibility="{Binding Visibility, ElementName=HotBarList}"/>
                                 </Grid>
                             </ls:LSScrollViewer>
 
