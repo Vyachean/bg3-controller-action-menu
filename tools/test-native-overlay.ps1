@@ -299,13 +299,15 @@ if (-not $contextMatch.Success -or
 }
 
 $overlaySource = Get-Content -Raw -LiteralPath $Script
-if (-not $overlaySource.Contains('Assert-GridChromeContract -Text $generated') -or
-    -not $overlaySource.Contains('Assert-GridChromeContract -Text $verifiedText')) {
-    throw "Generator and packed-package verification must share Assert-GridChromeContract."
-}
-$stalePackedChromePattern = "'Opacity=`"0`"',\s*'Width=`"0`"'"
-if ($overlaySource -match $stalePackedChromePattern) {
-    throw "Stale hidden-context-menu packed verifier contract reappeared."
+foreach ($forbiddenRuntimeVerifier in @(
+    'Packed controller library is missing required seam',
+    'Assert-GridChromeContract',
+    '$verifiedText',
+    '$verifiedLibrary'
+)) {
+    if ($overlaySource.Contains($forbiddenRuntimeVerifier)) {
+        throw "Install-time native overlay must not contain duplicated semantic post-pack verification: $forbiddenRuntimeVerifier"
+    }
 }
 
-Write-Host "Native assignment-grid focus-origin fixture passed: grid and selector share the centered coordinate space, X remains Customize, generator/packed verifier share one chrome contract, native focus/A/B/swap seams preserved."
+Write-Host "Native assignment-grid fixture passed: CI owns presentation/focus/A/B semantics; install-time overlay remains minimal."
