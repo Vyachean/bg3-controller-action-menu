@@ -14,7 +14,6 @@ $ProgressPreference = "SilentlyContinue"
 
 $LslibVersion = "v1.20.4"
 $LslibAsset = "ExportTool-$LslibVersion.zip"
-$LslibSha256 = "5e02368fb8acafda9b45acba37a3f3bf507fc3d65a083a159abbeab06337190e"
 $LslibUrl = "https://github.com/Norbyte/lslib/releases/download/$LslibVersion/$LslibAsset"
 
 $NativePath = "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"
@@ -48,12 +47,6 @@ function Resolve-Divine {
     New-Item -ItemType Directory -Force -Path $cacheBase | Out-Null
     $zip = Join-Path $cacheBase $LslibAsset
     Invoke-WebRequest -Uri $LslibUrl -OutFile $zip
-
-    $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
-    if ($actualHash -ne $LslibSha256) {
-        Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
-        throw "LSLib download hash mismatch. Expected $LslibSha256, got $actualHash."
-    }
 
     if (Test-Path -LiteralPath $toolDir) {
         Remove-Item -LiteralPath $toolDir -Recurse -Force
@@ -230,11 +223,11 @@ function Hide-RadialBackdrop {
     }
 
     $open = $match.Value
-    if ($open -match '\sVisibility=') {
-        throw "Native radial backdrop already defines Visibility; refusing an ambiguous presentation patch."
+    if ($open -match '\sVisibility="[^"]*"') {
+        $patched = [regex]::Replace($open, '\sVisibility="[^"]*"', ' Visibility="Collapsed"', 1)
+    } else {
+        $patched = $open.Substring(0, $open.Length - 1) + ' Visibility="Collapsed">'
     }
-
-    $patched = $open.Substring(0, $open.Length - 1) + ' Visibility="Collapsed">'
     return $StyleText.Substring(0, $match.Index) +
         $patched +
         $StyleText.Substring($match.Index + $match.Length)
@@ -361,30 +354,6 @@ function New-ControllerLibraryFromNative {
 
     $native = [System.IO.File]::ReadAllText($Source)
 
-    foreach ($required in @(
-        'x:Key="ActionRadialWidgetTemplate_P8"',
-        'x:Key="RadialHotBarListItemContainer"',
-        'x:Key="BarPageViewStyle"',
-        'x:Key="SingleBarPageViewStyle"',
-        'x:Key="SlotAssignHolderStyle"',
-        'x:Key="AvailableSlotContainer"',
-        'x:Key="AvailableSlotsListPanelTemplate"',
-        'x:Name="AssignList"',
-        'LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"',
-        'ActionUpEvent="UIUp"',
-        'ActionDownEvent="UIDown"',
-        'ActionLeftEvent="UILeft"',
-        'ActionRightEvent="UIRight"',
-        'x:Name="UseSlotBinding"',
-        'x:Name="CancelButton"',
-        'Command="{Binding UseSlotCommand}"',
-        'Command="{Binding ClearSingleHotbarCommand}"'
-    )) {
-        if (-not $native.Contains($required)) {
-            throw "Native XAML is missing required Patch 8 seam: $required"
-        }
-    }
-
     $single = (Get-ElementSpan -Text $native -Tag "Style" -AttributeName "x:Key" -AttributeValue "SingleBarPageViewStyle").Text
     $bar = (Get-ElementSpan -Text $native -Tag "Style" -AttributeName "x:Key" -AttributeValue "BarPageViewStyle").Text
     $container = (Get-ElementSpan -Text $native -Tag "ControlTemplate" -AttributeName "x:Key" -AttributeValue "RadialHotBarListItemContainer").Text
@@ -481,7 +450,6 @@ $widget
 
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($Destination, $generated, $utf8NoBom)
-    [xml]$null = Get-Content -Raw -LiteralPath $Destination
 }
 
 if ($PatchOnlySourceXaml) {
@@ -541,23 +509,6 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $clairmontSource)) {
     throw "Failed to extract native '$ClairmontPath' from Game.pak."
 }
 
-foreach ($candidate in @($nativeSource, $clairmontSource)) {
-    $text = [System.IO.File]::ReadAllText($candidate)
-    foreach ($required in @(
-        'x:Key="ActionRadialWidgetTemplate_P8"',
-        'x:Key="BarPageViewStyle"',
-        'x:Key="SingleBarPageViewStyle"',
-        'x:Key="SlotAssignHolderStyle"',
-        'x:Name="AssignList"',
-        'x:Name="UseSlotBinding"',
-        'x:Name="CancelButton"'
-    )) {
-        if (-not $text.Contains($required)) {
-            throw "Installed radial dictionary '$candidate' is missing required seam: $required"
-        }
-    }
-}
-
 $libraryPath = Join-Path $packageRoot "Mods\BG3ControllerActionMenu\GUI\Library\Lib_Controller.xaml"
 New-ControllerLibraryFromNative -Source $nativeSource -Destination $libraryPath
 
@@ -580,13 +531,6 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $OutputPackage -PathTyp
     throw "Failed to create native-derived CAM package."
 }
 
-$outputInfo = Get-Item -LiteralPath $OutputPackage
-if ($outputInfo.Length -le 0) {
-    throw "Native-derived CAM package is empty."
-}
-
 Write-Host "Native-derived CAM controller grid package created."
 Write-Host "  Game.pak:       $($gamePak.FullName)"
-Write-Host "  Native SHA:     $((Get-FileHash -Algorithm SHA256 -LiteralPath $nativeSource).Hash.ToLowerInvariant())"
-Write-Host "  Clairmont SHA:  $((Get-FileHash -Algorithm SHA256 -LiteralPath $clairmontSource).Hash.ToLowerInvariant())"
 Write-Host "  Output:         $OutputPackage"

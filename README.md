@@ -55,6 +55,25 @@ The focused slot still updates `ActionRadials.Tag`, and A remains BG3's native `
 
 No Larian XAML is committed to or distributed by this repository. The generated controller library exists only on the user's machine. Runtime remains Script-Extender/DLL/native-loader free.
 
+## Installer principle
+
+The user-side installer has one job: install the newest release.
+
+It does **not** run semantic XAML checks, package round-trip verification, focus-contract assertions, SHA assertions, or release-test logic on the user's PC. Those belong to CI before publication.
+
+The reusable launcher is intentionally small:
+
+```text
+VBS
+ -> bootstrap-latest.ps1
+ -> newest release's install-latest.ps1
+ -> download required release files
+ -> build local BG3-derived PAK
+ -> install it
+```
+
+The bootstrap never needs to understand a release-specific installer contract. It only downloads the newest `install-latest.ps1` and hands off.
+
 ## Xbox App installation
 
 For normal use, download **`BG3ControllerActionMenu-OneClickInstaller.zip`** from the newest GitHub Release and extract it once.

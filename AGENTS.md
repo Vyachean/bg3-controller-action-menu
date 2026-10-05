@@ -92,9 +92,15 @@ Current mandatory architecture:
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
-Installer/runtime-generation verification must stay minimal. `0.0.29` proved that duplicating presentation semantics inside the end-user install path creates stale verifier failures. Detailed generated-XAML semantics (grid/focus/chrome/A/B) belong in CI fixtures only. Runtime installation may fail closed on release hashes, unsafe target discovery, incompatible native source seams, invalid generated XML, or failed/empty PAK creation, but must not run a second semantic post-pack verifier.
+The end-user installer is not a verifier. `0.0.29` proved that duplicating release semantics inside the install path creates stale false failures. Detailed generated-XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer performs only the operations required to download, derive and install the package; it should fail only when an operation itself cannot be completed.
 
 The next in-game test is justified only after CI proves on a representative fixture that the generated library preserves native focus/A/B/swap seams, centers both assignment-style grids, collapses both radial backdrop ellipses, and removes the radial-specific customization prompt from visible grid chrome.
+
+## Installer boundary
+
+The stable bootstrap contract must remain tiny: newest release -> download `install-latest.ps1` -> execute it. Do not make the bootstrap understand version-specific assets.
+
+Do not add SHA/digest gates, XAML semantic assertions, expected UI literals, or package round-trip verification to `bootstrap-latest.ps1`, `install-latest.ps1`, or the runtime path in `native-overlay.ps1`. Those belong in CI before publication.
 
 ## Pull request expectations
 

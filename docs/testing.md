@@ -472,6 +472,21 @@ Detailed grid/focus/chrome/A/B semantics remain fully tested by `test-native-ove
 
 This keeps fail-closed behavior where it matters — changed game input structure, unsafe Xbox target, failed download/hash, invalid XML, failed package creation — without making the installer a second CI system.
 
+### 0.0.31 — single-purpose installer
+
+The installer is intentionally no longer a second verification system.
+
+The 0.0.29 failure showed the problem directly: a stale install-time expectation for `Width="0"` blocked installation even though the released generator had intentionally moved to `Width="Auto"`.
+
+From 0.0.31:
+
+- the bundled bootstrap only downloads the newest release's `install-latest.ps1` and executes it;
+- the current installer downloads that release's PAK, Xbox installer and native-overlay builder, then invokes installation;
+- native-overlay performs transformation and packaging operations only;
+- semantic XAML/focus/chrome assertions remain in CI fixtures and repository validation, not in the user's install path.
+
+An installer failure should now correspond to an actual failed operation rather than an independent policy assertion disagreeing with the published release.
+
 ## Manual test report format
 
 A useful report is:
