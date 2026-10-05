@@ -33,8 +33,7 @@ if ($LASTEXITCODE -ne 0) {
 $required = @(
     "Mods/BG3ControllerActionMenu/meta.lsx",
     "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Keyboard.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/Library/CAM_ActionRadials.xaml"
+    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Keyboard.xaml"
 )
 
 foreach ($relative in $required) {
@@ -48,6 +47,7 @@ foreach ($relative in $required) {
 $forbiddenPaths = @(
     "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml",
     "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml",
+    "Mods/BG3ControllerActionMenu/GUI/Library/CAM_ActionRadials.xaml",
     "Mods/BG3ControllerActionMenu/ScriptExtender"
 )
 
@@ -58,17 +58,8 @@ foreach ($relative in $forbiddenPaths) {
 }
 
 $controllerLibrary = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml")
-$template = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Library/CAM_ActionRadials.xaml")
+$template = $controllerLibrary
 $version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
-
-$requiredLibrarySeams = @(
-    "/BG3ControllerActionMenu;component/Library/CAM_ActionRadials.xaml"
-)
-foreach ($needle in $requiredLibrarySeams) {
-    if (-not $controllerLibrary.Contains($needle)) {
-        throw "Packaged controller library is missing integration seam: $needle"
-    }
-}
 
 $requiredTemplateSeams = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
@@ -118,6 +109,8 @@ if (-not $template.Contains($diagnosticBuild)) {
 }
 
 $forbiddenTemplateSeams = @(
+    "CAM_ActionRadials.xaml",
+    ";component/Library/CAM_ActionRadials.xaml",
     "opaqueBG.png",
     'Background="{DynamicResource LS_tint00}"',
     "CurrentPlayer.SelectedCharacter.HotBars",
@@ -139,4 +132,4 @@ foreach ($needle in $forbiddenTemplateSeams) {
     }
 }
 
-Write-Host "Package verification passed: native ActionRadials state/page preserved; controller library overrides only ActionRadialWidgetTemplate_P8; captured ControllerHotBars/focus/A/B seams present; no Script Extender dependency."
+Write-Host "Package verification passed: native ActionRadials state/page preserved; ActionRadialWidgetTemplate_P8 is inline in Lib_Controller.xaml; no CAM-local XAML dependency; captured ControllerHotBars/focus/A/B seams present; no Script Extender dependency."

@@ -215,6 +215,28 @@ Automatic proof for this candidate must establish:
 
 Only after those checks pass is one combined in-game test justified. If the resource override is not selected by BG3, the expected fallback is the vanilla radial page rather than a trapped/dead custom state.
 
+### 2026-10-05 — 0.0.23 startup failure
+
+`0.0.23-native-page-library-override` did not reach the main menu. BG3 showed:
+
+```text
+Missing XAML
+No XAML file or mod found in root./
+BG3ControllerActionMenu;component/Library/
+CAM_ActionRadials.xaml
+```
+
+This is direct runtime evidence that the CAM-local component URI used by `Lib_Controller.xaml` is not resolved as a resource URI in this loader path; it is interpreted as a literal missing XAML path.
+
+The correction does not substitute another path spelling. `0.0.24-inline-controller-library` removes the external CAM dictionary entirely and defines `ActionRadialWidgetTemplate_P8` plus its helper resources directly inside `Lib_Controller.xaml`.
+
+The package verifier now fails if either:
+
+- `GUI/Library/CAM_ActionRadials.xaml` is packaged; or
+- `Lib_Controller.xaml` contains a CAM-local `CAM_ActionRadials.xaml` reference.
+
+This makes the 0.0.23 startup failure structurally impossible to reproduce from the same mechanism.
+
 ## Manual test report format
 
 A useful report is:
