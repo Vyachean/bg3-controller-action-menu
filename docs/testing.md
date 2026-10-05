@@ -452,6 +452,26 @@ The generator and post-pack round-trip now call the same semantic `Assert-GridCh
 
 CI additionally rejects reintroduction of the old `Opacity="0" + Width="0"` packed verification pair.
 
+### 2026-10-05 — 0.0.31 installer simplification
+
+The 0.0.29 failure exposed a broader design problem: the installer duplicated semantic UI assertions that already belong in CI. Even after 0.0.30 unified those assertions, running them again after local packaging still adds failure modes without improving installation safety.
+
+The install-time contract is now intentionally minimal:
+
+1. resolve and SHA-256 verify release assets;
+2. locate the installed BG3 and safe mod target;
+3. extract the exact current native radial XAML;
+4. require only the native **input compatibility seams** needed before transformation;
+5. generate the controller library;
+6. require only that generated XAML parses;
+7. create the PAK;
+8. require that package creation succeeds and the output file is non-empty;
+9. install it.
+
+Detailed grid/focus/chrome/A/B semantics remain fully tested by `test-native-overlay.ps1` and repository CI. They are no longer re-asserted inside the end-user installation path.
+
+This keeps fail-closed behavior where it matters — changed game input structure, unsafe Xbox target, failed download/hash, invalid XML, failed package creation — without making the installer a second CI system.
+
 ## Manual test report format
 
 A useful report is:
