@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.18-native-controller-contract** or newer.
+Use **v0.0.19-native-input-routing** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -14,7 +14,7 @@ Launch BG3 from Xbox App and install one small mod through the **built-in Mod Ma
 
 Download both release assets into the same folder:
 
-- `BG3ControllerActionMenu-0.0.18-native-controller-contract.pak`
+- `BG3ControllerActionMenu-0.0.19-native-input-routing.pak`
 - `install-xbox-dev.ps1`
 
 ### 3. Run the read-only discovery
