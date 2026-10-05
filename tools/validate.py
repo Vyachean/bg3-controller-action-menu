@@ -94,7 +94,6 @@ def validate_semantics() -> list[str]:
             NATIVE_OVERLAY,
             [
                 '$LslibVersion = "v1.20.4"',
-                '$LslibSha256 = "5e02368fb8acafda9b45acba37a3f3bf507fc3d65a083a159abbeab06337190e"',
                 '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"',
                 '"Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml"',
                 '"Game.pak"',
@@ -194,16 +193,10 @@ def validate_semantics() -> list[str]:
             BOOTSTRAP_INSTALLER,
             [
                 "releases?per_page=20",
-                "Never silently fall back to an older release",
-                'bootstrap-latest.ps1',
                 'install-latest.ps1',
-                "BootstrapUpdated",
-                "Save-VerifiedReleaseAsset",
-                "^sha256:([0-9a-fA-F]{64})$",
-                "Refusing unexpected release asset URL",
-                "Get-FileHash -Algorithm SHA256",
-                "& $cachedBootstrap @forward",
-                "& $cachedInstaller @installerArgs",
+                "Invoke-RestMethod",
+                "Invoke-WebRequest",
+                "& $installer @installerArgs",
             ],
         )
     )
@@ -212,10 +205,8 @@ def validate_semantics() -> list[str]:
         require_text(
             BOOTSTRAP_TEST,
             [
-                "Self-updating installer bootstrap fixture tests passed.",
-                "Updated bootstrap was not invoked with -BootstrapUpdated.",
-                "Canonical installer was not invoked.",
-                "Malformed newest release silently fell back to an older release.",
+                "Minimal latest-installer bootstrap fixture passed.",
+                "Downloaded latest installer was not executed.",
             ],
         )
     )
@@ -226,27 +217,39 @@ def validate_semantics() -> list[str]:
             [
                 "releases?per_page=20",
                 "Sort-Object { [DateTimeOffset]$_.published_at } -Descending",
-                "Never silently fall back to an older release",
                 'BG3ControllerActionMenu-$version.pak',
                 'install-xbox-dev.ps1',
                 'native-overlay.ps1',
                 "browser_download_url",
-                "^sha256:([0-9a-fA-F]{64})$",
-                "Refusing unexpected release asset URL",
-                "Save-VerifiedReleaseAsset",
-                "NativeOverlayPath $overlayPath",
+                "Save-Asset",
+                "& $xboxPath -Apply",
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
         )
     )
 
+    for runtime_installer in (BOOTSTRAP_INSTALLER, LATEST_INSTALLER, NATIVE_OVERLAY):
+        if runtime_installer.exists():
+            runtime_text = runtime_installer.read_text(encoding="utf-8")
+            for forbidden in (
+                "Get-FileHash",
+                "Assert-AssetDigest",
+                "Save-VerifiedReleaseAsset",
+                "Packed controller library is missing required seam",
+                "Generated controller library is missing required seam",
+            ):
+                if forbidden in runtime_text:
+                    errors.append(
+                        f"{runtime_installer.relative_to(ROOT)}: install-time validation is forbidden: {forbidden}"
+                    )
+
     errors.extend(
         require_text(
             ONE_CLICK_LAUNCHER,
             [
                 "bootstrap-latest.ps1",
-                "Checking for installer updates and installing the newest release",
+                "Installing the newest BG3 Controller Action Menu release",
                 "shell.Run(command, 0, True)",
                 "install-latest.log",
                 "install-status.txt",
@@ -281,7 +284,7 @@ def validate_semantics() -> list[str]:
             require_text(
                 workflow,
                 [
-                    "Test self-updating bootstrap",
+                    "Test minimal installer bootstrap",
                     "test-bootstrap-latest.ps1",
                     "Test native slot-assignment grid presentation",
                     "test-native-overlay.ps1",
