@@ -61,18 +61,24 @@ $requiredPageSeams = @(
     'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars',
     'ItemsSource="{Binding SlotList}"',
     'ItemsSource="{Binding SingleHotBar.SlotList}"',
-    '<ls:LSInputBinding x:Name="UseSlotBinding"',
-    'PlayerId="{Binding CurrentPlayer.PlayerId}"',
+    'x:Key="CAM_SlotContainer"',
+    'TargetType="{x:Type ListBoxItem}"',
+    '<ls:LSListBox ItemsSource="{Binding SlotList}"',
+    'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
+    'ItemsPanel="{StaticResource CAM_NativeGrid}"',
+    'ActionUpEvent="UIUp"',
+    'ActionDownEvent="UIDown"',
+    'ActionLeftEvent="UILeft"',
+    'ActionRightEvent="UIRight"',
+    'FocusLeft="UITabPrev"',
+    'FocusRight="UITabNext"',
+    '<ls:LSButton x:Name="UseSlotBinding"',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"',
     'BoundEvent="UIAccept"',
-    '<ls:LSInputBinding x:Name="CancelBinding"',
+    '<ls:LSButton x:Name="CancelButton"',
     'Command="{Binding ClearSingleHotbarCommand}"',
     'Property="CommandParameter" Value="CloseWidget"',
-    'UseWidgetNavigation="True"',
-    'WidgetChainedNavigation="True"',
-    'ls:MoveFocus.InternalFocusable="True"',
-    'AlwaysSelectFirst="True"',
     'ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"',
     'x:Name="NativeSlotButton"',
     'Command="{x:Null}"',
@@ -114,11 +120,18 @@ if ($page.Contains('Command="ls:UIWidget.CloseRequestCommand"') -or
     $page.Contains('FocusUp="UIUp"') -or
     $page.Contains('FocusDown="UIDown"') -or
     $page.Contains('FocusLeft="UILeft"') -or
-    $page.Contains('FocusRight="UIRight"')) {
-    throw "Packaged controller page regressed from the captured/native input-routing contract."
+    $page.Contains('FocusRight="UIRight"') -or
+    $page.Contains('<ls:LSInputBinding x:Name="UseSlotBinding"') -or
+    $page.Contains('<ls:LSInputBinding x:Name="CancelBinding"') -or
+    $page.Contains('UseWidgetNavigation="True"') -or
+    $page.Contains('WidgetChainedNavigation="True"') -or
+    $page.Contains('ls:MoveFocus.InternalFocusable="True"') -or
+    $page.Contains('AlwaysSelectFirst="True"') -or
+    $page.Contains('ls:MoveFocus.IsMoveFocusScope="True"')) {
+    throw "Packaged controller page regressed from the captured Patch 8 LSListBox/LSGrid focus contract."
 }
 if ($page.Contains("opaqueBG.png") -or $page.Contains('Background="{DynamicResource LS_tint00}"')) {
     throw "Packaged controller page regressed to a full-screen opaque/dimmed background."
 }
 
-Write-Host "Package verification passed: ControllerHotBars plus player-scoped A/B and native grid-navigation seams present; no Script Extender dependency or full-screen dim regression."
+Write-Host "Package verification passed: ControllerHotBars plus captured Patch 8 LSListBox/LSGrid and native LSButton A/B seams present; no Script Extender dependency or full-screen dim regression."
