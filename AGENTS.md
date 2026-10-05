@@ -44,6 +44,8 @@ Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8
 - nested variants/upcasts/containers use `SingleHotBar.SlotList`;
 - `CurrentSingleHotbarFilter`, `IsShowingAContainerWithVariants` and `IsSelectingUpcastedSpell` are current;
 - focus-driven scrolling is `LSScrollViewer.ScrollToElement <- FocusedElement`;
+- the captured preloaded radial contains a current working 2D controller-grid pattern: `LSListBox -> focusable ListBoxItem -> LSGrid(ActionUp/Down/Left/Right = UIUp/UIDown/UILeft/UIRight)`;
+- the root radial page does not intercept the four `UI*` directional events; its root left/right mappings are `UITabPrev` / `UITabNext`;
 - normal controller A dispatch is page-level: `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
 - default B dispatch is `ClearSingleHotbarCommand`; when `SingleHotBar.SlotList.Count == 0` and items-to-throw is false, native triggers switch B to `CustomEvent("CloseWidget")`;
 - swap-slot mode switches B to `UseSlotCommand(null)`;
@@ -54,7 +56,9 @@ Do not reconstruct the visible grid from `HotbarContainer` component memory. Com
 
 The public `ActionRadials.xaml` dump from 2023-09-06 is Patch 2 Hotfix 1 and is historical evidence only.
 
-The next in-game test is allowed only for a candidate rebuilt from the captured contract, and it must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
+Runtime evidence additionally proves that `0.0.18` had the correct controller data/rendering path but the wrong focus container, while `0.0.19` regressed the page by replacing native radial input controls and adding unrelated grid flags. Do not reuse the 0.0.19 input-routing design.
+
+The next in-game test is allowed only for a candidate that preserves the proven 0.0.18 data/rendering path and uses the captured Patch 8 `LSListBox + ListBoxItem + LSGrid` focus hierarchy. It must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
 
 Custom code owns only page composition/layout and diagnostics, preserves the live gameplay view, and leaves gameplay state/dispatch to BG3.
 
