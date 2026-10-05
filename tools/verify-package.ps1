@@ -32,7 +32,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $required = @(
     "Mods/BG3ControllerActionMenu/meta.lsx",
-    "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml",
+    "Mods/BG3ControllerActionMenu/GUI/Pages/ActionRadials.xaml",
     "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml"
 )
 
@@ -49,40 +49,52 @@ if (Test-Path $scriptExtender) {
     throw "Xbox/App-compatible package unexpectedly contains ScriptExtender files."
 }
 
-$page = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml")
+$page = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Pages/ActionRadials.xaml")
 $state = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml")
 $version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
 
 $requiredPageSeams = @(
+    'x:Name="ActionRadials"',
     'ls:UIWidget.ContextName="HotBar"',
-    "<ls:UIWidget.Template>",
-    "<ControlTemplate>",
-    'x:Name="CAM_DiagnosticPanel"',
+    'FocusLeft="UITabPrev"',
+    'FocusRight="UITabNext"',
+    'CanCacheFocusSurroundingElements="True"',
+    'Template="{StaticResource CAM_ActionRadialWidgetTemplate}"',
+    'EventName="GotKeyboardFocus"',
+    'EventName="WidgetClosing"',
+    'Binding="{Binding Layout}"',
+    'x:Key="CAM_ActionRadialWidgetTemplate"',
     'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars',
-    'ItemsSource="{Binding SlotList}"',
-    'ItemsSource="{Binding SingleHotBar.SlotList}"',
+    'x:Name="HotBarList"',
+    'SelectedIndex="0"',
+    'ActionNextEvent="UIDown"',
+    'ActionPrevEvent="UIUp"',
+    'KeyboardNavigation.DirectionalNavigation="Contained"',
+    'LocalFocusSelector="{Binding ElementName=GridSelector, Mode=OneWay}"',
+    'x:Name="GridSelector"',
+    'Template="{StaticResource SelectorTemplate}"',
     'x:Key="CAM_SlotContainer"',
     'TargetType="{x:Type ListBoxItem}"',
-    '<ls:LSListBox ItemsSource="{Binding SlotList}"',
+    '<ls:LSListBox x:Name="SlotList"',
+    'ItemsSource="{Binding SlotList}"',
     'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
     'ItemsPanel="{StaticResource CAM_NativeGrid}"',
     'ActionUpEvent="UIUp"',
     'ActionDownEvent="UIDown"',
     'ActionLeftEvent="UILeft"',
     'ActionRightEvent="UIRight"',
-    'FocusLeft="UITabPrev"',
-    'FocusRight="UITabNext"',
+    'ContainerData="{Binding}"',
+    'ItemsSource="{Binding SingleHotBar.SlotList}"',
     '<ls:LSButton x:Name="UseSlotBinding"',
     'Command="{Binding UseSlotCommand}"',
-    'CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"',
+    'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
     'BoundEvent="UIAccept"',
     '<ls:LSButton x:Name="CancelButton"',
+    'BoundEvent="UICancel"',
     'Command="{Binding ClearSingleHotbarCommand}"',
     'Property="CommandParameter" Value="CloseWidget"',
-    'ScrollToElement="{Binding FocusedElement, ElementName=CAM_ActionMenu}"',
-    'x:Name="NativeSlotButton"',
-    'Command="{x:Null}"',
-    'EatInput="False"',
+    'ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"',
+    'x:Name="CAM_DiagnosticPanel"',
     'Background="Transparent"'
 )
 
@@ -100,13 +112,18 @@ if (-not $page.Contains($diagnosticBuild)) {
 $requiredStateSeams = @(
     'Name="ActionRadials"',
     'ModType="Override"',
-    'Filename="CAM_ActionMenu_c.xaml"'
+    'Filename="ActionRadials.xaml"'
 )
 
 foreach ($needle in $requiredStateSeams) {
     if (-not $state.Contains($needle)) {
         throw "Packaged controller state is missing integration seam: $needle"
     }
+}
+
+$oldActionPage = Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml"
+if (Test-Path $oldActionPage) {
+    throw "Superseded CAM_ActionMenu_c.xaml unexpectedly shipped; native-named ActionRadials.xaml is required."
 }
 
 if ($page.Contains("<ls:UIWidget.ContentTemplate>")) {
@@ -117,10 +134,7 @@ if ($page.Contains("CurrentPlayer.SelectedCharacter.HotBars")) {
 }
 if ($page.Contains('Command="ls:UIWidget.CloseRequestCommand"') -or
     $page.Contains('x:Name="CancelNestedButton"') -or
-    $page.Contains('FocusUp="UIUp"') -or
-    $page.Contains('FocusDown="UIDown"') -or
-    $page.Contains('FocusLeft="UILeft"') -or
-    $page.Contains('FocusRight="UIRight"') -or
+    $page.Contains('x:Name="CAM_ActionMenu"') -or
     $page.Contains('<ls:LSInputBinding x:Name="UseSlotBinding"') -or
     $page.Contains('<ls:LSInputBinding x:Name="CancelBinding"') -or
     $page.Contains('UseWidgetNavigation="True"') -or
@@ -128,10 +142,10 @@ if ($page.Contains('Command="ls:UIWidget.CloseRequestCommand"') -or
     $page.Contains('ls:MoveFocus.InternalFocusable="True"') -or
     $page.Contains('AlwaysSelectFirst="True"') -or
     $page.Contains('ls:MoveFocus.IsMoveFocusScope="True"')) {
-    throw "Packaged controller page regressed from the captured Patch 8 LSListBox/LSGrid focus contract."
+    throw "Packaged controller page regressed from the native ActionRadials shell/focus contract."
 }
 if ($page.Contains("opaqueBG.png") -or $page.Contains('Background="{DynamicResource LS_tint00}"')) {
     throw "Packaged controller page regressed to a full-screen opaque/dimmed background."
 }
 
-Write-Host "Package verification passed: ControllerHotBars plus captured Patch 8 LSListBox/LSGrid and native LSButton A/B seams present; no Script Extender dependency or full-screen dim regression."
+Write-Host "Package verification passed: native ActionRadials shell, AssignList-style focus root, ControllerHotBars and native LSButton A/B seams present; no Script Extender dependency or full-screen dim regression."
