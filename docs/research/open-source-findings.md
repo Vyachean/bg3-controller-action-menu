@@ -15,11 +15,11 @@ Open sources now prove more of the current Patch 8 controller contract than the 
 - controller and keyboard hotbar state are distinct at the game-component level;
 - the shipped Patch 8 controller radial uses focus-driven `LSScrollViewer.ScrollToElement`.
 
-The main unresolved seam is now narrower: **the exact current controller-radial collection exposed by the UI view model and its materialization hierarchy**. A September-2026 mod proves `PlayerCharacterProperties.KeyboardHotBars` exists, but that is explicitly the keyboard collection and must not be substituted for controller radial state.
+The public-source boundary was reached without exposing the exact controller-radial XAML collection. That remaining seam has now been resolved by a read-only capture of the installed Xbox App build 1.8.910.0.
+
+The installed native contract names `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars` as the root controller collection, `SlotList` as the per-bar collection, and `SingleHotBar.SlotList` as the nested collection.
 
 The earlier public `ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06. It remains historical evidence only.
-
-Therefore another gameplay build is not justified yet. Continue exhausting modern open sources; if the controller collection remains unpublished, one read-only native-file capture is the correct final evidence step.
 
 ## 1. Hotbar/radial data is publicly mapped
 
@@ -235,6 +235,31 @@ Reference:
 - `Coyote-31/bg3-advanced-character-sheet/Sources/BG3/Patch8/Game/Mods/MainUI/GUI/Pages/CharacterPanel.xaml`
 - `Coyote-31/bg3-advanced-character-sheet/Sources/BG3/Patch8/Game/Mods/MainUI/GUI/Pages/LearnSpells.xaml`
 
+## 10. Installed Xbox App capture closes the radial presentation seam
+
+A read-only capture performed against Xbox App package version `1.8.910.0` found three current radial files in `Game.pak`:
+
+- `Mods/MainUI/GUI/Pages/ActionRadials.xaml`;
+- `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml`;
+- `Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml`.
+
+The source page is a thin `HotBar`-context widget whose template is `ActionRadialWidgetTemplate_P8`.
+
+Both preloaded dictionaries agree on the gameplay/control contract:
+
+- main controller collection: `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
+- per-bar slots: `PagedList ItemsSource="{Binding SlotList}"`;
+- nested slots: `SingleHotBar.SlotList`;
+- focus scrolling: `LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"`;
+- normal A: hidden `UseSlotBinding` with `BoundEvent="UIAccept"`, `Command="{Binding UseSlotCommand}"`, and `CommandParameter="{Binding Tag, ElementName=ActionRadials}"`;
+- default B: `ClearSingleHotbarCommand`;
+- top-level B: when `SingleHotBar.SlotList.Count == 0` and `IsShowingItemsToThrow == False`, triggers replace B with `CustomEvent` + `CloseWidget`;
+- swap-slot B: `UseSlotCommand(null)`.
+
+The Clairmont copy differs from the normal library copy only in visual scaling/text-size resources in the captured diff; the data, focus, A and B seams above are the same.
+
+This capture also revealed a diagnostic bug in CAM's analyzer: unrelated tooltip/cost `ItemsSource` bindings mentioning `ElementName=ActionRadials` were being mistaken for root controller sources. The analyzer must identify collection names, not arbitrary occurrences of "ActionRadials".
+
 ## Revised technical plan
 
 ### Phase A — current game-file capture
@@ -279,14 +304,14 @@ Only after Phase B:
 
 ## Remaining unknown
 
-After the expanded open-source audit, the remaining high-value unknowns are:
+The high-value static contract unknowns are closed by the installed-game capture.
 
-1. the exact current **controller** radial collection/property path (not `KeyboardHotBars`);
-2. the current radial's list/paging/materialization hierarchy;
-3. the exact top-level vs nested `UICancel` switching used by the current radial page.
+What remains is runtime-only proof of the rebuilt presentation:
 
-Normal slot execution is no longer unknown: Patch 8 `HotBarSlotStyle` proves `UseSlotCommand` with the slot object as its command parameter.
+1. `ControllerHotBars` renders through the custom grid;
+2. controller focus moves through cells and the scroll view follows it;
+3. top-level B reaches `CloseWidget`;
+4. nested B reaches `ClearSingleHotbarCommand` when a nested selection is opened;
+5. one simple A reaches native `UseSlotCommand(focused slot)` exactly once.
 
-The expanded public search covered current Patch 8 shared resources, BG3SE mappings, late-2026 production UI code, ImprovedUI and current controller-hotbar/radial mods. No modern public repository exposes the full current `ActionRadials.xaml` / `PreloadedActionRadials_c.xaml` or the controller collection binding itself.
-
-Therefore items 1–3 have reached a genuine public-source boundary. They should now be resolved by **one read-only native-file capture**, whose automatic contract gate is tested in CI, not by another gameplay trial build.
+These must be checked together in one milestone run. No additional speculative builds should be inserted between these assertions.
