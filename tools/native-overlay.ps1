@@ -177,35 +177,42 @@ function New-GridRenderer {
     $selectorName = "CAM_" + $Name + "Selector"
     $interaction = Get-FirstInteractionTriggers -Text $OriginalRadialText
 
+    $focusRootName = "CAM_" + $Name + "FocusRoot"
+
     return @"
-                            <ls:LSListBox x:Name="$Name"
-                                          ItemsSource="$ItemsSource"
-                                          IsEnabled="$IsEnabled"
-                                          Visibility="Collapsed"
-                                          SelectedIndex="0"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"
-                                          HorizontalContentAlignment="Center"
-                                          VerticalContentAlignment="Center"
-                                          Width="640"
-                                          Height="400"
-                                          Background="Transparent"
-                                          KeyboardNavigation.DirectionalNavigation="Contained"
-                                          ActionNextEvent="UIDown"
-                                          ActionPrevEvent="UIUp"
-                                          LocalFocusSelector="{Binding ElementName=$selectorName,Mode=OneWay}"
-                                          Template="{StaticResource ScrolllessListBox}"
-                                          ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
-                                          ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
-                                          ItemsPanel="{StaticResource CAM_ActionGridPanel}">
+                            <Grid x:Name="$focusRootName"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Width="640"
+                                  Height="400"
+                                  Background="Transparent">
+                                <ls:LSListBox x:Name="$Name"
+                                              ItemsSource="$ItemsSource"
+                                              IsEnabled="$IsEnabled"
+                                              Visibility="Collapsed"
+                                              SelectedIndex="0"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Stretch"
+                                              HorizontalContentAlignment="Center"
+                                              VerticalContentAlignment="Center"
+                                              Background="Transparent"
+                                              KeyboardNavigation.DirectionalNavigation="Contained"
+                                              ActionNextEvent="UIDown"
+                                              ActionPrevEvent="UIUp"
+                                              LocalFocusSelector="{Binding ElementName=$selectorName,Mode=OneWay}"
+                                              Template="{StaticResource ScrolllessListBox}"
+                                              ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
+                                              ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
+                                              ItemsPanel="{StaticResource CAM_ActionGridPanel}">
 $interaction
-                            </ls:LSListBox>
-                            <Control x:Name="$selectorName"
-                                     IsHitTestVisible="False"
-                                     VerticalAlignment="Top"
-                                     HorizontalAlignment="Left"
-                                     Template="{StaticResource SelectorTemplate}"
-                                     Visibility="{Binding Visibility, ElementName=$Name}"/>
+                                </ls:LSListBox>
+                                <Control x:Name="$selectorName"
+                                         IsHitTestVisible="False"
+                                         VerticalAlignment="Top"
+                                         HorizontalAlignment="Left"
+                                         Template="{StaticResource SelectorTemplate}"
+                                         Visibility="{Binding Visibility, ElementName=$Name}"/>
+                            </Grid>
 "@
 }
 
@@ -297,11 +304,12 @@ function Convert-WidgetChromeForGrid {
     $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "SelectButtonVisual" -Attribute "Margin" -Value "0,0,20,0"
     $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "CancelButton" -Attribute "Margin" -Value "0"
 
-    # The ContextMenu command remains wired for compatibility, but its radial-specific
-    # "Radial Customisation" prompt is not part of the grid chrome.
-    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Opacity" -Value "0"
-    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Width" -Value "0"
-    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Margin" -Value "0"
+    # ContextMenu still edits the underlying hotbar slots, which remains useful for
+    # the grid. Keep X active and visible, but remove radial-specific wording.
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Opacity" -Value "1"
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Width" -Value "Auto"
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Margin" -Value "0,0,20,0"
+    $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute "Tag" -Value "Customize"
 
     return $WidgetText
 }
@@ -478,12 +486,14 @@ $widget
         'Command="{Binding ClearSingleHotbarCommand}"',
         'HorizontalAlignment="Center"',
         'VerticalAlignment="Center"',
+        'x:Name="CAM_HotBarRadialFocusRoot"',
+        'x:Name="CAM_SingleBarFocusRoot"',
         'Width="640"',
         'Height="400"',
         'x:Name="ButtonHintsContainer"',
         'x:Name="ShowContextMenu"',
-        'Opacity="0"',
-        'Width="0"'
+        'Opacity="1"',
+        'Tag="Customize"'
     )) {
         if (-not $generated.Contains($required)) {
             throw "Generated controller library is missing required seam: $required"
