@@ -24,7 +24,9 @@ BG3 controller ActionRadials state
        native BG3 dispatch
 ```
 
-The exact current Patch 8 **controller collection** is not yet proven. Normal slot dispatch is now proven independently by current Patch 8 `HotBarSlotStyle`: it invokes `UseSlotCommand` on the owning `UIWidget` and passes the slot object as the command parameter.
+The installed Xbox App build 1.8.910.0 has now provided the current Patch 8 radial contract directly. The main collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`; each bar materializes `SlotList` through `PagedList`; nested variants use `SingleHotBar.SlotList`.
+
+Controller-radial normal A dispatch is page-level: `UIAccept -> UseSlotCommand(ActionRadials.Tag)`, where the native page updates `ActionRadials.Tag` from the focused radial slot. `HotBarSlotStyle` remains a current native slot visual/command style, but CAM must not assume its per-slot `BoundEvent` is the radial-specific A-dispatch contract.
 
 The shipping `.pak` contains only ordinary BG3 mod resources. It has **no Script Extender, DLL, native loader or external runtime dependency**.
 
@@ -66,16 +68,20 @@ The custom layer should not own:
 
 ## Native widget contract
 
-Confirmed current Patch 8 structural evidence:
+Confirmed from the installed Xbox App build 1.8.910.0 capture:
 
-- `Controller.xaml` still defines the `ActionRadials` state and points it at `ActionRadials.xaml`;
-- Patch 8 pages such as `CharacterPanel.xaml` use `ls:UIWidget.Template/ControlTemplate` and direct view-model bindings inside that root template;
-- Patch 8 `DataTemplates.xaml` uses `(ls:WidgetData.DataContext)` + `TemplatedParent` in nested reusable templates where the templated parent is not the root widget;
-- a July 2026 Patch 8 runtime report identifies `PreloadedActionRadials_c.xaml` and focus-driven `LSScrollViewer.ScrollToElement`.
+- `Mods/MainUI/GUI/Pages/ActionRadials.xaml` is a thin `HotBar`-context widget using `ActionRadialWidgetTemplate_P8`;
+- `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` binds the main list to `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
+- each controller bar is materialized through `PagedList ItemsSource="{Binding SlotList}"`;
+- nested variants/upcasts/containers use `SingleHotBar.SlotList`;
+- focus-driven scrolling uses `LSScrollViewer.ScrollToElement <- FocusedElement`;
+- normal A dispatch is `UseSlotBinding: UIAccept -> UseSlotCommand(Tag)`;
+- default B dispatch is `ClearSingleHotbarCommand`, while a main-menu trigger (`SingleHotBar.SlotList.Count == 0` and not throwing) switches B to `CustomEvent("CloseWidget")`;
+- swap-slot mode switches B to `UseSlotCommand(null)`.
 
-Therefore neither direct binding nor `WidgetData.DataContext` should be treated as a universal rule. The correct choice must match the actual current radial template boundary.
+The captured normal library and Clairmont override copies agree on those gameplay/control seams; their differences are visual scaling/text sizing only.
 
-The older public `Public/Game/GUI/Widgets/ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06. Its `HotBars`, `PagedList/PageView`, `SingleHotBar` and radial-specific cancel structure are historical evidence only. `UseSlotCommand` itself is separately confirmed current by Patch 8 `HotBarSlotStyle` and September-2026 production code.
+The older public `Public/Game/GUI/Widgets/ActionRadials.xaml` is Patch 2 Hotfix 1 from 2023-09-06 and remains historical evidence only.
 
 ## Native UI reuse
 
@@ -92,7 +98,7 @@ Action cells should remain native. Recreating focus frames, disabled overlays, i
 
 ## Controller data
 
-Current evidence proves the **data model is mode-sensitive** but does not yet publish the Patch 8 controller collection property exposed to XAML.
+Current evidence now proves both the mode-sensitive storage model and the Patch 8 controller collection exposed to XAML.
 
 Current engine/component evidence:
 
@@ -100,21 +106,19 @@ Current engine/component evidence:
 - each bar has `Index`, `Controller`, `Elements`, dimensions and name;
 - hotbar mutation/event structures explicitly carry `HotBarController` / `IsController`.
 
-Current UI evidence from a production mod dated 2026-09-27:
+Current installed-game UI evidence:
 
-- top-level widget name: `HotBar`;
-- live view model: `HotBar.DataContext`;
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList` exists;
-- `CurrentSingleHotbarFilter` exists;
-- `UseSlotCommand:Execute(slot)` works.
+- top-level widget/context: `ActionRadials` / `HotBar`;
+- controller root collection: `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
+- per-bar slots: `SlotList`;
+- nested slots: `SingleHotBar.SlotList`;
+- nested-state filter: `CurrentSingleHotbarFilter`.
 
-The word **Keyboard** is significant. The current engine data proves keyboard and controller state are distinct, so `KeyboardHotBars` is evidence of the modern view-model shape, not the controller source CAM should render.
+A separate September-2026 production mod still proves `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`. The names are now directly symmetrical and must remain distinct: CAM renders `ControllerHotBars`, never `KeyboardHotBars`.
 
-Historical Patch 2 `ActionRadials.xaml` used `CurrentPlayer.SelectedCharacter.HotBars`, per-bar `SlotList` and `PagedList/PageView`. That path must not be promoted to Patch 8 truth without current evidence.
+## Native slot rendering and dispatch
 
-## Native slot dispatch
-
-Current Patch 8 `HotBarSlotStyle` supplies the gameplay seam CAM wants to preserve:
+Current Patch 8 `HotBarSlotStyle` remains the preferred native visual template for square action cells. Its generic hotbar contract is:
 
 ```text
 BoundEvent       <- slot.BoundEvent
@@ -122,7 +126,21 @@ Command          <- owning UIWidget.DataContext.UseSlotCommand
 CommandParameter <- current slot object
 ```
 
-Therefore CAM must not add its own gameplay execution command. Once the correct controller slot collection is identified, native slot buttons should continue to use `HotBarSlotStyle`.
+The captured **controller radial** uses a more specific input seam for normal A:
+
+```text
+Focused controller slot
+        |
+        v
+ActionRadials.Tag
+        |
+UIAccept
+        |
+        v
+UseSlotCommand(Tag)
+```
+
+CAM therefore reuses `HotBarSlotStyle` for cell visuals but neutralizes the cell-level controller command and mirrors the captured page-level `UIAccept -> UseSlotCommand(focused slot)` binding. Gameplay execution remains entirely BG3-owned.
 
 
 ## First-run diagnostics without Script Extender
