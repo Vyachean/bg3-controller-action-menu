@@ -98,7 +98,7 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                   <b:DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
                 </b:Interaction.Triggers>
               </ls:Radial>
-              <ls:LSInputBinding x:Name="swapSlotBinding" BoundEvent="UIAccept">
+              <ls:LSInputBinding x:Name="swapSlotBinding" BoundEvent="UIAccept" Command="{Binding RequestAssignSlotCommand}">
                 <ls:LSInputBinding.CommandParameter>
                   <MultiBinding>
                     <Binding Path="LocalFocus.Index" ElementName="HotBarRadial"/>
@@ -203,7 +203,7 @@ foreach ($needle in @(
 if ($text.Contains("<ls:Radial ")) {
     throw "Generated controller library still contains a radial slot renderer."
 }
-if ($text.Contains("AssignSlotCommand")) {
+if ($text.Contains('Command="{Binding AssignSlotCommand}"')) {
     throw "Action grid must not execute slot-assignment commands."
 }
 if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="(HotBarRadial|SingleBar)"').Count -ne 2) {
