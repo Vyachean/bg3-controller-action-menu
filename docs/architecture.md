@@ -6,34 +6,43 @@ Replace Baldur's Gate 3 controller action radial browsing with a native-style gr
 
 ## Runtime architecture
 
-The runtime boundary is now:
+The accepted runtime ownership boundary is:
 
 ```text
-native BG3 Controller state
+installed BG3 Game.pak
           |
           v
-native MainUI/Pages/ActionRadials.xaml
+native PreloadedActionRadials_c.xaml
+          |
+          | local, fail-closed presentation patch
+          v
+native ActionRadials template/PageViews/Radials preserved
+          |
+          +-- native Radial: invisible input/focus engine
+          |
+          +-- CAM grid: non-interactive visual mirror
+                         SelectedIndex <- Radial.LocalFocus.Index
           |
           v
-StaticResource ActionRadialWidgetTemplate_P8
-          ^
-          |
-CAM controller library resource override
-          |
-          v
-thin grid composition over native DCHotBar
-          |
-          v
-native BG3 commands/state events
+locally derived CAM PAK
 ```
 
-The installed Xbox App build 1.8.910.0 supplied the current Patch 8 radial contract directly. The main collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`; each bar exposes `SlotList`; nested variants use `SingleHotBar.SlotList`.
+The installed Xbox App build 1.8.910.0 supplied the current Patch 8 radial contract directly. The root collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`; each bar exposes `SlotList`; nested variants use `SingleHotBar.SlotList`.
 
-The decisive architectural change after runtime builds 0.0.18–0.0.20 is that CAM no longer owns the `ActionRadials` state or page. BG3 keeps its native state machine entry and exact `Mods/MainUI/GUI/Pages/ActionRadials.xaml` root, including the `ActionRadials` widget name, `HotBar` context, automation identity, page-level Loaded/Unloaded/WidgetClosing triggers, focus restore and native state events.
+Runtime builds 0.0.18–0.0.24 established progressively that CAM must not reconstruct the native focus/input lifecycle:
 
-CAM uses the BG3 controller library hook (`GUI/Library/Lib_Controller.xaml`) to provide the resource key consumed by that native page. Runtime 0.0.23 proved that a CAM-local merged dictionary referenced through a component URI is not resolved correctly by the Xbox/App loader path, so the radial template and its helper resources are now defined **directly inside `Lib_Controller.xaml`**. There is no CAM-local secondary XAML dependency.
+- 0.0.18/0.0.20 could render correct data but had dead navigation/B;
+- 0.0.19 regressed bindings while changing input transport;
+- 0.0.23 proved the controller-library secondary-XAML path assumption wrong at startup;
+- 0.0.24 proved the native page and CAM resource override were active (native radial movement sounds played), yet a full replacement `ActionRadialWidgetTemplate_P8` still had no usable focus/A/B.
 
-The shipping `.pak` contains only ordinary BG3 UI resources. It has **no Script Extender, DLL, native loader or external runtime dependency**.
+Therefore CAM no longer ships a page, StateMachine, controller library, replacement ActionRadials template, or copied native XAML.
+
+The one-click installer downloads only CAM-authored code plus a metadata-only base PAK. On the user's PC, `tools/native-overlay.ps1` extracts the two current `PreloadedActionRadials_c.xaml` resources from that installation's `Game.pak`, verifies required native seams, modifies only the two radial visual locations, and packs the derived files under their original `Public/Game/GUI/...` resource paths.
+
+The original `ls:Radial` elements remain in the XAML and keep native `LocalFocus`, `UseSlotBinding`, `CancelButton`, nested/swap behavior, PageView focus transitions and state-machine lifecycle. CAM makes those radial visuals transparent and adds a non-focusable/non-hit-test grid that mirrors the same items and selected native index.
+
+No Larian XAML is committed to or distributed by this repository. The runtime remains a normal BG3 `.pak` with **no Script Extender, DLL or native loader dependency**.
 
 ## Primary target
 
@@ -47,29 +56,25 @@ A change that requires Script Extender is not acceptable for the primary package
 
 ## Boundary
 
-The custom layer owns:
+CAM owns only:
 
-- one controller resource-library override for `ActionRadialWidgetTemplate_P8`;
-- ordering native groups;
-- grid column count/spacing;
-- main-list vs `SingleHotBar` variant presentation;
-- a local menu panel over the live gameplay view;
-- temporary visible diagnostics in prerelease candidates.
+- install-time extraction/verification of the current native radial resources;
+- a deterministic presentation patch that hides native radial artwork without removing the native radial control;
+- a non-interactive grid mirror using native slot visuals;
+- local packaging of those derived resources.
 
-The custom layer must **not** override the `ActionRadials` state or replace `MainUI/Pages/ActionRadials.xaml`. It must not add a full-screen opaque/dim background; opening the action menu should preserve the gameplay view behind the local panel.
+CAM must not own or replace:
 
-The custom layer should not own:
-
+- the `ActionRadials` state or native page;
+- `ActionRadialWidgetTemplate_P8` as a hand-written replacement;
+- PageView focus lifecycle;
+- radial `LocalFocus` calculation;
+- A/B input routing;
+- nested/upcast/swap state transitions;
 - whether an action is usable;
-- spell slot/resource calculation;
-- upcast rules;
-- target validation;
-- range/LOS checks;
-- action execution;
-- recast semantics;
-- passive/class resource semantics;
-- item counts/state;
-- cell visuals already provided by native BG3 resources.
+- spell/resource/targeting/execution rules.
+
+The patcher is fail-closed: if expected current Patch 8 seams are missing, it must refuse to build an installable package rather than guess against a changed game version.
 
 ## Native widget contract
 
@@ -123,18 +128,10 @@ A separate September-2026 production mod still proves `PlayerCharacterProperties
 
 ## Native slot rendering and dispatch
 
-Current Patch 8 `HotBarSlotStyle` remains the preferred native visual template for square action cells. Its generic hotbar contract is:
+The captured native controller radial owns the gameplay seams:
 
 ```text
-BoundEvent       <- slot.BoundEvent
-Command          <- owning UIWidget.DataContext.UseSlotCommand
-CommandParameter <- current slot object
-```
-
-The captured **controller radial** uses a more specific input seam for normal A:
-
-```text
-Focused controller slot
+native Radial.LocalFocus
         |
         v
 ActionRadials.Tag
@@ -145,32 +142,11 @@ UIAccept
 UseSlotCommand(Tag)
 ```
 
-CAM reuses `HotBarSlotStyle` for cell visuals while keeping gameplay dispatch page-level.
+Top-level/nested B remains the native `CancelButton` command switch; swap-slot behavior remains native as well.
 
-Runtime builds 0.0.18–0.0.20 proved that rebuilding the whole page/state was the wrong ownership boundary:
+CAM's visual mirror does **not** receive focus or input. Its cells reuse `HotBarSlotStyle` with command disabled and hit testing/focus disabled. The grid's selected index is a one-way mirror of the still-running native radial's `LocalFocus.Index`.
 
-- `0.0.18` proved `ControllerHotBars`, section materialization, native visuals and tooltip data, but directional navigation and B were dead;
-- `0.0.19` changed input transport and regressed rendering/data bindings;
-- `0.0.20` restored rendering and used the captured `LSListBox -> ListBoxItem -> LSGrid` focus hierarchy, but the custom page still had no working controller focus/input.
-
-Therefore the page/state reconstruction is rejected. The native `ActionRadials.xaml` page now remains untouched and continues to own its original root widget identity and page-level lifecycle. The template override keeps the captured native `UseSlotBinding` / `CancelButton` command semantics and updates `ActionRadials.Tag` from grid focus so `UseSlotCommand(Tag)` remains BG3-owned.
-
-The grid itself still follows the current Patch 8 2D controller pattern already present in the captured `PreloadedActionRadials_c.xaml`:
-
-```text
-LSListBox
-    |
-focusable ListBoxItem
-    |
-LSGrid
-  ActionUpEvent    = UIUp
-  ActionDownEvent  = UIDown
-  ActionLeftEvent  = UILeft
-  ActionRightEvent = UIRight
-```
-
-This keeps the custom surface limited to the resource template while the state/page lifecycle remains entirely native.
-
+This is intentionally different from the failed 0.0.18–0.0.24 approaches: input is no longer reconstructed, forwarded or emulated by CAM.
 
 ## First-run diagnostics without Script Extender
 
@@ -190,8 +166,8 @@ This does not replace full runtime introspection, but it makes the first Xbox ru
 
 ## Compatibility
 
-CAM no longer overrides the controller `ActionRadials` state/page. It participates through `Lib_Controller.xaml`, with the radial template defined inline so the controller loader does not need to resolve a CAM-local merged dictionary.
+The derived PAK overrides the exact native `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml` and Clairmont counterpart from the user's installed version. This is inherently a UI-resource conflict surface: another mod overriding the same files can conflict by load order.
 
-A different UI mod that defines the same `ActionRadialWidgetTemplate_P8` resource key can still conflict by load order, but ordinary state-machine compatibility is improved because CAM no longer replaces the state itself.
+Because CAM derives from the installed files rather than bundling a fixed copy, game updates are handled fail-closed: the patcher re-reads the current `Game.pak` and refuses to patch if the required native seams no longer match.
 
-If CAM's resource key is not selected, the native page/state remains valid and the expected fallback is BG3's normal radial UI rather than a dead custom page.
+No proprietary native XAML is stored in GitHub or release assets.

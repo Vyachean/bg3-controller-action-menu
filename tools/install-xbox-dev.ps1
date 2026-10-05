@@ -1,6 +1,7 @@
 param(
     [switch]$Apply,
     [string]$PackagePath,
+    [string]$NativeOverlayPath,
     [string]$PackageRoot,
     [string]$ModsPath,
     [string]$ModSettingsPath,
@@ -611,6 +612,14 @@ if (-not (Test-Path -LiteralPath $PackagePath)) {
 }
 $PackagePath = (Resolve-Path -LiteralPath $PackagePath).Path
 
+if (-not $NativeOverlayPath) {
+    throw "Apply requires -NativeOverlayPath from the same verified release."
+}
+if (-not (Test-Path -LiteralPath $NativeOverlayPath -PathType Leaf)) {
+    throw "Native overlay builder does not exist: $NativeOverlayPath"
+}
+$NativeOverlayPath = (Resolve-Path -LiteralPath $NativeOverlayPath).Path
+
 $target = $report.Selected
 $targetMods = $target.Mods[0].Path
 $targetSettings = $target.SelectedModSettings.Path
@@ -619,6 +628,37 @@ if (-not $schema) {
     throw "Refusing to modify Xbox data: no reusable LSX schema was proven from an existing active mod."
 }
 $destPak = Join-Path $targetMods "BG3ControllerActionMenu.pak"
+
+# The published PAK is intentionally free of proprietary BG3 XAML. Build the
+# installable PAK locally from this exact installed game's native radial XAML,
+# preserving native focus/input/lifecycle and changing only presentation.
+$derivedRoot = if ($env:LOCALAPPDATA) {
+    Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\derived"
+} else {
+    Join-Path $env:TEMP "BG3ControllerActionMenu\derived"
+}
+New-Item -ItemType Directory -Force -Path $derivedRoot | Out-Null
+$derivedPackage = Join-Path $derivedRoot "BG3ControllerActionMenu-native-derived.pak"
+if (Test-Path -LiteralPath $derivedPackage) {
+    Remove-Item -LiteralPath $derivedPackage -Force
+}
+
+$overlayArgs = @{
+    BasePackage = $PackagePath
+    OutputPackage = $derivedPackage
+}
+if ($target.InstallLocation -and (Test-Path -LiteralPath $target.InstallLocation -PathType Container)) {
+    $overlayArgs.GameInstallRoot = $target.InstallLocation
+}
+
+Write-Host ""
+Write-Host "Building a native-derived radial overlay from the installed BG3 version..."
+& $NativeOverlayPath @overlayArgs
+
+if (-not (Test-Path -LiteralPath $derivedPackage -PathType Leaf)) {
+    throw "Native overlay builder did not create the derived package: $derivedPackage"
+}
+$PackagePath = (Resolve-Path -LiteralPath $derivedPackage).Path
 
 [xml]$settingsXml = Get-Content -Raw -LiteralPath $targetSettings
 $settingsRoot = $settingsXml.SelectSingleNode("//region[@id='ModuleSettings']/node[@id='root']")
@@ -697,6 +737,7 @@ try {
 Write-Host ""
 Write-Host "Installed successfully into the evidence-backed Xbox mod cache."
 Write-Host "  PAK:        $destPak"
+Write-Host "  Derived:    $PackagePath"
 Write-Host "  Load order: $targetSettings"
 Write-Host "  Backup:     $settingsBackup"
 Write-Host ""

@@ -8,6 +8,7 @@ $Mods = Join-Path $Local "Mods"
 $Profile = Join-Path $FakeCache "SystemAppData\xgs\000901FDE86FE763_fixture\PlayerProfiles\2535464828397411"
 $Settings = Join-Path $Profile "modsettings.lsx"
 $FakePak = Join-Path $Temp "fixture.pak"
+$FakeOverlay = Join-Path $Temp "native-overlay-fixture.ps1"
 $OfficialPak = Join-Path $Mods "OfficialFixture.pak"
 $SecondPak = Join-Path $Mods "SecondFixture.pak"
 $DecoyDir = Join-Path $Mods "00000000-0000-0441-2693-069153013516"
@@ -24,6 +25,16 @@ New-Item -ItemType Directory -Force -Path $Profile | Out-Null
 New-Item -ItemType Directory -Force -Path $Mods | Out-Null
 New-Item -ItemType Directory -Force -Path $DecoyDir | Out-Null
 Set-Content -Path $FakePak -Value "fake CAM pak bytes" -NoNewline
+@'
+param(
+    [Parameter(Mandatory = $true)][string]$BasePackage,
+    [Parameter(Mandatory = $true)][string]$OutputPackage,
+    [string]$GameInstallRoot
+)
+$parent = Split-Path -Parent $OutputPackage
+if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
+Copy-Item -LiteralPath $BasePackage -Destination $OutputPackage -Force
+'@ | Set-Content -Path $FakeOverlay -Encoding UTF8
 Set-Content -Path $OfficialPak -Value "existing official pak evidence" -NoNewline
 Set-Content -Path $SecondPak -Value "second existing pak evidence" -NoNewline
 
@@ -128,7 +139,7 @@ if ($usable.WriteSchema.ModsUuidType -ne "guid" -or
 }
 
 # Phase 2 performs the write only when explicitly requested.
-& $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
+& $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -NativeOverlayPath $FakeOverlay -ReportPath $Report
 
 $deployedPak = Join-Path $Mods "BG3ControllerActionMenu.pak"
 if (-not (Test-Path $deployedPak)) { throw "Deployed CAM pak is missing." }
@@ -163,7 +174,7 @@ if (-not $camPublish -or $camPublish.GetAttribute("type") -ne "uint64" -or $camP
 }
 
 # Repeat apply: no duplicate UUID entries and still no ModOrder.
-& $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
+& $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -NativeOverlayPath $FakeOverlay -ReportPath $Report
 
 [xml]$xml2 = Get-Content -Raw $Settings
 $descOurs2 = @(
@@ -185,7 +196,7 @@ Copy-Item $Settings $OtherSettings -Force
 
 $failedClosed = $false
 try {
-    & $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -ReportPath $Report
+    & $installer -Apply -PackageRoot $FakeCache -PackagePath $FakePak -NativeOverlayPath $FakeOverlay -ReportPath $Report
 } catch {
     if ($_.Exception.Message -like "*Refusing to modify Xbox data*") {
         $failedClosed = $true

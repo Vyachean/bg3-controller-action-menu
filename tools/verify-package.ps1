@@ -30,106 +30,33 @@ if ($LASTEXITCODE -ne 0) {
     throw "Package extraction failed with exit code $LASTEXITCODE"
 }
 
-$required = @(
-    "Mods/BG3ControllerActionMenu/meta.lsx",
-    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Keyboard.xaml"
-)
-
-foreach ($relative in $required) {
-    $path = Join-Path $Extract $relative
-    if (-not (Test-Path $path)) {
-        throw "Packaged file missing: $relative"
-    }
-    Write-Host "OK packaged file: $relative"
+$meta = Join-Path $Extract "Mods/BG3ControllerActionMenu/meta.lsx"
+if (-not (Test-Path $meta)) {
+    throw "Packaged metadata missing: Mods/BG3ControllerActionMenu/meta.lsx"
 }
 
-$forbiddenPaths = @(
+$forbidden = @(
     "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml",
     "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml",
+    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml",
+    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Keyboard.xaml",
     "Mods/BG3ControllerActionMenu/GUI/Library/CAM_ActionRadials.xaml",
+    "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+    "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml",
     "Mods/BG3ControllerActionMenu/ScriptExtender"
 )
 
-foreach ($relative in $forbiddenPaths) {
+foreach ($relative in $forbidden) {
     if (Test-Path (Join-Path $Extract $relative)) {
-        throw "Packaged native-ownership regression: $relative must not exist."
+        throw "Published base package must not contain runtime/native XAML or Script Extender files: $relative"
     }
 }
 
-$controllerLibrary = Get-Content -Raw (Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml")
-$template = $controllerLibrary
-$version = (Get-Content -Raw (Join-Path $Root "VERSION")).Trim()
-
-$requiredTemplateSeams = @(
-    'x:Key="ActionRadialWidgetTemplate_P8"',
-    'x:Name="CAM_DiagnosticPanel"',
-    'native ActionRadials page + Lib_Controller template override',
-    'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars',
-    'ItemsSource="{Binding SlotList}"',
-    'ItemsSource="{Binding SingleHotBar.SlotList}"',
-    'x:Key="CAM_SlotContainer"',
-    'TargetType="{x:Type ListBoxItem}"',
-    'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
-    'ItemsPanel="{StaticResource CAM_NativeGrid}"',
-    'ActionUpEvent="UIUp"',
-    'ActionDownEvent="UIDown"',
-    'ActionLeftEvent="UILeft"',
-    'ActionRightEvent="UIRight"',
-    'TargetName="ActionRadials"',
-    'PropertyName="Tag"',
-    'Value="{Binding LocalFocus.DataContext, ElementName=SectionSlots}"',
-                'TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1"',
-                'TargetName="HotBarList"',
-                'FocusElement="{Binding ElementName=HotBarList, Path=Tag}"',
-    '<ls:LSButton x:Name="UseSlotBinding"',
-    'Command="{Binding UseSlotCommand}"',
-    'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
-    'BoundEvent="UIAccept"',
-    '<ls:LSButton x:Name="CancelButton"',
-    'Command="{Binding ClearSingleHotbarCommand}"',
-    'Property="CommandParameter" Value="CloseWidget"',
-    'ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"',
-    'x:Name="NativeSlotButton"',
-    'Command="{x:Null}"',
-    'EatInput="False"',
-    'BoundEvent="UICancel"',
-    'Background="Transparent"'
+$unexpectedXaml = @(
+    Get-ChildItem -LiteralPath $Extract -File -Recurse -Filter "*.xaml" -ErrorAction SilentlyContinue
 )
-
-foreach ($needle in $requiredTemplateSeams) {
-    if (-not $template.Contains($needle)) {
-        throw "Packaged radial template is missing structural/safety seam: $needle"
-    }
+if ($unexpectedXaml.Count -gt 0) {
+    throw "Published base package unexpectedly contains XAML: $($unexpectedXaml[0].FullName)"
 }
 
-$diagnosticBuild = "CAM $version Xbox diagnostic"
-if (-not $template.Contains($diagnosticBuild)) {
-    throw "Packaged diagnostic build marker does not match VERSION: $diagnosticBuild"
-}
-
-$forbiddenTemplateSeams = @(
-    "CAM_ActionRadials.xaml",
-    ";component/Library/CAM_ActionRadials.xaml",
-    "opaqueBG.png",
-    'Background="{DynamicResource LS_tint00}"',
-    "CurrentPlayer.SelectedCharacter.HotBars",
-    'Command="ls:UIWidget.CloseRequestCommand"',
-    'x:Name="CancelNestedButton"',
-    '<ls:LSInputBinding x:Name="UseSlotBinding"',
-    '<ls:LSInputBinding x:Name="CancelBinding"',
-    'UseWidgetNavigation="True"',
-    'WidgetChainedNavigation="True"',
-    'ls:MoveFocus.InternalFocusable="True"',
-    'AlwaysSelectFirst="True"',
-    'ls:MoveFocus.IsMoveFocusScope="True"',
-    'ElementName=CAM_ActionMenu'
-)
-
-foreach ($needle in $forbiddenTemplateSeams) {
-    if ($template.Contains($needle)) {
-        throw "Packaged radial template safety regression: $needle"
-    }
-}
-
-Write-Host "Package verification passed: native ActionRadials state/page preserved; ActionRadialWidgetTemplate_P8 is inline in Lib_Controller.xaml; no CAM-local XAML dependency; captured ControllerHotBars/focus/A/B seams present; no Script Extender dependency."
+Write-Host "Package verification passed: release PAK is metadata/bootstrap only; no CAM replacement XAML, proprietary native XAML, or Script Extender files are embedded."

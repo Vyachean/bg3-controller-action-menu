@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repository-level static validation for the no-Script-Extender runtime package."""
+"""Repository-level static validation for the native-derived no-SE package."""
 
 from __future__ import annotations
 
@@ -11,19 +11,27 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "BG3ControllerActionMenu"
 MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
-CONTROLLER_LIBRARY = MOD_ROOT / "GUI/Library/Lib_Controller.xaml"
-KEYBOARD_LIBRARY = MOD_ROOT / "GUI/Library/Lib_Keyboard.xaml"
-ACTION_TEMPLATE = CONTROLLER_LIBRARY
-EXTERNAL_ACTION_TEMPLATE = MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml"
-LEGACY_ACTION_PAGE = MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml"
-LEGACY_CONTROLLER_STATE = MOD_ROOT / "GUI/StateMachines/Controller.xaml"
 VERSION = ROOT / "VERSION"
+
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
-RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+NATIVE_OVERLAY = ROOT / "tools/native-overlay.ps1"
+NATIVE_OVERLAY_TEST = ROOT / "tools/test-native-overlay.ps1"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
+BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
+RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+
+FORBIDDEN_STATIC_RUNTIME_PATHS = [
+    MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml",
+    MOD_ROOT / "GUI/StateMachines/Controller.xaml",
+    MOD_ROOT / "GUI/Library/Lib_Controller.xaml",
+    MOD_ROOT / "GUI/Library/Lib_Keyboard.xaml",
+    MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml",
+    PACKAGE_ROOT / "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+    PACKAGE_ROOT / "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml",
+]
 
 IGNORED_DIRS = {".git", ".local", "build", "dist", "artifacts", "extracted", "game-data", "toolkit-data"}
 XML_SUFFIXES = {".xaml", ".xml", ".lsx"}
@@ -61,67 +69,8 @@ def require_text(path: Path, required: list[str]) -> list[str]:
 def validate_semantics() -> list[str]:
     errors: list[str] = []
 
-    errors.extend(
-        require_text(
-            CONTROLLER_LIBRARY,
-            [
-                "ResourceDictionary",
-                'x:Key="ActionRadialWidgetTemplate_P8"',
-                'x:Name="CAM_DiagnosticPanel"',
-            ],
-        )
-    )
-
-    errors.extend(
-        require_text(
-            KEYBOARD_LIBRARY,
-            [
-                "ResourceDictionary",
-                "CAM is controller-only",
-            ],
-        )
-    )
-
-    errors.extend(
-        require_text(
-            ACTION_TEMPLATE,
-            [
-                'x:Key="ActionRadialWidgetTemplate_P8"',
-                'x:Name="CAM_DiagnosticPanel"',
-                "native ActionRadials page + Lib_Controller template override",
-                "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars",
-                'ItemsSource="{Binding SlotList}"',
-                'ItemsSource="{Binding SingleHotBar.SlotList}"',
-                'x:Key="CAM_SlotContainer"',
-                'TargetType="{x:Type ListBoxItem}"',
-                'ItemContainerStyle="{StaticResource CAM_SlotContainer}"',
-                'ItemsPanel="{StaticResource CAM_NativeGrid}"',
-                'ActionUpEvent="UIUp"',
-                'ActionDownEvent="UIDown"',
-                'ActionLeftEvent="UILeft"',
-                'ActionRightEvent="UIRight"',
-                'TargetName="ActionRadials"',
-                'PropertyName="Tag"',
-                'Value="{Binding LocalFocus.DataContext, ElementName=SectionSlots}"',
-                'TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1"',
-                'TargetName="HotBarList"',
-                'FocusElement="{Binding ElementName=HotBarList, Path=Tag}"',
-                '<ls:LSButton x:Name="UseSlotBinding"',
-                'Command="{Binding UseSlotCommand}"',
-                'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
-                'BoundEvent="UIAccept"',
-                '<ls:LSButton x:Name="CancelButton"',
-                'Command="{Binding ClearSingleHotbarCommand}"',
-                'Property="CommandParameter" Value="CloseWidget"',
-                'ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"',
-                'x:Name="NativeSlotButton"',
-                'Command="{x:Null}"',
-                'EatInput="False"',
-                'BoundEvent="UICancel"',
-                'Background="Transparent"',
-            ],
-        )
-    )
+    if not (MOD_ROOT / "meta.lsx").exists():
+        errors.append("BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/meta.lsx: required file is missing")
 
     script_extender = MOD_ROOT / "ScriptExtender"
     if script_extender.exists():
@@ -129,68 +78,79 @@ def validate_semantics() -> list[str]:
             f"{script_extender.relative_to(ROOT)}: runtime package must not contain Script Extender files"
         )
 
-    # Runtime ownership must stay with the base game. Reintroducing either file
-    # recreates the dead-input architecture proven by 0.0.18-0.0.20.
-    for legacy in (LEGACY_ACTION_PAGE, LEGACY_CONTROLLER_STATE):
-        if legacy.exists():
+    # Published source package must not contain either a reconstructed CAM page/template
+    # or copied proprietary native XAML. The installer derives the two native files
+    # locally from the user's exact installed Game.pak.
+    for forbidden_path in FORBIDDEN_STATIC_RUNTIME_PATHS:
+        if forbidden_path.exists():
             errors.append(
-                f"{legacy.relative_to(ROOT)}: native ActionRadials state/page must not be overridden"
+                f"{forbidden_path.relative_to(ROOT)}: static runtime XAML is forbidden; native radial XAML must be derived locally"
             )
 
-    # 0.0.23 proved that a CAM-local merged dictionary path is not resolved by
-    # the Xbox/App Noesis loader: it is treated as a literal missing XAML path.
-    # Keep the ActionRadials template inline in Lib_Controller.xaml.
-    if EXTERNAL_ACTION_TEMPLATE.exists():
-        errors.append(
-            f"{EXTERNAL_ACTION_TEMPLATE.relative_to(ROOT)}: controller template must be inline in Lib_Controller.xaml"
+    errors.extend(
+        require_text(
+            NATIVE_OVERLAY,
+            [
+                '$LslibVersion = "v1.20.4"',
+                '$LslibSha256 = "5e02368fb8acafda9b45acba37a3f3bf507fc3d65a083a159abbeab06337190e"',
+                '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"',
+                '"Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml"',
+                '"Game.pak"',
+                "Patch-NativeRadialXaml",
+                "Add-VisualMirror",
+                '-RadialName "HotBarRadial"',
+                '-RadialName "SingleBar"',
+                'Opacity="0"',
+                "CAM_HotBarRadialGrid",
+                "CAM_SingleBarGrid",
+                'SelectedIndex="{Binding LocalFocus.Index, ElementName=__RADIAL__, Mode=OneWay}"',
+                'Style="{StaticResource HotBarSlotStyle}"',
+                'Command="{x:Null}"',
+                'Focusable="False"',
+                'IsHitTestVisible="False"',
+                "--action extract-single-file",
+                "--action create-package",
+                "-PatchOnlySourceXaml",
+            ],
         )
+    )
 
-    if ACTION_TEMPLATE.exists():
-        template_text = ACTION_TEMPLATE.read_text(encoding="utf-8")
-        forbidden = [
-            "CAM_ActionRadials.xaml",
-            ";component/Library/CAM_ActionRadials.xaml",
-            "opaqueBG.png",
-            'Background="{DynamicResource LS_tint00}"',
-            "CurrentPlayer.SelectedCharacter.HotBars",
-            'Command="ls:UIWidget.CloseRequestCommand"',
-            'x:Name="CancelNestedButton"',
-            '<ls:LSInputBinding x:Name="UseSlotBinding"',
-            '<ls:LSInputBinding x:Name="CancelBinding"',
-            'UseWidgetNavigation="True"',
-            'WidgetChainedNavigation="True"',
-            'ls:MoveFocus.InternalFocusable="True"',
-            'AlwaysSelectFirst="True"',
-            'ls:MoveFocus.IsMoveFocusScope="True"',
-            'ElementName=CAM_ActionMenu',
-        ]
-        for needle in forbidden:
-            if needle in template_text:
-                errors.append(
-                    f"{ACTION_TEMPLATE.relative_to(ROOT)}: controller template safety regression: {needle}"
-                )
+    errors.extend(
+        require_text(
+            NATIVE_OVERLAY_TEST,
+            [
+                "PatchOnlySourceXaml",
+                "CAM_HotBarRadialGrid",
+                "CAM_SingleBarGrid",
+                'x:Name="UseSlotBinding"',
+                'x:Name="CancelButton"',
+                'Command="{Binding UseSlotCommand}"',
+                'Command="{Binding ClearSingleHotbarCommand}"',
+                'Opacity="0"',
+                "Native Radial controls must remain present as the input/focus engine.",
+            ],
+        )
+    )
 
     errors.extend(
         require_text(
             XBOX_INSTALLER,
             [
                 "[switch]$Apply",
+                "[string]$NativeOverlayPath",
                 "Get-AppxPackage",
                 "LocalCache\\Local",
                 "ExistingPakFound",
                 "ReusableModSettingsSchemaFound",
                 "WriteSchemaReady",
                 "SelectedModSettings",
-                "Get-ChildItem -LiteralPath $root",
-                "Get-XmlShapeSummary",
-                "ShapeSummary",
-                "ModsOnly",
                 "PlayerProfiles",
-                "ValidProfileModSettingsFound",
-                "PublishHandle",
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
                 "BG3ControllerActionMenu-backups",
+                "Building a native-derived radial overlay",
+                "& $NativeOverlayPath @overlayArgs",
+                "BG3ControllerActionMenu-native-derived.pak",
             ],
         )
     )
@@ -204,11 +164,12 @@ def validate_semantics() -> list[str]:
                 "Never silently fall back to an older release",
                 'BG3ControllerActionMenu-$version.pak',
                 'install-xbox-dev.ps1',
+                'native-overlay.ps1',
                 "browser_download_url",
                 "^sha256:([0-9a-fA-F]{64})$",
                 "Refusing unexpected release asset URL",
                 "Save-VerifiedReleaseAsset",
-                "& $installerPath -Apply -PackagePath $pakPath",
+                "NativeOverlayPath $overlayPath",
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
@@ -241,13 +202,24 @@ def validate_semantics() -> list[str]:
         )
     )
 
+    for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
+        errors.extend(
+            require_text(
+                workflow,
+                [
+                    "Test native radial visual overlay",
+                    "test-native-overlay.ps1",
+                ],
+            )
+        )
+
     errors.extend(
         require_text(
             RELEASE_WORKFLOW,
             [
-                "Test hidden one-click installer",
-                "build-one-click-installer.ps1",
-                "BG3ControllerActionMenu-OneClickInstaller.zip",
+                '"tools/native-overlay.ps1"',
+                '$overlay = "tools/native-overlay.ps1"',
+                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay',
             ],
         )
     )
@@ -258,21 +230,10 @@ def validate_semantics() -> list[str]:
             [
                 'Get-AppxPackage -Name "LarianStudiosGamesLtd.baldurssgate3"',
                 '$LslibVersion = "v1.20.4"',
-                '$LslibSha256 = "5e02368fb8acafda9b45acba37a3f3bf507fc3d65a083a159abbeab06337190e"',
                 '$TargetExpression = "*ActionRadials*.xaml"',
-                "--action list-package",
                 "--action extract-single-file",
-                "capture-manifest.json",
-                "capture-summary.txt",
-                "native-contract.json",
                 "native-contract-analysis.json",
-                "native-contract-analysis.txt",
-                "KeyboardOnlySources",
-                "MainControllerSourceCandidates",
-                "SlotMaterializationSources",
-                "AuxiliaryItemsSources",
                 "ImplementationGate",
-                "controller-source-ambiguous",
                 "No game, profile or mod files were modified.",
             ],
         )
@@ -284,13 +245,6 @@ def validate_semantics() -> list[str]:
         version = VERSION.read_text(encoding="utf-8").strip()
         if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?", version):
             errors.append(f"VERSION: invalid SemVer-like value: {version!r}")
-        elif ACTION_TEMPLATE.exists():
-            expected_diagnostic = f"CAM {version} Xbox diagnostic"
-            if expected_diagnostic not in ACTION_TEMPLATE.read_text(encoding="utf-8"):
-                errors.append(
-                    f"{ACTION_TEMPLATE.relative_to(ROOT)}: diagnostic build marker must match VERSION: "
-                    f"{expected_diagnostic!r}"
-                )
 
     return errors
 
@@ -314,7 +268,8 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "structural/safety seams present; runtime package is Script-Extender-free)."
+        "native-derived overlay contract present; published package contains no proprietary native XAML; "
+        "runtime remains Script-Extender-free)."
     )
     return 0
 

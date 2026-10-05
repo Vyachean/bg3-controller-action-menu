@@ -100,12 +100,16 @@ function Resolve-LatestCamRelease {
 
     $pakAssets = @($release.assets | Where-Object { $_.name -eq $expectedPakName })
     $installerAssets = @($release.assets | Where-Object { $_.name -eq "install-xbox-dev.ps1" })
+    $overlayAssets = @($release.assets | Where-Object { $_.name -eq "native-overlay.ps1" })
 
     if ($pakAssets.Count -ne 1) {
         throw "Latest release '$tag' must contain exactly one '$expectedPakName' asset; found $($pakAssets.Count)."
     }
     if ($installerAssets.Count -ne 1) {
         throw "Latest release '$tag' must contain exactly one 'install-xbox-dev.ps1' asset; found $($installerAssets.Count)."
+    }
+    if ($overlayAssets.Count -ne 1) {
+        throw "Latest release '$tag' must contain exactly one 'native-overlay.ps1' asset; found $($overlayAssets.Count)."
     }
 
     return [pscustomobject]@{
@@ -114,6 +118,7 @@ function Resolve-LatestCamRelease {
         Version = $version
         Pak = $pakAssets[0]
         Installer = $installerAssets[0]
+        NativeOverlay = $overlayAssets[0]
     }
 }
 
@@ -204,6 +209,7 @@ try {
             Version = $selection.Version
             Pak = $selection.Pak.name
             Installer = $selection.Installer.name
+            NativeOverlay = $selection.NativeOverlay.name
         } | ConvertTo-Json -Depth 4
         exit 0
     }
@@ -213,20 +219,23 @@ try {
 
     $pakPath = Join-Path $releaseDir ([string]$selection.Pak.name)
     $installerPath = Join-Path $releaseDir "install-xbox-dev.ps1"
+    $overlayPath = Join-Path $releaseDir "native-overlay.ps1"
 
     Write-Host ("Cache:          {0}" -f $releaseDir)
     Write-Host "Downloading and verifying current release assets..."
 
     Save-VerifiedReleaseAsset -Asset $selection.Pak -Destination $pakPath
     Save-VerifiedReleaseAsset -Asset $selection.Installer -Destination $installerPath
+    Save-VerifiedReleaseAsset -Asset $selection.NativeOverlay -Destination $overlayPath
 
     Write-Host "SHA-256 verification passed for:"
     Write-Host ("  {0}" -f $selection.Pak.name)
     Write-Host "  install-xbox-dev.ps1"
+    Write-Host "  native-overlay.ps1"
     Write-Host ""
     Write-Host "Running the fail-closed Xbox installer..."
 
-    & $installerPath -Apply -PackagePath $pakPath -ReportPath $ReportPath
+    & $installerPath -Apply -PackagePath $pakPath -NativeOverlayPath $overlayPath -ReportPath $ReportPath
 
     Write-Host ""
     Write-Host ("Installed release: {0}" -f $selection.Tag)

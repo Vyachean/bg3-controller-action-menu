@@ -39,6 +39,10 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
+      - name: Test native radial visual overlay
+        shell: pwsh
+        run: ./tools/test-native-overlay.ps1
+
       - name: Build .pak
         shell: pwsh
         env:
@@ -66,6 +70,7 @@ jobs:
           path: |
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
+            tools/native-overlay.ps1
             build/BG3ControllerActionMenu-OneClickInstaller.zip
             tools/capture-native-radials.ps1
           if-no-files-found: error

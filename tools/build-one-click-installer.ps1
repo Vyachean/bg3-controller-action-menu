@@ -36,7 +36,8 @@ BG3 Controller Action Menu - One-click installer
 2. Double-click Install-BG3ControllerActionMenu.vbs.
 3. No PowerShell/console window is shown.
 4. The launcher always selects the newest published GitHub release, including prereleases.
-5. It downloads both the current PAK and the current fail-closed Xbox installer and verifies their GitHub SHA-256 digests before installation.
+5. It downloads the current base PAK, fail-closed Xbox installer, and native-overlay builder and verifies all GitHub SHA-256 digests.
+6. On your PC it reads the exact installed BG3 Game.pak, patches only the radial presentation locally, and builds the installable PAK. Native game XAML is never shipped in the GitHub release.
 
 One-time prerequisite:
 BG3's built-in Mod Manager must already have at least one enabled mod so the installer can prove the Xbox Mods cache and reuse the real modsettings.lsx schema.

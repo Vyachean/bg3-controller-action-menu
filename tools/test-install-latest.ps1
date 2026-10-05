@@ -71,22 +71,27 @@ try {
     $latestVersion = "9.9.9-fixture"
     $pak = Join-Path $assetRoot "BG3ControllerActionMenu-$latestVersion.pak"
     $installer = Join-Path $assetRoot "install-xbox-dev.ps1"
+    $overlay = Join-Path $assetRoot "native-overlay.ps1"
 
     $pakHash = New-FixtureAsset -Path $pak -Content "fake-pak-content"
     $installerHash = New-FixtureAsset -Path $installer -Content @'
 param(
     [switch]$Apply,
     [string]$PackagePath,
+    [string]$NativeOverlayPath,
     [string]$ReportPath
 )
 $ErrorActionPreference = "Stop"
 if (-not $Apply) { throw "Fixture installer expected -Apply." }
 if (-not (Test-Path -LiteralPath $PackagePath)) { throw "Fixture package is missing." }
+if (-not (Test-Path -LiteralPath $NativeOverlayPath)) { throw "Fixture native overlay builder is missing." }
 @{
     Applied = $true
     Package = (Split-Path -Leaf $PackagePath)
+    NativeOverlay = (Split-Path -Leaf $NativeOverlayPath)
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
 '@
+    $overlayHash = New-FixtureAsset -Path $overlay -Content "param() Write-Output native-overlay-fixture"
 
     $olderVersion = "9.9.8-fixture"
     $olderPak = Join-Path $assetRoot "BG3ControllerActionMenu-$olderVersion.pak"
@@ -117,6 +122,11 @@ if (-not (Test-Path -LiteralPath $PackagePath)) { throw "Fixture package is miss
                     name = "install-xbox-dev.ps1"
                     browser_download_url = $installer
                     digest = "sha256:$installerHash"
+                },
+                [ordered]@{
+                    name = "native-overlay.ps1"
+                    browser_download_url = $overlay
+                    digest = "sha256:$overlayHash"
                 }
             )
         },
@@ -157,17 +167,23 @@ if (-not (Test-Path -LiteralPath $PackagePath)) { throw "Fixture package is miss
         throw "Fixture installer was not invoked; report is missing."
     }
     $report = Get-Content -Raw -LiteralPath $success.Report | ConvertFrom-Json
-    if (-not $report.Applied -or $report.Package -ne "BG3ControllerActionMenu-$latestVersion.pak") {
-        throw "Fixture installer received the wrong package."
+    if (-not $report.Applied -or
+        $report.Package -ne "BG3ControllerActionMenu-$latestVersion.pak" -or
+        $report.NativeOverlay -ne "native-overlay.ps1") {
+        throw "Fixture installer received the wrong release assets."
     }
 
     $cachedPak = Join-Path $success.Cache ("v$latestVersion\BG3ControllerActionMenu-$latestVersion.pak")
     $cachedInstaller = Join-Path $success.Cache ("v$latestVersion\install-xbox-dev.ps1")
+    $cachedOverlay = Join-Path $success.Cache ("v$latestVersion\native-overlay.ps1")
     if ((Get-FileHash -Algorithm SHA256 -LiteralPath $cachedPak).Hash.ToLowerInvariant() -ne $pakHash) {
         throw "Cached PAK digest differs from the release asset."
     }
     if ((Get-FileHash -Algorithm SHA256 -LiteralPath $cachedInstaller).Hash.ToLowerInvariant() -ne $installerHash) {
         throw "Cached installer digest differs from the release asset."
+    }
+    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $cachedOverlay).Hash.ToLowerInvariant() -ne $overlayHash) {
+        throw "Cached native overlay digest differs from the release asset."
     }
 
     # Digest mismatch must fail before the downloaded installer can run.
@@ -187,7 +203,7 @@ if (-not (Test-Path -LiteralPath $PackagePath)) { throw "Fixture package is miss
 
     # A malformed newest release must not silently fall back to an older version.
     $malformed = $releases | ConvertTo-Json -Depth 8 | ConvertFrom-Json
-    $malformed[1].assets = @($malformed[1].assets | Where-Object { $_.name -ne "install-xbox-dev.ps1" })
+    $malformed[1].assets = @($malformed[1].assets | Where-Object { $_.name -ne "native-overlay.ps1" })
     $malformedMetadata = Join-Path $TestRoot "releases-malformed-latest.json"
     $malformed | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $malformedMetadata -Encoding UTF8
 
