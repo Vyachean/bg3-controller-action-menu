@@ -45,14 +45,14 @@ There is no visible PowerShell or Command Prompt window. The launcher runs in th
 
 Every run:
 
-- checks GitHub Releases, including prereleases;
-- selects the newest published release;
-- downloads that release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-- verifies all three files against GitHub's SHA-256 digests;
-- extracts the exact current radial XAML from the installed BG3 `Game.pak` and applies the presentation-only mirror patch locally;
-- packs that locally derived result and runs the existing fail-closed Xbox installer.
+- starts from a tiny stable `bootstrap-latest.ps1` bundled beside the VBS launcher;
+- checks the newest published GitHub Release;
+- downloads and SHA-256 verifies that release's current `bootstrap-latest.ps1` and `install-latest.ps1`;
+- automatically hands off to the newer bootstrap first if the bundled bootstrap is stale;
+- the current canonical installer then downloads and verifies the release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
+- extracts the exact current radial XAML from the installed BG3 `Game.pak`, applies the presentation-only mirror patch locally, packs the derived result, and runs the fail-closed Xbox installer.
 
-So the extracted one-click installer can be kept and reused for future CAM updates.
+After installing the self-updating launcher once, the extracted folder is intended to remain reusable even when the internal installer contract changes.
 
 One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
 
