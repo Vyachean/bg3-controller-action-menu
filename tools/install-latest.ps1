@@ -47,18 +47,19 @@ function Write-InstallStatus {
 
 function Get-Releases {
     if ($ReleaseMetadataPath) {
-        return @(Get-Content -Raw -LiteralPath $ReleaseMetadataPath | ConvertFrom-Json)
+        return (Get-Content -Raw -LiteralPath $ReleaseMetadataPath | ConvertFrom-Json)
     }
-    return @(Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers)
+    return (Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers)
 }
 
 function Get-LatestRelease {
-    $all = @(Get-Releases)
-    $published = @(
-        $all |
-            Where-Object { -not $_.draft -and $_.published_at -and $_.tag_name } |
-            Sort-Object { [DateTimeOffset]$_.published_at } -Descending
-    )
+    $published = @()
+    foreach ($candidate in (Get-Releases)) {
+        if (-not $candidate.draft -and $candidate.published_at -and $candidate.tag_name) {
+            $published += $candidate
+        }
+    }
+    $published = @($published | Sort-Object { [DateTimeOffset]$_.published_at } -Descending)
     if ($published.Count -eq 0) {
         throw "No published release found."
     }
