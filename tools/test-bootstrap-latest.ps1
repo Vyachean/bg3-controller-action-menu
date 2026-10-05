@@ -62,7 +62,8 @@ exit 0
         "-CacheRoot", $cacheRoot,
         "-LogPath", $log,
         "-StatusPath", $status,
-        "-ReportPath", $report
+        "-ReportPath", $report,
+        "-BootstrapUpdated"
     )
     & powershell.exe @args
 
