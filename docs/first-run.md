@@ -1,6 +1,6 @@
 # First in-game run — Xbox App / PC
 
-Use **v0.0.27-native-slot-assignment-grid** or newer.
+Use **v0.0.28-grid-presentation-cleanup** or newer.
 
 The runtime mod contains no Script Extender.
 
@@ -39,11 +39,12 @@ After a successful install, perform **one combined run**:
 2. use a disposable/pre-mod save;
 3. switch to controller UI and open the normal action menu;
 4. confirm the gameplay view remains visible behind the local panel;
-5. confirm each action page is rendered as a square grid rather than a radial wheel;
-6. move with D-pad/stick in all four directions and confirm selection moves cell-to-cell using the same controller behavior as the native “choose action for radial slot” screen;
-7. press B from the top level and confirm the menu closes;
-8. reopen the menu and use A on one simple non-container action (for example Jump) and confirm BG3 enters its normal action/targeting path;
-9. if a nested variant/upcast/container opens naturally, press B once and confirm native nested cancel behavior still works.
+5. confirm each action page is rendered as a square grid centered on the native page position;
+6. confirm there is no dark circular radial backdrop behind the grid and no visible “Radial Customisation” hint;
+7. move with D-pad/stick in all four directions and confirm selection moves cell-to-cell using the same controller behavior as the native “choose action for radial slot” screen;
+8. press B from the top level and confirm the menu closes;
+9. reopen the menu and use A on one simple non-container action (for example Jump) and confirm BG3 enters its normal action/targeting path;
+10. if a nested variant/upcast/container opens naturally, press B once and confirm native nested cancel behavior still works.
 
 Do not perform separate runs for each assertion. If something fails, one screenshot (or a short video if focus/scroll is the failure) plus the visible diagnostic overlay is sufficient.
 
