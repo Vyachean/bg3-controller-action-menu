@@ -31,7 +31,7 @@ The installed Xbox App build 1.8.910.0 supplied the current Patch 8 radial contr
 
 The decisive architectural change after runtime builds 0.0.18–0.0.20 is that CAM no longer owns the `ActionRadials` state or page. BG3 keeps its native state machine entry and exact `Mods/MainUI/GUI/Pages/ActionRadials.xaml` root, including the `ActionRadials` widget name, `HotBar` context, automation identity, page-level Loaded/Unloaded/WidgetClosing triggers, focus restore and native state events.
 
-CAM uses the documented BG3 controller library hook (`GUI/Library/Lib_Controller.xaml`) to provide the resource key consumed by that native page. This is the smallest ordinary-.pak hook that can still replace the radial presentation.
+CAM uses the BG3 controller library hook (`GUI/Library/Lib_Controller.xaml`) to provide the resource key consumed by that native page. Runtime 0.0.23 proved that a CAM-local merged dictionary referenced through a component URI is not resolved correctly by the Xbox/App loader path, so the radial template and its helper resources are now defined **directly inside `Lib_Controller.xaml`**. There is no CAM-local secondary XAML dependency.
 
 The shipping `.pak` contains only ordinary BG3 UI resources. It has **no Script Extender, DLL, native loader or external runtime dependency**.
 
@@ -190,7 +190,7 @@ This does not replace full runtime introspection, but it makes the first Xbox ru
 
 ## Compatibility
 
-CAM no longer overrides the controller `ActionRadials` state/page. It participates through `Lib_Controller.xaml`, the documented controller-mode resource library hook.
+CAM no longer overrides the controller `ActionRadials` state/page. It participates through `Lib_Controller.xaml`, with the radial template defined inline so the controller loader does not need to resolve a CAM-local merged dictionary.
 
 A different UI mod that defines the same `ActionRadialWidgetTemplate_P8` resource key can still conflict by load order, but ordinary state-machine compatibility is improved because CAM no longer replaces the state itself.
 
