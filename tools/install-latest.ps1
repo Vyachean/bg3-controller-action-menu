@@ -53,15 +53,16 @@ function Get-Releases {
 }
 
 function Get-LatestRelease {
-    $release = @(
-        Get-Releases |
+    $all = @(Get-Releases)
+    $published = @(
+        $all |
             Where-Object { -not $_.draft -and $_.published_at -and $_.tag_name } |
             Sort-Object { [DateTimeOffset]$_.published_at } -Descending
-    )[0]
-    if (-not $release) {
+    )
+    if ($published.Count -eq 0) {
         throw "No published release found."
     }
-    return $release
+    return $published[0]
 }
 
 function Get-Asset {
