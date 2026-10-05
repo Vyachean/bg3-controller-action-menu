@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test native radial visual overlay
+      - name: Test native slot-assignment grid presentation
         shell: pwsh
         run: ./tools/test-native-overlay.ps1
 
