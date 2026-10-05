@@ -56,11 +56,28 @@ Do not reconstruct the visible grid from `HotbarContainer` component memory. Com
 
 The public `ActionRadials.xaml` dump from 2023-09-06 is Patch 2 Hotfix 1 and is historical evidence only.
 
-Runtime evidence additionally proves that `0.0.18` had the correct controller data/rendering path but the wrong focus container, while `0.0.19` regressed the page by replacing native radial input controls and adding unrelated grid flags. Do not reuse the 0.0.19 input-routing design.
+Runtime evidence additionally proves:
 
-The next in-game test is allowed only for a candidate that preserves the proven 0.0.18 data/rendering path and uses the captured Patch 8 `LSListBox + ListBoxItem + LSGrid` focus hierarchy. It must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch into one milestone run.
+- `0.0.18` had the correct controller data/rendering path but no working navigation/B;
+- `0.0.19` regressed the page by replacing native radial input controls and adding unrelated grid flags;
+- `0.0.20` restored rendering (`Controller bars: 5`, Class/Actions/Items visible) but still had no widget focus, slot focus, navigation or B.
 
-Custom code owns only page composition/layout and diagnostics, preserves the live gameplay view, and leaves gameplay state/dispatch to BG3.
+Do not iterate again on the fully custom `CAM_ActionMenu_c.xaml` architecture. The remaining failure is the page lifecycle/focus boundary, not the controller data source.
+
+The next architecture must:
+
+- ship a native-named `ActionRadials.xaml` root with the captured Patch 8 root identity/lifecycle;
+- preserve native root focus mappings (`UITabPrev`/`UITabNext`), Loaded/WidgetClosing/Layout refocus triggers and `ActionRadials` element name;
+- use the captured slot-assignment focus root: outer `LSListBox` with `SelectedIndex=0`, `LocalFocusSelector`, `ActionNextEvent=UIDown`, `ActionPrevEvent=UIUp`;
+- keep outer section `ListBoxItem` containers focusable;
+- use inner `LSGrid` with `ContainerData="{Binding}"` and `UIUp/UIDown/UILeft/UIRight`;
+- preserve native radial `LSButton` A/B primitives.
+
+The superseded `CAM_ActionMenu_c.xaml` must not ship.
+
+Another in-game test is allowed only after this native-shell architecture passes static validation, native-capture fixture and package round-trip verification. The test must combine rendering, controller focus/scroll, top-level B, nested B if encountered, and one simple A dispatch.
+
+Custom code owns only template composition/layout and diagnostics, preserves the live gameplay view, and leaves gameplay state/dispatch to BG3.
 
 ## Pull request expectations
 
