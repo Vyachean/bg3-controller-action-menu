@@ -285,7 +285,7 @@ def validate_semantics() -> list[str]:
                 [
                     "Test minimal installer bootstrap",
                     "test-bootstrap-latest.ps1",
-                    "Test native slot-assignment grid presentation",
+                    "Test automatic native action catalog",
                     "test-native-overlay.ps1",
                 ],
             )
