@@ -32,13 +32,14 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $actionPath) | Out
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ls="clr-namespace:ls;assembly=Code">
-  <ListBox ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}">
+  <ListBox x:Name="HotBarList" ItemsSource="{Binding CurrentPlayer.SelectedCharacter.HotBars}">
     <ListBox.ItemTemplate>
       <DataTemplate>
         <ItemsControl ItemsSource="{Binding SlotList}"/>
       </DataTemplate>
     </ListBox.ItemTemplate>
   </ListBox>
+  <ItemsControl x:Name="Warnings" ItemsSource="{Binding DataContext.FocusedSlotTooltipData.UnavailableReasons, ElementName=ActionRadials}"/>
   <ls:LSInputBinding BoundEvent="UIAccept" Command="{Binding UseSlotCommand}"/>
   <ls:LSButton BoundEvent="UICancel" Command="{Binding ClearSingleHotbarCommand}"/>
 </ls:UIWidget>
@@ -70,8 +71,9 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $patchActionPath) 
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ls="clr-namespace:ls;assembly=Code">
-  <ListBox ItemsSource="{Binding PatchedControllerBars}"/>
+  <ListBox x:Name="HotBarList" ItemsSource="{Binding PatchedControllerBars}"/>
   <ItemsControl ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"/>
+  <ItemsControl x:Name="ActionCostSummary" ItemsSource="{Binding DataContext.FocusedSlotTooltipData.CostSummary, ElementName=ActionRadials}"/>
   <ls:LSInputBinding BoundEvent="UIAccept" Command="{Binding PatchedUseCommand}"/>
   <ls:LSButton BoundEvent="UICancel" Command="{Binding CustomEvent}" CommandParameter="CloseWidget"/>
 </ls:UIWidget>
@@ -242,6 +244,16 @@ if (@($analysis.KeyboardOnlySources | Where-Object {
 if (@($analysis.SlotMaterializationSources | Where-Object { $_.Value -eq "{Binding SlotList}" }).Count -ne 1) {
     throw "Fixture analysis did not isolate per-bar SlotList from root controller source candidates."
 }
+if (@($analysis.AuxiliaryItemsSources | Where-Object {
+    $_.Value -match "FocusedSlotTooltipData"
+}).Count -ne 2) {
+    throw "Fixture analysis did not isolate unrelated ActionRadials-referencing ItemsSource bindings as auxiliary."
+}
+if (@($analysis.MainControllerSourceCandidates | Where-Object {
+    $_.Value -match "FocusedSlotTooltipData"
+}).Count -ne 0) {
+    throw "Auxiliary tooltip ItemsSource bindings must not be promoted to controller-source candidates."
+}
 if (-not $analysis.Facts.HasSlotMaterializationSource) {
     throw "Fixture analysis should report per-bar slot materialization evidence."
 }
@@ -276,6 +288,7 @@ $analysisSummary = Get-Content -Raw -LiteralPath $analysisSummaryPath
 foreach ($needle in @(
     "Main controller source candidates",
     "Slot materialization sources",
+    "Auxiliary ItemsSource bindings",
     "Keyboard-only sources",
     "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars",
     "SingleHotBar.SlotList",
