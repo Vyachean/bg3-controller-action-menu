@@ -14,22 +14,19 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Captured Patch 8 list-grid correction candidate.**
+**Native ActionRadials shell correction in development.**
 
-A read-only capture of the installed Xbox App build 1.8.910.0 established the current Patch 8 radial contract. The candidate now uses:
+The installed Xbox App 1.8.910.0 capture has already proven the controller data and gameplay command contract. Runtime builds also established a clear boundary:
 
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars` as the controller source;
-- each bar's native `SlotList`;
-- `SingleHotBar.SlotList` for nested variants/upcasts/containers;
-- focus-driven scrolling following the page's `FocusedElement`;
-- the native radial A seam: `UIAccept -> UseSlotCommand(focused slot)`;
-- the native radial B switch: nested `ClearSingleHotbarCommand`, top-level `CustomEvent("CloseWidget")`.
+- `0.0.18`: populated Class / Actions / Items, but no navigation/B;
+- `0.0.19`: rejected input-routing regression;
+- `0.0.20`: populated grid again, but no widget/slot focus and no controller input.
 
-`0.0.18-native-controller-contract` proved the controller data path and rendering in-game, but directional navigation and B failed. `0.0.19-native-input-routing` then regressed rendering/data and is rejected.
+The project is therefore no longer iterating on the fully custom `CAM_ActionMenu_c.xaml` root.
 
-`0.0.20-patch8-list-grid` returns to the proven 0.0.18 rendering/input base and changes the slot container to the exact current Patch 8 controller-grid hierarchy already present in `PreloadedActionRadials_c.xaml`: `LSListBox -> focusable ListBoxItem -> LSGrid`. Native radial `LSButton` A/B controls are retained.
+The current architecture keeps the captured native `ActionRadials` root identity/lifecycle and changes only its presentation template. The focus hierarchy mirrors the current Patch 8 slot-assignment UI, including the outer `LSListBox` focus root, `LocalFocusSelector`, focusable outer items, inner `LSGrid ContainerData="{Binding}"`, and native radial `LSButton` A/B primitives.
 
-It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
+No new in-game test is requested until this architecture passes static validation and package round-trip verification.
 
 ## Xbox App local development
 
