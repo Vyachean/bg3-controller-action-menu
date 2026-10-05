@@ -7,10 +7,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              d:DesignWidth="3840"
              d:DesignHeight="2160"
-             FocusUp="UIUp"
-             FocusDown="UIDown"
-             FocusLeft="UILeft"
-             FocusRight="UIRight"
              KeyboardNavigation.DirectionalNavigation="Continue"
              ls:MoveFocus.FocusMovementMode="Closest"
              CanCacheFocusSurroundingElements="True"
@@ -149,6 +145,10 @@
                            ActionLeftEvent="UILeft"
                            ActionRightEvent="UIRight"
                            AutoIndex="True"
+                           AlwaysSelectFirst="True"
+                           UseWidgetNavigation="True"
+                           WidgetChainedNavigation="True"
+                           ls:MoveFocus.InternalFocusable="True"
                            Columns="8"
                            CellWidth="{StaticResource HotBarSlotWidth}"
                            CellHeight="{StaticResource HotBarSlotHeight}"
@@ -211,7 +211,7 @@
                         BorderThickness="2"
                         Panel.ZIndex="20">
                     <StackPanel Width="360">
-                        <TextBlock Text="CAM 0.0.18-native-controller-contract Xbox diagnostic"
+                        <TextBlock Text="CAM 0.0.19-native-input-routing Xbox diagnostic"
                                    Foreground="{DynamicResource LS_PrimaryColor}"
                                    FontWeight="DemiBold"
                                    FontSize="{DynamicResource SmallFontSize}"
@@ -340,33 +340,38 @@
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
                                      Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UIAccept'}"
                                      Margin="12,0"/>
-                        <ls:LSButton x:Name="CancelButton"
-                                     BoundEvent="UICancel"
-                                     Command="{Binding ClearSingleHotbarCommand}"
+                        <ls:LSButton x:Name="CancelHint"
+                                     Focusable="False"
+                                     IsHitTestVisible="False"
                                      ContentTemplate="{StaticResource ControllerButtonHint}"
                                      Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UICancel'}"
-                                     Margin="12,0">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="LSButtonReleased">
-                                    <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
-                                    <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"
-                                                           DirectionFocus="Left"
-                                                           JumpFocus="First"
-                                                           DeferFocusAction="True"/>
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </ls:LSButton>
+                                     Margin="12,0"/>
                     </StackPanel>
 
-                    <!-- Patch 8 radial normal dispatch: UIAccept invokes the native
-                         UseSlotCommand with the currently focused slot VM. -->
-                    <ls:LSButton x:Name="UseSlotBinding"
-                                 Command="{Binding UseSlotCommand}"
-                                 CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"
-                                 Height="0"
-                                 Width="0"
-                                 BoundEvent="UIAccept"
-                                 HorizontalAlignment="Left"/>
+                    <!-- Input is kept separate from the visual cell/hint controls.
+                         LSInputBinding is player-scoped and does not depend on which
+                         LSButton currently owns keyboard focus. -->
+                    <ls:LSInputBinding x:Name="UseSlotBinding"
+                                       PlayerId="{Binding CurrentPlayer.PlayerId}"
+                                       BoundEvent="UIAccept"
+                                       Command="{Binding UseSlotCommand}"
+                                       CommandParameter="{Binding Tag, ElementName=CAM_ActionMenu}"/>
+
+                    <ls:LSInputBinding x:Name="CancelBinding"
+                                       PlayerId="{Binding CurrentPlayer.PlayerId}"
+                                       BoundEvent="UICancel"
+                                       TriggerOnRelease="True"
+                                       Command="{Binding ClearSingleHotbarCommand}">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="LSInputBindingReleased">
+                                <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
+                                <ls:SetMoveFocusAction TargetName="CAM_ActionMenu"
+                                                       DirectionFocus="Left"
+                                                       JumpFocus="First"
+                                                       DeferFocusAction="True"/>
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </ls:LSInputBinding>
                 </Grid>
 
                 <ControlTemplate.Triggers>
@@ -423,28 +428,28 @@
                             <Condition Binding="{Binding SingleHotBar.SlotList.Count}" Value="0"/>
                             <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
                         </MultiDataTrigger.Conditions>
-                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
-                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                        <Setter TargetName="CancelBinding" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelBinding" Property="CommandParameter" Value="CloseWidget"/>
                     </MultiDataTrigger>
 
                     <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.IsShapeShifted}" Value="True">
-                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
-                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                        <Setter TargetName="CancelBinding" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelBinding" Property="CommandParameter" Value="CloseWidget"/>
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.CharacterType}" Value="Summon">
-                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
-                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                        <Setter TargetName="CancelBinding" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelBinding" Property="CommandParameter" Value="CloseWidget"/>
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.CharacterType}" Value="Follower">
-                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
-                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                        <Setter TargetName="CancelBinding" Property="Command" Value="{Binding CustomEvent}"/>
+                        <Setter TargetName="CancelBinding" Property="CommandParameter" Value="CloseWidget"/>
                     </DataTrigger>
 
                     <DataTrigger Binding="{Binding InSwapSlotState}" Value="True">
-                        <Setter TargetName="CancelButton" Property="Command" Value="{Binding UseSlotCommand}"/>
-                        <Setter TargetName="CancelButton" Property="CommandParameter" Value="{x:Null}"/>
+                        <Setter TargetName="CancelBinding" Property="Command" Value="{Binding UseSlotCommand}"/>
+                        <Setter TargetName="CancelBinding" Property="CommandParameter" Value="{x:Null}"/>
                         <Setter TargetName="UseSlotBinding" Property="Command" Value="{x:Null}"/>
                         <Setter TargetName="UseSlotBinding" Property="EatInput" Value="False"/>
                     </DataTrigger>
