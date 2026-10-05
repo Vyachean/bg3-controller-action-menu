@@ -12,18 +12,15 @@ For every install or update:
 
 No PowerShell or Command Prompt window is shown.
 
-The launcher is reusable across releases. Every run is two-stage:
+The launcher is reusable across releases. Its bootstrap has one stable responsibility:
 
-1. the bundled stable `bootstrap-latest.ps1` selects the newest published non-draft release;
-2. it requires that exact release's `bootstrap-latest.ps1` and `install-latest.ps1`;
-3. it downloads both and verifies their GitHub SHA-256 digests;
-4. if the release bootstrap differs from the bundled copy, control is transferred to the verified newer bootstrap automatically;
-5. the verified canonical `install-latest.ps1` then resolves the same newest release and downloads the version-specific base PAK, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-6. those assets are SHA-256 verified and installation proceeds through the fail-closed Xbox installer.
+1. find the newest published non-draft release;
+2. download that release's `install-latest.ps1`;
+3. run it.
 
-This separates the stable update protocol from the version-specific installer contract. A stale extracted folder therefore cannot silently pair an old `install-latest.ps1` with a newer release.
+The downloaded current installer then downloads only the files required by that release, derives the local PAK from the installed BG3 files, and installs it.
 
-Neither stage silently falls back to an older release when the newest published release is malformed.
+There is no bootstrap self-update protocol, release-asset hash verification, or duplicated UI/package validation on the user's PC. Those checks belong to CI before a release is published.
 
 Installer state is stored under:
 
@@ -55,53 +52,20 @@ That existing in-game-installed PAK proves which Mods cache this machine actuall
 
 This is a one-time prerequisite. Later CAM updates use the same one-click launcher.
 
-## Fail-closed behavior
+## Installation behavior
 
-Double-click installation does **not** remove the existing safety checks.
+The normal installer performs only the operations needed to install:
 
-The installer refuses to write when:
+- find the Xbox BG3 package/profile paths;
+- download the current release payload;
+- extract the native radial XAML from the installed game;
+- generate the local CAM controller library;
+- create the derived PAK;
+- copy it into the Mods directory and update `modsettings.lsx`.
 
-- no BG3 Xbox package data can be found;
-- no existing PAK proves which Mods directory the built-in manager uses;
-- no valid `modsettings.lsx` exists;
-- no active non-CAM mod supplies a reusable load-order schema;
-- active mods expose conflicting LSX schemas;
-- more than one profile/load-order file is plausible;
-- more than one package cache is independently plausible;
-- the BG3 XML structure is unexpected;
-- the newest GitHub Release does not contain exactly one bootstrap, canonical installer, expected CAM PAK, Xbox installer, or native-overlay builder;
-- a downloaded release asset does not match GitHub's SHA-256 digest.
+Semantic XAML checks, focus/A/B assertions, presentation literals, package round-trip checks and release-integrity test suites do **not** run during installation. They are CI/release gates.
 
-In these cases the launcher reports failure and pauses. The underlying Xbox installer remains fail-closed; ambiguous cache/load-order discovery does not become an automatic write.
-
-The generated `xbox-dev-environment.json` in the installer cache is the diagnostic artifact to inspect if installation is refused.
-
-## Installation verification philosophy
-
-The one-click installer is intentionally simple. It is not a second CI test suite.
-
-At install time it verifies only what is required for a safe write:
-
-- GitHub SHA-256 for downloaded release assets;
-- a unique writable Xbox mod target;
-- the minimum native source seams needed before applying the transformation;
-- generated XAML is valid XML;
-- LSLib package creation succeeds and produces a non-empty PAK.
-
-Grid layout, focus, A/B, chrome and other generated-UI semantics are validated in CI before release and are not re-asserted on the user's machine after packing.
-
-## What the underlying installer still does
-
-After a unique target is proven, `install-xbox-dev.ps1`:
-
-1. backs up `modsettings.lsx`;
-2. backs up an existing CAM PAK if present;
-3. copies the selected release PAK into the proven Mods directory;
-4. removes only stale entries for CAM UUID `c4be2039-13bf-4413-8d4f-2642f86d4a8e`;
-5. writes exactly one CAM load-order/module entry using the proven donor schema;
-6. writes through a temporary XML file;
-7. reopens and validates the result;
-8. restores the original `modsettings.lsx` if verification fails.
+Operational failures still stop installation naturally: missing game files, failed download/extraction/packing, no usable target profile, or failed file writes.
 
 ## Advanced/manual mode
 
