@@ -214,6 +214,7 @@ def validate_semantics() -> list[str]:
             ONE_CLICK_LAUNCHER,
             [
                 "bootstrap-latest.ps1",
+                "Checking for installer updates and installing the newest release",
                 "shell.Run(command, 0, True)",
                 "install-latest.log",
                 "install-status.txt",
@@ -234,6 +235,14 @@ def validate_semantics() -> list[str]:
             ],
         )
     )
+
+    launcher_text = ONE_CLICK_LAUNCHER.read_text(encoding="utf-8") if ONE_CLICK_LAUNCHER.exists() else ""
+    builder_text = ONE_CLICK_BUILDER.read_text(encoding="utf-8") if ONE_CLICK_BUILDER.exists() else ""
+    for path, text_value in ((ONE_CLICK_LAUNCHER, launcher_text), (ONE_CLICK_BUILDER, builder_text)):
+        if "install-latest.ps1" in text_value:
+            errors.append(
+                f"{path.relative_to(ROOT)}: reusable one-click bundle must not pin install-latest.ps1"
+            )
 
     for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
         errors.extend(
