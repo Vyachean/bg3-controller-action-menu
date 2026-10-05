@@ -29,17 +29,35 @@ A read-only capture of the installed Xbox App build 1.8.910.0 established the cu
 
 `0.0.20-patch8-list-grid` returns to the proven 0.0.18 rendering/input base and changes the slot container to the exact current Patch 8 controller-grid hierarchy already present in `PreloadedActionRadials_c.xaml`: `LSListBox -> focusable ListBoxItem -> LSGrid`. Native radial `LSButton` A/B controls are retained.
 
+`0.0.22-hidden-one-click` keeps that same runtime candidate and changes installation UX only (plus the visible diagnostic version marker).
+
 It still needs one combined in-game milestone proof for navigation, B and one simple A dispatch. It remains an ordinary Script-Extender-free `.pak`.
 
 ## Xbox App installation
 
-For normal use, download **`install-latest.cmd` once** and run it by double-clicking it.
+For normal use, download **`BG3ControllerActionMenu-OneClickInstaller.zip`** from the newest GitHub Release and extract it once.
 
-It always finds the newest published GitHub Release (including prereleases), downloads the matching CAM PAK and PowerShell installer, verifies both SHA-256 digests, and runs the existing fail-closed Xbox installation automatically.
+Then simply double-click:
 
-The first installation still requires one small mod to have been installed and enabled through BG3's built-in Mod Manager so CAM can prove the real Xbox cache and mirror the machine's actual load-order schema. After that, the same `install-latest.cmd` can be reused for every CAM update.
+`Install-BG3ControllerActionMenu.vbs`
 
-The Xbox App build does not use the ordinary Steam/GOG mod path in the same way, so CAM still does **not** hard-code `C:\WpSystem` or assume one cache location.
+There is no visible PowerShell or Command Prompt window. The launcher runs in the background and then shows a normal Windows success/error dialog.
+
+Every run:
+
+- checks GitHub Releases, including prereleases;
+- selects the newest published release;
+- downloads that release's exact CAM `.pak` and current `install-xbox-dev.ps1`;
+- verifies both files against GitHub's SHA-256 digests;
+- runs the existing fail-closed Xbox installer.
+
+So the extracted one-click installer can be kept and reused for future CAM updates.
+
+One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
+
+Logs and diagnostics are stored under `%LOCALAPPDATA%\BG3ControllerActionMenu`.
+
+The lower-level `install-xbox-dev.ps1` remains available for manual diagnosis/development.
 
 See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
 
