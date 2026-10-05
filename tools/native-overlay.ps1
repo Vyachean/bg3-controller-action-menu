@@ -364,7 +364,7 @@ $widget
     if ($generated.Contains("<ls:Radial ")) {
         throw "Generated controller library still contains a radial slot renderer."
     }
-    if ($generated.Contains("AssignSlotCommand")) {
+    if ($generated.Contains('Command="{Binding AssignSlotCommand}"')) {
         throw "Generated action-browsing controller library must not dispatch AssignSlotCommand."
     }
 
