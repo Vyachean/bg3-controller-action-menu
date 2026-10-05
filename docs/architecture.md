@@ -6,52 +6,60 @@ Replace Baldur's Gate 3 controller action radial browsing with a native-style gr
 
 ## Runtime architecture
 
-The accepted runtime boundary is now:
+The main grid is no longer a presentation of configured controller radial slots.
 
 ```text
 native ActionRadials state/page
           |
           v
-native ActionRadialWidgetTemplate_P8
-  (copied locally from this installed Game.pak)
+locally derived ActionRadialWidgetTemplate_P8
           |
-          +-- native outer lifecycle / A / B / nested / swap unchanged
+          +-- MAIN: automatic native action catalog
+          |     |
+          |     +-- SpellsAndActions[*].Actions
+          |     +-- togglable Passives
+          |     +-- togglable Metamagic
+          |     +-- Inventory.Slots (Items)
+          |     |
+          |     v
+          |  AssignList-style LSListBox
+          |     + LocalFocusSelector
+          |     + nested LSGrid groups
           |
-          +-- BarPageViewStyle / SingleBarPageViewStyle
+          +-- NESTED: native SingleHotBar.SlotList
                 |
                 v
-         LSListBox + LocalFocusSelector
-                |
-                v
-             LSGrid
-      UIUp / UIDown / UILeft / UIRight
+          proven assignment-style grid renderer
+
+A / B / targeting / costs / upcast rules remain BG3-owned.
 ```
 
-The key correction is that CAM no longer tries to make `ls:Radial` behave like a grid, and no longer keeps a hidden radial as the navigation engine. The installed Patch 8 XAML already contains a working controller grid in the **slot-assignment UI** (`AssignList` / `AvailableSlotsListPanelTemplate`). CAM reuses that focus/navigation contract for action browsing.
+The installed Patch 8 `PreloadedActionRadials_c.xaml` already contains the complete automatic source catalog used when the player chooses an action to insert into a radial:
 
-At install time CAM extracts the exact current `PreloadedActionRadials_c.xaml` from the user's `Game.pak`. It locally derives a `GUI/Library/Lib_Controller.xaml` containing the exact native:
+- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions`;
+- each spell/action group exposes `Actions`;
+- `CurrentPlayer.SelectedCharacter.Stats.Passives` filtered with `Data.TogglablePassivePredicate`;
+- the same passives collection filtered with `Data.TogglableMetaMagicPassivePredicate`;
+- `CurrentPlayer.SelectedCharacter.Inventory.Slots`.
 
-- `ActionRadialWidgetTemplate_P8`;
-- `RadialHotBarListItemContainer`;
-- `BarPageViewStyle`;
-- `SingleBarPageViewStyle`.
+That screen also proves the focus hierarchy CAM needs: `AssignList` + `SelectorAssign`, nested `LSListBox` groups, and `LSGrid(UIUp/UIDown/UILeft/UIRight)`.
 
-Only the two page-view styles are transformed: their `ls:Radial` slot renderer is replaced with the controller-grid pattern proven by the native slot-assignment UI. Runtime 0.0.27 proved this focus model works. The presentation layer then centers the grid within the existing PageView and collapses the obsolete circular radial backdrop:
+The previous 0.0.27–0.0.29 line reused only the **navigation** from that screen while still binding content to `ControllerHotBars[*].SlotList`. Runtime proved the grid mechanics work, but that data source is semantically wrong for CAM: it only shows whatever the user has configured in radial wheels.
 
-- `LSListBox`;
-- `LocalFocusSelector`;
-- focusable `ListBoxItem` cells;
-- `LSGrid ActionUpEvent/ActionDownEvent/ActionLeftEvent/ActionRightEvent`;
-- `KeyboardNavigation.DirectionalNavigation="Contained"`;
-- native `LocalFocusChanged` / delayed `ActionRadials.Tag` update semantics;
-- centered 640×400 grid viewport inside the native 1560×1560 page;
-- radial background ellipse collapsed without changing PageView focus/lifecycle.
+The new main catalog therefore reuses both halves of the native assignment screen:
 
-The copied outer template remains native. Therefore `UseSlotBinding`, `CancelButton`, top-level vs nested B switching, swap-slot commands, split-screen close behavior, `PagedList`, context menu and state-machine lifecycle are not reimplemented. CAM only adjusts the visible hint strip for the common grid layout: it centers the strip and suppresses the obsolete “Radial Customisation” prompt while leaving the underlying context-menu command wired.
+1. its automatic data collections;
+2. its controller-focus composition.
 
-The grid cells are visual-only slot representations. The focused VM still reaches the native page through `ActionRadials.Tag`, and normal A remains `UIAccept -> UseSlotCommand(Tag)`.
+On focus change, the selected native candidate is stored in `ActionRadials.Tag`. The existing page-level `UIAccept -> UseSlotCommand(Tag)` remains the execution boundary. This does not add spell/item/passive execution logic to CAM.
 
-No Larian XAML is committed to or distributed by this repository. The derived `Lib_Controller.xaml` is produced only on the user's machine from their installed game. The runtime remains a normal BG3 `.pak` with **no Script Extender, DLL or native loader dependency**.
+There is independent native precedent for `UseSlotCommand` receiving non-radial action objects directly: the game hotbar uses `HotBarSlotStyle`/direct action bindings for fixed actions such as the main attack and direct call-allies entries. The exact current catalog-candidate dispatch still requires one runtime proof and is kept isolated to this single seam.
+
+`SingleHotBar.SlotList` remains unchanged as the native second-stage source for upcast, variants, containers and other nested selections after A.
+
+Radial customization is outside CAM's product boundary. `ShowContextMenu`/X and Assign/Swap/Clear/Add/Remove wheel operations are disabled from the generated grid UI.
+
+No Larian XAML is committed to or distributed by this repository. `Lib_Controller.xaml` is derived locally from the installed game. The shipping runtime remains Script-Extender/DLL/native-loader free.
 
 ## Primary target
 
@@ -65,25 +73,25 @@ A change that requires Script Extender is not acceptable for the primary package
 
 ## Boundary
 
-CAM owns only:
+CAM owns:
 
-- install-time extraction and contract verification of the current native radial dictionary;
-- local generation of a controller library from native resources already present in the user's game;
-- replacement of the **slot renderer inside the two native PageView styles** with the proven slot-assignment `LSListBox + LSGrid` focus pattern;
-- compact centered grid cell presentation;
-- removal of obsolete radial-only visual chrome (circular backdrop and radial-specific customization prompt).
+- composition and ordering of the automatic action catalog;
+- controller grid layout/focus composition reused from the native assignment UI;
+- section presentation for Actions/Spells, Passives/Metamagic and Items;
+- transition between the automatic main catalog and BG3's native `SingleHotBar` nested results.
 
-CAM must not own or reimplement:
+BG3 owns:
 
-- the `ActionRadials` state or page;
-- outer `ActionRadialWidgetTemplate_P8` lifecycle;
-- A/B input commands;
-- nested/upcast/container switching;
-- swap-slot semantics;
-- targeting/execution/resource rules;
-- controller action source data.
+- which actions/spells/passives/items exist for the selected character;
+- usability/cost/resource/targeting state;
+- `UseSlotCommand` execution;
+- `ClearSingleHotbarCommand` and nested-state lifecycle;
+- upcast/variant/container generation;
+- action tooltips and native view models.
 
-The patcher is fail-closed. If the installed game's current radial or slot-assignment seams no longer match the known contract, installation must stop before replacing the active CAM package.
+CAM explicitly does **not** own radial-wheel customization. The generated UI must not expose `ShowContextMenu`, `RequestAssignSlotCommand`, `AssignSlotCommand`, slot swap/clear, or add/remove radial commands.
+
+The main catalog must not depend on `ControllerHotBars` membership. A newly learned/obtained native action should appear because the corresponding native automatic collection changed, without asking the player to edit a radial.
 
 ## Native widget contract
 

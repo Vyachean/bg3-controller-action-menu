@@ -19,44 +19,71 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ls="clr-namespace:ls;assembly=Code"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors">
+
+  <!-- Current native assignment-grid resources. -->
   <Style x:Key="AvailableSlotContainer" TargetType="ListBoxItem">
     <Setter Property="Focusable" Value="True"/>
+    <Setter Property="ContentTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Rectangle Fill="{Binding Icon}" Width="104" Height="104"/>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
   </Style>
+
   <ItemsPanelTemplate x:Key="AvailableSlotsListPanelTemplate">
     <ls:LSGrid ActionUpEvent="UIUp"
                ActionDownEvent="UIDown"
                ActionRightEvent="UIRight"
                ActionLeftEvent="UILeft"
                AutoIndex="True"
-               Columns="5"/>
+               ContainerData="{Binding}"
+               Columns="5"
+               CellWidth="120"
+               CellHeight="120"
+               DisableScrolling="True"/>
   </ItemsPanelTemplate>
-  <Style x:Key="SlotAssignHolderStyle" TargetType="Control">
-    <Setter Property="Template">
+
+  <ControlTemplate x:Key="SpellGroupListTemplate">
+    <ls:LSListBox x:Name="ListBox"
+                  ItemsSource="{Binding Actions}"
+                  Focusable="False"
+                  ItemContainerStyle="{StaticResource AvailableSlotContainer}"
+                  ItemsPanel="{StaticResource AvailableSlotsListPanelTemplate}">
+      <b:Interaction.Triggers>
+        <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=ListBox}">
+          <ls:LSPlaySound Sound="UI_Shared_Hover"/>
+        </b:PropertyChangedTrigger>
+      </b:Interaction.Triggers>
+    </ls:LSListBox>
+  </ControlTemplate>
+
+  <ControlTemplate x:Key="InventoryCellTemplate">
+    <ls:LSEntityObject Context="Inventory" EntityRef="{Binding EntityHandle}" DataContext="{Binding Object}">
+      <ContentPresenter Content="{Binding .}"/>
+    </ls:LSEntityObject>
+  </ControlTemplate>
+
+  <Style TargetType="ListBox" x:Key="InventoryGrid">
+    <Setter Property="ItemContainerStyle">
       <Setter.Value>
-        <ControlTemplate>
-          <Grid>
-            <ls:LSListBox x:Name="AssignList"
-                          LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"
-                          KeyboardNavigation.DirectionalNavigation="Contained"
-                          ActionNextEvent="UIDown"
-                          ActionPrevEvent="UIUp"/>
-            <Control x:Name="SelectorAssign"/>
-          </Grid>
-        </ControlTemplate>
+        <Style TargetType="ListBoxItem">
+          <Setter Property="Focusable" Value="True"/>
+          <Setter Property="Template" Value="{StaticResource InventoryCellTemplate}"/>
+        </Style>
       </Setter.Value>
     </Setter>
   </Style>
 
+  <!-- Only nested SingleHotBar keeps a native radial renderer before conversion. -->
   <Style x:Key="SingleBarPageViewStyle" TargetType="{x:Type ls:PageView}">
     <Setter Property="ls:MoveFocus.Focusable" Value="True"/>
-    <Setter Property="Margin" Value="-320,0"/>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="{x:Type ls:PageView}">
           <Grid x:Name="radialRoot" Width="1560" Height="1560">
-            <Ellipse Margin="0,36,0,0" Opacity="0.9" Height="1260" Width="1260">
-              <Ellipse.Fill><SolidColorBrush Color="Black"/></Ellipse.Fill>
-            </Ellipse>
+            <Ellipse Margin="0,36,0,0" Opacity="0.9" Height="1260" Width="1260"/>
             <ls:Radial x:Name="SingleBar"
                        ItemsSource="{Binding ItemsSource,RelativeSource={RelativeSource TemplatedParent}}"
                        Visibility="Collapsed"
@@ -66,7 +93,9 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                   <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                 </b:EventTrigger>
                 <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                  <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=SingleBar}"/>
+                  <b:ChangePropertyAction TargetName="ActionRadials"
+                                          PropertyName="Tag"
+                                          Value="{Binding LocalFocus.DataContext, ElementName=SingleBar}"/>
                 </b:TimerTrigger>
               </b:Interaction.Triggers>
             </ls:Radial>
@@ -81,79 +110,29 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
     </Setter>
   </Style>
 
-  <Style x:Key="BarPageViewStyle" TargetType="{x:Type ls:PageView}">
-    <Setter Property="ls:MoveFocus.Focusable" Value="True"/>
-    <Setter Property="Margin" Value="-320,0"/>
-    <Setter Property="Template">
-      <Setter.Value>
-        <ControlTemplate TargetType="{x:Type ls:PageView}">
-          <Border Width="1560" Height="1560">
-            <Grid x:Name="radialRoot" Visibility="Collapsed">
-              <Ellipse Margin="0,36,0,0" Opacity="0.9" Height="1260" Width="1260">
-                <Ellipse.Fill><SolidColorBrush Color="Black"/></Ellipse.Fill>
-              </Ellipse>
-              <ls:Radial x:Name="HotBarRadial"
-                         ItemsSource="{TemplateBinding ItemsSource}"
-                         IsEnabled="{Binding Path=(ls:MoveFocus.IsFocused), RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                         Visibility="Collapsed">
-                <b:Interaction.Triggers>
-                  <b:EventTrigger EventName="LocalFocusChanged">
-                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                  </b:EventTrigger>
-                  <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarRadial}"/>
-                  </b:TimerTrigger>
-                  <b:DataTrigger Binding="{Binding Path=(ls:MoveFocus.IsFocused), RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
-                </b:Interaction.Triggers>
-              </ls:Radial>
-              <ls:LSInputBinding x:Name="swapSlotBinding"
-                                 BoundEvent="UIAccept"
-                                 Command="{Binding RequestAssignSlotCommand}">
-                <ls:LSInputBinding.CommandParameter>
-                  <MultiBinding>
-                    <Binding Path="LocalFocus.Index" ElementName="HotBarRadial"/>
-                    <Binding Path="LocalFocus.DataContext" ElementName="HotBarRadial"/>
-                  </MultiBinding>
-                </ls:LSInputBinding.CommandParameter>
-              </ls:LSInputBinding>
-            </Grid>
-          </Border>
-          <ControlTemplate.Triggers>
-            <DataTrigger Binding="{Binding LocalFocus, ElementName=HotBarRadial}" Value="{x:Null}">
-              <Setter TargetName="swapSlotBinding" Property="IsEnabled" Value="False"/>
-            </DataTrigger>
-          </ControlTemplate.Triggers>
-        </ControlTemplate>
-      </Setter.Value>
-    </Setter>
-  </Style>
-
-  <ControlTemplate x:Key="RadialHotBarListItemContainer" TargetType="{x:Type ListBoxItem}">
-    <ls:PagedList ItemsSource="{Binding SlotList}" PageStyle="{StaticResource BarPageViewStyle}"/>
-  </ControlTemplate>
-
   <ControlTemplate x:Key="ActionRadialWidgetTemplate_P8">
     <Grid>
-      <Control x:Name="singleBarHolder">
+      <Control x:Name="singleBarHolder" Visibility="Collapsed">
         <Control.Template>
           <ControlTemplate>
-            <ls:PagedList ItemsSource="{Binding SingleHotBar.SlotList}" PageStyle="{StaticResource SingleBarPageViewStyle}"/>
+            <ls:PagedList ItemsSource="{Binding SingleHotBar.SlotList}"
+                          PageStyle="{StaticResource SingleBarPageViewStyle}"/>
           </ControlTemplate>
         </Control.Template>
       </Control>
 
-      <ListBox x:Name="HotBarList">
-        <ListBox.ItemContainerStyle>
-          <Style TargetType="{x:Type ListBoxItem}">
-            <Setter Property="Template" Value="{StaticResource RadialHotBarListItemContainer}"/>
-          </Style>
-        </ListBox.ItemContainerStyle>
-      </ListBox>
+      <!-- Old main source: generation must remove this completely. -->
+      <Grid x:Name="MainHotbarListHolder">
+        <ListBox x:Name="HotBarList"
+                 ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"/>
+      </Grid>
+
+      <!-- Native radial customization holder: generation must disable it. -->
+      <Control x:Name="SlotAssignHolder" Visibility="Collapsed"/>
 
       <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
                              HorizontalAlignment="Right"
                              HorizontalContentAlignment="Right"
-                             IsEnabled="{Binding AssigningSlot}"
                              Width="1000"
                              FlowDirection="RightToLeft"
                              Margin="26,0,26,56">
@@ -161,6 +140,8 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                      BoundEvent="UIAccept"
                      Width="1000"/>
         <ls:LSButton x:Name="ShowContextMenu"
+                     Command="{Binding ShowContextMenuCommand}"
+                     CommandParameter="{Binding FocusedElement, ElementName=ActionRadials}"
                      BoundEvent="ContextMenu"
                      Width="1000"/>
         <ls:LSButton x:Name="CancelConcentrationButton"
@@ -190,6 +171,10 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
           </MultiDataTrigger.Conditions>
           <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
         </MultiDataTrigger>
+        <DataTrigger Binding="{Binding SingleHotBar.SlotList.Count}" Value="1">
+          <Setter TargetName="singleBarHolder" Property="Visibility" Value="Visible"/>
+          <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
       </ControlTemplate.Triggers>
     </Grid>
   </ControlTemplate>
@@ -210,94 +195,97 @@ if ((Get-FileHash -Algorithm SHA256 -LiteralPath $source).Hash -ne $sourceHash) 
 [xml]$xml = Get-Content -Raw -LiteralPath $generated
 $text = Get-Content -Raw -LiteralPath $generated
 
+# Main menu must no longer depend on user-configured radial membership.
+if ($text.Contains("ControllerHotBars")) {
+    throw "Automatic main catalog must not bind ControllerHotBars."
+}
+
 foreach ($needle in @(
-    'x:Key="CAM_ActionGridPanel"',
-    '<ls:LSListBox x:Name="HotBarRadial"',
+    'x:Name="CAM_AutoCatalogFocusRoot"',
+    '<ls:LSListBox x:Name="HotBarList"',
+    'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
+    'x:Name="CAM_AutoCatalogSelector"',
+    'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions',
+    'CurrentPlayer.SelectedCharacter.Stats.Passives',
+    'Data.TogglablePassivePredicate',
+    'Data.TogglableMetaMagicPassivePredicate',
+    'CurrentPlayer.SelectedCharacter.Inventory.Slots',
+    'x:Key="CAM_AvailableSlotContainer"',
+    'x:Key="CAM_AvailableSlotsListPanelTemplate"',
+    'x:Key="CAM_SpellGroupListTemplate"',
+    'ItemsSource="{Binding Actions}"',
+    'x:Key="CAM_InventoryCellTemplate"',
+    'x:Key="CAM_InventoryGrid"',
+    'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
+    'Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"',
+    'x:Name="singleBarHolder"',
+    'ItemsSource="{Binding SingleHotBar.SlotList}"',
     '<ls:LSListBox x:Name="SingleBar"',
-    'LocalFocusSelector="{Binding ElementName=CAM_HotBarRadialSelector,Mode=OneWay}"',
     'LocalFocusSelector="{Binding ElementName=CAM_SingleBarSelector,Mode=OneWay}"',
-    'x:Name="CAM_HotBarRadialFocusRoot"',
-    'x:Name="CAM_SingleBarFocusRoot"',
-    'HorizontalAlignment="Center"',
-    'VerticalAlignment="Center"',
-    'Width="640"',
-    'Height="400"',
-    'KeyboardNavigation.DirectionalNavigation="Contained"',
-    'ActionUpEvent="UIUp"',
-    'ActionDownEvent="UIDown"',
-    'ActionRightEvent="UIRight"',
-    'ActionLeftEvent="UILeft"',
-    'x:Key="RadialHotBarListItemContainer"',
-    'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="UseSlotBinding"',
-    'x:Name="CancelButton"',
     'Command="{Binding UseSlotCommand}"',
-    'Command="{Binding ClearSingleHotbarCommand}"',
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
-    'Property="CommandParameter" Value="CloseWidget"',
-    'Binding Path="LocalFocus.Index" ElementName="HotBarRadial"',
-    'Binding Path="LocalFocus.DataContext" ElementName="HotBarRadial"',
-    'x:Name="ButtonHintsContainer"',
-    'FlowDirection="LeftToRight"',
-    'x:Name="ShowContextMenu"',
-    'Opacity="1"',
-    'Tag="Customize"'
+    'x:Name="CancelButton"',
+    'Command="{Binding ClearSingleHotbarCommand}"',
+    'Property="CommandParameter" Value="CloseWidget"'
 )) {
     if (-not $text.Contains($needle)) {
-        throw "Generated controller library is missing: $needle"
+        throw "Generated automatic catalog is missing: $needle"
     }
 }
 
+# Main focus uses the same shared list+selector coordinate model already proven in-game.
+$catalogRootPattern = '<Grid\b[^>]*x:Name="CAM_AutoCatalogFocusRoot"[^>]*>[\s\S]*?<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?<Control\b[^>]*x:Name="CAM_AutoCatalogSelector"'
+if (-not [regex]::IsMatch($text, $catalogRootPattern)) {
+    throw "Automatic catalog list and selector must share one centered focus root."
+}
+
+# Nested/upcast/variant renderer remains the proven SingleHotBar grid.
 if ($text.Contains("<ls:Radial ")) {
-    throw "Generated controller library still contains a radial slot renderer."
+    throw "Generated controller library still contains a radial renderer."
 }
-if ($text.Contains('Command="{Binding AssignSlotCommand}"')) {
-    throw "Action grid must not execute slot-assignment commands."
-}
-
-if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="(HotBarRadial|SingleBar)"').Count -ne 2) {
-    throw "Expected exactly two assignment-style action grids."
+if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="SingleBar"').Count -ne 1) {
+    throw "Expected exactly one nested SingleHotBar grid renderer."
 }
 
-foreach ($name in @("HotBarRadial", "SingleBar")) {
-    $rootName = "CAM_" + $name + "FocusRoot"
-    $selectorName = "CAM_" + $name + "Selector"
-    $rootPattern = '<Grid\b[^>]*x:Name="' + [regex]::Escape($rootName) + '"[^>]*>[\s\S]*?<ls:LSListBox\b[^>]*x:Name="' + [regex]::Escape($name) + '"[\s\S]*?<Control\b[^>]*x:Name="' + [regex]::Escape($selectorName) + '"'
-    if (-not [regex]::IsMatch($text, $rootPattern)) {
-        throw "Focus selector and grid list must share the centered focus-root coordinate space for $name."
-    }
-}
-
-if ([regex]::Matches($text, '<Ellipse\s+(?=[^>]*Margin="0,36,0,0")(?=[^>]*Height="1260")(?=[^>]*Width="1260")[^>]*Visibility="Collapsed"').Count -ne 2) {
-    throw "Both native radial shadow/backdrop ellipses must be collapsed."
-}
-
-$hintMatch = [regex]::Match(
-    $text,
-    '<ls:AlignableWrapPanel\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $hintMatch.Success -or
-    -not $hintMatch.Value.Contains('HorizontalAlignment="Center"') -or
-    -not $hintMatch.Value.Contains('HorizontalContentAlignment="Center"') -or
-    -not $hintMatch.Value.Contains('VerticalAlignment="Bottom"') -or
-    -not $hintMatch.Value.Contains('Width="Auto"') -or
-    -not $hintMatch.Value.Contains('FlowDirection="LeftToRight"')) {
-    throw "Grid button hints are not centered/compact."
-}
-
+# Radial customization must be completely unreachable from CAM.
 $contextMatch = [regex]::Match(
     $text,
     '<ls:LSButton\b[^>]*x:Name="ShowContextMenu"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $contextMatch.Success -or
-    -not $contextMatch.Value.Contains('Opacity="1"') -or
-    -not $contextMatch.Value.Contains('Width="Auto"') -or
-    -not $contextMatch.Value.Contains('Tag="Customize"')) {
-    throw "Context-menu hint must remain active and be labeled Customize."
+    -not $contextMatch.Value.Contains('IsEnabled="False"') -or
+    -not $contextMatch.Value.Contains('Visibility="Collapsed"') -or
+    -not $contextMatch.Value.Contains('Opacity="0"') -or
+    -not $contextMatch.Value.Contains('Width="0"') -or
+    -not $contextMatch.Value.Contains('Command="{x:Null}"')) {
+    throw "Radial ContextMenu/X must be disabled and hidden."
 }
 
+foreach ($forbidden in @(
+    'Command="{Binding AssignSlotCommand}"',
+    'RequestAssignSlotCommand',
+    'SwapSlotCommand',
+    'ClearSlotCommand'
+)) {
+    if ($text.Contains($forbidden)) {
+        throw "Radial customization command leaked into automatic catalog: $forbidden"
+    }
+}
+
+$slotAssignMatch = [regex]::Match(
+    $text,
+    '<Control\b[^>]*x:Name="SlotAssignHolder"[^>]*/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $slotAssignMatch.Success -or
+    -not $slotAssignMatch.Value.Contains('Visibility="Collapsed"') -or
+    -not $slotAssignMatch.Value.Contains('IsEnabled="False"')) {
+    throw "SlotAssignHolder must be inert in automatic-catalog mode."
+}
+
+# The runtime installer stays operational/minimal; semantic proof remains CI-owned.
 $overlaySource = Get-Content -Raw -LiteralPath $Script
 foreach ($forbiddenRuntimeVerifier in @(
     'Packed controller library is missing required seam',
@@ -310,4 +298,4 @@ foreach ($forbiddenRuntimeVerifier in @(
     }
 }
 
-Write-Host "Native assignment-grid fixture passed: CI owns presentation/focus/A/B semantics; install-time overlay remains minimal."
+Write-Host "Automatic action catalog fixture passed: native sources populate the main grid, radial customization is unreachable, nested SingleHotBar and native A/B dispatch remain intact."

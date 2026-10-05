@@ -80,16 +80,16 @@ The controller Spell Book exposes a particularly useful model:
 
 This means our desired menu is not a foreign UI concept; it is essentially a combat-oriented presentation of data structures BG3 already exposes elsewhere.
 
-### Action radial
+### Action radial and assignment catalog
 
-The old public radial page is Patch 2 Hotfix 1 and is no longer treated as a current data-source specification.
+The old public radial page is Patch 2 Hotfix 1 and is no longer treated as a current data-source specification. The installed Patch 8 preloaded radial is authoritative and, importantly, contains the current **slot-assignment catalog** used when choosing what to put into a radial.
 
 The installed Xbox App build 1.8.910.0 now establishes the current radial contract directly:
 
 - controller state/context: `ActionRadials` / `HotBar`;
-- root collection: `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
-- per-bar collection: `SlotList`;
-- nested collection: `SingleHotBar.SlotList`;
+- configured radial storage/presentation: `ControllerHotBars[*].SlotList`;
+- automatic assignment catalog: `PlayerCharacterProperties.SpellsAndActions`, togglable `Stats.Passives`, metamagic and `Inventory.Slots`;
+- nested execution choices: `SingleHotBar.SlotList`;
 - nested-state property: `CurrentSingleHotbarFilter`;
 - variant/upcast state: `IsShowingAContainerWithVariants` / `IsSelectingUpcastedSpell`;
 - focus-scroll mechanism: `LSScrollViewer.ScrollToElement` following `FocusedElement`;
@@ -103,35 +103,40 @@ Current `HotBarSlotStyle` remains useful for square native cell visuals, but its
 Prefer:
 
 ```text
-native ActionRadials state
+native ActionRadials state/page
           |
-native MainUI/Pages/ActionRadials.xaml
+locally derived ActionRadialWidgetTemplate_P8
           |
-ActionRadialWidgetTemplate_P8
-          ^
+automatic assignment catalog
+SpellsAndActions / Passives / Metamagic / Items
           |
-CAM Lib_Controller.xaml resource override
+AssignList-style controller grid
           |
-ControllerHotBars / SlotList grid
+ActionRadials.Tag
           |
-native UIAccept -> UseSlotCommand(Tag)
+native UseSlotCommand
+          |
+SingleHotBar grid when BG3 opens variants/upcast/container
 ```
 
-The state and page are no longer CAM-owned. The resource library is the customization boundary.
+Do **not** use `ControllerHotBars[*].SlotList` for the main menu. That collection describes the player's manually configured radial wheels and would make CAM depend on exactly the customization workflow it is intended to replace.
 
-Do not implement spell execution, targeting, resource checks, upcast rules, recasts, or passive semantics ourselves.
+Radial editing commands (X/context menu, assign, swap, clear, add/remove slots) are not part of CAM.
+
+Do not implement spell execution, targeting, resource checks, upcast rules, recasts, passive semantics or inventory use ourselves.
 
 ## First functional target
 
-The first functional replacement should prove:
+The current grid/focus implementation is already proven in-game. The next functional replacement must prove:
 
-1. the current radial state can load our presentation;
-2. live native action entries can be rendered as focusable grid cells;
-3. focused entry becomes the native command parameter;
-4. `UIAccept` reaches `UseSlotCommand`;
-5. `UICancel` exits cleanly.
+1. the main menu populates from the automatic assignment collections rather than configured radial slots;
+2. actions absent from the user's radial wheels are visible automatically;
+3. focused native catalog entries become `ActionRadials.Tag`;
+4. `UIAccept` reaches `UseSlotCommand` for a direct native catalog candidate;
+5. `UICancel` exits cleanly;
+6. nested/upcast/variant choices continue through `SingleHotBar`.
 
-Only after that proof should categorisation be made more sophisticated.
+Only after this execution seam is proven should category headers/filtering be refined further.
 
 ## Probe status
 

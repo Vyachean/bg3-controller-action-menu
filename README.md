@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native slot-assignment grid, focus-origin correction candidate.**
+**Automatic native action catalog candidate.**
 
 Runtime evidence through `0.0.25` now rules out three earlier approaches:
 
@@ -28,7 +28,11 @@ The current Patch 8 `PreloadedActionRadials_c.xaml` already contains the control
 
 `0.0.28-grid-presentation-cleanup` centered the grids and removed the radial backdrop. Runtime then exposed a narrower layout bug: the focus selector stayed in the PageView's old upper-left coordinate space because it was no longer colocated with the centered list.
 
-`0.0.29-focus-origin-fix` centers a shared focus root containing both the action list and its `LocalFocusSelector`, matching the native `AssignList + SelectorAssign` arrangement. X/ContextMenu remains active for editing the underlying slots and its hint is restored as the grid-neutral `Customize`.
+`0.0.29-focus-origin-fix` completed the grid/focus proof: cells and focus now align correctly in-game.
+
+The next architecture removes the remaining radial dependency. The main grid no longer reads `ControllerHotBars[*].SlotList`. Instead it uses the same automatic collections as BG3's native “choose action for radial slot” screen: `SpellsAndActions`, togglable passives/metamagic and inventory items. That means available actions appear automatically instead of requiring radial-wheel maintenance.
+
+Radial customization (X / assign / swap / clear / add / remove wheel slots) is removed from CAM entirely.
 
 At install time CAM extracts the exact native radial dictionary from the user's installed `Game.pak` and locally generates `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`.
 
@@ -41,17 +45,21 @@ The generated library preserves the exact native:
 - swap-slot semantics;
 - PageView and state-machine lifecycle.
 
-Only the two page-view slot renderers are transformed:
+The main surface now reuses the native assignment catalog:
 
 ```text
-ls:Radial
-   ↓
-LSListBox + LocalFocusSelector
-   ↓
-LSGrid(UIUp / UIDown / UILeft / UIRight)
+SpellsAndActions / Passives / Metamagic / Items
+            ↓
+AssignList + LocalFocusSelector
+            ↓
+nested LSGrid groups
+            ↓
+ActionRadials.Tag
+            ↓
+UseSlotCommand
 ```
 
-The focused slot still updates `ActionRadials.Tag`, and A remains BG3's native `UseSlotCommand(Tag)`. B remains BG3's native top-level/nested switch.
+`SingleHotBar.SlotList` remains the native nested/upcast/variant surface. B remains BG3's native close/nested-cancel path.
 
 No Larian XAML is committed to or distributed by this repository. The generated controller library exists only on the user's machine. Runtime remains Script-Extender/DLL/native-loader free.
 

@@ -6,10 +6,12 @@ The mod should not imitate Baldur's Gate 3 UI when an equivalent native controll
 
 The combat page owns only composition:
 
-- which native action collections are shown;
+- which **automatic native action collections** are shown;
 - their order;
 - the number of grid columns;
-- the transition between the main list and `SingleHotBar` variants.
+- the transition between the main catalog and `SingleHotBar` variants.
+
+The main menu deliberately does **not** use `ControllerHotBars[*].SlotList`; radial membership is user customization state, not the source of truth for CAM.
 
 BG3 owns cell rendering, action state, tooltips, focus visuals and dispatch.
 
@@ -21,13 +23,17 @@ The page imports game-owned resource dictionaries:
 - `GustavNoesisGUI/Library/FocusableControls_c.xaml`;
 - `MainUI/Library/Tooltips.xaml`.
 
-The following native resources are consumed directly:
+The main catalog derives exact current resources from the installed radial-assignment UI:
 
-- `HotBarSlotStyle`;
-- `ExpanderButtonTemplateSpellBook`;
-- `LS_InventoryGridSurround`;
-- native font/color resources;
-- native controller button hints.
+- `AvailableSlotContainer`;
+- `AvailableSlotsListPanelTemplate`;
+- `SpellGroupListTemplate`;
+- `InventoryCellTemplate`;
+- `InventoryGrid`;
+- `SelectorTemplate`;
+- native font/color/tooltip resources.
+
+Nested `SingleHotBar` cells continue to reuse the existing native slot visuals.
 
 ## Action cells
 
@@ -45,15 +51,19 @@ The following native resources are consumed directly:
 
 The mod does not define its own icon frames, disabled overlays, active overlays or action execution logic.
 
-## Group layout
+## Automatic catalog sources
 
-Groups use BG3's controller Spell Book expander chrome:
+The current Patch 8 radial-assignment UI already maintains the lists CAM needs:
 
-`ExpanderButtonTemplateSpellBook`
+- `PlayerCharacterProperties.SpellsAndActions`;
+- each group's `Actions`;
+- togglable `Stats.Passives`;
+- metamagic passives;
+- `Inventory.Slots`.
 
-and the same inventory-grid surround resource.
+CAM reuses those collections directly. Learning a spell, gaining an action or changing inventory should therefore change the catalog without editing a radial wheel.
 
-The remaining custom grid only decides the spatial arrangement (currently six columns) and binds controller directional events.
+The grid focus hierarchy is also copied from the same native assignment screen: outer `AssignList` semantics, nested lists, `LocalFocusSelector` and directional `LSGrid`.
 
 ## Why not copy the entire SpellBook page
 
@@ -68,6 +78,9 @@ Intentional custom surface should remain limited to:
 - page width/height;
 - section ordering;
 - grid column count and spacing;
-- main-vs-variant visibility.
+- main-vs-variant visibility;
+- category/group ordering of the automatic catalog.
+
+Radial customization controls are intentionally outside this surface.
 
 If a future change introduces a custom action icon frame, focus frame, disabled overlay or tooltip renderer, it should be treated as an architecture regression unless the native resource cannot satisfy the requirement.

@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test native slot-assignment grid presentation
+      - name: Test automatic native action catalog
         shell: pwsh
         run: ./tools/test-native-overlay.ps1
 

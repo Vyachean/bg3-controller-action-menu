@@ -487,6 +487,38 @@ From 0.0.31:
 
 An installer failure should now correspond to an actual failed operation rather than an independent policy assertion disagreeing with the published release.
 
+### 2026-10-05 — automatic-catalog boundary
+
+Runtime 0.0.29 closes the grid/focus-layout line: cell rendering and the focus selector now align correctly.
+
+The remaining product defect is semantic: the main grid still uses `ControllerHotBars[*].SlotList`, so it only reflects radial-wheel customization. The user explicitly rejects that model. Radial customization is also removed as a feature because its native context-menu operations are visually/semantically awkward in the grid.
+
+The current captured Patch 8 XAML provides a stronger source directly inside `SlotAssignHolderStyle`:
+
+```text
+AssignList
+  |
+  +-- SpellsAndActions[*].Actions
+  +-- Stats.Passives --TogglablePassivePredicate
+  +-- Stats.Passives --TogglableMetaMagicPassivePredicate
+  +-- Inventory.Slots
+```
+
+These collections are maintained by BG3 and are exactly what the native radial assignment screen offers to the player. They are therefore the new main-menu source of truth.
+
+The automatic-catalog candidate must prove statically:
+
+- main generated XAML contains no `ItemsSource` binding to `ControllerHotBars`;
+- it contains `SpellsAndActions`, both passive predicates and `Inventory.Slots`;
+- it uses the native `AssignList + LocalFocusSelector + LSGrid` hierarchy;
+- focus updates `ActionRadials.Tag`;
+- A remains `UseSlotCommand(Tag)`;
+- B remains the native close/nested cancel command;
+- nested `SingleHotBar.SlotList` grid remains present;
+- `ShowContextMenu` is disabled/hidden and no `AssignSlotCommand` is reachable.
+
+The only high-value runtime question after that is direct execution of an automatic catalog candidate through the existing `UseSlotCommand` seam, plus confirmation that newly available actions appear without radial customization.
+
 ## Manual test report format
 
 A useful report is:
