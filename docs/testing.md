@@ -181,6 +181,34 @@ The current radial uses this exact structure for its slot-assignment spell/actio
 
 No further data-source experimentation is justified.
 
+### 2026-10-05 — 0.0.20 list-grid runtime result
+
+`0.0.20-patch8-list-grid` restored the proven data/rendering path:
+
+- `Controller bars: 5`;
+- Class / Actions / Items rendered;
+- gameplay remained visible.
+
+But the diagnostic overlay reported no widget/slot focus and all controller input remained dead:
+
+- `Focus name` empty;
+- `Focused slot: none`;
+- no directional navigation;
+- B did not close.
+
+This proves that merely inserting the native inner `LSListBox + ListBoxItem + LSGrid` shape inside a separately reconstructed page is insufficient.
+
+Re-reading the captured slot-assignment implementation revealed the missing surrounding focus contract:
+
+- outer `AssignList` is itself the focus root;
+- `SelectedIndex=0`;
+- `LocalFocusSelector` points at the native selector;
+- `ActionNextEvent=UIDown` / `ActionPrevEvent=UIUp`;
+- outer `LSListBoxItem` containers remain focusable;
+- inner `LSGrid` uses `ContainerData="{Binding}"`.
+
+The next candidate therefore replaces the custom root architecture, not another individual input property: it uses a native-named `ActionRadials.xaml` and preserves the installed Patch 8 root lifecycle while changing only the presentation template.
+
 ## Manual test report format
 
 A useful report is:
