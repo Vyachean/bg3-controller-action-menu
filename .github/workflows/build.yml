@@ -31,11 +31,11 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
-      - name: Test self-updating bootstrap
+      - name: Test minimal installer bootstrap
         shell: pwsh
         run: ./tools/test-bootstrap-latest.ps1
 
-      - name: Test canonical latest-release installer
+      - name: Test latest-release install flow
         shell: pwsh
         run: ./tools/test-install-latest.ps1
 
