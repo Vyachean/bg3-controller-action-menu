@@ -239,6 +239,9 @@ exit 0
         throw "Malformed newest release silently fell back to an older release."
     }
 
+    # Expected negative fixtures leave powershell.exe's native exit code at 1.
+    # Reset it so a successful test script returns success to GitHub Actions.
+    $global:LASTEXITCODE = 0
     Write-Host "Self-updating installer bootstrap fixture tests passed."
 } finally {
     Remove-Item -LiteralPath $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
