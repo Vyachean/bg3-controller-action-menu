@@ -324,7 +324,7 @@ def validate_semantics() -> list[str]:
                 "universal development shortcut",
                 "one operator-facing VBS",
                 "dev-entry.ps1",
-                "no manual replacement or update of the VBS is required",
+                "No manual replacement or update of the VBS is required",
                 "A change that would require the operator to download a newer VBS manually is a development-launcher architecture regression.",
                 "normal install/update",
                 "read-only capture",
