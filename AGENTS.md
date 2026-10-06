@@ -40,8 +40,8 @@ Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8
 - historical runtime builds proved CAM can replace the state/page, but those replacements left controller focus/input dead and are now rejected;
 - the native page uses `ActionRadialWidgetTemplate_P8` from `PreloadedActionRadials_c.xaml`;
 - official BG3 UI documentation confirms `Lib_Controller.xaml` is loaded in controller mode before mod StateMachines, making a controller resource-library override the preferred hook;
-- the exact main controller collection is `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
-- each controller bar exposes `SlotList` and native materialization uses `PagedList`;
+- the vanilla radial still exposes `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`, but that persisted user layout is **not** CAM's automatic main catalog;
+- executable CAM cells come from current native hotbar-slot collections such as `CurrentShownDeck.SlotList`, `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList`, and `SingleHotBar.SlotList`;
 - nested variants/upcasts/containers use `SingleHotBar.SlotList`;
 - `CurrentSingleHotbarFilter`, `IsShowingAContainerWithVariants` and `IsSelectingUpcastedSpell` are current;
 - focus-driven scrolling is `LSScrollViewer.ScrollToElement <- FocusedElement`;
@@ -94,10 +94,10 @@ Current mandatory architecture:
 - type tabs are native **filters**, not independent data catalogs. Reuse the current captured/proven hotbar seams for `SetCurrentShownDeckCommand` / `CurrentShownDeck.SlotList`, passives, cantrip filtering and `ClearSingleHotbarCommand`;
 - resource filters come from the current `CurrentPlayer.UIData.ActionResourcesCostPreview` model and invoke the current native `FilterActionResourceCommand`; do not infer resource membership from action names, icons or CAM-owned rules;
 - release XAML must not depend on install-time discovery of HotBar command parameters or binding names. Any required current values must be captured during development and represented explicitly in project-owned runtime resources/tests;
-- the main navigation hierarchy is one assignment-style outer `LSListBox + LocalFocusSelector` with scrolling. Child resource/action lists use `KeyboardNavigation.DirectionalNavigation="Continue"` and `LSGrid(UIUp/UIDown/UILeft/UIRight)`; do not split each filter into an independent focus root;
+- the main navigation hierarchy is one assignment-style outer `LSListBox + LocalFocusSelector` with scrolling. Child resource/action lists use `KeyboardNavigation.DirectionalNavigation="Continue"` and `LSGrid(UIUp/UIDown/UILeft/UIRight)`; do not split each filter into an independent focus root. The fresh `1.8.910.0` `SelectorAssign` contract has no fixed width/height/margin, so do not restore the old synthetic `118x118` selector geometry;
 - do not hard-code a short/fixed action-grid height that truncates the navigation space;
-- each action cell container must expose the native slot VM as its `Tag`, because the native radial focus lifecycle consumes `LocalFocus.Tag`;
-- main slot focus must reproduce the captured current radial `LocalFocusChanged` lifecycle for `ActionRadials.Tag`, `CreateFocusedTooltipDataCommand`, `HighlightResourcesCommand` and hover feedback. Do not invent alternative resource-cost preview semantics;
+- action cells are native `VMHotBarSlot` objects. Their container may retain `Tag="{Binding .}"` for presentation compatibility, but the current `1.8.910.0` gameplay-facing radial focus lifecycle consumes `LocalFocus.DataContext`;
+- main slot focus must reproduce the captured current radial `LocalFocusChanged` lifecycle: clear stale focus state immediately, then after the native 70 ms delay copy `LocalFocus.DataContext` to `ActionRadials.Tag` and invoke `CreateFocusedTooltipDataCommand` / `HighlightResourcesCommand` with that same slot. Do not invent alternative resource-cost preview semantics;
 - A remains the existing page-level `UIAccept -> UseSlotCommand(ActionRadials.Tag)` path;
 - `SingleHotBar.SlotList` remains BG3-owned for filtered/nested/upcast/variant/container state and the native B lifecycle remains authoritative;
 - preserve the captured current `ButtonHintsContainer` layout/behavior contract. Do not restyle it horizontally and do not add duplicate LB/RB hint presenters;
