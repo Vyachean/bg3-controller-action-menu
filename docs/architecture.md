@@ -85,7 +85,7 @@ LB/RB selects native semantic filters:
 | Common | `SetCurrentShownDeckCommand("CommonHotBar")` -> `CurrentShownDeck.SlotList` |
 | Class | `SetCurrentShownDeckCommand("ClassHotBar")` -> `CurrentShownDeck.SlotList` |
 | Items | `SetCurrentShownDeckCommand("ItemHotBar")` -> `CurrentShownDeck.SlotList` |
-| Passives | `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList` |
+| Passives | `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList` |
 | Cantrips | captured current `FilterCantripsCommand` contract |
 
 Resource filters use `CurrentPlayer.UIData.ActionResourcesCostPreview` and `FilterActionResourceCommand`.
@@ -155,20 +155,23 @@ Runtime source is:
 
 The mod PAK must not contain copied game-owned `Public/Game/GUI` resources.
 
-Normal installation:
+Development control flow:
 
 ```text
-VBS (temporary development launcher)
-  -> bootstrap-latest.ps1
-  -> release install-latest.ps1
-  -> download prebuilt PAK
-  -> install-xbox-dev.ps1
-  -> copy PAK + update modsettings.lsx
+same universal VBS
+  -> newest release dev-entry.ps1
+       -> install task:
+            install-latest.ps1
+            -> prebuilt PAK
+            -> install-xbox-dev.ps1
+            -> copy PAK + update modsettings.lsx
+       -> capture/diagnostic task:
+            release-selected development helper
 ```
 
-It does not read `Game.pak`, use LSLib, generate XAML or repack a PAK.
+The normal install branch does not read `Game.pak`, use LSLib, generate XAML or repack a PAK.
 
-Developer capture is a separate read-only evidence workflow and never a runtime/install dependency.
+The universal development entry is intentionally outside that install boundary: a release-selected capture task may inspect the game read-only without making capture a runtime or installation dependency.
 
 ## Primary compatibility target
 
