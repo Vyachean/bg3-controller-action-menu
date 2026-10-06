@@ -97,7 +97,47 @@
       "filterTabInactiveAsset": "Assets/BottomBar/btn_pil_d.png",
       "filterTabActiveAsset": "Assets/BottomBar/btn_pil_active_d.png",
       "filterTabFontResource": "SmallFontSize",
-      "filterTabTextStyle": "BtnTextGlow"
+      "filterTabTextStyle": "BtnTextGlow",
+      "nativeSelectorVisualExpansion": 12,
+      "camSelectorVisualExpansion": 0,
+      "selectorAsset": "Core/Assets/Shared_c/c_itemSelector.png",
+      "filterTabBarAsset": "Assets/BottomBar/bar_bottom.png",
+      "filterTabActiveMarkerAsset": "Assets/BottomBar/btn_pil_activemod_d.png",
+      "filterTabActiveArrowAsset": "Assets/BottomBar/btn_pil_activemod_arrowRed.png",
+      "spellSlotLevelStyle": "RomanNumeralLevelImage"
+    },
+    "tooltipDisplay": {
+      "owner": [
+        "HotBarList",
+        "SingleBar"
+      ],
+      "contentPath": "LocalFocus.DataContext.Content",
+      "command": "ShowTooltipOnUIElementCommand",
+      "context": "Hotbar",
+      "placement": "Right",
+      "horizontalOffset": 40,
+      "verticalOffset": -40
+    },
+    "informationArchitecture": {
+      "primaryTabs": [
+        "Common",
+        "Class",
+        "Items",
+        "Passives"
+      ],
+      "cantripsArePrimaryTab": false,
+      "secondaryFilters": [
+        "Cantrips",
+        "ActionResourcesCostPreview"
+      ],
+      "secondaryFilterLocation": "beforeActions",
+      "secondaryFilterPrimaryTabs": [
+        "Common",
+        "Class"
+      ],
+      "initialOuterFocusIndex": 1,
+      "slotOrder": "nativeSlotListOrder",
+      "semanticSorterOwnedByCam": false
     }
   },
   "captureMatchCount": 22,
