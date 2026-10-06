@@ -14,60 +14,47 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native hotbar-filter milestone candidate (`0.0.38-simple-install-path`).**
+**Self-contained Patch 8 runtime candidate on draft PR #56.**
 
-`0.0.38` keeps the `0.0.37` runtime/UI architecture unchanged and only removes the install-time semantic HotBar contract scan that should have remained in CI.
+A fresh Xbox App capture from game package **1.8.910.0** has now been consumed as the current runtime source of evidence. The shipping source contains a project-owned controller library at:
 
-Runtime through 0.0.36 has narrowed the architecture substantially:
+`Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`
 
-- 0.0.27 proved BG3's own assignment-style controller grid can navigate inside `ActionRadials`;
-- 0.0.29 proved cells and the native-derived focus selector can be aligned correctly;
-- 0.0.35 proved LB/RB tabs render and switch;
-- 0.0.36 disproved the remaining source-tab design: navigation breaks at longer grids, A/container opening still fails, resource preview is absent, and custom hint composition does not match the native radial.
+and CI packages that file into the ordinary CAM `.pak`. Normal installation does not read `Game.pak`, invoke LSLib, generate XAML, or rebuild the package.
 
-The key correction is the execution data type. Current Patch 8 `HotBarSlotStyle` renders `VMCharacterAction`, `VMUpcast`, `VMItem` and `VMPassive` as **content of a native hotbar slot**; its command parameter is the surrounding `VMHotBarSlot`. The assignment catalog objects used by 0.0.35/0.0.36 are therefore no longer used as gameplay-dispatch candidates.
-
-0.0.37 keeps the native `DCHotBar` workflow and composes two current BG3 contracts:
+The current composition is:
 
 ```text
-captured current HotBar contract
-  type/resource filter commands
-          |
-          v
+captured Patch 8 HotBar contract
+  SetCurrentShownDeckCommand / FilterCantripsCommand
+  ActionResourcesCostPreview / FilterActionResourceCommand
+            |
+            v
 native VMHotBarSlot collections
   CurrentShownDeck.SlotList
   PassivesHotBar.SlotList
   SingleHotBar.SlotList
-          |
-          v
+            |
+            v
 captured controller-radial focus lifecycle
-  LocalFocus.Tag -> ActionRadials.Tag
+  LocalFocus.DataContext -> ActionRadials.Tag
   CreateFocusedTooltipDataCommand
   HighlightResourcesCommand
-          |
-          v
-UIAccept -> UseSlotCommand(slot)
+            |
+            v
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-The top LB/RB tabs are now **filters**, not independent catalogs:
+The fresh capture corrected two stale development-fixture assumptions:
 
-- Common;
-- current class;
-- Items;
-- Passives;
-- Cantrips.
+- current `SelectorAssign` has no hard-coded `Width`, `Height` or `Margin`;
+- current radial focus uses `LocalFocus.DataContext`, with the native 70 ms delayed handoff, rather than `LocalFocus.Tag`.
 
-A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the currently proven `FilterCantripsCommand` contract. Deck filters use the currently proven `SetCurrentShownDeckCommand` contract.
+The LB/RB tabs are semantic filters (Common, current class, Items, Passives, Cantrips), not independent raw action catalogs. Resource filters are native `ActionResourcesCostPreview` objects. `SingleHotBar.SlotList` remains BG3-owned for nested/container/upcast/variant state. Native A/B dispatch is retained, while radial customization is deliberately unavailable.
 
-The target architecture is a **self-contained release PAK**. Game UI files may be captured read-only during development to establish the current native contract, but normal installation must not extract or transform `Game.pak`.
+The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only.
 
-Navigation also returns to the complete native assignment hierarchy: **one outer scrollable `LSListBox`** owns vertical continuation, while the resource/action grids inside it use `KeyboardNavigation.DirectionalNavigation="Continue"`. The old fixed three-row action-grid height is removed.
-
-The captured native `ButtonHintsContainer` layout/behavior contract is preserved instead of restyled. CAM only disables the X/radial-customisation entry point. The extra custom LB/RB hint presenters from 0.0.36 are gone.
-
-`SingleHotBar.SlotList` remains BG3-owned for filters, variants, containers and upcast choices. Radial customization (assign/swap/clear/add/remove wheel slots) remains outside CAM.
-
-This candidate is statically/CI proof-gated but is **not yet claimed runtime-correct** until one milestone game test confirms navigation, action/container dispatch, resource highlighting, native button hints and filter behavior together.
+This candidate is not yet claimed runtime-correct. Static/package CI must be green first; after that, one milestone in-game run should verify long-grid navigation, semantic filters, resource preview, A dispatch, one natural nested/container case, native hints, and top-level/nested B together.
 
 ## Development installer principle
 
