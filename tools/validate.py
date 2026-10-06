@@ -27,6 +27,7 @@ DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
 DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
 DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
 SELF_CONTAINED_REFERENCE_PREP = ROOT / "tools/prepare-self-contained-reference.ps1"
+SELF_CONTAINED_REFERENCE_TEST = ROOT / "tools/test-self-contained-reference.ps1"
 DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
 SELF_CONTAINED_RELEASE_GUARD = ROOT / "tools/assert-self-contained-release.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
@@ -429,6 +430,16 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
+            BUILD_WORKFLOW,
+            [
+                "Test capture-to-reference migration",
+                "test-self-contained-reference.ps1",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
             RELEASE_WORKFLOW,
             [
                 '"tools/bootstrap-latest.ps1"',
@@ -543,6 +554,19 @@ def validate_semantics() -> list[str]:
                 "evidence.json",
                 "CantripFilterParameter",
                 "Development-only reference",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            SELF_CONTAINED_REFERENCE_TEST,
+            [
+                "test-native-overlay.ps1",
+                "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+                "Mods/MainUI/GUI/Pages/HotBar.xaml",
+                "hfixturecantrips",
+                "Self-contained capture-to-reference fixture passed.",
             ],
         )
     )
