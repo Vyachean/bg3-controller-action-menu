@@ -1,8 +1,10 @@
 # Xbox App / Microsoft Store PC installation
 
-## Normal installation: double click, no console
+## Development installation: double click, no console
 
-Download **`BG3ControllerActionMenu-OneClickInstaller.zip`** from any current GitHub Release and extract it once.
+This VBS workflow is temporary and exists only while CAM is not yet on its intended official delivery path.
+
+Extract **`BG3ControllerActionMenu-OneClickInstaller.zip`** once. The same extracted launcher must remain usable for later development installs/updates without a manual VBS replacement.
 
 For every install or update:
 
@@ -12,7 +14,7 @@ For every install or update:
 
 No PowerShell or Command Prompt window is shown.
 
-The launcher is reusable across releases. Its bootstrap has one stable responsibility:
+The development launcher is deliberately reusable across builds. Its bootstrap interface is a backward-compatible contract with one stable responsibility:
 
 1. find the newest published non-draft release;
 2. download that release's `install-latest.ps1`;
@@ -35,7 +37,7 @@ Useful files there include:
 
 The normal installer does not place its own cache, logs or temporary build output in `%LOCALAPPDATA%`.
 
-The old console launcher is no longer the recommended path. The release ZIP is the normal user-facing installer.
+The old console launcher is not the development path. The VBS is only a temporary tester-facing delivery bridge; it should be retired when the official mod-delivery path is ready.
 
 
 ## One-time preparation on the gaming PC
@@ -103,3 +105,14 @@ When fresh game UI evidence is required, the development bundle uses:
 It launches the read-only `capture-self-contained-inputs.ps1`, downloads its extraction tool into `capture-work` beside the VBS file, scans the installed game PAKs, and creates `bg3-controller-action-menu-inputs-*.zip` beside the launcher.
 
 This capture never writes to the game installation, profile, saves, or Mods directory. It exists only to supply development evidence for the self-contained release package.
+
+
+## VBS lifecycle rule
+
+The development VBS must not require routine manual updates. If a new development build needs different helper behavior, the existing stable launcher/bootstrap must obtain the current helper scripts automatically.
+
+A change that requires the tester to download a new VBS merely because the installer internals changed is considered a regression.
+
+Read-only extraction/capture helpers may be added when development needs fresh evidence from the installed game. Those helpers prepare artifacts for the developer; they are not part of the final mod runtime or official installation design.
+
+See [Development VBS contract](development-vbs.md).
