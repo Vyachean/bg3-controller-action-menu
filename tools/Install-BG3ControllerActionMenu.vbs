@@ -21,7 +21,7 @@ If Not fso.FileExists(bootstrap) Then
     WScript.Quit 2
 End If
 
-stateRoot = shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\BG3ControllerActionMenu"
+stateRoot = fso.BuildPath(baseDir, "installer-work")
 If Not fso.FolderExists(stateRoot) Then
     fso.CreateFolder stateRoot
 End If
@@ -39,7 +39,8 @@ End If
 command = "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File " & QuoteArg(bootstrap) & _
           " -LogPath " & QuoteArg(logPath) & _
           " -StatusPath " & QuoteArg(statusPath) & _
-          " -ReportPath " & QuoteArg(reportPath)
+          " -ReportPath " & QuoteArg(reportPath) & _
+          " -CacheRoot " & QuoteArg(fso.BuildPath(stateRoot, "bootstrap-cache"))
 
 shell.Popup "Installing the newest BG3 Controller Action Menu release..." & vbCrLf & _
             "This may take a minute.", 2, "BG3 Controller Action Menu", 64
