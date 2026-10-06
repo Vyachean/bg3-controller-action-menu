@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Self-contained Patch 8 runtime candidate on draft PR #56.**
+**Self-contained Patch 8 runtime on the current development release line.**
 
 A fresh Xbox App capture from game package **1.8.910.0** has now been consumed as the current runtime source of evidence. The shipping source contains a project-owned controller library at:
 
@@ -97,6 +97,8 @@ The extracted development folder is intentionally reusable. Internal scripts and
 One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
 
 The one-click folder is portable. Its `installer-work` directory beside the VBS launcher contains downloads, logs, status and diagnostics.
+
+`installer-work\launcher-bootstrap.log` is created before any network request, so failures that happen before `dev-entry.ps1` is downloaded are still diagnosable.
 
 The lower-level `install-xbox-dev.ps1` remains available for manual diagnosis/development.
 

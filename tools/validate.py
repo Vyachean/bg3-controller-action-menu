@@ -16,6 +16,7 @@ VERSION = ROOT / "VERSION"
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
 DEV_ENTRY = ROOT / "tools/dev-entry.ps1"
 DEV_ENTRY_TEST = ROOT / "tools/test-dev-entry.ps1"
+STANDALONE_VBS_TEST = ROOT / "tools/test-standalone-vbs.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
@@ -250,6 +251,19 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
+            STANDALONE_VBS_TEST,
+            [
+                "one VBS in an otherwise empty",
+                "--resolve-only",
+                "--no-ui",
+                "launcher-bootstrap.log",
+                "Standalone one-file VBS bootstrap fixture passed",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
             LATEST_INSTALLER,
             [
                 "releases?per_page=20",
@@ -306,7 +320,10 @@ def validate_semantics() -> list[str]:
                 "dev-entry.ps1",
                 "releases?per_page=20",
                 "Invoke-RestMethod",
+                "foreach($candidate in @($payload))",
                 "Invoke-WebRequest",
+                "launcher-bootstrap.log",
+                "BOOTSTRAP ERROR:",
                 "Running the current BG3 Controller Action Menu development task",
                 "shell.Run(command, 0, True)",
                 "dev-task.log",
@@ -314,6 +331,8 @@ def validate_semantics() -> list[str]:
                 "Development task completed.",
                 'stateRoot = fso.BuildPath(baseDir, "installer-work")',
                 "--self-test",
+                "--resolve-only",
+                "--no-ui",
             ],
         )
     )
@@ -378,6 +397,8 @@ def validate_semantics() -> list[str]:
                 [
                     "Test universal development entry",
                     "test-dev-entry.ps1",
+                    "Test standalone one-file VBS",
+                    "test-standalone-vbs.ps1",
                     "Test self-contained Patch 8 runtime",
                     "test-self-contained-runtime.ps1",
                 ],
@@ -406,6 +427,7 @@ def validate_semantics() -> list[str]:
                 '$launcher = "tools/Install-BG3ControllerActionMenu.vbs"',
                 '"release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $devEntry, $latestInstaller, $capture',
                 './tools/dev-entry.ps1 -ResolveOnly',
+                './tools/test-standalone-vbs.ps1',
                 '$deadline = (Get-Date).ToUniversalTime().AddMinutes(5)',
                 '$delaySeconds = [Math]::Min(15, $delaySeconds * 2)',
                 'within the five-minute publication propagation window',

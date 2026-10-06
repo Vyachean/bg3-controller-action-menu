@@ -35,6 +35,10 @@ jobs:
         shell: pwsh
         run: ./tools/test-dev-entry.ps1
 
+      - name: Test standalone one-file VBS
+        shell: pwsh
+        run: ./tools/test-standalone-vbs.ps1
+
       - name: Test latest-release install flow
         shell: pwsh
         run: ./tools/test-install-latest.ps1

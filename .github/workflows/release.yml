@@ -16,6 +16,7 @@ on:
       - "tools/install-xbox-dev.ps1"
       - "tools/dev-entry.ps1"
       - "tools/test-dev-entry.ps1"
+      - "tools/test-standalone-vbs.ps1"
       - "tools/install-latest.ps1"
       - "tools/Install-BG3ControllerActionMenu.vbs"
       - "tools/test-install-latest.ps1"
@@ -80,6 +81,11 @@ jobs:
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
         run: ./tools/test-dev-entry.ps1
+
+      - name: Test standalone one-file VBS
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/test-standalone-vbs.ps1
 
       - name: Test latest-release install flow
         if: steps.existing.outputs.exists != 'true'
@@ -263,3 +269,8 @@ jobs:
           }
 
           Write-Host "Published release $env:TAG is complete and selected by the universal development entry."
+
+          # Exercise the exact operator entry point after publication as well.
+          # This catches failures that occur before dev-entry.ps1 starts, such
+          # as release-array parsing, asset lookup, download, or bootstrap logging.
+          ./tools/test-standalone-vbs.ps1
