@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $Library = Join-Path $Root "BG3ControllerActionMenu\Mods\BG3ControllerActionMenu\GUI\Library\Lib_Controller.xaml"
 $Launcher = Join-Path $Root "tools\Install-BG3ControllerActionMenu.vbs"
-$BootstrapInstaller = Join-Path $Root "tools\bootstrap-latest.ps1"
+$DevEntry = Join-Path $Root "tools\dev-entry.ps1"
 $LatestInstaller = Join-Path $Root "tools\install-latest.ps1"
 $XboxInstaller = Join-Path $Root "tools\install-xbox-dev.ps1"
 $RuntimeTest = Join-Path $Root "tools\test-self-contained-runtime.ps1"
@@ -22,7 +22,11 @@ self-contained runtime migration before publishing a release.
 "@
 }
 
-foreach ($path in @($Launcher, $BootstrapInstaller, $LatestInstaller, $XboxInstaller)) {
+if (-not (Test-Path -LiteralPath $DevEntry -PathType Leaf)) {
+    throw "Release blocked: universal development entry is missing: $DevEntry"
+}
+
+foreach ($path in @($Launcher, $LatestInstaller, $XboxInstaller)) {
     $text = Get-Content -Raw -LiteralPath $path
     foreach ($forbidden in @(
         "native-overlay.ps1",
