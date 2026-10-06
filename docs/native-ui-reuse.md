@@ -1,141 +1,125 @@
 # Native UI reuse
 
-## 0.0.37 native hotbar-filter composition
+## Principle
 
-0.0.36 proved that the radial **assignment catalog** is a useful navigation reference but the wrong gameplay-dispatch model.
+CAM does not reimplement Baldur's Gate 3 gameplay semantics. The self-contained controller library composes the smallest current Patch 8 contracts needed to present native executable slots in a controller grid.
 
-Current Patch 8 `HotBarSlotStyle` establishes the important type boundary:
+The consumed Xbox App `1.8.910.0` evidence is pinned in `docs/evidence/patch8-1.8.910.0-runtime-contract.json`.
+
+## Execution type boundary
+
+Current `HotBarSlotStyle` establishes the important boundary:
 
 ```text
 VMHotBarSlot
   Content -> VMCharacterAction / VMUpcast / VMItem / VMPassive
-  CommandParameter -> VMHotBarSlot
+  execution parameter -> VMHotBarSlot
 ```
 
-CAM therefore uses native hotbar slot collections for executable cells and no longer sends raw `SpellsAndActions`, inventory or passive assignment objects to `UseSlotCommand`.
+Therefore CAM's executable main cells come only from native hotbar-slot collections:
 
-## Principle
+- `CurrentShownDeck.SlotList`;
+- `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList`;
+- `SingleHotBar.SlotList`.
 
-The mod should not imitate Baldur's Gate 3 UI or gameplay semantics when an equivalent native controller/keyboard hotbar contract already exists.
+Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates.
 
-CAM owns only thin composition:
+## HotBar filter semantics
 
-- which proven native type/resource filters are presented;
-- grid columns/spacing;
-- the one-outer-list controller navigation shell;
-- a project-owned equivalent of the proven radial focus handoff from the focused grid slot into BG3-owned commands.
+The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM:
 
-BG3 owns:
-
-- slot membership and ordering;
-- resource/type filter semantics;
-- slot visuals and action state;
-- resource cost preview;
-- tooltip data;
-- `UseSlotCommand`;
-- container/variant/upcast lifecycle.
-
-## Two native contracts are composed
-
-### Keyboard HotBar.xaml: filter semantics
-
-The current `Mods/MainUI/GUI/Pages/HotBar.xaml` is development evidence, not an installer input.
-
-A fresh developer capture is used when the contract must be checked. The self-contained runtime then records only the project-owned bindings needed to call the proven BG3 model:
-
+- `SetCurrentShownDeckCommand("CommonHotBar")`;
+- `SetCurrentShownDeckCommand("ClassHotBar")`;
+- `SetCurrentShownDeckCommand("ItemHotBar")`;
+- `FilterCantripsCommand` with the captured current parameter;
 - `CurrentPlayer.UIData.ActionResourcesCostPreview`;
 - `FilterActionResourceCommand`;
-- `FilterCantripsCommand`;
-- `SetCurrentShownDeckCommand`;
-- `ClearSingleHotbarCommand`;
-- `CurrentShownDeck`;
-- `SingleHotBar.SlotList`;
-- Common/Class/Item deck identifiers;
-- `CurrentPlayer.SelectedCharacter.PassivesHotBar`.
+- `ClearSingleHotbarCommand`.
 
-Any concrete filter parameter that cannot be proven stable from current evidence remains a development blocker rather than being discovered dynamically on the tester's machine.
+The tabs are semantic filters, not independent source catalogs. CAM does not classify actions by names, icons, spell levels or custom resource rules.
 
-### Controller radial: focus/dispatch semantics
+## Controller focus and dispatch
 
-Captured current `PreloadedActionRadials_c.xaml` evidence remains authoritative for:
+The current native radial lifecycle uses the focused item's **DataContext**.
 
-- `ActionRadialWidgetTemplate_P8`;
-- exact `SelectorAssign` geometry;
-- page-level `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
-- native B/`ClearSingleHotbarCommand` lifecycle;
-- `SingleHotBar.SlotList`;
-- `HotBarRadial.LocalFocusChanged` behavior.
+```text
+CAM_FilteredSlotList.LocalFocus.DataContext
+        |
+        +--> ActionRadials.Tag
+        +--> CreateFocusedTooltipDataCommand(slot)
+        +--> HighlightResourcesCommand(slot)
+        |
+        v
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
+```
 
-The self-contained controller resource must reproduce the proven main-radial `LocalFocusChanged` handoff for `CAM_FilteredSlotList`. The required BG3-owned actions are:
+The capture proves the native sequence:
 
-- writing `LocalFocus.Tag` to `ActionRadials.Tag`;
-- `CreateFocusedTooltipDataCommand`;
-- `HighlightResourcesCommand`;
-- native controller hover feedback.
+1. on `LocalFocusChanged`, clear the previous tag/tooltip/resource highlight and play the hover sound;
+2. after the native 70 ms delay, write `LocalFocus.DataContext` into `ActionRadials.Tag`;
+3. create focused tooltip data and highlight resources for that same native slot.
 
-The PageView-specific radial tooltip-display call is omitted because the grid is not a radial PageView. Tooltip data itself remains native.
+The older development fixture's `LocalFocus.Tag` handoff is rejected.
+
+The item container may still expose `Tag="{Binding .}"` as ordinary presentation metadata, but the current gameplay-facing focus lifecycle does not depend on it.
 
 ## Navigation reuse
 
-The installed radial assignment UI proves the controller hierarchy:
+The current assignment UI proves the controller hierarchy:
 
 ```text
 outer LSListBox
   LocalFocusSelector
   DirectionalNavigation = Contained
-  scroll viewer
-      |
-      +-- child LSListBox
-             DirectionalNavigation = Continue
-             LSGrid(UIUp/UIDown/UILeft/UIRight)
+  ActionNextEvent = UIDown
+  ActionPrevEvent = UIUp
+        |
+        +-- child LSListBox
+              DirectionalNavigation = Continue
+              |
+              v
+            LSGrid
+              UIUp / UIDown / UILeft / UIRight
 ```
 
-0.0.36 split sources into independent focus roots and runtime showed navigation could break after reaching lower rows. 0.0.37 returns to one outer navigation/scroll owner and removes the fixed three-row action-grid height.
+The fresh `1.8.910.0` `SelectorAssign` element has no fixed width, height or margin. CAM reproduces that current selector contract instead of retaining the stale synthetic `118x118` geometry.
 
-The self-contained selector must be authored from the captured current `SelectorAssign` contract and verified against that evidence; normal installation does not clone anything from the game.
+One outer list owns scrolling/vertical continuation. Resource and action grids remain children of that navigation shell.
 
-## Action cells
+## Native nested state and B
 
-The grid item container binds:
+`SingleHotBar.SlotList` remains BG3-owned for container, variant and upcast state.
 
-```xaml
-Tag="{Binding .}"
+A remains:
+
+```text
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-where the data item is the native `VMHotBarSlot`. This is required because the native radial focus lifecycle reads `LocalFocus.Tag`.
+B remains the native command lifecycle:
 
-The visible cell continues to use BG3-owned slot/icon resources. CAM does not define gameplay execution logic.
+- default: `ClearSingleHotbarCommand`;
+- top level: native `CustomEvent("CloseWidget")` condition;
+- swap state: native `UseSlotCommand(null)` behavior.
 
-## Type and resource filters
+CAM does not implement separate cancel semantics.
 
-LB/RB type filters use the currently proven native commands/decks:
+## Resource filters
 
-- Common;
-- current class;
-- Items;
-- Passives;
-- Cantrips.
+Resource filter cells are the current native `VMActionResourceCostPreview` objects from `ActionResourcesCostPreview`.
 
-Resource filter cells are native `VMActionResourceCostPreview` entries from `ActionResourcesCostPreview`. Focus invokes `FilterActionResourceCommand` with the native object.
+The project-owned renderer uses the captured model shape (`ActionResource`, `MaxValue`, `Value`, `Cost`) and sends the focused preview object to `FilterActionResourceCommand`.
 
-CAM does not classify actions by resource names, action names, spell levels or icons.
+Resource membership and action costs remain BG3-owned.
 
-## Button hints
+## Button hints and customization
 
-The self-contained template preserves the captured native `ButtonHintsContainer` behavior/layout contract. CAM does not replace it with a horizontal wrap panel and does not add separate LB/RB hint presenters.
+The project-owned template retains the captured right-stacked `ButtonHintsContainer` composition and native input glyph/content resources.
 
-Only radial customization is removed:
+Radial editing is outside CAM. `ShowContextMenu` is hidden/inert and assign/swap/clear/add/remove radial mutation commands are absent from the project-owned runtime.
 
-- `ShowContextMenu`;
-- assign;
-- swap;
-- clear;
-- add/remove radial.
+## Resource ownership
 
-## Why not copy the entire SpellBook page
+CAM references already-loaded native styles/templates such as slot visuals, selector chrome, input hints and action-resource rendering. It does not copy the full Larian controller dictionary or any `Public/Game/GUI` resource into the mod.
 
-The Spell Book remains design precedent for dense controller filtering, but it contains preparation/class-navigation state unrelated to combat action execution.
-
-CAM instead composes the smallest current BG3-owned contracts needed for combat selection: keyboard hotbar filters, controller radial focus/dispatch, and native hotbar slot VMs.
-
-Any future custom action classifier, resource calculator, execution command, focus frame or tooltip renderer should be treated as an architecture regression unless current native resources are proven insufficient.
+If a future Patch changes one of these dependencies, the developer capture is refreshed and the project-owned contract is reviewed before release. Installation never derives a replacement from the user's local game.
