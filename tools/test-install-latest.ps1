@@ -115,6 +115,35 @@ exit 0
         throw "Canonical installer did not refresh the existing development bootstrap automatically."
     }
 
+    # Legacy extracted launchers do not know the newer -LauncherRoot parameter.
+    # Prove that install-latest can recover the caller bootstrap directory from
+    # MyInvocation.ScriptName and upgrade that already-extracted folder anyway.
+    $legacyRoot = Join-Path $caseRoot "legacy-launcher"
+    $legacyCache = Join-Path $caseRoot "legacy-cache"
+    $legacyLog = Join-Path $caseRoot "legacy-install.log"
+    $legacyStatus = Join-Path $caseRoot "legacy-status.txt"
+    $legacyReport = Join-Path $caseRoot "legacy-report.json"
+    New-Item -ItemType Directory -Force -Path $legacyRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $legacyRoot "Install-BG3ControllerActionMenu.vbs") -Value "' legacy launcher fixture" -Encoding ASCII
+
+    $legacyBootstrap = Join-Path $legacyRoot "bootstrap-latest.ps1"
+@"
+param()
+& '$Installer' -ReleaseMetadataPath '$metadata' -CacheRoot '$legacyCache' -LogPath '$legacyLog' -StatusPath '$legacyStatus' -ReportPath '$legacyReport'
+exit `$LASTEXITCODE
+"@ | Set-Content -LiteralPath $legacyBootstrap -Encoding UTF8
+
+    & $legacyBootstrap
+    if ($LASTEXITCODE -ne 0) {
+        throw "Legacy launcher compatibility fixture failed with exit code $LASTEXITCODE."
+    }
+    if ((Get-Content -Raw -LiteralPath (Join-Path $legacyRoot "Install-BG3ControllerActionMenu.vbs")).Trim() -ne "' new launcher fixture") {
+        throw "Installer could not auto-refresh a legacy VBS without an explicit LauncherRoot."
+    }
+    if ((Get-Content -Raw -LiteralPath $legacyBootstrap).Trim() -ne "# new bootstrap fixture") {
+        throw "Installer could not auto-refresh the running legacy bootstrap without an explicit LauncherRoot."
+    }
+
     $launcherOutput = & cscript.exe //nologo $Launcher --self-test
     if ($LASTEXITCODE -ne 0 -or ($launcherOutput -join [Environment]::NewLine) -notmatch "syntax OK") {
         throw "VBScript launcher self-test failed."
