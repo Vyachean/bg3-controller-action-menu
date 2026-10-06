@@ -10,6 +10,7 @@ on:
       - ".github/workflows/release.yml"
       - "tools/verify-package.ps1"
       - "tools/validate.py"
+      - "tools/assert-self-contained-release.ps1"
       - "tools/install-xbox-dev.ps1"
       - "tools/bootstrap-latest.ps1"
       - "tools/test-bootstrap-latest.ps1"
@@ -90,6 +91,11 @@ jobs:
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
         run: ./tools/test-native-overlay.ps1
+
+      - name: Require self-contained runtime
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/assert-self-contained-release.ps1
 
       - name: Build package
         if: steps.existing.outputs.exists != 'true'
