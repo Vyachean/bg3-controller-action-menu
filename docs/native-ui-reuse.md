@@ -1,5 +1,20 @@
 # Native UI reuse
 
+## 0.0.35 tab composition
+
+CAM adds only a thin tab/presentation layer over current installed-game sources:
+
+- `Actions / Spells` → `PlayerCharacterProperties.SpellsAndActions`;
+- `Items` → `Inventory.Slots`;
+- `Passives` → native `TogglablePassivePredicate`;
+- `Metamagic` → native `TogglableMetaMagicPassivePredicate`.
+
+The tab strip itself uses BG3 controller primitives: `LSListBox`, `UITabPrev`, `UITabNext`, controller input hints, and `SetMoveFocusAction`. The content continues to use the exact assignment-grid resources extracted from the installed radial dictionary.
+
+No user hotbar/radial `SlotList` is read for top-level content. No `Custom` tab is created.
+
+The older public SpellBook names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` remain research evidence only until the current installed SpellBook resource proves them. CAM preserves current native `SpellsAndActions` grouping instead of replacing that uncertainty with a `SpellSlotLevel` or name-based classifier.
+
 ## Principle
 
 The mod should not imitate Baldur's Gate 3 UI when an equivalent native controller resource already exists.

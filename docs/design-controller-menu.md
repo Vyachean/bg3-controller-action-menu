@@ -20,36 +20,32 @@ These screens already solve the exact controller problem we need:
 
 ## Target interaction
 
-Top-level categories:
-
-1. Actions
-2. Spells
-3. Items
-4. Class / Passives
-
-For **Spells**, do not start with separate level tabs. Mirror the native Spell Book / spell-preparation layout:
+The current proof-gated milestone uses four automatic tabs:
 
 ```text
-SPELLS
-
-Cantrips
-[ ][ ][ ][ ][ ]
-[ ][ ][ ][ ][ ]
-
-Level I
-[ ][ ][ ][ ][ ]
-
-Level II
-[ ][ ][ ][ ][ ]
-[ ][ ][ ][ ][ ]
-
-Level III
-[ ][ ][ ][ ][ ]
+[ Actions / Spells ] [ Items ] [ Passives ] [ Metamagic* ]
 ```
 
-The full category is one vertically scrollable surface. Controller focus moves naturally through the grid and the scroll view follows focus.
+`Metamagic` is present only when BG3's native metamagic predicate produces candidates. Passives follows the same empty-filter rule. There is no `Custom` tab and there is no CAM-owned slot editor.
 
-This preserves the user's key requirement: the available choices are visible spatially rather than hidden behind an arbitrary sequence of radial pages.
+The mapping is deliberately mechanical:
+
+- **Actions / Spells** → `PlayerCharacterProperties.SpellsAndActions`;
+- **Items** → `Inventory.Slots`;
+- **Passives** → `Stats.Passives` filtered by `TogglablePassivePredicate`;
+- **Metamagic** → the same passives collection filtered by `TogglableMetaMagicPassivePredicate`.
+
+The tabs do not decide whether an action is a spell, common action, class action, usable item, or valid target. They only choose which BG3-owned source is visible.
+
+Controller navigation uses `UITabPrev` / `UITabNext` on an `LSListBox`. The content stays in the already-proven two-dimensional assignment-style grid. On tab selection change, stale `ActionRadials.Tag` is cleared and native `SetMoveFocusAction` returns focus to the automatic grid root. Per-list focus/selection is otherwise left to the native controls, allowing a reasonable restore when a tab is revisited.
+
+### Spell-level grouping
+
+The desired end state still follows BG3's own Spell Book semantics: cantrips and spell-level/action groups should be shown under BG3-provided group names when the exact current contract is proven.
+
+Do **not** produce that layout by manually inspecting `SpellSlotLevel`, slot type, action names, icons, resources, or any CAM-owned heuristic.
+
+The historical public SpellBook XAML contains `CantripGroupPredicate`, `SpellLevelsGroupPredicate`, `AllActionsGroupPredicate` and `VMActionGroup.Name`, but that public file is not current Patch 8 proof. The 0.0.35 milestone therefore preserves the native `SpellsAndActions` grouping/order without hard-coding those historical predicate names. Current installed-game SpellBook evidence is required before adding the finer headings.
 
 ## Native UI evidence
 
@@ -67,18 +63,15 @@ ImprovedUI and HybridUI both retain this same structural pattern in current publ
 
 ### Spell Book
 
-The controller Spell Book exposes a particularly useful model:
+The controller Spell Book is strong **design precedent** for:
 
-- `CurrentPlayer.SelectedCharacter.SpellBooks`;
-- `ActionGroups`;
-- a cantrip-group predicate;
-- a spell-level-group predicate;
-- action groups;
+- controller tabs driven by `UITabPrev` / `UITabNext`;
+- action groups with game-provided names;
+- cantrip / spell-level / action separation;
 - passives and metamagic;
-- native `VMCharacterAction` entries;
-- an `LSGrid`-based icon layout with controller focus.
+- `LSGrid`-based icon layouts and focus-driven scrolling.
 
-This means our desired menu is not a foreign UI concept; it is essentially a combat-oriented presentation of data structures BG3 already exposes elsewhere.
+The exact public SpellBook file currently available for the named group predicates is historical, so those particular binding/property names are not treated as a shipping Patch 8 contract. The semantics remain the target; the current installed resource must prove the concrete bindings before CAM adopts them.
 
 ### Action radial and assignment catalog
 
@@ -125,18 +118,22 @@ Radial editing commands (X/context menu, assign, swap, clear, add/remove slots) 
 
 Do not implement spell execution, targeting, resource checks, upcast rules, recasts, passive semantics or inventory use ourselves.
 
-## First functional target
+## Current milestone target — 0.0.35
 
-The current grid/focus implementation is already proven in-game. The next functional replacement must prove:
+Before another in-game run, static/package proof must establish all of the following together:
 
-1. the main menu populates from the automatic assignment collections rather than configured radial slots;
-2. actions absent from the user's radial wheels are visible automatically;
-3. focused native catalog entries become `ActionRadials.Tag`;
-4. `UIAccept` reaches `UseSlotCommand` for a direct native catalog candidate;
-5. `UICancel` exits cleanly;
-6. nested/upcast/variant choices continue through `SingleHotBar`.
+1. the main menu does not bind `ControllerHotBars[*].SlotList`;
+2. the four tab definitions map only to current BG3-owned automatic sources;
+3. `UITabPrev` / `UITabNext` are wired on the tab `LSListBox`;
+4. filtered empty Passives/Metamagic tabs collapse;
+5. tab changes clear stale `ActionRadials.Tag` and return focus to `HotBarList` through `SetMoveFocusAction`;
+6. the existing `AssignList + LocalFocusSelector + LSGrid` focus model remains the content renderer;
+7. X/context-menu editing and Assign/Swap/Clear/Add/Remove radial mutations are unreachable;
+8. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+9. B and nested `SingleHotBar.SlotList` remain BG3-owned;
+10. the package builds and survives package verification/round-trip checks.
 
-Only after this execution seam is proven should category headers/filtering be refined further.
+The next game run is one milestone test, not a sequence of one-binding experiments. It should verify tab switching, empty-tab behavior, focus after switching, representative automatic content, one simple A dispatch, top-level B, and nested/upcast B if naturally available.
 
 ## Probe status
 

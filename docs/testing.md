@@ -538,3 +538,42 @@ Screenshot/video/log:
 ```
 
 Do not request broad exploratory testing when one targeted assertion can answer the current question.
+
+### 2026-10-06 — 0.0.35 native action-tabs milestone
+
+The automatic catalog is now split only along **current proven native-source boundaries**:
+
+- `Actions / Spells` → `PlayerCharacterProperties.SpellsAndActions`;
+- `Items` → `Inventory.Slots`;
+- `Passives` → `Stats.Passives` + `TogglablePassivePredicate`;
+- `Metamagic` → `Stats.Passives` + `TogglableMetaMagicPassivePredicate`.
+
+The tab strip is an `LSListBox` with `ActionPrevEvent="UITabPrev"` and `ActionNextEvent="UITabNext"`. Filtered empty Passives/Metamagic tabs collapse. The selected tab index drives the automatic focus list; `SelectionChanged` clears the old action tag and uses `SetMoveFocusAction` to return focus to `HotBarList`.
+
+Static fixture coverage must prove:
+
+- generated XAML parses;
+- `ControllerHotBars` is absent from the main catalog;
+- every current automatic source/filter binding is present;
+- all four tab identities and `UITabPrev/UITabNext` wiring are present;
+- the tab selection index controls the main content list;
+- focus handoff uses `SetMoveFocusAction`;
+- `ShowContextMenu` has no input binding and is inert;
+- `RequestAssignSlotCommand`, `AssignSlotCommand`, `SwapSlotCommand`, `ClearSlotCommand`, `AddRadialCommand` and `RemoveRadialCommand` do not survive generated XAML;
+- no `Custom` tab exists;
+- historical-only `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` do not enter shipping generation without new current Patch 8 evidence;
+- native A/B and `SingleHotBar.SlotList` seams remain;
+- package build, verification and round-trip checks pass.
+
+The one remaining proof boundary is runtime behavior. One milestone run should answer all of these together:
+
+1. shoulder/tab input changes the selected tab;
+2. empty filtered tabs do not trap navigation;
+3. focus lands in the selected grid and remains aligned with the cell;
+4. returning to a tab has sensible focus behavior;
+5. representative actions/items/passives appear without radial customization;
+6. one direct native candidate executes through A;
+7. B closes the top level;
+8. nested `SingleHotBar` / upcast / variant B still works when available.
+
+Do not request an earlier game run for spell-level headings. Fine-grained Cantrip/Level I/Level II presentation stays blocked until the current installed SpellBook contract is captured rather than inferred from the old public dump.

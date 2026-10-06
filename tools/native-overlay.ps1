@@ -271,6 +271,29 @@ function Set-NamedElementAttribute {
         $Text.Substring($span.Start + $span.OpenLength)
 }
 
+function Disable-RadialCustomizationCommands {
+    param([Parameter(Mandatory = $true)][string]$Text)
+
+    # The copied native widget can contain dormant context-menu command bindings.
+    # CAM has no radial-editor mode, so neutralize every mutation command even if a
+    # future native template keeps the corresponding menu item around.
+    foreach ($commandName in @(
+        "ShowContextMenuCommand",
+        "RequestAssignSlotCommand",
+        "AssignSlotCommand",
+        "SwapSlotCommand",
+        "ClearSlotCommand",
+        "AddRadialCommand",
+        "RemoveRadialCommand"
+    )) {
+        $escaped = [regex]::Escape($commandName)
+        $pattern = 'Command\s*=\s*"\{Binding[^"]*' + $escaped + '[^"]*\}"'
+        $Text = [regex]::Replace($Text, $pattern, 'Command="{x:Null}"')
+    }
+
+    return $Text
+}
+
 function Convert-WidgetChromeForGrid {
     param([Parameter(Mandatory = $true)][string]$WidgetText)
 
@@ -298,23 +321,16 @@ function Convert-WidgetChromeForGrid {
     $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "SelectButtonVisual" -Attribute "Margin" -Value "0,0,20,0"
     $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "CancelButton" -Attribute "Margin" -Value "0"
 
-    # CAM no longer exposes radial-wheel editing. Keep the native named element
-    # because the copied outer template has triggers that target it, but make the
-    # ContextMenu input path unreachable.
-    foreach ($change in @(
-        @("IsEnabled", "False"),
-        @("Visibility", "Collapsed"),
-        @("Opacity", "0"),
-        @("Width", "0"),
-        @("Margin", "0"),
-        @("Command", "{x:Null}")
-    )) {
-        $WidgetText = Set-NamedElementAttribute -Text $WidgetText -Tag "ls:LSButton" -Name "ShowContextMenu" -Attribute $change[0] -Value $change[1]
-    }
+    # Preserve the native element name/type for template compatibility, but remove
+    # the ContextMenu input binding itself. X is not an editor entry point in CAM.
+    $contextMenuButton = Get-ElementSpan -Text $WidgetText -Tag "ls:LSButton" -AttributeName "x:Name" -AttributeValue "ShowContextMenu"
+    $inertContextMenuButton = '<ls:LSButton x:Name="ShowContextMenu" Visibility="Collapsed" IsEnabled="False" IsHitTestVisible="False" Focusable="False" Width="0" Height="0" Command="{x:Null}"/>'
+    $WidgetText = $WidgetText.Substring(0, $contextMenuButton.Start) +
+        $inertContextMenuButton +
+        $WidgetText.Substring($contextMenuButton.End)
 
-    return $WidgetText
+    return Disable-RadialCustomizationCommands -Text $WidgetText
 }
-
 function Rename-NativeResource {
     param(
         [Parameter(Mandatory = $true)][string]$Text,
@@ -356,163 +372,338 @@ function New-AutomaticActionCatalog {
                       Width="820"
                       Height="940"
                       Background="Transparent">
-                    <ls:LSListBox x:Name="HotBarList"
-                                  Background="Transparent"
-                                  KeyboardNavigation.DirectionalNavigation="Contained"
-                                  ActionNextEvent="UIDown"
-                                  ActionPrevEvent="UIUp"
-                                  SelectedIndex="0"
-                                  LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"
-                                  Tag="{Binding LocalFocus, ElementName=HotBarList}"
-                                  Height="900"
-                                  Width="800">
-                        <ls:LSListBox.ToolTip>
-                            <ls:LSTooltip x:Name="CAM_AutoCatalogTooltip"
-                                          ToolTipService.Placement="Right"
-                                          ToolTipService.HorizontalOffset="40"
-                                          ToolTipService.VerticalOffset="-40"/>
-                        </ls:LSListBox.ToolTip>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="70"/>
+                        <RowDefinition Height="870"/>
+                    </Grid.RowDefinitions>
 
-                        <ls:LSListBox.Template>
-                            <ControlTemplate TargetType="{x:Type ListBox}">
-                                <ScrollViewer HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Visible"
-                                              Template="{StaticResource ScrollViewerTemplate}">
-                                    <ScrollViewer.Resources>
-                                        <GridLength x:Key="Top">0</GridLength>
-                                        <GridLength x:Key="Bottom">0</GridLength>
-                                    </ScrollViewer.Resources>
-                                    <ItemsPresenter/>
-                                </ScrollViewer>
-                            </ControlTemplate>
-                        </ls:LSListBox.Template>
+                    <!-- Native-style controller tabs. They select presentation only;
+                         all action data remains in BG3-owned collections below. -->
+                    <DockPanel x:Name="CAM_TabHeader"
+                               Grid.Row="0"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top"
+                               LastChildFill="True">
+                        <ContentPresenter x:Name="CAM_TabPrevHint"
+                                          DockPanel.Dock="Left"
+                                          ContentTemplate="{StaticResource ControllerButtonHint}"
+                                          Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UITabPrev, Converter={StaticResource FindInputEventConverter}}"
+                                          Focusable="False"
+                                          Margin="0,0,16,0"/>
+                        <ContentPresenter x:Name="CAM_TabNextHint"
+                                          DockPanel.Dock="Right"
+                                          ContentTemplate="{StaticResource ControllerButtonHint}"
+                                          Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UITabNext, Converter={StaticResource FindInputEventConverter}}"
+                                          Focusable="False"
+                                          Margin="16,0,0,0"/>
 
-                        <ls:LSListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ls:LSVirtualizingStackPanel/>
-                            </ItemsPanelTemplate>
-                        </ls:LSListBox.ItemsPanel>
+                        <ls:LSListBox x:Name="CAM_TabList"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      ActionPrevEvent="UITabPrev"
+                                      ActionNextEvent="UITabNext"
+                                      KeyboardNavigation.DirectionalNavigation="Cycle"
+                                      SelectedIndex="0">
+                            <ls:LSListBox.Resources>
+                                <Style x:Key="CAM_TabItemStyle"
+                                       TargetType="{x:Type ListBoxItem}"
+                                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="Padding" Value="18,8"/>
+                                    <Setter Property="Opacity" Value="0.55"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                <Border Background="Transparent">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Opacity" Value="1"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ls:LSListBox.Resources>
 
-                        <!-- Native automatic spell/action groups. -->
-                        <ls:LSListBoxItem HorizontalAlignment="Center">
-                            <ls:LSListBox x:Name="CAM_SpellGroupList"
-                                          ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions}"
-                                          ActionNextEvent="UIDown"
-                                          ActionPrevEvent="UIUp"
-                                          KeyboardNavigation.DirectionalNavigation="Continue"
-                                          MaxWidth="760"
-                                          Template="{StaticResource ScrolllessListBox}">
-                                <ls:LSListBox.ItemContainerStyle>
-                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Template" Value="{StaticResource CAM_SpellGroupListTemplate}"/>
+                            <b:Interaction.Triggers>
+                                <b:EventTrigger EventName="SelectionChanged">
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=HotBarList}"/>
+                                </b:EventTrigger>
+                            </b:Interaction.Triggers>
+
+                            <ls:LSListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ls:LSListBox.ItemsPanel>
+
+                            <ls:LSListBoxItem x:Name="CAM_ActionsTab">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource CAM_TabItemStyle}">
                                         <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="BorderBrush" Value="Transparent"/>
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding Actions.Count}" Value="0">
+                                            <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions.Count}" Value="0">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Setter Property="Focusable" Value="False"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </ls:LSListBox.ItemContainerStyle>
-                            </ls:LSListBox>
-                        </ls:LSListBoxItem>
+                                </ls:LSListBoxItem.Style>
+                                <TextBlock Text="Actions / Spells" FontSize="26"/>
+                            </ls:LSListBoxItem>
 
-                        <!-- Native togglable passives. -->
-                        <ls:LSListBoxItem HorizontalAlignment="Center" x:Name="CAM_PassivesHolder">
-                            <b:Interaction.Behaviors>
-                                <ls:CollectionFilterBehavior x:Name="CAM_PassivesFilter"
-                                                             ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Stats.Passives}"
-                                                             Predicate="{Binding Data.TogglablePassivePredicate}"/>
-                            </b:Interaction.Behaviors>
-                            <ls:LSListBox x:Name="CAM_PassivesListbox"
-                                          ItemsSource="{Binding (b:Interaction.Behaviors)[0].FilteredItems, ElementName=CAM_PassivesHolder}"
-                                          KeyboardNavigation.DirectionalNavigation="Continue"
-                                          Template="{StaticResource ScrolllessListBox}"
-                                          Visibility="{Binding (b:Interaction.Behaviors)[0].FilteredItems.Count, ElementName=CAM_PassivesHolder, Converter={StaticResource CountToVisibilityConverter}}"
-                                          ItemContainerStyle="{StaticResource CAM_AvailableSlotContainer}"
-                                          ItemsPanel="{StaticResource CAM_AvailableSlotsListPanelTemplate}">
-                                <b:Interaction.Triggers>
-                                    <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_PassivesListbox}">
-                                        <ls:LSPlaySound Sound="UI_Shared_Hover"/>
-                                    </b:PropertyChangedTrigger>
-                                </b:Interaction.Triggers>
-                            </ls:LSListBox>
-                        </ls:LSListBoxItem>
+                            <ls:LSListBoxItem x:Name="CAM_ItemsTab">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource CAM_TabItemStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.Inventory.Slots.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <TextBlock Text="Items" FontSize="26"/>
+                            </ls:LSListBoxItem>
 
-                        <!-- Native metamagic toggles. -->
-                        <ls:LSListBoxItem HorizontalAlignment="Center" x:Name="CAM_MetaMagicHolder">
-                            <b:Interaction.Behaviors>
-                                <ls:CollectionFilterBehavior x:Name="CAM_MetaMagicFilter"
-                                                             ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Stats.Passives}"
-                                                             Predicate="{Binding Data.TogglableMetaMagicPassivePredicate}"/>
-                            </b:Interaction.Behaviors>
-                            <ls:LSListBox x:Name="CAM_MetamagicListbox"
-                                          ItemsSource="{Binding (b:Interaction.Behaviors)[0].FilteredItems, ElementName=CAM_MetaMagicHolder}"
-                                          KeyboardNavigation.DirectionalNavigation="Continue"
-                                          Template="{StaticResource ScrolllessListBox}"
-                                          Visibility="{Binding (b:Interaction.Behaviors)[0].FilteredItems.Count, ElementName=CAM_MetaMagicHolder, Converter={StaticResource CountToVisibilityConverter}}"
-                                          ItemContainerStyle="{StaticResource CAM_AvailableSlotContainer}"
-                                          ItemsPanel="{StaticResource CAM_AvailableSlotsListPanelTemplate}">
-                                <b:Interaction.Triggers>
-                                    <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_MetamagicListbox}">
-                                        <ls:LSPlaySound Sound="UI_Shared_Hover"/>
-                                    </b:PropertyChangedTrigger>
-                                </b:Interaction.Triggers>
-                            </ls:LSListBox>
-                        </ls:LSListBoxItem>
+                            <ls:LSListBoxItem x:Name="CAM_PassivesTab">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource CAM_TabItemStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding (b:Interaction.Behaviors)[0].FilteredItems.Count, ElementName=CAM_PassivesHolder}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <TextBlock Text="Passives" FontSize="26"/>
+                            </ls:LSListBoxItem>
 
-                        <!-- Native inventory candidates. For execution, use the item object,
-                             while focus/navigation remains on the inventory slot wrapper. -->
-                        <ls:LSListBoxItem HorizontalAlignment="Center" x:Name="CAM_InventoryListHolder">
-                            <ls:LSListBox x:Name="CAM_InventoryListbox"
-                                          ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Inventory.Slots}"
-                                          Style="{StaticResource CAM_InventoryGrid}"
-                                          KeyboardNavigation.DirectionalNavigation="Continue"
-                                          Template="{StaticResource ScrolllessListBox}"
-                                          ItemsPanel="{StaticResource CAM_AvailableSlotsListPanelTemplate}">
-                                <b:Interaction.Triggers>
-                                    <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_InventoryListbox}">
-                                        <ls:LSPlaySound Sound="UI_Shared_Hover"/>
-                                    </b:PropertyChangedTrigger>
-                                    <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="80" TotalTicks="1">
-                                        <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"/>
-                                    </b:TimerTrigger>
-                                </b:Interaction.Triggers>
-                            </ls:LSListBox>
-                        </ls:LSListBoxItem>
+                            <ls:LSListBoxItem x:Name="CAM_MetamagicTab">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource CAM_TabItemStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding (b:Interaction.Behaviors)[0].FilteredItems.Count, ElementName=CAM_MetaMagicHolder}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <TextBlock Text="Metamagic" FontSize="26"/>
+                            </ls:LSListBoxItem>
+                        </ls:LSListBox>
+                    </DockPanel>
 
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger EventName="LocalFocusChanged">
-                                <b:ChangePropertyAction TargetName="CAM_AutoCatalogTooltip"
-                                                        PropertyName="Content"
-                                                        Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                <b:InvokeCommandAction IsEnabled="{Binding LocalFocus, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                                       Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                       CommandParameter="{Binding ., ElementName=HotBarList}"/>
-                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                            </b:EventTrigger>
-                            <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                <b:ChangePropertyAction TargetName="ActionRadials"
-                                                        PropertyName="Tag"
-                                                        Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                            </b:TimerTrigger>
-                        </b:Interaction.Triggers>
-                    </ls:LSListBox>
+                    <Grid Grid.Row="1"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Top"
+                          Width="820"
+                          Height="870">
+                        <ls:LSListBox x:Name="HotBarList"
+                                      Background="Transparent"
+                                      KeyboardNavigation.DirectionalNavigation="Contained"
+                                      ActionNextEvent="UIDown"
+                                      ActionPrevEvent="UIUp"
+                                      SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"
+                                      LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"
+                                      Tag="{Binding LocalFocus, ElementName=HotBarList}"
+                                      Height="850"
+                                      Width="800">
+                            <ls:LSListBox.ToolTip>
+                                <ls:LSTooltip x:Name="CAM_AutoCatalogTooltip"
+                                              ToolTipService.Placement="Right"
+                                              ToolTipService.HorizontalOffset="40"
+                                              ToolTipService.VerticalOffset="-40"/>
+                            </ls:LSListBox.ToolTip>
 
-                    <Control x:Name="CAM_AutoCatalogSelector"
-                             IsHitTestVisible="False"
-                             VerticalAlignment="Top"
-                             HorizontalAlignment="Left"
-                             Template="{StaticResource SelectorTemplate}"
-                             Visibility="{Binding Visibility, ElementName=HotBarList}"/>
+                            <ls:LSListBox.Template>
+                                <ControlTemplate TargetType="{x:Type ListBox}">
+                                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                                  VerticalScrollBarVisibility="Visible"
+                                                  Template="{StaticResource ScrollViewerTemplate}">
+                                        <ScrollViewer.Resources>
+                                            <GridLength x:Key="Top">0</GridLength>
+                                            <GridLength x:Key="Bottom">0</GridLength>
+                                        </ScrollViewer.Resources>
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </ControlTemplate>
+                            </ls:LSListBox.Template>
+
+                            <ls:LSListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ls:LSVirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ls:LSListBox.ItemsPanel>
+
+                            <!-- Native automatic spell/action groups. No CAM heuristics:
+                                 group membership/order comes directly from SpellsAndActions. -->
+                            <ls:LSListBoxItem HorizontalAlignment="Center">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_TabList}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <ls:LSListBox x:Name="CAM_SpellGroupList"
+                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions}"
+                                              ActionNextEvent="UIDown"
+                                              ActionPrevEvent="UIUp"
+                                              KeyboardNavigation.DirectionalNavigation="Continue"
+                                              MaxWidth="760"
+                                              Template="{StaticResource ScrolllessListBox}">
+                                    <ls:LSListBox.ItemContainerStyle>
+                                        <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Template" Value="{StaticResource CAM_SpellGroupListTemplate}"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding Actions.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ls:LSListBox.ItemContainerStyle>
+                                </ls:LSListBox>
+                            </ls:LSListBoxItem>
+
+                            <!-- Native inventory candidates. -->
+                            <ls:LSListBoxItem HorizontalAlignment="Center" x:Name="CAM_InventoryListHolder">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_TabList}" Value="1">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <ls:LSListBox x:Name="CAM_InventoryListbox"
+                                              ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Inventory.Slots}"
+                                              Style="{StaticResource CAM_InventoryGrid}"
+                                              KeyboardNavigation.DirectionalNavigation="Continue"
+                                              Template="{StaticResource ScrolllessListBox}"
+                                              ItemsPanel="{StaticResource CAM_AvailableSlotsListPanelTemplate}">
+                                    <b:Interaction.Triggers>
+                                        <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_InventoryListbox}">
+                                            <ls:LSPlaySound Sound="UI_Shared_Hover"/>
+                                        </b:PropertyChangedTrigger>
+                                        <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="80" TotalTicks="1">
+                                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"/>
+                                        </b:TimerTrigger>
+                                    </b:Interaction.Triggers>
+                                </ls:LSListBox>
+                            </ls:LSListBoxItem>
+
+                            <!-- Native togglable passives. -->
+                            <ls:LSListBoxItem HorizontalAlignment="Center" x:Name="CAM_PassivesHolder">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_TabList}" Value="2">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <b:Interaction.Behaviors>
+                                    <ls:CollectionFilterBehavior x:Name="CAM_PassivesFilter"
+                                                                 ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Stats.Passives}"
+                                                                 Predicate="{Binding Data.TogglablePassivePredicate}"/>
+                                </b:Interaction.Behaviors>
+                                <ls:LSListBox x:Name="CAM_PassivesListbox"
+                                              ItemsSource="{Binding (b:Interaction.Behaviors)[0].FilteredItems, ElementName=CAM_PassivesHolder}"
+                                              KeyboardNavigation.DirectionalNavigation="Continue"
+                                              Template="{StaticResource ScrolllessListBox}"
+                                              Visibility="{Binding (b:Interaction.Behaviors)[0].FilteredItems.Count, ElementName=CAM_PassivesHolder, Converter={StaticResource CountToVisibilityConverter}}"
+                                              ItemContainerStyle="{StaticResource CAM_AvailableSlotContainer}"
+                                              ItemsPanel="{StaticResource CAM_AvailableSlotsListPanelTemplate}">
+                                    <b:Interaction.Triggers>
+                                        <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_PassivesListbox}">
+                                            <ls:LSPlaySound Sound="UI_Shared_Hover"/>
+                                        </b:PropertyChangedTrigger>
+                                    </b:Interaction.Triggers>
+                                </ls:LSListBox>
+                            </ls:LSListBoxItem>
+
+                            <!-- Native metamagic toggles. This tab disappears when the
+                                 current native predicate returns no candidates. -->
+                            <ls:LSListBoxItem HorizontalAlignment="Center" x:Name="CAM_MetaMagicHolder">
+                                <ls:LSListBoxItem.Style>
+                                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_TabList}" Value="3">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ls:LSListBoxItem.Style>
+                                <b:Interaction.Behaviors>
+                                    <ls:CollectionFilterBehavior x:Name="CAM_MetaMagicFilter"
+                                                                 ItemsSource="{Binding CurrentPlayer.SelectedCharacter.Stats.Passives}"
+                                                                 Predicate="{Binding Data.TogglableMetaMagicPassivePredicate}"/>
+                                </b:Interaction.Behaviors>
+                                <ls:LSListBox x:Name="CAM_MetamagicListbox"
+                                              ItemsSource="{Binding (b:Interaction.Behaviors)[0].FilteredItems, ElementName=CAM_MetaMagicHolder}"
+                                              KeyboardNavigation.DirectionalNavigation="Continue"
+                                              Template="{StaticResource ScrolllessListBox}"
+                                              Visibility="{Binding (b:Interaction.Behaviors)[0].FilteredItems.Count, ElementName=CAM_MetaMagicHolder, Converter={StaticResource CountToVisibilityConverter}}"
+                                              ItemContainerStyle="{StaticResource CAM_AvailableSlotContainer}"
+                                              ItemsPanel="{StaticResource CAM_AvailableSlotsListPanelTemplate}">
+                                    <b:Interaction.Triggers>
+                                        <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=CAM_MetamagicListbox}">
+                                            <ls:LSPlaySound Sound="UI_Shared_Hover"/>
+                                        </b:PropertyChangedTrigger>
+                                    </b:Interaction.Triggers>
+                                </ls:LSListBox>
+                            </ls:LSListBoxItem>
+
+                            <b:Interaction.Triggers>
+                                <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:ChangePropertyAction TargetName="CAM_AutoCatalogTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
+                                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:ChangePropertyAction TargetName="ActionRadials"
+                                                            PropertyName="Tag"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                </b:TimerTrigger>
+                            </b:Interaction.Triggers>
+                        </ls:LSListBox>
+
+                        <Control x:Name="CAM_AutoCatalogSelector"
+                                 IsHitTestVisible="False"
+                                 VerticalAlignment="Top"
+                                 HorizontalAlignment="Left"
+                                 Template="{StaticResource SelectorTemplate}"
+                                 Visibility="{Binding Visibility, ElementName=HotBarList}"/>
+                    </Grid>
                 </Grid>
             </Grid>
 '@
 }
-
 function Convert-WidgetToAutomaticCatalog {
     param([Parameter(Mandatory = $true)][string]$WidgetText)
 
