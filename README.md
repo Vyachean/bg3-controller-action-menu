@@ -69,9 +69,9 @@ The installed native `ButtonHintsContainer` is preserved instead of restyled. CA
 
 This candidate is statically/CI proof-gated but is **not yet claimed runtime-correct** until one milestone game test confirms navigation, action/container dispatch, resource highlighting, native button hints and filter behavior together.
 
-## Installer principle
+## Development installer principle
 
-The user-side installer has one job: install the newest release.
+The VBS installer is a **temporary development tool** used only until CAM is delivered through the intended official mod-distribution path. It has one job during development: one-click install/update of the newest usable build.
 
 For maintainers, a CI artifact is **not** a release. A version is installer-ready only after the Release workflow publishes it and the canonical resolver confirms that it is the newest published version. See [Release process](docs/release-process.md).
 
@@ -91,7 +91,7 @@ The bootstrap never needs to understand a release-specific installer contract. I
 
 ## Xbox App installation
 
-For normal use, download **`BG3ControllerActionMenu-OneClickInstaller.zip`** from the newest GitHub Release and extract it once.
+For the current development workflow, extract **`BG3ControllerActionMenu-OneClickInstaller.zip`** once. Keep that folder: subsequent development installs/updates must use the same VBS without requiring a manual launcher refresh.
 
 Then simply double-click:
 
@@ -108,7 +108,7 @@ Every run:
 - the current canonical installer then downloads and verifies the release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
 - installs the release's already-built self-contained CAM PAK; it does not read or rebuild from BG3 game PAKs.
 
-After installing the self-updating launcher once, the extracted folder is intended to remain reusable even when the internal installer contract changes.
+The extracted development-installer folder is intentionally reusable. Internal helper scripts/builds may change, but an existing VBS/bootstrap contract must continue to work without asking the tester to download a replacement launcher.
 
 One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
 
@@ -116,7 +116,7 @@ The one-click folder is portable. Its `installer-work` directory beside the VBS 
 
 The lower-level `install-xbox-dev.ps1` remains available for manual diagnosis/development.
 
-See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
+See [Development VBS contract](docs/development-vbs.md), [Xbox App installation](docs/xbox-app-installation.md), and [Xbox App research](docs/research/xbox-app-modding.md).
 
 ## Architecture
 
