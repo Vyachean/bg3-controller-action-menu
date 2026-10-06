@@ -14,7 +14,9 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native hotbar-filter milestone candidate (`0.0.37-native-hotbar-filters`).**
+**Native hotbar-filter milestone candidate (`0.0.38-simple-install-path`).**
+
+`0.0.38` keeps the `0.0.37` runtime/UI architecture unchanged and only removes the install-time semantic HotBar contract scan that should have remained in CI.
 
 Runtime through 0.0.36 has narrowed the architecture substantially:
 
@@ -57,7 +59,7 @@ The top LB/RB tabs are now **filters**, not independent catalogs:
 
 A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the current installed `FilterCantripsCommand`. Deck filters use the current installed `SetCurrentShownDeckCommand`.
 
-The installer extracts both the current controller radial dictionary and the current keyboard `HotBar.xaml` from the user's installed `Game.pak`. Generation proceeds only against the exact command/property names present in that game version; no Larian XAML is committed or published.
+The installer extracts the controller radial dictionary and keyboard `HotBar.xaml` needed for the deterministic transformation. It does not run a separate semantic compatibility scan over those files; those contract assertions live in CI fixtures. No Larian XAML is committed or published.
 
 Navigation also returns to the complete native assignment hierarchy: **one outer scrollable `LSListBox`** owns vertical continuation, while the resource/action grids inside it use `KeyboardNavigation.DirectionalNavigation="Continue"`. The old fixed three-row action-grid height is removed.
 
