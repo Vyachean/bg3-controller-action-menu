@@ -19,7 +19,7 @@
     "mainSlotType": "VMHotBarSlot",
     "mainSlotSources": [
       "CurrentShownDeck.SlotList",
-      "CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList",
+      "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
       "SingleHotBar.SlotList"
     ],
     "deckCommands": {
