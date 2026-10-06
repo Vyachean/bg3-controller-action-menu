@@ -12,9 +12,9 @@ The main grid is not a presentation of user-configured controller radial slots a
 native ActionRadials state/page
           |
           v
-locally derived ActionRadialWidgetTemplate_P8
+project-owned ActionRadialWidgetTemplate_P8 override
           |
-          +-- type/resource filters from installed HotBar.xaml
+          +-- type/resource filters proven from current HotBar contract
           |     |
           |     +-- SetCurrentShownDeckCommand
           |     +-- FilterActionResourceCommand
@@ -72,13 +72,13 @@ Tabs now behave like filters rather than source pages. LB/RB selects a native ty
 | Class | `SetCurrentShownDeckCommand("ClassHotBar")` -> `CurrentShownDeck.SlotList` |
 | Items | `SetCurrentShownDeckCommand("ItemHotBar")` -> `CurrentShownDeck.SlotList` |
 | Passives | `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList` |
-| Cantrips | current installed `FilterCantripsCommand` |
+| Cantrips | current proven `FilterCantripsCommand` contract |
 
-Resource filters are populated from `CurrentPlayer.UIData.ActionResourcesCostPreview` and invoke the current installed `FilterActionResourceCommand` with the native resource-preview VM.
+Resource filters are populated from `CurrentPlayer.UIData.ActionResourcesCostPreview` and invoke the current proven `FilterActionResourceCommand` contract with the native resource-preview VM.
 
-The command/property names above are not frozen from historical XAML. At install time CAM extracts the current keyboard `Mods/MainUI/GUI/Pages/HotBar.xaml` from the same installed `Game.pak`, verifies that those exact seams still exist, extracts the current cantrip command parameter, and derives the controller library locally.
+Those command/property names are development evidence, not installer-discovered configuration. Fresh game captures are used when the contract must be re-verified; the release XAML then records the proven contract explicitly and is packaged by CI.
 
-This means BG3 continues to own action membership, resource membership, ordering and filtering semantics.
+This keeps BG3 responsible for action membership, resource membership, ordering and filtering semantics without making installation a build step.
 
 ### Navigation model
 
@@ -117,7 +117,7 @@ This restores the same resource-cost preview path that the radial uses. CAM does
 
 The installed `ButtonHintsContainer` is preserved rather than re-laid out. CAM removes only the radial-customisation/X entry point and its mutation commands. The extra LB/RB presentation-only hints introduced by 0.0.36 are gone.
 
-No Larian XAML is committed to or distributed by this repository. The locally generated `Lib_Controller.xaml` remains Script-Extender/DLL/native-loader free.
+Raw captured Larian XAML is not committed or distributed as runtime source. CAM ships project-owned `Lib_Controller.xaml` built from the proven contract and remains Script-Extender/DLL/native-loader free.
 
 ## Primary target
 
@@ -256,8 +256,8 @@ This does not replace full runtime introspection, but it makes the first Xbox ru
 
 ## Compatibility
 
-The installed package contains a locally generated `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`. It is derived from the user's exact current `PreloadedActionRadials_c.xaml`, so the native outer template and control semantics track the installed game version.
+The installed package contains project-owned `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml` inside the published PAK. Its gameplay-facing bindings are gated against captured current-game evidence before release.
 
-Another UI mod overriding the same ActionRadials resource keys can still conflict by load order. The installer therefore remains fail-closed and records the native source hash used to derive the library.
+Another UI mod overriding the same ActionRadials resource keys can still conflict by load order. Installation does not attempt to resolve or rebuild around that conflict.
 
-No proprietary native XAML is stored in GitHub or release assets.
+Raw captured proprietary XAML is development evidence only and is not shipped as copied game resources.
