@@ -26,6 +26,7 @@ DEV_CAPTURE = ROOT / "tools/capture-self-contained-inputs.ps1"
 DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
 DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
 DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
+DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
@@ -336,6 +337,32 @@ def validate_semantics() -> list[str]:
             ],
         )
     )
+
+    errors.extend(
+        require_text(
+            DEVELOPMENT_VBS_DOC,
+            [
+                "temporary development delivery tool",
+                "no manual replacement or update of the VBS is required",
+                "A change that would require the tester to download a newer VBS manually is an installer architecture regression.",
+                "official delivery path",
+                "development helper scripts",
+            ],
+        )
+    )
+
+    if ONE_CLICK_LAUNCHER.exists():
+        launcher_text = ONE_CLICK_LAUNCHER.read_text(encoding="utf-8")
+        for forbidden in (
+            "native-overlay.ps1",
+            "Game.pak",
+            "divine.exe",
+            "BG3ControllerActionMenu-0.",
+        ):
+            if forbidden in launcher_text:
+                errors.append(
+                    f"{ONE_CLICK_LAUNCHER.relative_to(ROOT)}: stable development VBS must not contain version/build-specific behavior: {forbidden}"
+                )
 
     errors.extend(
         require_text(
