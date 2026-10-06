@@ -82,7 +82,15 @@
       "width": 1000,
       "margin": "26,0,26,56"
     },
-    "radialCustomizationAllowed": false
+    "radialCustomizationAllowed": false,
+    "controllerPresentation": {
+      "mainSlotStyle": "SlotIconStyle",
+      "mainSlotSize": 104,
+      "keyboardStyleRejected": "HotBarSlotStyle",
+      "keyboardOverlayRejected": "HotKey",
+      "filterTabInactiveAsset": "Assets/BottomBar/btn_pil_d.png",
+      "filterTabActiveAsset": "Assets/BottomBar/btn_pil_active_d.png"
+    }
   },
   "captureMatchCount": 22,
   "captureScanErrorCount": 0

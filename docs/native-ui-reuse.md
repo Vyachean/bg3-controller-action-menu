@@ -24,6 +24,19 @@ Therefore CAM's executable main cells come only from native hotbar-slot collecti
 
 Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates.
 
+## Controller cell presentation
+
+The fresh controller capture contains two different presentation seams with different purposes:
+
+- `HotBarSlotStyle` is the keyboard hotbar slot style. It proves the important execution-type boundary because its command parameter is the surrounding `VMHotBarSlot`, but its visual template is 88×88 and explicitly renders `HotKey`.
+- `SlotIconStyle` is the current controller radial/assignment icon presentation. CAM uses this style over `VMHotBarSlot.Content` in a 104×104 presentation cell while the focused list item itself remains the `VMHotBarSlot`.
+
+This separation is intentional. Gameplay dispatch still uses `ActionRadials.Tag -> VMHotBarSlot -> UseSlotCommand`; only the renderer consumes `slot.Content`. Using `HotBarSlotStyle` in the controller grid is a presentation regression because keyboard hotkey labels become visible and its 88px geometry no longer matches the assignment-grid focus footprint.
+
+The selector itself remains geometry-free, matching current `SelectorAssign`. Its visual size follows the focused 104px item instead of carrying a synthetic selector width/height.
+
+The semantic filter tabs reuse the current HotBar pill artwork for presentation only. Their selected state is owned by `CAM_FilterTabs.SelectedIndex`; all filtering commands and slot sources remain unchanged.
+
 ## HotBar filter semantics
 
 The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM:

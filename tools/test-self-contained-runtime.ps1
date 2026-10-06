@@ -33,6 +33,12 @@ if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb
 if ($evidence.sourceHashes.'Mods/MainUI/GUI/StateMachines/Controller.xaml' -ne "53389126eb75eaa275609fce981b15339ea8cacab58df3af0d97c370658a573c") {
     throw "Unexpected MainUI controller state-machine capture hash."
 }
+if ($evidence.runtimeContract.controllerPresentation.mainSlotStyle -ne "SlotIconStyle" -or $evidence.runtimeContract.controllerPresentation.mainSlotSize -ne 104) {
+    throw "Controller slot presentation must remain pinned to captured SlotIconStyle at 104px."
+}
+if ($evidence.runtimeContract.controllerPresentation.keyboardStyleRejected -ne "HotBarSlotStyle" -or $evidence.runtimeContract.controllerPresentation.keyboardOverlayRejected -ne "HotKey") {
+    throw "Keyboard HotBarSlotStyle/HotKey presentation regression guard is missing from capture evidence."
+}
 
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
@@ -66,8 +72,13 @@ $required = @(
     'HighlightResourcesCommand',
     'UI_HUD_Controller_RadialMenu_SlotHover',
     'x:Name="UseSlotBinding"',
-    'Style="{StaticResource HotBarSlotStyle}"',
-    'BoundEvent="{x:Null}"',
+    'Style="{StaticResource SlotIconStyle}"',
+    'Width="104"',
+    'Height="104"',
+    'x:Key="CAM_FilterTabTextStyle"',
+    '<Setter Property="FontSize" Value="32"/>',
+    'btn_pil_d.png',
+    'btn_pil_active_d.png',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
     'BoundEvent="UIAccept"',
@@ -134,6 +145,8 @@ foreach ($forbidden in @(
     'RemoveRadialCommand',
     'Height="376"',
     'ShowTooltipOnUIElement',
+    'HotBarSlotStyle',
+    'HotKey',
     'Public/Game/GUI/',
     'ScriptExtender'
 )) {
@@ -154,4 +167,4 @@ foreach ($needle in @(
     }
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/focus/native B are retained, stale selector/focus fixtures are rejected, and radial customization/raw assignment catalogs are absent."
+Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/focus/native B are retained, controller-native 104px slot presentation and styled filter tabs are enforced, keyboard HotBarSlotStyle/HotKey overlays are rejected, and radial customization/raw assignment catalogs are absent."
