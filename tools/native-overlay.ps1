@@ -641,8 +641,8 @@ function New-AutomaticActionCatalog {
                                                 <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="3">
                                                     <Setter Property="ItemsSource" Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"/>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="4">
-                                                    <Setter Property="ItemsSource" Value="{x:Null}"/>
+                                                <DataTrigger Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}" Value="True">
+                                                    <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -663,6 +663,38 @@ function New-AutomaticActionCatalog {
     $catalog = $catalog.Replace("__CAM_MAIN_FOCUS_TRIGGER__", $NativeMainFocusTrigger)
     $catalog = $catalog.Replace("__CAM_CANTRIP_FILTER__", $CantripFilterParameter)
     return $catalog
+}
+
+
+function Preserve-MainSurfaceForHotBarFilters {
+    param([Parameter(Mandatory = $true)][string]$WidgetText)
+
+    # Resource/cantrip filters are main-surface filters, not a nested navigation
+    # level. True container/variant/upcast/throw states keep the native nested
+    # SingleHotBar presentation.
+    $trigger = @'
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"/>
+                        <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                        <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
+                        <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="singleBarHolder" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                    <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                </MultiDataTrigger>
+'@
+
+    $closing = "</ControlTemplate.Triggers>"
+    $index = $WidgetText.LastIndexOf($closing, [System.StringComparison]::Ordinal)
+    if ($index -lt 0) {
+        throw "Native ActionRadialWidgetTemplate_P8 has no top-level ControlTemplate.Triggers."
+    }
+    return $WidgetText.Substring(0, $index) +
+        $trigger +
+        $WidgetText.Substring($index)
 }
 
 function Convert-WidgetToAutomaticCatalog {
@@ -687,7 +719,7 @@ function Convert-WidgetToAutomaticCatalog {
         $disabledSlotAssign +
         $WidgetText.Substring($slotAssign.End)
 
-    return $WidgetText
+    return Preserve-MainSurfaceForHotBarFilters -WidgetText $WidgetText
 }
 
 function Convert-PageStyleToGrid {
