@@ -20,32 +20,28 @@ These screens already solve the exact controller problem we need:
 
 ## Target interaction
 
-The current proof-gated milestone uses four automatic tabs:
+The main surface has two filter dimensions, both owned by BG3:
+
+1. **type/deck filters** switched with LB/RB;
+2. **resource filters** derived from the same action-resource preview model used by the keyboard hotbar.
+
+Type filters:
 
 ```text
-[ Actions / Spells ] [ Items ] [ Passives ] [ Metamagic* ]
+[ Common ] [ Class ] [ Items ] [ Passives ] [ Cantrips ]
 ```
 
-`Metamagic` is present only when BG3's native metamagic predicate produces candidates. Passives follows the same empty-filter rule. There is no `Custom` tab and there is no CAM-owned slot editor.
+They do not own separate action catalogs. Common/Class/Items select the current native shown deck, Passives uses the native passives hotbar, and Cantrips invokes BG3's own current cantrip filter.
 
-The mapping is deliberately mechanical:
+The resource row comes from `CurrentPlayer.UIData.ActionResourcesCostPreview`. Focusing a resource entry invokes `FilterActionResourceCommand` with that native resource-preview object. CAM does not infer Action/Bonus Action/Spell Slot/class-resource membership.
 
-- **Actions / Spells** → `PlayerCharacterProperties.SpellsAndActions`;
-- **Items** → `Inventory.Slots`;
-- **Passives** → `Stats.Passives` filtered by `TogglablePassivePredicate`;
-- **Metamagic** → the same passives collection filtered by `TogglableMetaMagicPassivePredicate`.
+The action grid displays native hotbar slot VMs. This is required for execution and container behavior; raw `SpellsAndActions`, inventory and passive assignment objects are not used as `UseSlotCommand` candidates.
 
-The tabs do not decide whether an action is a spell, common action, class action, usable item, or valid target. They only choose which BG3-owned source is visible.
-
-Controller navigation uses `UITabPrev` / `UITabNext` on an `LSListBox`. The content stays in the already-proven two-dimensional assignment-style grid. Runtime 0.0.35 showed that one shared outer focus root is not sufficient: visual selection changed while tooltip/dispatch focus could remain on the first tab. Each tab now owns its own assignment-style focus list and native-derived selector; `SetMoveFocusAction` targets the newly selected list directly, and only that list updates `ActionRadials.Tag`.
+Controller navigation follows the complete assignment-screen hierarchy: one outer scrollable list, inner resource/action grids with directional continuation, and one exact native-derived selector. Long lists are not given a fixed three-row height.
 
 ### Spell-level grouping
 
-The desired end state still follows BG3's own Spell Book semantics: cantrips and spell-level/action groups should be shown under BG3-provided group names when the exact current contract is proven.
-
-Do **not** produce that layout by manually inspecting `SpellSlotLevel`, slot type, action names, icons, resources, or any CAM-owned heuristic.
-
-The historical public SpellBook XAML contains `CantripGroupPredicate`, `SpellLevelsGroupPredicate`, `AllActionsGroupPredicate` and `VMActionGroup.Name`, but that public file is not current Patch 8 proof. The 0.0.35 milestone therefore preserves the native `SpellsAndActions` grouping/order without hard-coding those historical predicate names. Current installed-game SpellBook evidence is required before adding the finer headings.
+Cantrips are exposed through the native hotbar filter because that concrete command can be proof-gated against the user's installed `HotBar.xaml`. Other desired spell-level filters remain blocked until current installed-game evidence exposes the exact native commands/predicates. Do not classify them from `SpellSlotLevel`, action names, icons or CAM-owned heuristics.
 
 ## Native UI evidence
 
@@ -89,54 +85,60 @@ The installed Xbox App build 1.8.910.0 now establishes the current radial contra
 - normal controller A: a page-level `UIAccept` binding invokes `UseSlotCommand` with the focused slot stored in the page `Tag`;
 - B: `ClearSingleHotbarCommand` for nested state, dynamically changed to `CustomEvent("CloseWidget")` at the top level.
 
-Current `HotBarSlotStyle` remains useful for square native cell visuals, but its generic per-slot `BoundEvent` is not the captured radial-specific A-input mechanism.
+Current `HotBarSlotStyle` remains useful for square native cell visuals. Its button DataContext is the native hotbar slot; the `VMCharacterAction` / `VMUpcast` / `VMItem` / `VMPassive` DataTemplates render that slot's content. Its `UseSlotCommand` parameter therefore supports the VMHotBarSlot path, not the raw assignment-catalog path rejected by 0.0.36.
 
 ## Architecture implication
 
 Prefer:
 
 ```text
-native ActionRadials state/page
+installed HotBar.xaml
+  native deck/resource/cantrip filters
           |
-locally derived ActionRadialWidgetTemplate_P8
+          v
+native VMHotBarSlot collection
           |
-automatic assignment catalog
-SpellsAndActions / Passives / Metamagic / Items
+          v
+assignment-style grid navigation
           |
-AssignList-style controller grid
+          v
+installed radial LocalFocusChanged lifecycle
           |
-ActionRadials.Tag
+          +-- ActionRadials.Tag
+          +-- HighlightResourcesCommand
           |
-native UseSlotCommand
+          v
+UIAccept -> UseSlotCommand(slot)
           |
-SingleHotBar grid when BG3 opens variants/upcast/container
+          v
+SingleHotBar when BG3 opens a filter/container/variant/upcast
 ```
 
-Do **not** use `ControllerHotBars[*].SlotList` for the main menu. That collection describes the player's manually configured radial wheels and would make CAM depend on exactly the customization workflow it is intended to replace.
+Do not use `ControllerHotBars[*].SlotList` as the automatic main menu and do not use raw radial-assignment catalog objects as gameplay dispatch candidates.
 
 Radial editing commands (X/context menu, assign, swap, clear, add/remove slots) are not part of CAM.
 
-Do not implement spell execution, targeting, resource checks, upcast rules, recasts, passive semantics or inventory use ourselves.
+Do not implement spell execution, targeting, resource checks, filter membership, upcast rules, recasts, passive semantics or inventory use ourselves.
 
-## Current milestone target — 0.0.36
+## Current milestone target — 0.0.37
 
 Before another in-game run, static/package proof must establish all of the following together:
 
-1. the main menu does not bind `ControllerHotBars[*].SlotList`;
-2. the four tab definitions map only to current BG3-owned automatic sources;
-3. `UITabPrev` / `UITabNext` are wired on the tab `LSListBox`;
-4. filtered empty Passives/Metamagic tabs collapse;
-5. every tab owns a separate assignment-style focus list and exact native-derived `SelectorAssign` clone;
-6. tab changes clear stale `ActionRadials.Tag` and move focus directly to the selected tab list through `SetMoveFocusAction`;
-7. only the selected tab list writes the current native candidate to `ActionRadials.Tag`;
-8. the existing `AssignList + LocalFocusSelector + LSGrid` focus model remains the content renderer;
-9. X/context-menu editing and Assign/Swap/Clear/Add/Remove radial mutations are unreachable;
-10. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
-11. B and nested `SingleHotBar.SlotList` remain BG3-owned;
-12. native footer hints remain in the right-side lane and do not occupy the center-bottom resource lane;
-13. the package builds and survives package verification/round-trip checks.
+1. the main execution grid binds native slot collections (`CurrentShownDeck.SlotList`, `PassivesHotBar.SlotList`, `SingleHotBar.SlotList` where BG3 owns nested/filter state);
+2. raw `SpellsAndActions`, `Inventory.Slots` and `Stats.Passives` are absent from the main dispatch path;
+3. current installed `HotBar.xaml` is extracted and required to expose the exact deck/resource/cantrip filter seams;
+4. LB/RB tabs invoke native type/deck filters rather than switching independent catalogs;
+5. resource filters use `ActionResourcesCostPreview` + `FilterActionResourceCommand`;
+6. one outer assignment-style list owns vertical continuation and scrolling; child grids use directional continuation;
+7. the old fixed three-row grid height is absent;
+8. the exact installed `HotBarRadial.LocalFocusChanged` lifecycle is reused for slot Tag, focused-tooltip data and resource highlighting;
+9. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+10. container/variant/upcast state remains `SingleHotBar`/BG3-owned;
+11. the installed native button-hint stack is preserved and duplicate custom LB/RB hints are absent;
+12. X/radial customization remains unreachable;
+13. package/release verification succeeds.
 
-The next game run is one milestone test, not a sequence of one-binding experiments. It should verify tab switching, empty-tab behavior, focus after switching, representative automatic content, one simple A dispatch, top-level B, and nested/upcast B if naturally available.
+The next game run is one milestone test: traverse a long grid down and back up, switch type filters, use at least one resource filter, execute one direct action, open one container/variant if naturally available, confirm the bottom resource-cost preview follows focus, confirm the native vertical hint stack, and verify top-level/nested B.
 
 ## Probe status
 
