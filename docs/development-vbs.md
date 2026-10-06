@@ -11,7 +11,8 @@ Its job is deliberately narrow:
 1. the tester keeps one extracted development-installer folder;
 2. the tester double-clicks the same VBS for every install or update;
 3. the launcher/bootstrap resolves the newest development build and installs it;
-4. no manual replacement or update of the VBS is required during normal development iteration.
+4. no manual replacement or update of the VBS is required during normal development iteration;
+5. after a successful install, the canonical installer refreshes the VBS/bootstrap in that same folder from the published development release, so future launcher changes migrate automatically.
 
 When CAM moves to the official delivery path, this VBS workflow can be retired.
 
@@ -30,7 +31,7 @@ It may know only the stable bootstrap entry point and portable state paths. It m
 
 Version-specific behavior belongs in scripts downloaded by the stable bootstrap. The bootstrap/VBS interface must remain backward-compatible so an already extracted development-installer folder continues to work without a manual refresh.
 
-A change that would require the tester to download a newer VBS manually is an installer architecture regression.
+A change that would require the tester to download a newer VBS manually is an installer architecture regression. The canonical installer therefore publishes the VBS as a standalone release asset and refreshes the already-extracted launcher folder after a successful update. It also recovers the caller bootstrap directory for older launchers that predate the explicit `LauncherRoot` argument.
 
 ## One-click development workflow
 
