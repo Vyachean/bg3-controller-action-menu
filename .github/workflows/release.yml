@@ -14,14 +14,16 @@ on:
       - "tools/test-self-contained-runtime.ps1"
       - "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
       - "tools/install-xbox-dev.ps1"
-      - "tools/bootstrap-latest.ps1"
-      - "tools/test-bootstrap-latest.ps1"
+      - "tools/dev-entry.ps1"
+      - "tools/test-dev-entry.ps1"
       - "tools/install-latest.ps1"
       - "tools/Install-BG3ControllerActionMenu.vbs"
       - "tools/test-install-latest.ps1"
       - "tools/build-one-click-installer.ps1"
       - "tools/deploy-xbox-dev.ps1"
       - "tools/test-deploy-xbox-dev.ps1"
+      - "tools/capture-self-contained-inputs.ps1"
+      - "tools/test-dev-capture.ps1"
   workflow_dispatch:
 
 permissions:
@@ -74,10 +76,10 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
-      - name: Test minimal installer bootstrap
+      - name: Test universal development entry
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
-        run: ./tools/test-bootstrap-latest.ps1
+        run: ./tools/test-dev-entry.ps1
 
       - name: Test latest-release install flow
         if: steps.existing.outputs.exists != 'true'
@@ -138,14 +140,17 @@ jobs:
           $launcher = "tools/Install-BG3ControllerActionMenu.vbs"
           if (-not (Test-Path $launcher)) { throw "Missing development VBS launcher: $launcher" }
 
-          $bootstrap = "tools/bootstrap-latest.ps1"
-          if (-not (Test-Path $bootstrap)) { throw "Missing installer bootstrap: $bootstrap" }
+          $devEntry = "tools/dev-entry.ps1"
+          if (-not (Test-Path $devEntry)) { throw "Missing universal development entry: $devEntry" }
 
           $latestInstaller = "tools/install-latest.ps1"
           if (-not (Test-Path $latestInstaller)) { throw "Missing canonical latest-release installer: $latestInstaller" }
 
+          $capture = "tools/capture-self-contained-inputs.ps1"
+          if (-not (Test-Path $capture)) { throw "Missing developer capture helper: $capture" }
+
           $args = @(
-            "release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $bootstrap, $latestInstaller,
+            "release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $devEntry, $latestInstaller, $capture,
             "--repo", $env:GITHUB_REPOSITORY,
             "--target", $env:GITHUB_SHA,
             "--title", "BG3 Controller Action Menu $env:TAG",
@@ -180,9 +185,10 @@ jobs:
             "BG3ControllerActionMenu-$env:VERSION.pak",
             "BG3ControllerActionMenu-OneClickInstaller.zip",
             "Install-BG3ControllerActionMenu.vbs",
-            "bootstrap-latest.ps1",
+            "dev-entry.ps1",
             "install-latest.ps1",
-            "install-xbox-dev.ps1"
+            "install-xbox-dev.ps1",
+            "capture-self-contained-inputs.ps1"
           )
           $assetNames = @($release.assets | ForEach-Object { [string]$_.name })
           foreach ($required in $requiredAssets) {
@@ -199,8 +205,8 @@ jobs:
           $cache = Join-Path $resolveRoot "cache"
 
           # GitHub's exact-tag endpoint can expose a newly created release well
-          # before the releases collection used by the real installer does.
-          # Keep proving visibility with the canonical resolver itself. A bounded
+          # before the releases collection used by the universal launcher does.
+          # Keep proving visibility with the release-controlled entry itself. A bounded
           # wall-clock deadline is more robust than a tiny fixed retry count while
           # exponential backoff avoids hammering the Releases API.
           $resolved = $false
@@ -211,7 +217,7 @@ jobs:
           while ((Get-Date).ToUniversalTime() -lt $deadline) {
             $attempt++
             Remove-Item -LiteralPath $status -Force -ErrorAction SilentlyContinue
-            ./tools/install-latest.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
+            ./tools/dev-entry.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
 
             if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $status)) {
               $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
@@ -223,9 +229,9 @@ jobs:
               }
 
               $observed = if ($statusLines.Count -ge 2) { $statusLines[1] } else { "<none>" }
-              Write-Host "Installer visibility attempt $attempt still resolves '$observed'."
+              Write-Host "Universal entry visibility attempt $attempt still resolves '$observed'."
             } else {
-              Write-Host "Installer visibility attempt $attempt did not resolve successfully."
+              Write-Host "Universal entry visibility attempt $attempt did not resolve successfully."
             }
 
             $remainingSeconds = [Math]::Max(
@@ -242,7 +248,7 @@ jobs:
           }
 
           if (-not $resolved) {
-            throw "Canonical installer resolver did not select expected version '$env:VERSION' within the five-minute publication propagation window after $attempt attempts."
+            throw "Universal development entry did not select expected version '$env:VERSION' within the five-minute publication propagation window after $attempt attempts."
           }
 
-          Write-Host "Published release $env:TAG is complete and selected by the canonical installer."
+          Write-Host "Published release $env:TAG is complete and selected by the universal development entry."
