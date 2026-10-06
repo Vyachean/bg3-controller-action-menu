@@ -55,7 +55,7 @@ The milestone UI partitions those **same current native sources** into four pres
 
 This is not a second catalog. CAM does not copy, normalize, classify or persist action entries. The tab index only selects which native source is visible. Empty filtered Passives/Metamagic tabs collapse from navigation.
 
-The tab strip uses the native controller pattern `LSListBox(ActionPrevEvent=UITabPrev, ActionNextEvent=UITabNext)` and native controller hint bindings. The selected tab index drives the single automatic focus list. On `SelectionChanged`, CAM clears the previous `ActionRadials.Tag` and invokes `SetMoveFocusAction` back to `HotBarList`, so the next A press cannot intentionally reuse a stale candidate.
+The tab strip uses the native controller pattern `LSListBox(ActionPrevEvent=UITabPrev, ActionNextEvent=UITabNext)` and native controller hint bindings. Runtime 0.0.35 rejected a single automatic focus list: changing only the visible/selected outer item left `LocalFocus`, tooltip data and dispatch ownership on the first tab. Each tab therefore owns an independent assignment-style `LSListBox + LocalFocusSelector` pair. A tab change clears `ActionRadials.Tag` and invokes `SetMoveFocusAction` directly on that tab's visible list. Each list alone writes its current native candidate back to `ActionRadials.Tag`.
 
 There is deliberately no `Custom` tab.
 
@@ -74,7 +74,7 @@ The new main catalog therefore reuses both halves of the native assignment scree
 1. its automatic data collections;
 2. its controller-focus composition.
 
-On focus change, the selected native candidate is stored in `ActionRadials.Tag`. The existing page-level `UIAccept -> UseSlotCommand(Tag)` remains the execution boundary. This does not add spell/item/passive execution logic to CAM.
+On focus change, the **currently selected tab's list only** stores its native candidate in `ActionRadials.Tag`. Actions/Spells, Passives and Metamagic use their direct `LocalFocus.DataContext`; Inventory uses the native inventory wrapper's `.Object`. The existing page-level `UIAccept -> UseSlotCommand(Tag)` remains the execution boundary. This does not add spell/item/passive execution logic to CAM.
 
 There is independent native precedent for `UseSlotCommand` receiving non-radial action objects directly: the game hotbar uses `HotBarSlotStyle`/direct action bindings for fixed actions such as the main attack and direct call-allies entries. The exact current catalog-candidate dispatch still requires one runtime proof and is kept isolated to this single seam.
 
