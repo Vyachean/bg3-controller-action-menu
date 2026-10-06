@@ -384,22 +384,18 @@ function New-AutomaticActionCatalog {
                                HorizontalAlignment="Center"
                                VerticalAlignment="Top"
                                LastChildFill="True">
-                        <ls:LSButton x:Name="CAM_TabPrevHint"
-                                     DockPanel.Dock="Left"
-                                     BoundEvent="UITabPrev"
-                                     ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UITabPrev'}"
-                                     ls:LSButton.EatInput="False"
-                                     Focusable="False"
-                                     Margin="0,0,16,0"/>
-                        <ls:LSButton x:Name="CAM_TabNextHint"
-                                     DockPanel.Dock="Right"
-                                     BoundEvent="UITabNext"
-                                     ContentTemplate="{StaticResource ControllerButtonHint}"
-                                     Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UITabNext'}"
-                                     ls:LSButton.EatInput="False"
-                                     Focusable="False"
-                                     Margin="16,0,0,0"/>
+                        <ContentPresenter x:Name="CAM_TabPrevHint"
+                                          DockPanel.Dock="Left"
+                                          ContentTemplate="{StaticResource ControllerButtonHint}"
+                                          Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UITabPrev, Converter={StaticResource FindInputEventConverter}}"
+                                          Focusable="False"
+                                          Margin="0,0,16,0"/>
+                        <ContentPresenter x:Name="CAM_TabNextHint"
+                                          DockPanel.Dock="Right"
+                                          ContentTemplate="{StaticResource ControllerButtonHint}"
+                                          Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UITabNext, Converter={StaticResource FindInputEventConverter}}"
+                                          Focusable="False"
+                                          Margin="16,0,0,0"/>
 
                         <ls:LSListBox x:Name="CAM_TabList"
                                       HorizontalAlignment="Center"
@@ -407,8 +403,7 @@ function New-AutomaticActionCatalog {
                                       ActionPrevEvent="UITabPrev"
                                       ActionNextEvent="UITabNext"
                                       KeyboardNavigation.DirectionalNavigation="Cycle"
-                                      SelectedIndex="0"
-                                      >
+                                      SelectedIndex="0">
                             <ls:LSListBox.Resources>
                                 <Style x:Key="CAM_TabItemStyle"
                                        TargetType="{x:Type ListBoxItem}"
