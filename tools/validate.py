@@ -368,6 +368,9 @@ def validate_semantics() -> list[str]:
                 '$bootstrap = "tools/bootstrap-latest.ps1"',
                 '$latestInstaller = "tools/install-latest.ps1"',
                 '"release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay, $bootstrap, $latestInstaller',
+                '$deadline = (Get-Date).ToUniversalTime().AddMinutes(5)',
+                '$delaySeconds = [Math]::Min(15, $delaySeconds * 2)',
+                'within the five-minute publication propagation window',
             ],
         )
     )

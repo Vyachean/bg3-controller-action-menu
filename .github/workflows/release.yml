@@ -192,11 +192,18 @@ jobs:
           $report = Join-Path $resolveRoot "report.json"
           $cache = Join-Path $resolveRoot "cache"
 
-          # GitHub's exact-tag endpoint can expose a newly created release a few
-          # seconds before the releases collection used by the real installer does.
-          # Prove eventual installer visibility without duplicating selection logic.
+          # GitHub's exact-tag endpoint can expose a newly created release well
+          # before the releases collection used by the real installer does.
+          # Keep proving visibility with the canonical resolver itself. A bounded
+          # wall-clock deadline is more robust than a tiny fixed retry count while
+          # exponential backoff avoids hammering the Releases API.
           $resolved = $false
-          for ($attempt = 1; $attempt -le 6; $attempt++) {
+          $attempt = 0
+          $delaySeconds = 2
+          $deadline = (Get-Date).ToUniversalTime().AddMinutes(5)
+
+          while ((Get-Date).ToUniversalTime() -lt $deadline) {
+            $attempt++
             Remove-Item -LiteralPath $status -Force -ErrorAction SilentlyContinue
             ./tools/install-latest.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
 
@@ -215,13 +222,21 @@ jobs:
               Write-Host "Installer visibility attempt $attempt did not resolve successfully."
             }
 
-            if ($attempt -lt 6) {
-              Start-Sleep -Seconds 2
+            $remainingSeconds = [Math]::Max(
+              0,
+              [Math]::Ceiling(($deadline - (Get-Date).ToUniversalTime()).TotalSeconds)
+            )
+            if ($remainingSeconds -le 0) {
+              break
             }
+
+            $sleepSeconds = [Math]::Min($delaySeconds, $remainingSeconds)
+            Start-Sleep -Seconds $sleepSeconds
+            $delaySeconds = [Math]::Min(15, $delaySeconds * 2)
           }
 
           if (-not $resolved) {
-            throw "Canonical installer resolver did not select expected version '$env:VERSION' after publication propagation checks."
+            throw "Canonical installer resolver did not select expected version '$env:VERSION' within the five-minute publication propagation window after $attempt attempts."
           }
 
           Write-Host "Published release $env:TAG is complete and selected by the canonical installer."
