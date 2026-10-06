@@ -493,4 +493,34 @@
                     <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Visible"/>
                 </MultiDataTrigger>
 
-       
+                <!-- B stays native: clear nested/filter state first, close only at the top level. -->
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding SingleHotBar.SlotList.Count}" Value="0"/>
+                        <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                    <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                </MultiDataTrigger>
+                <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.IsShapeShifted}" Value="True">
+                    <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                    <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.CharacterType}" Value="Summon">
+                    <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                    <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.CharacterType}" Value="Follower">
+                    <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
+                    <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding InSwapSlotState}" Value="True">
+                    <Setter TargetName="CancelButton" Property="Command" Value="{Binding UseSlotCommand}"/>
+                    <Setter TargetName="CancelButton" Property="CommandParameter" Value="{x:Null}"/>
+                    <Setter TargetName="UseSlotBinding" Property="Command" Value="{x:Null}"/>
+                    <Setter TargetName="UseSlotBinding" Property="EatInput" Value="False"/>
+                </DataTrigger>
+            </ControlTemplate.Triggers>
+        </Grid>
+    </ControlTemplate>
+</ResourceDictionary>
