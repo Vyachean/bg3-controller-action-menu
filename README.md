@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Per-tab native focus/dispatch milestone candidate (`0.0.36-tab-focus-dispatch`).**
+**Native hotbar-slot filter-grid milestone candidate (`0.0.37-native-hotbar-filter-grid`).**
 
 Runtime evidence through `0.0.25` now rules out three earlier approaches:
 
@@ -33,6 +33,10 @@ The current Patch 8 `PreloadedActionRadials_c.xaml` already contains the control
 `0.0.35-native-action-tabs` proved that the native tabs themselves render and switch in-game, but also exposed a composition defect: all tabs shared one outer `HotBarList.LocalFocus`. The visible tab changed while tooltip/dispatch focus could remain owned by the first tab, A received the wrong/stale candidate, the generic selector no longer matched assignment-cell geometry, and the centered footer hints overlapped the native action-resource lane.
 
 `0.0.36-tab-focus-dispatch` removes that shared focus owner. Each tab now has its own assignment-style list, its own exact locally extracted `SelectorAssign`, and its own single writer to `ActionRadials.Tag`. Tab changes move focus directly to the selected list. The native footer hints return to their right-side lane.
+
+Runtime `0.0.36` then disproved the deeper assumption: raw assignment candidates are not native executable hotbar slots. Navigation could trap on the bottom row, A and containers remained dead, and the resource bar had no cost preview.
+
+Current Patch 8 `HotBarSlotStyle` shows why: BG3 executes and previews a **VMHotBarSlot wrapper**; the visible action/item/passive is its `Content`. `0.0.37` therefore replaces the assignment-source top level with one flat grid of native hotbar slots and derives deck/filter semantics from the installed `HotBar.xaml`.
 
 The next architecture removes the remaining radial dependency. The main grid no longer reads `ControllerHotBars[*].SlotList`. Instead it uses the same automatic collections as BG3's native “choose action for radial slot” screen: `SpellsAndActions`, togglable passives/metamagic and inventory items. That means available actions appear automatically instead of requiring radial-wheel maintenance.
 
@@ -54,21 +58,23 @@ The generated library preserves the exact native outer/template lifecycle needed
 
 The main surface itself uses locally extracted assignment-grid resources instead of radial slot containers. Radial editing commands are not retained as CAM functionality.
 
-The main surface now reuses the native assignment catalog:
+The main surface now follows the native hotbar execution/filter model:
 
 ```text
-[Actions / Spells] [Items] [Passives] [Metamagic*]
-            ↓  UITabPrev / UITabNext
-native automatic source selected for presentation
+[Common] [Class] [Items] [Passives]
+            ↓  native deck/filter state
+native VMHotBarSlot result set
             ↓
-AssignList-style LSListBox + LocalFocusSelector
+single flat controller LSGrid
             ↓
-nested LSGrid groups
+tooltip + action-resource preview(slot)
             ↓
-ActionRadials.Tag
+ActionRadials.Tag = slot
             ↓
-UseSlotCommand
+UseSlotCommand(slot)
 ```
+
+The installer derives both the controller radial resource and the current keyboard `HotBar.xaml` contract from the user's installed `Game.pak`; filter command names are not guessed from historical files.
 
 `SingleHotBar.SlotList` remains the native nested/upcast/variant surface. B remains BG3's native close/nested-cancel path.
 
