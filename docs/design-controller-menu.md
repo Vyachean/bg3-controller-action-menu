@@ -93,50 +93,56 @@ Current `HotBarSlotStyle` remains useful for square native cell visuals, but its
 
 ## Architecture implication
 
+0.0.36 proves that assignment candidates cannot be treated as executable hotbar slots.
+
 Prefer:
 
 ```text
 native ActionRadials state/page
           |
-locally derived ActionRadialWidgetTemplate_P8
+current installed HotBar deck/resource filter semantics
           |
-automatic assignment catalog
-SpellsAndActions / Passives / Metamagic / Items
+native VMHotBarSlot result set
           |
-AssignList-style controller grid
+one flat controller grid
           |
-ActionRadials.Tag
+focus -> tooltip/resource preview(slot)
           |
-native UseSlotCommand
+ActionRadials.Tag = slot
           |
-SingleHotBar grid when BG3 opens variants/upcast/container
+native UseSlotCommand(slot)
+          |
+SingleHotBar grid when BG3 opens filter/container/upcast/variant results
 ```
 
-Do **not** use `ControllerHotBars[*].SlotList` for the main menu. That collection describes the player's manually configured radial wheels and would make CAM depend on exactly the customization workflow it is intended to replace.
+The grid may reuse controller navigation primitives learned from the assignment screen, but **not** its raw candidate object model.
 
-Radial editing commands (X/context menu, assign, swap, clear, add/remove slots) are not part of CAM.
+Do not implement spell execution, targeting, resource checks, upcast rules, recasts, passive semantics, inventory use or action classification ourselves.
 
-Do not implement spell execution, targeting, resource checks, upcast rules, recasts, passive semantics or inventory use ourselves.
+Do not derive filters from `SlotType`, `SpellSlotLevel`, names, icons or hard-coded class resources. Use the installed current DCHotBar contract.
 
-## Current milestone target — 0.0.36
+Do not expose the keyboard `Custom` deck or any radial editing workflow.
+
+## Current milestone target — 0.0.37
 
 Before another in-game run, static/package proof must establish all of the following together:
 
-1. the main menu does not bind `ControllerHotBars[*].SlotList`;
-2. the four tab definitions map only to current BG3-owned automatic sources;
-3. `UITabPrev` / `UITabNext` are wired on the tab `LSListBox`;
-4. filtered empty Passives/Metamagic tabs collapse;
-5. every tab owns a separate assignment-style focus list and exact native-derived `SelectorAssign` clone;
-6. tab changes clear stale `ActionRadials.Tag` and move focus directly to the selected tab list through `SetMoveFocusAction`;
-7. only the selected tab list writes the current native candidate to `ActionRadials.Tag`;
-8. the existing `AssignList + LocalFocusSelector + LSGrid` focus model remains the content renderer;
-9. X/context-menu editing and Assign/Swap/Clear/Add/Remove radial mutations are unreachable;
-10. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
-11. B and nested `SingleHotBar.SlotList` remain BG3-owned;
-12. native footer hints remain in the right-side lane and do not occupy the center-bottom resource lane;
-13. the package builds and survives package verification/round-trip checks.
+1. the top-level generated surface no longer binds assignment candidates from `SpellsAndActions`, passive predicates or `Inventory.Slots`;
+2. the installer extracts current `HotBar.xaml` as an operational input alongside current ActionRadials resources;
+3. concrete filter commands/properties used in shipping generation must exist in that current local hotbar source;
+4. the visible action result surface is one flat `LSListBox + LSGrid + LocalFocusSelector`;
+5. every result cell represents a native VMHotBarSlot wrapper and renders its `Content`;
+6. focus writes that wrapper to `ActionRadials.Tag`;
+7. focus invokes native tooltip/resource-preview commands for the same wrapper;
+8. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+9. native `SingleHotBar.SlotList` remains the filter/container/upcast/variant result surface;
+10. deck semantics include Common/Class/Items/Passives and exclude Custom;
+11. resource/action filters are DCHotBar-owned, not CAM heuristics;
+12. the original native button-hint container layout is not modified, and CAM-authored shoulder hints are absent;
+13. radial editing remains unreachable;
+14. package verification and round-trip checks pass.
 
-The next game run is one milestone test, not a sequence of one-binding experiments. It should verify tab switching, empty-tab behavior, focus after switching, representative automatic content, one simple A dispatch, top-level B, and nested/upcast B if naturally available.
+The next game run is one milestone test. It should verify navigation from first to last rows and back, filter changes, resource-cost preview on focus, one simple A dispatch, one container/upcast transition, nested/top-level B, and native vertical button-hint layout.
 
 ## Probe status
 
