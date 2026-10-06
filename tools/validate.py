@@ -292,7 +292,7 @@ def validate_semantics() -> list[str]:
             [
                 'cmd.exe /c "exit 37"',
                 "return normally without calling exit",
-                "must not mistake that value",
+                "mistake that value for",
             ],
         )
     )
