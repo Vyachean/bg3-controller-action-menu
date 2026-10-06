@@ -144,6 +144,20 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                      CommandParameter="{Binding FocusedElement, ElementName=ActionRadials}"
                      BoundEvent="ContextMenu"
                      Width="1000"/>
+        <StackPanel x:Name="LegacyRadialCustomization">
+          <ls:ContextMenuItem x:Name="AssignSlotItem"
+                              Command="{Binding DataContext.RequestAssignSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+          <ls:ContextMenuItem x:Name="DirectAssignSlotItem"
+                              Command="{Binding DataContext.AssignSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+          <ls:ContextMenuItem x:Name="SwapSlotItem"
+                              Command="{Binding DataContext.SwapSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+          <ls:ContextMenuItem x:Name="ClearSlotItem"
+                              Command="{Binding DataContext.ClearSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+          <ls:ContextMenuItem x:Name="AddRadialItem"
+                              Command="{Binding DataContext.AddRadialCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+          <ls:ContextMenuItem x:Name="RemoveRadialItem"
+                              Command="{Binding DataContext.RemoveRadialCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+        </StackPanel>
         <ls:LSButton x:Name="CancelConcentrationButton"
                      BoundEvent="UIEndTurn"
                      Width="1000"/>
@@ -202,6 +216,22 @@ if ($text.Contains("ControllerHotBars")) {
 
 foreach ($needle in @(
     'x:Name="CAM_AutoCatalogFocusRoot"',
+    'x:Name="CAM_TabList"',
+    'ActionPrevEvent="UITabPrev"',
+    'ActionNextEvent="UITabNext"',
+    'BoundEvent="UITabPrev"',
+    'BoundEvent="UITabNext"',
+    'x:Name="CAM_ActionsTab"',
+    'x:Name="CAM_ItemsTab"',
+    'x:Name="CAM_PassivesTab"',
+    'x:Name="CAM_MetamagicTab"',
+    'Text="Actions / Spells"',
+    'Text="Items"',
+    'Text="Passives"',
+    'Text="Metamagic"',
+    'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+    '<ls:SetMoveFocusAction TargetName="ActionRadials"',
+    'FocusElement="{Binding ElementName=HotBarList}"',
     '<ls:LSListBox x:Name="HotBarList"',
     'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
     'x:Name="CAM_AutoCatalogSelector"',
@@ -256,22 +286,41 @@ $contextMatch = [regex]::Match(
 )
 if (-not $contextMatch.Success -or
     -not $contextMatch.Value.Contains('IsEnabled="False"') -or
+    -not $contextMatch.Value.Contains('IsHitTestVisible="False"') -or
     -not $contextMatch.Value.Contains('Visibility="Collapsed"') -or
-    -not $contextMatch.Value.Contains('Opacity="0"') -or
     -not $contextMatch.Value.Contains('Width="0"') -or
-    -not $contextMatch.Value.Contains('Command="{x:Null}"')) {
-    throw "Radial ContextMenu/X must be disabled and hidden."
+    -not $contextMatch.Value.Contains('Command="{x:Null}"') -or
+    $contextMatch.Value.Contains('BoundEvent=')) {
+    throw "Radial ContextMenu/X must be inert, hidden, and have no input binding."
 }
 
 foreach ($forbidden in @(
-    'Command="{Binding AssignSlotCommand}"',
+    'ShowContextMenuCommand',
     'RequestAssignSlotCommand',
+    'AssignSlotCommand',
     'SwapSlotCommand',
-    'ClearSlotCommand'
+    'ClearSlotCommand',
+    'AddRadialCommand',
+    'RemoveRadialCommand'
 )) {
     if ($text.Contains($forbidden)) {
         throw "Radial customization command leaked into automatic catalog: $forbidden"
     }
+}
+
+# Historical SpellBook predicate names are not a current Patch 8 proof.
+# Do not silently turn them into shipping classification heuristics.
+foreach ($unprovenPredicate in @(
+    'CantripGroupPredicate',
+    'SpellLevelsGroupPredicate',
+    'AllActionsGroupPredicate'
+)) {
+    if ($text.Contains($unprovenPredicate)) {
+        throw "Unproven SpellBook predicate leaked into milestone XAML: $unprovenPredicate"
+    }
+}
+if ($text.Contains('Text="Custom"')) {
+    throw "CAM must not expose a Custom tab."
 }
 
 $slotAssignMatch = [regex]::Match(
@@ -298,4 +347,4 @@ foreach ($forbiddenRuntimeVerifier in @(
     }
 }
 
-Write-Host "Automatic action catalog fixture passed: native sources populate the main grid, radial customization is unreachable, nested SingleHotBar and native A/B dispatch remain intact."
+Write-Host "Automatic action-tab fixture passed: native sources populate controller tabs, tab focus returns to the grid, empty filtered tabs can collapse, radial customization is unreachable, nested SingleHotBar and native A/B dispatch remain intact."
