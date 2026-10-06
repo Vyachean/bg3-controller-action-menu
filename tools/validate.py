@@ -96,69 +96,59 @@ def validate_semantics() -> list[str]:
                 '$LslibVersion = "v1.20.4"',
                 '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"',
                 '"Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml"',
+                '$KeyboardHotBarPath = "Mods/MainUI/GUI/Pages/HotBar.xaml"',
                 '"Game.pak"',
                 "New-ControllerLibraryFromNative",
                 "New-AutomaticActionCatalog",
+                "Assert-CurrentHotBarFilterContract",
+                "Get-CurrentCantripFilterParameter",
+                "Convert-NativeRadialFocusTriggerForGrid",
                 "Disable-RadialCustomizationCommands",
                 "Convert-WidgetToAutomaticCatalog",
-                "Convert-SpellGroupTemplateForCatalog",
                 "Convert-PageStyleToGrid",
                 "Hide-RadialBackdrop",
-                'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions',
-                'CurrentPlayer.SelectedCharacter.Stats.Passives',
-                'Data.TogglablePassivePredicate',
-                'Data.TogglableMetaMagicPassivePredicate',
-                'CurrentPlayer.SelectedCharacter.Inventory.Slots',
-                'CAM_AvailableSlotContainer',
-                'CAM_AvailableSlotsListPanelTemplate',
-                'CAM_SpellGroupListTemplate',
-                'CAM_InventoryCellTemplate',
-                'CAM_InventoryGrid',
+                "CurrentPlayer.UIData.ActionResourcesCostPreview",
+                "FilterActionResourceCommand",
+                "FilterCantripsCommand",
+                "SetCurrentShownDeckCommand",
+                "ClearSingleHotbarCommand",
+                "CurrentShownDeck.SlotList",
+                "CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList",
                 'x:Name="CAM_AutoCatalogFocusRoot"',
-                'x:Name="CAM_TabList"',
+                'x:Name="CAM_FilterTabs"',
                 'ActionPrevEvent="UITabPrev"',
                 'ActionNextEvent="UITabNext"',
-                '<ContentPresenter x:Name="CAM_TabPrevHint"',
-                '<ContentPresenter x:Name="CAM_TabNextHint"',
-                'x:Name="CAM_ActionsTab"',
-                'x:Name="CAM_ItemsTab"',
-                'x:Name="CAM_PassivesTab"',
-                'x:Name="CAM_MetamagicTab"',
-                'x:Name="CAM_ActionsFocusRoot"',
-                'x:Name="CAM_ItemsFocusRoot"',
-                'x:Name="CAM_PassivesFocusRoot"',
-                'x:Name="CAM_MetamagicFocusRoot"',
-                '<ls:SetMoveFocusAction TargetName="ActionRadials"',
-                'FocusElement="{Binding ElementName=HotBarList}"',
-                'FocusElement="{Binding ElementName=CAM_InventoryListbox}"',
-                'FocusElement="{Binding ElementName=CAM_PassivesListbox}"',
-                'FocusElement="{Binding ElementName=CAM_MetamagicListbox}"',
+                'x:Name="CAM_CommonFilterTab"',
+                'x:Name="CAM_ClassFilterTab"',
+                'x:Name="CAM_ItemsFilterTab"',
+                'x:Name="CAM_PassivesFilterTab"',
+                'x:Name="CAM_CantripsFilterTab"',
+                'x:Name="CAM_ResourceFilterList"',
+                'x:Name="CAM_FilteredSlotList"',
+                'KeyboardNavigation.DirectionalNavigation="Continue"',
+                'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
+                'x:Name="CAM_MainSelector"',
+                'Property="Tag" Value="{Binding .}"',
+                'HighlightResourcesCommand',
+                'CreateFocusedTooltipDataCommand',
+                'x:Key="CAM_ActionGridPanel"',
+                'x:Key="CAM_ResourceFilterContainer"',
+                'x:Key="CAM_ResourceFilterPanel"',
                 'x:Name="ShowContextMenu" Visibility="Collapsed" IsEnabled="False" IsHitTestVisible="False" Focusable="False"',
                 'Command="{x:Null}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_ActionsSelector,Mode=OneWay}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_ItemsSelector,Mode=OneWay}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_PassivesSelector,Mode=OneWay}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_MetamagicSelector,Mode=OneWay}"',
-                'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
-                'Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"',
-                'Value="{Binding LocalFocus.DataContext, ElementName=CAM_PassivesListbox}"',
-                'Value="{Binding LocalFocus.DataContext, ElementName=CAM_MetamagicListbox}"',
-                'New-AssignSelectorClone',
-                'Get-NamedElementSpan -Text $native -Name "SelectorAssign"',
-                '@("HorizontalAlignment", "Right")',
-                '@("HorizontalContentAlignment", "Right")',
-                '@("FlowDirection", "RightToLeft")',
-                '@("Margin", "26,0,26,56")',
                 'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
                 "--action extract-single-file",
+                "--packaged-path $KeyboardHotBarPath",
                 "--action create-package",
                 "-PatchOnlySourceXaml",
+                "-PatchOnlyHotBarSourceXaml",
             ],
         )
     )
 
     if NATIVE_OVERLAY.exists():
         overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
+
         for forbidden in (
             "Packed controller library is missing required seam",
             "Assert-GridChromeContract",
@@ -170,19 +160,26 @@ def validate_semantics() -> list[str]:
                     f"{NATIVE_OVERLAY.relative_to(ROOT)}: install-time semantic post-pack verifier is forbidden: {forbidden}"
                 )
 
-    if NATIVE_OVERLAY.exists():
-        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
-        for broken_focus_seam in (
-            'CAM_AutoCatalogSelector',
-            'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+        # 0.0.35/0.0.36 proved that source tabs and assignment-catalog objects
+        # are not a valid gameplay-dispatch architecture.
+        for obsolete_main_seam in (
+            "CAM_AutoCatalogSelector",
+            "CAM_ActionsFocusRoot",
+            "CAM_ItemsFocusRoot",
+            "CAM_PassivesFocusRoot",
+            "CAM_MetamagicFocusRoot",
+            "CAM_TabPrevHint",
+            "CAM_TabNextHint",
+            "PlayerCharacterProperties.SpellsAndActions",
+            "CurrentPlayer.SelectedCharacter.Inventory.Slots",
+            "CurrentPlayer.SelectedCharacter.Stats.Passives",
+            'Height="376"',
         ):
-            if broken_focus_seam in overlay_text:
+            if obsolete_main_seam in overlay_text:
                 errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: broken 0.0.35 shared tab-focus seam must not return: {broken_focus_seam}"
+                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: obsolete 0.0.35/0.0.36 main-grid seam must not return: {obsolete_main_seam}"
                 )
 
-    if NATIVE_OVERLAY.exists():
-        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
         for unproven_predicate in (
             "CantripGroupPredicate",
             "SpellLevelsGroupPredicate",
@@ -198,44 +195,33 @@ def validate_semantics() -> list[str]:
             NATIVE_OVERLAY_TEST,
             [
                 "PatchOnlySourceXaml",
-                "Automatic main catalog must not bind ControllerHotBars.",
-                'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions',
-                'Data.TogglablePassivePredicate',
-                'Data.TogglableMetaMagicPassivePredicate',
-                'CurrentPlayer.SelectedCharacter.Inventory.Slots',
-                'x:Name="CAM_AutoCatalogFocusRoot"',
-                'x:Name="CAM_TabList"',
+                "PatchOnlyHotBarSourceXaml",
+                "gameplay candidates are VMHotBarSlot collections",
+                'CurrentPlayer.UIData.ActionResourcesCostPreview',
+                'x:Name="CAM_FilterTabs"',
                 'ActionPrevEvent="UITabPrev"',
                 'ActionNextEvent="UITabNext"',
-                '<ContentPresenter x:Name="CAM_TabPrevHint"',
-                '<ContentPresenter x:Name="CAM_TabNextHint"',
-                "Controller tab hint must be presentation-only",
-                '<ls:SetMoveFocusAction TargetName="ActionRadials"',
-                'FocusElement="{Binding ElementName=HotBarList}"',
-                'FocusElement="{Binding ElementName=CAM_InventoryListbox}"',
-                'FocusElement="{Binding ElementName=CAM_PassivesListbox}"',
-                'FocusElement="{Binding ElementName=CAM_MetamagicListbox}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_ActionsSelector,Mode=OneWay}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_ItemsSelector,Mode=OneWay}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_PassivesSelector,Mode=OneWay}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_MetamagicSelector,Mode=OneWay}"',
-                "Tab focus owner must colocate list and native selector",
-                "Tab selector did not preserve current native SelectorAssign geometry",
-                "Controller footer hints must remain in the native right-side lane.",
-                "0.0.35 shared outer focus model must not survive tab-focus repair.",
-                'x:Key="CAM_SpellGroupListTemplate"',
-                'x:Key="CAM_InventoryGrid"',
+                'x:Name="CAM_ResourceFilterList"',
+                'Command="{Binding FilterActionResourceCommand}"',
+                'x:Name="CAM_FilteredSlotList"',
+                'Value="{Binding CurrentShownDeck.SlotList}"',
+                'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
+                'Command="{Binding FilterCantripsCommand}" CommandParameter="hfixturecantrips"',
+                'KeyboardNavigation.DirectionalNavigation="Continue"',
+                'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
+                "Main selector did not preserve current native SelectorAssign geometry/binding.",
+                'Value="{Binding LocalFocus.Tag, ElementName=CAM_FilteredSlotList}"',
+                "CreateFocusedTooltipDataCommand",
+                "HighlightResourcesCommand",
+                "Main action grid must not keep the old fixed three-row height.",
+                "Installed native right-stacked button hint container was not preserved.",
+                "0.0.36 custom horizontal/tab-hint chrome must not return.",
                 'ItemsSource="{Binding SingleHotBar.SlotList}"',
                 '<ls:LSListBox x:Name="SingleBar"',
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
                 "Radial ContextMenu/X must be inert, hidden, and have no input binding.",
-                "AddRadialCommand",
-                "RemoveRadialCommand",
-                "Unproven SpellBook predicate leaked into milestone XAML",
-                "CAM must not expose a Custom tab.",
-                "SlotAssignHolder must be inert in automatic-catalog mode.",
-                "Automatic action-tab fixture passed",
+                "Native hotbar-filter grid fixture passed",
             ],
         )
     )
@@ -424,7 +410,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "automatic native action-tab contract present; published package contains no proprietary native XAML; "
+        "native hotbar-filter/controller-focus contract present; published package contains no proprietary native XAML; "
         "runtime remains Script-Extender-free)."
     )
     return 0
