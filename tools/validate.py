@@ -19,15 +19,14 @@ BOOTSTRAP_TEST = ROOT / "tools/test-bootstrap-latest.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
-NATIVE_OVERLAY = ROOT / "tools/native-overlay.ps1"
-NATIVE_OVERLAY_TEST = ROOT / "tools/test-native-overlay.ps1"
+SELF_CONTAINED_RUNTIME = MOD_ROOT / "GUI/Library/Lib_Controller.xaml"
+SELF_CONTAINED_RUNTIME_TEST = ROOT / "tools/test-self-contained-runtime.ps1"
+PATCH8_RUNTIME_EVIDENCE = ROOT / "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
 DEV_CAPTURE = ROOT / "tools/capture-self-contained-inputs.ps1"
 DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
 DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
 DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
-SELF_CONTAINED_REFERENCE_PREP = ROOT / "tools/prepare-self-contained-reference.ps1"
-SELF_CONTAINED_REFERENCE_TEST = ROOT / "tools/test-self-contained-reference.ps1"
 DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
 SELF_CONTAINED_RELEASE_GUARD = ROOT / "tools/assert-self-contained-release.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
@@ -96,147 +95,92 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
-            NATIVE_OVERLAY,
+            SELF_CONTAINED_RUNTIME,
             [
-                '$LslibVersion = "v1.20.4"',
-                '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"',
-                '"Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml"',
-                '$KeyboardHotBarPath = "Mods/MainUI/GUI/Pages/HotBar.xaml"',
-                '"Game.pak"',
-                "New-ControllerLibraryFromNative",
-                "New-AutomaticActionCatalog",
-                "Get-CurrentCantripFilterParameter",
-                "Convert-NativeRadialFocusTriggerForGrid",
-                "Preserve-MainSurfaceForHotBarFilters",
-                "Disable-RadialCustomizationCommands",
-                "Convert-WidgetToAutomaticCatalog",
-                "Convert-PageStyleToGrid",
-                "Hide-RadialBackdrop",
-                "CurrentPlayer.UIData.ActionResourcesCostPreview",
-                "FilterActionResourceCommand",
-                "FilterCantripsCommand",
-                "SetCurrentShownDeckCommand",
-                "ClearSingleHotbarCommand",
-                "CurrentShownDeck.SlotList",
-                "CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList",
-                'Value="{Binding SingleHotBar.SlotList}"',
-                'Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"',
-                'Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"',
-                'Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"',
-                'x:Name="CAM_AutoCatalogFocusRoot"',
+                'x:Key="ActionRadialWidgetTemplate_P8"',
                 'x:Name="CAM_FilterTabs"',
-                'ActionPrevEvent="UITabPrev"',
-                'ActionNextEvent="UITabNext"',
-                'x:Name="CAM_CommonFilterTab"',
-                'x:Name="CAM_ClassFilterTab"',
-                'x:Name="CAM_ItemsFilterTab"',
-                'x:Name="CAM_PassivesFilterTab"',
-                'x:Name="CAM_CantripsFilterTab"',
-                'x:Name="CAM_ResourceFilterList"',
-                'x:Name="CAM_FilteredSlotList"',
+                'CurrentPlayer.UIData.ActionResourcesCostPreview',
+                'FilterActionResourceCommand',
+                'FilterCantripsCommand',
+                'SetCurrentShownDeckCommand',
+                'CurrentShownDeck.SlotList',
+                'CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList',
+                'SingleHotBar.SlotList',
+                'KeyboardNavigation.DirectionalNavigation="Contained"',
                 'KeyboardNavigation.DirectionalNavigation="Continue"',
-                'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
-                'Property="Tag" Value="{Binding .}"',
-                'x:Key="CAM_ActionGridPanel"',
-                'x:Key="CAM_ResourceFilterContainer"',
-                'x:Key="CAM_ResourceFilterPanel"',
-                'x:Name="ShowContextMenu" Visibility="Collapsed" IsEnabled="False" IsHitTestVisible="False" Focusable="False"',
+                'LocalFocus.DataContext',
+                'MillisecondsPerTick="70"',
+                'CreateFocusedTooltipDataCommand',
+                'HighlightResourcesCommand',
+                'Command="{Binding UseSlotCommand}"',
+                'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
+                'Command="{Binding ClearSingleHotbarCommand}"',
+                'x:Name="ButtonHintsContainer"',
+                'x:Name="ShowContextMenu"',
                 'Command="{x:Null}"',
-                'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
-                "--action extract-single-file",
-                "--packaged-path $KeyboardHotBarPath",
-                "--action create-package",
-                "-PatchOnlySourceXaml",
-                "-PatchOnlyHotBarSourceXaml",
             ],
         )
     )
-
-    if NATIVE_OVERLAY.exists():
-        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
-
-        for forbidden in (
-            "Packed controller library is missing required seam",
-            "Assert-GridChromeContract",
-            "Assert-CurrentHotBarFilterContract",
-            "missing required filter seam",
-            "$verifiedText",
-            "$verifiedLibrary",
-        ):
-            if forbidden in overlay_text:
-                errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: install-time semantic post-pack verifier is forbidden: {forbidden}"
-                )
-
-        # 0.0.35/0.0.36 proved that source tabs and assignment-catalog objects
-        # are not a valid gameplay-dispatch architecture.
-        for obsolete_main_seam in (
-            "CAM_AutoCatalogSelector",
-            "CAM_ActionsFocusRoot",
-            "CAM_ItemsFocusRoot",
-            "CAM_PassivesFocusRoot",
-            "CAM_MetamagicFocusRoot",
-            "CAM_TabPrevHint",
-            "CAM_TabNextHint",
-            "PlayerCharacterProperties.SpellsAndActions",
-            "CurrentPlayer.SelectedCharacter.Inventory.Slots",
-            "CurrentPlayer.SelectedCharacter.Stats.Passives",
-            'Height="376"',
-        ):
-            if obsolete_main_seam in overlay_text:
-                errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: obsolete 0.0.35/0.0.36 main-grid seam must not return: {obsolete_main_seam}"
-                )
-
-        for unproven_predicate in (
-            "CantripGroupPredicate",
-            "SpellLevelsGroupPredicate",
-            "AllActionsGroupPredicate",
-        ):
-            if unproven_predicate in overlay_text:
-                errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: historical SpellBook predicate must not enter shipping XAML without current Patch 8 proof: {unproven_predicate}"
-                )
 
     errors.extend(
         require_text(
-            NATIVE_OVERLAY_TEST,
+            SELF_CONTAINED_RUNTIME_TEST,
             [
-                "PatchOnlySourceXaml",
-                "PatchOnlyHotBarSourceXaml",
-                "gameplay candidates are VMHotBarSlot collections",
-                'CurrentPlayer.UIData.ActionResourcesCostPreview',
-                'x:Name="CAM_FilterTabs"',
-                'ActionPrevEvent="UITabPrev"',
-                'ActionNextEvent="UITabNext"',
-                'x:Name="CAM_ResourceFilterList"',
-                'Command="{Binding FilterActionResourceCommand}"',
-                'x:Name="CAM_FilteredSlotList"',
-                'Value="{Binding CurrentShownDeck.SlotList}"',
-                'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
-                'Value="{Binding SingleHotBar.SlotList}"',
-                'Command="{Binding FilterCantripsCommand}" CommandParameter="hfixturecantrips"',
-                'Setter TargetName="singleBarHolder" Property="Visibility" Value="Collapsed"',
-                'Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Visible"',
-                'Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"',
-                'KeyboardNavigation.DirectionalNavigation="Continue"',
-                'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
-                "Main selector did not preserve current native SelectorAssign geometry/binding.",
-                'Value="{Binding LocalFocus.Tag, ElementName=CAM_FilteredSlotList}"',
-                "CreateFocusedTooltipDataCommand",
-                "HighlightResourcesCommand",
-                "Main action grid must not keep the old fixed three-row height.",
-                "Installed native ButtonHintsContainer layout was not preserved exactly.",
-                "0.0.36 duplicate tab-hint chrome must not return.",
-                'ItemsSource="{Binding SingleHotBar.SlotList}"',
-                '<ls:LSListBox x:Name="SingleBar"',
-                'Command="{Binding UseSlotCommand}"',
-                'Command="{Binding ClearSingleHotbarCommand}"',
-                "Radial ContextMenu/X must be inert, hidden, and have no input binding.",
-                "Native hotbar-filter grid fixture passed",
+                "1.8.910.0",
+                "LocalFocus.DataContext",
+                "LocalFocus.Tag",
+                "PlayerCharacterProperties.ControllerHotBars",
+                "ShowContextMenuCommand",
+                "Self-contained Patch 8 runtime contract passed",
             ],
         )
     )
+
+    errors.extend(
+        require_text(
+            PATCH8_RUNTIME_EVIDENCE,
+            [
+                '"gamePackageVersion": "1.8.910.0"',
+                '"focusValuePath": "LocalFocus.DataContext"',
+                '"selectorHasFixedGeometry": false',
+                '"cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3"',
+                '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml": "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b"',
+                '"Mods/MainUI/GUI/Pages/HotBar.xaml": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728"',
+            ],
+        )
+    )
+
+    if SELF_CONTAINED_RUNTIME.exists():
+        runtime_text = SELF_CONTAINED_RUNTIME.read_text(encoding="utf-8")
+        for forbidden in (
+            "LocalFocus.Tag",
+            "PlayerCharacterProperties.ControllerHotBars",
+            "PlayerCharacterProperties.SpellsAndActions",
+            "CurrentPlayer.SelectedCharacter.Inventory.Slots",
+            "CurrentPlayer.SelectedCharacter.Stats.Passives",
+            "ShowContextMenuCommand",
+            "AssignSlotCommand",
+            "SwapSlotCommand",
+            "AddRadialCommand",
+            "RemoveRadialCommand",
+            "Public/Game/GUI/",
+            "ScriptExtender",
+        ):
+            if forbidden in runtime_text:
+                errors.append(
+                    f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: forbidden obsolete/native-copy seam: {forbidden}"
+                )
+
+    for obsolete in (
+        ROOT / "tools/native-overlay.ps1",
+        ROOT / "tools/test-native-overlay.ps1",
+        ROOT / "tools/prepare-self-contained-reference.ps1",
+        ROOT / "tools/test-self-contained-reference.ps1",
+    ):
+        if obsolete.exists():
+            errors.append(
+                f"{obsolete.relative_to(ROOT)}: obsolete install-time derivation/reference tool must be removed"
+            )
 
     errors.extend(
         require_text(
@@ -422,21 +366,11 @@ def validate_semantics() -> list[str]:
                 [
                     "Test minimal installer bootstrap",
                     "test-bootstrap-latest.ps1",
-                    "Test native hotbar filter grid",
-                    "test-native-overlay.ps1",
+                    "Test self-contained Patch 8 runtime",
+                    "test-self-contained-runtime.ps1",
                 ],
             )
         )
-
-    errors.extend(
-        require_text(
-            BUILD_WORKFLOW,
-            [
-                "Test capture-to-reference migration",
-                "test-self-contained-reference.ps1",
-            ],
-        )
-    )
 
     errors.extend(
         require_text(
@@ -538,35 +472,6 @@ def validate_semantics() -> list[str]:
                 'Portable developer capture fixture passed.',
                 '%LOCALAPPDATA%',
                 'No BG3 files, saves, profiles, or mods were modified.',
-            ],
-        )
-    )
-
-    errors.extend(
-        require_text(
-            SELF_CONTAINED_REFERENCE_PREP,
-            [
-                "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
-                "Mods/MainUI/GUI/Pages/HotBar.xaml",
-                "PatchOnlySourceXaml",
-                "PatchOnlyHotBarSourceXaml",
-                "Lib_Controller.reference.xaml",
-                "evidence.json",
-                "CantripFilterParameter",
-                "Development-only reference",
-            ],
-        )
-    )
-
-    errors.extend(
-        require_text(
-            SELF_CONTAINED_REFERENCE_TEST,
-            [
-                "test-native-overlay.ps1",
-                "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
-                "Mods/MainUI/GUI/Pages/HotBar.xaml",
-                "hfixturecantrips",
-                "Self-contained capture-to-reference fixture passed.",
             ],
         )
     )
