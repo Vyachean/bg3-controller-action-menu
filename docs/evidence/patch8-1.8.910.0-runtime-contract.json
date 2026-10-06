@@ -84,12 +84,20 @@
     },
     "radialCustomizationAllowed": false,
     "controllerPresentation": {
-      "mainSlotStyle": "SlotIconStyle",
-      "mainSlotSize": 104,
+      "assignmentIconBinding": "Icon",
+      "camIconBinding": "Content.Icon",
+      "actionCellSize": 104,
+      "actionGridCellSize": 120,
+      "selectorHasFixedGeometry": false,
+      "slotIconStyleRejectedBecauseInternalIconSize": 120,
       "keyboardStyleRejected": "HotBarSlotStyle",
       "keyboardOverlayRejected": "HotKey",
+      "resourceButtonSize": 72,
+      "resourceNameTextVisible": false,
       "filterTabInactiveAsset": "Assets/BottomBar/btn_pil_d.png",
-      "filterTabActiveAsset": "Assets/BottomBar/btn_pil_active_d.png"
+      "filterTabActiveAsset": "Assets/BottomBar/btn_pil_active_d.png",
+      "filterTabFontResource": "SmallFontSize",
+      "filterTabTextStyle": "BtnTextGlow"
     }
   },
   "captureMatchCount": 22,
