@@ -27,6 +27,7 @@ DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
 DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
 DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
 DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
+SELF_CONTAINED_RELEASE_GUARD = ROOT / "tools/assert-self-contained-release.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
@@ -443,6 +444,29 @@ def validate_semantics() -> list[str]:
             errors.append(
                 f"{RELEASE_WORKFLOW.relative_to(ROOT)}: native overlay builder must not be a normal release/install asset"
             )
+
+    errors.extend(
+        require_text(
+            SELF_CONTAINED_RELEASE_GUARD,
+            [
+                "Release blocked: the self-contained controller runtime is not present.",
+                "Lib_Controller.xaml",
+                "native-overlay.ps1",
+                "Game.pak",
+                "Self-contained release boundary passed.",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            RELEASE_WORKFLOW,
+            [
+                "Require self-contained runtime",
+                "./tools/assert-self-contained-release.ps1",
+            ],
+        )
+    )
 
     errors.extend(
         require_text(
