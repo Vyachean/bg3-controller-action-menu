@@ -43,9 +43,9 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test native hotbar filter grid
+      - name: Test self-contained Patch 8 runtime
         shell: pwsh
-        run: ./tools/test-native-overlay.ps1
+        run: ./tools/test-self-contained-runtime.ps1
 
       - name: Build .pak
         shell: pwsh
@@ -60,10 +60,6 @@ jobs:
       - name: Test portable developer capture
         shell: pwsh
         run: ./tools/test-dev-capture.ps1
-
-      - name: Test capture-to-reference migration
-        shell: pwsh
-        run: ./tools/test-self-contained-reference.ps1
 
       - name: Verify packaged contents
         shell: pwsh
