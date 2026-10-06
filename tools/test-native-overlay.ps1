@@ -219,8 +219,10 @@ foreach ($needle in @(
     'x:Name="CAM_TabList"',
     'ActionPrevEvent="UITabPrev"',
     'ActionNextEvent="UITabNext"',
-    'BoundEvent="UITabPrev"',
-    'BoundEvent="UITabNext"',
+    '<ContentPresenter x:Name="CAM_TabPrevHint"',
+    '<ContentPresenter x:Name="CAM_TabNextHint"',
+    'ConverterParameter=UITabPrev',
+    'ConverterParameter=UITabNext',
     'x:Name="CAM_ActionsTab"',
     'x:Name="CAM_ItemsTab"',
     'x:Name="CAM_PassivesTab"',
@@ -261,6 +263,18 @@ foreach ($needle in @(
 )) {
     if (-not $text.Contains($needle)) {
         throw "Generated automatic catalog is missing: $needle"
+    }
+}
+
+# Tab hints are visual only; the tab list is the sole UITab event owner.
+foreach ($hintName in @('CAM_TabPrevHint', 'CAM_TabNextHint')) {
+    $hintMatch = [regex]::Match(
+        $text,
+        '<ContentPresenter\b[^>]*x:Name="' + $hintName + '"[^>]*/>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    if (-not $hintMatch.Success -or $hintMatch.Value.Contains('BoundEvent=')) {
+        throw "Controller tab hint must be presentation-only: $hintName"
     }
 }
 
