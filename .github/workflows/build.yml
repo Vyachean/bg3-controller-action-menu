@@ -82,6 +82,7 @@ jobs:
           path: |
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
+            tools/Install-BG3ControllerActionMenu.vbs
             tools/bootstrap-latest.ps1
             tools/install-latest.ps1
             build/BG3ControllerActionMenu-OneClickInstaller.zip
