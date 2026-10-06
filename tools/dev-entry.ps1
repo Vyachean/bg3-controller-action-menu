@@ -135,5 +135,9 @@ $installerArgs = @{
     LauncherRoot = $LauncherRoot
 }
 
+# install-latest.ps1 is an in-process PowerShell helper. If it returns,
+# the task succeeded; failures propagate as terminating exceptions. Never use
+# $LASTEXITCODE as the status of a script invoked with & because it may be null
+# or left over from an unrelated native command.
 & $installer @installerArgs
-exit $LASTEXITCODE
+exit 0
