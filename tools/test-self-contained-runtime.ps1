@@ -45,13 +45,23 @@ if ($evidence.runtimeContract.controllerPresentation.slotIconStyleRejectedBecaus
 if ($evidence.runtimeContract.controllerPresentation.resourceButtonSize -ne 72 -or $evidence.runtimeContract.controllerPresentation.resourceNameTextVisible -ne $false) {
     throw "Resource filters must remain pinned to the captured compact 72px HotBar presentation without resource-name text."
 }
-if ($evidence.runtimeContract.controllerPresentation.filterTabFontResource -ne "SmallFontSize" -or $evidence.runtimeContract.controllerPresentation.filterTabTextStyle -ne "BtnTextGlow") {
-    throw "Filter-tab presentation must remain pinned to the current HotBar FilterButton typography."
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "controller-carousel" -or
+    $evidence.runtimeContract.controllerPresentation.tabPrevEvent -ne "UITabPrev" -or
+    $evidence.runtimeContract.controllerPresentation.tabNextEvent -ne "UITabNext") {
+    throw "Primary tabs must use the captured controller carousel navigation pattern."
+}
+if ($evidence.runtimeContract.controllerPresentation.resourcePanel -ne "horizontal-stack") {
+    throw "Resource filters must remain a single native-style horizontal strip."
+}
+if ($evidence.runtimeContract.organization.cantripVisualSource -ne "SingleHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.cantripNeverFallsBackToPreviousDeck -ne $true) {
+    throw "Cantrips must render SingleHotBar directly instead of inheriting the previous deck."
 }
 if ($evidence.runtimeContract.controllerPresentation.nativeSelectorOutset -ne 12 -or
     $evidence.runtimeContract.controllerPresentation.camSelectorTemplate -ne "CAM_SelectorTemplate" -or
-    $evidence.runtimeContract.controllerPresentation.camSelectorOutset -ne 0) {
-    throw "CAM focus chrome must explicitly neutralize the native SelectorTemplate 12px visual outset."
+    $evidence.runtimeContract.controllerPresentation.camSelectorOutset -ne 4 -or
+    $evidence.runtimeContract.controllerPresentation.selectorDerivation -ne "12-(120-104)/2") {
+    throw "CAM focus chrome must derive its 4px selector compensation from native 12px outset and 120/104 grid/icon geometry."
 }
 if ($evidence.runtimeContract.controllerPresentation.spellSlotLevelStyle -ne "RomanNumeralLevelImage") {
     throw "Spell-slot secondary filters must retain the current HotBar Roman-numeral level presentation."
@@ -112,22 +122,28 @@ $required = @(
     'CellWidth="120"',
     'CellHeight="120"',
     'x:Key="CAM_FilterTabItemStyle"',
-    'FontSize" Value="{StaticResource SmallFontSize}"',
-    'Style="{StaticResource BtnTextGlow}"',
-    'btn_pil_d.png',
-    'btn_pil_active_d.png',
-    'btn_pil_inactivemod_d.png',
-    'ActiveModArrow',
-    'x:Name="Marker"',
+    'x:Name="CAM_FilterHeader"',
+    'x:Name="CAM_TabLeft"',
+    'x:Name="CAM_TabRight"',
+    'BoundEvent="UITabPrev"',
+    'BoundEvent="UITabNext"',
+    'SelectNextListBoxItem',
+    'CAM_TabDotOn',
+    'CAM_TabDotOff',
+    'c_pagination_on.png',
+    'c_pagination_off.png',
+    'Text="{Binding SelectedItem.Content, ElementName=CAM_FilterTabs}"',
     'x:Key="CAM_ResourceFilterTemplate"',
     'Style="{StaticResource RomanNumeralLevelImage}"',
     'x:Name="SpellSlotLevels"',
     'Width="72"',
     'Height="72"',
-    'Columns="10"',
-    'CellWidth="80"',
-    'CellHeight="80"',
+    '<StackPanel Orientation="Horizontal"',
+    'ActionNextEvent="UIRight"',
+    'ActionPrevEvent="UILeft"',
     'SelectedIndex="1"',
+    'Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2"',
+    '<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>',
     'x:Name="CAM_ActionTooltip"',
     'x:Name="CAM_SingleActionTooltip"',
     'ShowTooltipOnUIElementCommand',
@@ -181,11 +197,11 @@ $selectorTemplate = [regex]::Match(
 if (-not $selectorTemplate.Success) {
     throw "CAM_SelectorTemplate was not found."
 }
-if ($selectorTemplate.Value.Contains('Margin="-12"')) {
-    throw "CAM selector must not retain the native 12px outward focus-frame expansion."
+if ($selectorTemplate.Value.Contains('Margin="-12"') -or $selectorTemplate.Value.Contains('Margin="0"')) {
+    throw "CAM selector must use the derived intermediate compensation, not native -12 or the proven-too-small zero outset."
 }
-if (-not $selectorTemplate.Value.Contains('Margin="0"')) {
-    throw "CAM selector must keep the native focus texture inside the focused element bounds."
+if (-not $selectorTemplate.Value.Contains('Margin="-4"') -or -not $selectorTemplate.Value.Contains('Margin="4"')) {
+    throw "CAM selector must use -4 outer / +4 inner compensation for the 120px focus cell around a 104px icon."
 }
 
 # The fresh native radial contract uses LocalFocus.DataContext, not the older fixture's LocalFocus.Tag.
@@ -223,6 +239,10 @@ foreach ($forbidden in @(
     'Width="150"',
     'Height="64"',
     'Text="{Binding ActionResource.Name}"',
+    'CAM_FilterButtonBackground',
+    'CAM_ActiveFilterButtonBackground',
+    'btn_pil_active_d.png',
+    'btn_pil_inactivemod_d.png',
     'Public/Game/GUI/',
     'ScriptExtender'
 )) {
@@ -268,6 +288,28 @@ if (-not $text.Contains('Value="{Binding LocalFocus.DataContext.Content, Element
     throw "Main action tooltip must consume the focused VMHotBarSlot.Content object."
 }
 
+# Resource previews must be a single horizontal strip; LSGrid caused hidden items to reserve blank rows.
+$resourcePanel = [regex]::Match(
+    $text,
+    '<ItemsPanelTemplate\b[^>]*x:Key="CAM_ResourceFilterPanel"[\s\S]*?</ItemsPanelTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourcePanel.Success -or -not $resourcePanel.Value.Contains('StackPanel Orientation="Horizontal"')) {
+    throw "CAM_ResourceFilterPanel must remain a horizontal StackPanel."
+}
+if ($resourcePanel.Value.Contains('LSGrid')) {
+    throw "Resource filters must not use LSGrid because hidden preview entries create blank grid rows."
+}
+
+# Cantrips must never render CurrentShownDeck from the previously selected primary tab.
+if (-not $text.Contains('Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2"')) {
+    throw "Cantrip selected-index source override is missing."
+}
+$cantripSourcePattern = '<DataTrigger\s+Binding="\{Binding SelectedIndex, ElementName=CAM_FilterTabs\}"\s+Value="2">[\s\S]*?SingleHotBar\.SlotList[\s\S]*?</DataTrigger>'
+if (-not [regex]::IsMatch($text, $cantripSourcePattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+    throw "Cantrip tab must explicitly source SingleHotBar.SlotList."
+}
+
 # Resource filtering follows the native click/accept model: focus alone must not mutate the filter.
 $resourceList = [regex]::Match(
     $text,
@@ -293,4 +335,4 @@ foreach ($needle in @(
     }
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/focus/native B are retained, CAM focus chrome matches focused cell bounds, focused action tooltips use the native show-command path, type -> resource/level -> native slot ordering is enforced, and keyboard/radial presentation regressions are rejected."
+Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, controller carousel tabs replace desktop pills, Cantrips explicitly renders SingleHotBar, resource previews stay in one horizontal row, selector compensation is derived from 120/104 geometry, and VMHotBarSlot dispatch/tooltips/native B remain intact."
