@@ -72,6 +72,7 @@ $installerArgs = @{
     StatusPath = $StatusPath
     ReportPath = $ReportPath
     CacheRoot = Join-Path (Split-Path -Parent $CacheRoot) "release-cache"
+    LauncherRoot = $ScriptRoot
 }
 if ($ReleaseMetadataPath) {
     $installerArgs.ReleaseMetadataPath = $ReleaseMetadataPath
