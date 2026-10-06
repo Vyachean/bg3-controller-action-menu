@@ -34,19 +34,21 @@ The fresh capture distinguishes three presentation contracts:
 
 The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104.
 
-The stock `SelectorTemplate` is not size-neutral visually: it draws `c_itemSelector.png` with `Margin="-12"`, so its visible frame extends 12 px outside the focused item on every side. That is appropriate in native assignment UI but was proven too large for CAM's icon grid. CAM therefore owns `CAM_SelectorTemplate`: it reuses the same native selector texture and nine-slice values, keeps selector width/height derived from the focused element, but sets visual outset to zero. No synthetic selector width/height is introduced.
+The stock `SelectorTemplate` compensates the selector texture with a 12px outset. Runtime proved the stock `-12` treatment too large in CAM, while removing the compensation entirely made the visible frame strongly too small. The missing geometry is now explicit: CAM's focus cell is 120px while its visible icon is 104px. Therefore `CAM_SelectorTemplate` retains only `12 - (120-104)/2 = 4` pixels of the native compensation (`Margin="-4"` outside and `Margin="4"` inside). Selector width/height still come from focus; no synthetic fixed selector size is introduced.
 
-The semantic type tabs reproduce the current HotBar `FilterButton`/`ActiveFilterButton` presentation: `btn_pil_d.png` / `btn_pil_active_d.png`, `BtnTextGlow`, `SmallFontSize`, native padding and `-4,0` margins. The selected tab also reproduces the native active marker strip/arrow rather than changing only the pill background.
+Primary type navigation now follows the current **controller SpellBook carousel** instead of imitating keyboard/mouse HotBar pills. The selected tab name is shown prominently between LB/RB glyphs, with native pagination dots underneath. This is a controller-native navigation idiom and avoids cramped pseudo-desktop tabs.
 
-The current HotBar resource controls are a separate compact 72px strip. CAM does not present `ActionResourcesCostPreview` as action cells or draw `ActionResource.Name` below them. The strip is now the **secondary filter layer above the action catalog**. SpellSlot/WarlockSpellSlot resources use the captured `RomanNumeralLevelImage`, so the same strip naturally becomes a spell-level selector without CAM inventing spell classification. Controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`, matching native click-to-filter semantics.
+The current HotBar resource controls are a separate compact 72px strip. CAM does not present `ActionResourcesCostPreview` as action cells or draw `ActionResource.Name` below them. The strip is the secondary filter layer above the action catalog. It now uses the same single horizontal StackPanel layout as HotBar rather than an `LSGrid`; hidden preview entries therefore cannot reserve empty grid rows. SpellSlot/WarlockSpellSlot resources retain `RomanNumeralLevelImage`. Controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`.
 
 ## Controller organization
 
 CAM uses a two-level organization that stays entirely on proven BG3 models:
 
-1. primary type tabs: **Common -> class -> Cantrips -> Items -> Passives**;
+1. primary controller carousel: **Common -> class -> Cantrips -> Items -> Passives**;
 2. secondary native resource/level strip from `ActionResourcesCostPreview`;
 3. executable `VMHotBarSlot` grid in the order BG3 already exposes.
+
+`FilterCantripsCommand` populates the native `SingleHotBar`. CAM therefore explicitly renders `SingleHotBar.SlotList` whenever the Cantrips page is selected instead of temporarily/finally falling back to `CurrentShownDeck.SlotList` from the previous page.
 
 The resource strip is visually above the grid but `HotBarList.SelectedIndex=1` starts controller focus on actions, so opening CAM does not force the user through filter controls first.
 
