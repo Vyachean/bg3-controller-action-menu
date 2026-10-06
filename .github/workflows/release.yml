@@ -89,10 +89,10 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test native hotbar filter grid
+      - name: Test self-contained Patch 8 runtime
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
-        run: ./tools/test-native-overlay.ps1
+        run: ./tools/test-self-contained-runtime.ps1
 
       - name: Require self-contained runtime
         if: steps.existing.outputs.exists != 'true'
