@@ -3,9 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $Launcher = Join-Path $Root "tools\Capture-BG3ControllerArtifacts.vbs"
 $Capture = Join-Path $Root "tools\capture-self-contained-inputs.ps1"
-$ReferencePrep = Join-Path $Root "tools\prepare-self-contained-reference.ps1"
-
-foreach ($path in @($Launcher, $Capture, $ReferencePrep)) {
+foreach ($path in @($Launcher, $Capture)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Missing portable capture component: $path"
     }
@@ -13,7 +11,7 @@ foreach ($path in @($Launcher, $Capture, $ReferencePrep)) {
 
 $tokens = $null
 $errors = $null
-foreach ($script in @($Capture, $ReferencePrep)) {
+foreach ($script in @($Capture)) {
     $tokens = $null
     $errors = $null
     [void][System.Management.Automation.Language.Parser]::ParseFile(
