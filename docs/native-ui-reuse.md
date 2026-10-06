@@ -32,11 +32,21 @@ The fresh capture distinguishes three presentation contracts:
 - `SlotIconStyle` belongs to the controller radial renderer, but its own captured inner icon style is 120×120. Wrapping it in a 104×104 control does not make the visible icon 104×104 and was proven in-game to leave the focus frame mismatched.
 - the current controller **assignment grid** uses a real 104×104 icon surface (`Rectangle Fill="{Binding Icon}" Width="104" Height="104"`) inside a 120×120 `LSGrid` cell. This is the geometry CAM now reproduces for `VMHotBarSlot.Content.Icon`.
 
-The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104, while `SelectorTemplate` remains geometry-free and follows that focused item. This keeps selector sizing derived from the real cell instead of hard-coding selector dimensions.
+The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104.
 
-The semantic type tabs now reproduce the current HotBar `FilterButton`/`ActiveFilterButton` presentation: `btn_pil_d.png` / `btn_pil_active_d.png`, `BtnTextGlow`, `SmallFontSize`, native padding and `-4,0` margins. CAM does not invent fixed 150×64 tab geometry or a 32px font.
+The current native `SelectorTemplate` is not visually size-neutral: the capture shows `Margin="-12"` on the selector image and an inner `Margin="12"`, deliberately drawing chrome 12 px outside the focused control. That is why CAM's focus frame remained larger even after the cell itself became 104×104. CAM now keeps the same BG3 `c_itemSelector.png` artwork and dynamic `LocalFocusSelector` positioning, but uses a project-owned zero-expansion selector template (`Margin="0"`) so the visible frame matches the action image bounds. The selector control itself still has no hard-coded position or size.
 
-The current HotBar resource controls are a separate compact 72px strip. CAM therefore does not present `ActionResourcesCostPreview` as 104/120px action cells or draw `ActionResource.Name` below them. The resource strip follows the action catalog, and controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`, matching the native click-to-filter semantics.
+The primary tabs reproduce the current HotBar `FilterButton`/`ActiveFilterButton` presentation: `btn_pil_d.png` / `btn_pil_active_d.png`, `BtnTextGlow`, `SmallFontSize`, native padding and `-4,0` margins, plus the captured `bar_bottom.png` chrome and active marker/arrow. CAM does not invent fixed tab geometry.
+
+The information architecture is intentionally hierarchical:
+
+1. **Primary category (LB/RB):** Common, Class, Items, Passives.
+2. **Secondary filter row:** Cantrips plus current `ActionResourcesCostPreview` resource/spell-slot filters, shown for Common/Class.
+3. **Action grid:** the executable native `VMHotBarSlot` collection for the current category/filter.
+
+Cantrips are therefore no longer a fifth peer category; the current HotBar capture presents them as a resource-like filter beside spell/action-resource filters. Spell-slot filters retain the captured Roman-numeral level presentation. The secondary row sits above actions, but `HotBarList` initially selects the action row so opening CAM still lands on an executable action.
+
+CAM does **not** invent an action sorter. Within each native deck/filter result, slot order remains BG3's `SlotList` order because the current capture exposes no proven `VMHotBarSlot` semantic comparer or spell-level predicate. SpellBook grouping predicates operate on `SelectedItem.ActionGroups` and remain presentation evidence only.
 
 ## HotBar filter semantics
 
@@ -50,7 +60,7 @@ The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM
 - `FilterActionResourceCommand`;
 - `ClearSingleHotbarCommand`.
 
-The tabs are semantic filters, not independent source catalogs. CAM does not classify actions by names, icons, spell levels or custom resource rules.
+The primary categories and secondary resource/cantrip controls are semantic filters over native hotbar state, not independent source catalogs. CAM does not classify or sort executable actions by names, icons, guessed spell levels or custom resource rules.
 
 ## SpellBook evidence boundary
 
@@ -77,7 +87,8 @@ The capture proves the native sequence:
 
 1. on `LocalFocusChanged`, clear the previous tag/tooltip/resource highlight and play the hover sound;
 2. after the native 70 ms delay, write `LocalFocus.DataContext` into `ActionRadials.Tag`;
-3. create focused tooltip data and highlight resources for that same native slot.
+3. create focused tooltip data and highlight resources for that same native slot;
+4. set an `LSTooltip` to `LocalFocus.DataContext.Content` and invoke `ShowTooltipOnUIElementCommand` on the outer focus owner, matching current assignment/hotbar tooltip presentation.
 
 The older development fixture's `LocalFocus.Tag` handoff is rejected.
 
