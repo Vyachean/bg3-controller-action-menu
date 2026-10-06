@@ -326,7 +326,9 @@ def validate_semantics() -> list[str]:
                 "dev-entry.ps1",
                 "no manual replacement or update of the VBS is required",
                 "A change that would require the operator to download a newer VBS manually is a development-launcher architecture regression.",
-                "install, capture, diagnostics",
+                "normal install/update",
+                "read-only capture",
+                "diagnostics",
                 "official delivery path",
             ],
         )
@@ -358,10 +360,15 @@ def validate_semantics() -> list[str]:
     )
 
     builder_text = ONE_CLICK_BUILDER.read_text(encoding="utf-8") if ONE_CLICK_BUILDER.exists() else ""
-    if 'Copy-Item -LiteralPath $latestInstaller' in builder_text or 'Join-Path $Stage "install-latest.ps1"' in builder_text:
-        errors.append(
-            f"{ONE_CLICK_BUILDER.relative_to(ROOT)}: reusable one-click ZIP must not embed install-latest.ps1"
-        )
+    for forbidden_bundle_seam in (
+        'Join-Path $Stage "install-latest.ps1"',
+        'Join-Path $Stage "dev-entry.ps1"',
+        'Join-Path $Stage "bootstrap-latest.ps1"',
+    ):
+        if forbidden_bundle_seam in builder_text:
+            errors.append(
+                f"{ONE_CLICK_BUILDER.relative_to(ROOT)}: reusable one-click ZIP must contain only the universal VBS: {forbidden_bundle_seam}"
+            )
 
     for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
         errors.extend(
@@ -472,7 +479,7 @@ def validate_semantics() -> list[str]:
         require_text(
             DEV_CAPTURE_TEST,
             [
-                'Portable developer capture fixture passed.',
+                'Portable developer capture helper fixture passed.',
                 '%LOCALAPPDATA%',
                 'No BG3 files, saves, profiles, or mods were modified.',
             ],
