@@ -14,23 +14,19 @@ try {
     $version = "9.9.9-fixture"
     $pak = Join-Path $assetRoot "BG3ControllerActionMenu-$version.pak"
     $xbox = Join-Path $assetRoot "install-xbox-dev.ps1"
-    $overlay = Join-Path $assetRoot "native-overlay.ps1"
 
     Set-Content -LiteralPath $pak -Value "fake-pak" -NoNewline
-    Set-Content -LiteralPath $overlay -Value "param() Write-Output overlay-fixture" -Encoding UTF8
 
 @'
 param(
     [switch]$Apply,
     [string]$PackagePath,
-    [string]$NativeOverlayPath,
     [string]$ReportPath
 )
 if (-not $Apply) { throw "Expected -Apply." }
 @{
     Applied = $true
     Package = (Split-Path -Leaf $PackagePath)
-    Overlay = (Split-Path -Leaf $NativeOverlayPath)
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
 exit 0
 '@ | Set-Content -LiteralPath $xbox -Encoding UTF8
@@ -55,10 +51,6 @@ exit 0
                 [ordered]@{
                     name = "install-xbox-dev.ps1"
                     browser_download_url = $xbox
-                },
-                [ordered]@{
-                    name = "native-overlay.ps1"
-                    browser_download_url = $overlay
                 }
             )
         }
@@ -95,9 +87,8 @@ exit 0
 
     $result = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
     if (-not $result.Applied -or
-        $result.Package -ne "BG3ControllerActionMenu-$version.pak" -or
-        $result.Overlay -ne "native-overlay.ps1") {
-        throw "Installer did not pass the latest release assets to the Xbox installer."
+        $result.Package -ne "BG3ControllerActionMenu-$version.pak") {
+        throw "Installer did not pass the self-contained release PAK to the Xbox installer."
     }
 
     $launcherOutput = & cscript.exe //nologo $Launcher --self-test
