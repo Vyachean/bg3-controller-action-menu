@@ -97,10 +97,10 @@ Current mandatory architecture:
 - the main navigation hierarchy is one assignment-style outer `LSListBox + LocalFocusSelector` with scrolling. Child resource/action lists use `KeyboardNavigation.DirectionalNavigation="Continue"` and `LSGrid(UIUp/UIDown/UILeft/UIRight)`; do not split each filter into an independent focus root;
 - do not hard-code a short/fixed action-grid height that truncates the navigation space;
 - each action cell container must expose the native slot VM as its `Tag`, because the native radial focus lifecycle consumes `LocalFocus.Tag`;
-- main slot focus must reuse the exact installed radial `LocalFocusChanged` lifecycle for `ActionRadials.Tag`, `CreateFocusedTooltipDataCommand`, `HighlightResourcesCommand` and hover feedback. Do not recreate resource-cost preview semantics;
+- main slot focus must reproduce the captured current radial `LocalFocusChanged` lifecycle for `ActionRadials.Tag`, `CreateFocusedTooltipDataCommand`, `HighlightResourcesCommand` and hover feedback. Do not invent alternative resource-cost preview semantics;
 - A remains the existing page-level `UIAccept -> UseSlotCommand(ActionRadials.Tag)` path;
 - `SingleHotBar.SlotList` remains BG3-owned for filtered/nested/upcast/variant/container state and the native B lifecycle remains authoritative;
-- preserve the installed `ButtonHintsContainer` composition. Do not restyle it horizontally and do not add duplicate LB/RB hint presenters;
+- preserve the captured current `ButtonHintsContainer` layout/behavior contract. Do not restyle it horizontally and do not add duplicate LB/RB hint presenters;
 - X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must remain unreachable from CAM;
 - historical SpellBook predicates and CAM-owned spell/resource classifiers remain forbidden without current installed-game proof;
 - there is no install-time XAML generation. Semantic/contract assertions and package construction are CI/development responsibilities.
