@@ -19,10 +19,10 @@ A version may be called **released**, **ready to install**, or **the newest inst
 5. That release contains every installer-required asset:
    - `BG3ControllerActionMenu-<VERSION>.pak`
    - `BG3ControllerActionMenu-OneClickInstaller.zip`
+   - `Install-BG3ControllerActionMenu.vbs`
    - `bootstrap-latest.ps1`
    - `install-latest.ps1`
    - `install-xbox-dev.ps1`
-   - `native-overlay.ps1`
 6. The new tag is the newest published release selected by the same release ordering used by `install-latest.ps1`.
 7. `install-latest.ps1 -ResolveOnly`, against the live GitHub Releases API, resolves exactly `<VERSION>`.
 
@@ -71,7 +71,8 @@ Before merging:
 - repository validation must pass;
 - installer fixture tests must pass;
 - Xbox installer tests must pass;
-- native-overlay/static contract tests must pass;
+- development native-contract/static fixture tests must pass;
+- `tools/assert-self-contained-release.ps1` must pass: the project-owned controller runtime exists and normal installation contains no local-build/game-PAK seam;
 - package verification must pass;
 - documentation must describe any changed architecture or runtime proof boundary;
 - the PR must state what remains runtime-only.

@@ -10,12 +10,13 @@ on:
       - ".github/workflows/release.yml"
       - "tools/verify-package.ps1"
       - "tools/validate.py"
+      - "tools/assert-self-contained-release.ps1"
+      - "tools/test-self-contained-runtime.ps1"
+      - "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
       - "tools/install-xbox-dev.ps1"
       - "tools/bootstrap-latest.ps1"
       - "tools/test-bootstrap-latest.ps1"
       - "tools/install-latest.ps1"
-      - "tools/native-overlay.ps1"
-      - "tools/test-native-overlay.ps1"
       - "tools/Install-BG3ControllerActionMenu.vbs"
       - "tools/test-install-latest.ps1"
       - "tools/build-one-click-installer.ps1"
@@ -88,10 +89,15 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test native hotbar filter grid
+      - name: Test self-contained Patch 8 runtime
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
-        run: ./tools/test-native-overlay.ps1
+        run: ./tools/test-self-contained-runtime.ps1
+
+      - name: Require self-contained runtime
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/assert-self-contained-release.ps1
 
       - name: Build package
         if: steps.existing.outputs.exists != 'true'
@@ -129,8 +135,8 @@ jobs:
           $oneClick = "build/BG3ControllerActionMenu-OneClickInstaller.zip"
           if (-not (Test-Path $oneClick)) { throw "Missing one-click installer bundle: $oneClick" }
 
-          $overlay = "tools/native-overlay.ps1"
-          if (-not (Test-Path $overlay)) { throw "Missing native overlay builder: $overlay" }
+          $launcher = "tools/Install-BG3ControllerActionMenu.vbs"
+          if (-not (Test-Path $launcher)) { throw "Missing development VBS launcher: $launcher" }
 
           $bootstrap = "tools/bootstrap-latest.ps1"
           if (-not (Test-Path $bootstrap)) { throw "Missing installer bootstrap: $bootstrap" }
@@ -139,7 +145,7 @@ jobs:
           if (-not (Test-Path $latestInstaller)) { throw "Missing canonical latest-release installer: $latestInstaller" }
 
           $args = @(
-            "release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay, $bootstrap, $latestInstaller,
+            "release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $bootstrap, $latestInstaller,
             "--repo", $env:GITHUB_REPOSITORY,
             "--target", $env:GITHUB_SHA,
             "--title", "BG3 Controller Action Menu $env:TAG",
@@ -173,10 +179,10 @@ jobs:
           $requiredAssets = @(
             "BG3ControllerActionMenu-$env:VERSION.pak",
             "BG3ControllerActionMenu-OneClickInstaller.zip",
+            "Install-BG3ControllerActionMenu.vbs",
             "bootstrap-latest.ps1",
             "install-latest.ps1",
-            "install-xbox-dev.ps1",
-            "native-overlay.ps1"
+            "install-xbox-dev.ps1"
           )
           $assetNames = @($release.assets | ForEach-Object { [string]$_.name })
           foreach ($required in $requiredAssets) {

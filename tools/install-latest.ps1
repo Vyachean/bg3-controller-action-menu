@@ -6,26 +6,49 @@ param(
     [string]$LogPath,
     [string]$StatusPath,
     [string]$ReportPath,
+    [string]$LauncherRoot,
     [switch]$ResolveOnly
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# New bootstraps pass LauncherRoot explicitly. For already-extracted legacy
+# development launchers, PowerShell exposes the calling bootstrap path through
+# MyInvocation.ScriptName, allowing this installer to upgrade that launcher
+# without asking the tester to download a new VBS manually.
+if (-not $LauncherRoot -and $MyInvocation.ScriptName) {
+    $callerRoot = Split-Path -Parent $MyInvocation.ScriptName
+    if (Test-Path -LiteralPath (Join-Path $callerRoot "Install-BG3ControllerActionMenu.vbs") -PathType Leaf) {
+        $LauncherRoot = $callerRoot
+    }
+}
+if ($LauncherRoot -and (Test-Path -LiteralPath $LauncherRoot -PathType Container)) {
+    $LauncherRoot = (Resolve-Path -LiteralPath $LauncherRoot).Path
+}
+
+$PortableStateRoot = if ($LauncherRoot) {
+    Join-Path $LauncherRoot "installer-work"
+} else {
+    Join-Path $ScriptRoot "installer-work"
+}
+
 if (-not $ReleaseApiUrl) {
     $ReleaseApiUrl = "https://api.github.com/repos/$Repository/releases?per_page=20"
 }
 if (-not $CacheRoot) {
-    $CacheRoot = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\installer-cache"
+    $CacheRoot = Join-Path $PortableStateRoot "release-cache"
 }
 if (-not $LogPath) {
-    $LogPath = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\install-latest.log"
+    $LogPath = Join-Path $PortableStateRoot "install-latest.log"
 }
 if (-not $StatusPath) {
-    $StatusPath = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\install-status.txt"
+    $StatusPath = Join-Path $PortableStateRoot "install-status.txt"
 }
 if (-not $ReportPath) {
-    $ReportPath = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\xbox-dev-environment.json"
+    $ReportPath = Join-Path $PortableStateRoot "xbox-dev-environment.json"
 }
 
 New-Item -ItemType Directory -Force -Path $CacheRoot | Out-Null
@@ -89,6 +112,29 @@ function Save-Asset {
     }
 }
 
+function Update-DevelopmentLauncher {
+    param(
+        $Release,
+        [string]$ReleaseDirectory
+    )
+
+    if (-not $LauncherRoot) { return }
+
+    $launcherAsset = Get-Asset -Release $Release -Name "Install-BG3ControllerActionMenu.vbs"
+    $bootstrapAsset = Get-Asset -Release $Release -Name "bootstrap-latest.ps1"
+
+    $launcherDownload = Join-Path $ReleaseDirectory "Install-BG3ControllerActionMenu.vbs"
+    $bootstrapDownload = Join-Path $ReleaseDirectory "bootstrap-latest.ps1"
+
+    Save-Asset -Asset $launcherAsset -Destination $launcherDownload
+    Save-Asset -Asset $bootstrapAsset -Destination $bootstrapDownload
+
+    # WScript has already parsed the VBS before PowerShell starts, so replacing
+    # the source file here updates the next run without changing this one.
+    Copy-Item -LiteralPath $launcherDownload -Destination (Join-Path $LauncherRoot "Install-BG3ControllerActionMenu.vbs") -Force
+    Copy-Item -LiteralPath $bootstrapDownload -Destination (Join-Path $LauncherRoot "bootstrap-latest.ps1") -Force
+}
+
 $transcriptStarted = $false
 $version = ""
 
@@ -109,7 +155,6 @@ try {
     $pakName = "BG3ControllerActionMenu-$version.pak"
     $pakAsset = Get-Asset -Release $release -Name $pakName
     $xboxAsset = Get-Asset -Release $release -Name "install-xbox-dev.ps1"
-    $overlayAsset = Get-Asset -Release $release -Name "native-overlay.ps1"
 
     if ($ResolveOnly) {
         Write-InstallStatus -State "SUCCESS" -Version $version -Message "Latest release resolved."
@@ -126,14 +171,18 @@ try {
 
     $pakPath = Join-Path $releaseDir $pakName
     $xboxPath = Join-Path $releaseDir "install-xbox-dev.ps1"
-    $overlayPath = Join-Path $releaseDir "native-overlay.ps1"
 
     Write-Host "Installing $tag..."
     Save-Asset -Asset $pakAsset -Destination $pakPath
     Save-Asset -Asset $xboxAsset -Destination $xboxPath
-    Save-Asset -Asset $overlayAsset -Destination $overlayPath
 
-    & $xboxPath -Apply -PackagePath $pakPath -NativeOverlayPath $overlayPath -ReportPath $ReportPath
+    # Update the temporary development launcher before touching BG3 data.
+    # A non-writable launcher folder therefore fails before any mod/profile
+    # mutation; if the mod apply itself fails, the launcher is still current
+    # for the next retry.
+    Update-DevelopmentLauncher -Release $release -ReleaseDirectory $releaseDir
+
+    & $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath
     if ($LASTEXITCODE -ne 0) {
         throw "Installer failed with exit code $LASTEXITCODE."
     }

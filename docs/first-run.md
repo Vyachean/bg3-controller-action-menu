@@ -18,7 +18,7 @@ Double-click:
 
 `Install-BG3ControllerActionMenu.vbs`
 
-No console window is shown. The bundled bootstrap resolves the newest published release and hands off to its canonical installer. The current installer downloads the required release files and derives the installable PAK locally from this machine's exact BG3 `Game.pak`.
+No console window is shown. The bundled bootstrap resolves the newest published development release and hands off to its canonical installer. The current installer downloads the already-built self-contained PAK and installs it directly; it does not inspect `Game.pak` or build UI resources on this machine.
 
 After this self-updating OneClickInstaller has been extracted once, future installer-internal changes should not require replacing the folder.
 

@@ -14,64 +14,51 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native hotbar-filter milestone candidate (`0.0.38-simple-install-path`).**
+**Self-contained Patch 8 runtime candidate on draft PR #56.**
 
-`0.0.38` keeps the `0.0.37` runtime/UI architecture unchanged and only removes the install-time semantic HotBar contract scan that should have remained in CI.
+A fresh Xbox App capture from game package **1.8.910.0** has now been consumed as the current runtime source of evidence. The shipping source contains a project-owned controller library at:
 
-Runtime through 0.0.36 has narrowed the architecture substantially:
+`Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`
 
-- 0.0.27 proved BG3's own assignment-style controller grid can navigate inside `ActionRadials`;
-- 0.0.29 proved cells and the native-derived focus selector can be aligned correctly;
-- 0.0.35 proved LB/RB tabs render and switch;
-- 0.0.36 disproved the remaining source-tab design: navigation breaks at longer grids, A/container opening still fails, resource preview is absent, and custom hint composition does not match the native radial.
+and CI packages that file into the ordinary CAM `.pak`. Normal installation does not read `Game.pak`, invoke LSLib, generate XAML, or rebuild the package.
 
-The key correction is the execution data type. Current Patch 8 `HotBarSlotStyle` renders `VMCharacterAction`, `VMUpcast`, `VMItem` and `VMPassive` as **content of a native hotbar slot**; its command parameter is the surrounding `VMHotBarSlot`. The assignment catalog objects used by 0.0.35/0.0.36 are therefore no longer used as gameplay-dispatch candidates.
-
-0.0.37 keeps the native `DCHotBar` workflow and composes two current BG3 contracts:
+The current composition is:
 
 ```text
-installed keyboard HotBar.xaml
-  type/resource filter commands
-          |
-          v
+captured Patch 8 HotBar contract
+  SetCurrentShownDeckCommand / FilterCantripsCommand
+  ActionResourcesCostPreview / FilterActionResourceCommand
+            |
+            v
 native VMHotBarSlot collections
   CurrentShownDeck.SlotList
-  PassivesHotBar.SlotList
+  CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList
   SingleHotBar.SlotList
-          |
-          v
-installed controller radial focus lifecycle
-  LocalFocus.Tag -> ActionRadials.Tag
+            |
+            v
+captured controller-radial focus lifecycle
+  LocalFocus.DataContext -> ActionRadials.Tag
   CreateFocusedTooltipDataCommand
   HighlightResourcesCommand
-          |
-          v
-UIAccept -> UseSlotCommand(slot)
+            |
+            v
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-The top LB/RB tabs are now **filters**, not independent catalogs:
+The fresh capture corrected two stale development-fixture assumptions:
 
-- Common;
-- current class;
-- Items;
-- Passives;
-- Cantrips.
+- current `SelectorAssign` has no hard-coded `Width`, `Height` or `Margin`;
+- current radial focus uses `LocalFocus.DataContext`, with the native 70 ms delayed handoff, rather than `LocalFocus.Tag`.
 
-A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the current installed `FilterCantripsCommand`. Deck filters use the current installed `SetCurrentShownDeckCommand`.
+The LB/RB tabs are semantic filters (Common, current class, Items, Passives, Cantrips), not independent raw action catalogs. Resource filters are native `ActionResourcesCostPreview` objects. `SingleHotBar.SlotList` remains BG3-owned for nested/container/upcast/variant state. Native A/B dispatch is retained, while radial customization is deliberately unavailable.
 
-The installer extracts the controller radial dictionary and keyboard `HotBar.xaml` needed for the deterministic transformation. It does not run a separate semantic compatibility scan over those files; those contract assertions live in CI fixtures. No Larian XAML is committed or published.
+The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only.
 
-Navigation also returns to the complete native assignment hierarchy: **one outer scrollable `LSListBox`** owns vertical continuation, while the resource/action grids inside it use `KeyboardNavigation.DirectionalNavigation="Continue"`. The old fixed three-row action-grid height is removed.
+This candidate is not yet claimed runtime-correct. Static/package CI must be green first; after that, one milestone in-game run should verify long-grid navigation, semantic filters, resource preview, A dispatch, one natural nested/container case, native hints, and top-level/nested B together.
 
-The installed native `ButtonHintsContainer` is preserved instead of restyled. CAM only disables the X/radial-customisation entry point. The extra custom LB/RB hint presenters from 0.0.36 are gone.
+## Development installer principle
 
-`SingleHotBar.SlotList` remains BG3-owned for filters, variants, containers and upcast choices. Radial customization (assign/swap/clear/add/remove wheel slots) remains outside CAM.
-
-This candidate is statically/CI proof-gated but is **not yet claimed runtime-correct** until one milestone game test confirms navigation, action/container dispatch, resource highlighting, native button hints and filter behavior together.
-
-## Installer principle
-
-The user-side installer has one job: install the newest release.
+The VBS installer is a **temporary development tool** used only until CAM is delivered through the intended official mod-distribution path. It has one job during development: one-click install/update of the newest usable build.
 
 For maintainers, a CI artifact is **not** a release. A version is installer-ready only after the Release workflow publishes it and the canonical resolver confirms that it is the newest published version. See [Release process](docs/release-process.md).
 
@@ -83,8 +70,7 @@ The reusable launcher is intentionally small:
 VBS
  -> bootstrap-latest.ps1
  -> newest release's install-latest.ps1
- -> download required release files
- -> build local BG3-derived PAK
+ -> download the prebuilt self-contained PAK
  -> install it
 ```
 
@@ -92,7 +78,7 @@ The bootstrap never needs to understand a release-specific installer contract. I
 
 ## Xbox App installation
 
-For normal use, download **`BG3ControllerActionMenu-OneClickInstaller.zip`** from the newest GitHub Release and extract it once.
+For the current development workflow, extract **`BG3ControllerActionMenu-OneClickInstaller.zip`** once. Keep that folder: subsequent development installs/updates must use the same VBS without requiring a manual launcher refresh.
 
 Then simply double-click:
 
@@ -104,41 +90,38 @@ Every run:
 
 - starts from a tiny stable `bootstrap-latest.ps1` bundled beside the VBS launcher;
 - checks the newest published GitHub Release;
-- downloads and SHA-256 verifies that release's current `bootstrap-latest.ps1` and `install-latest.ps1`;
-- automatically hands off to the newer bootstrap first if the bundled bootstrap is stale;
-- the current canonical installer then downloads and verifies the release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-- extracts the exact current radial XAML from the installed BG3 `Game.pak`, derives a controller library whose action pages use the native slot-assignment grid focus pattern, packs it locally, and runs the fail-closed Xbox installer.
+- resolves the newest published development release;
+- downloads that release's current `install-latest.ps1`;
+- the canonical installer downloads only the self-contained CAM `.pak` and `install-xbox-dev.ps1` for installation;
+- installs that prebuilt PAK directly; it does not read or rebuild from BG3 game PAKs;
+- after success, refreshes the VBS/bootstrap in the already-extracted development-installer folder from standalone release assets.
 
-After installing the self-updating launcher once, the extracted folder is intended to remain reusable even when the internal installer contract changes.
+The extracted development-installer folder is intentionally reusable. Internal helper scripts/builds may change, but an existing VBS/bootstrap contract must continue to work without asking the tester to download a replacement launcher.
 
 One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
 
-Logs and diagnostics are stored under `%LOCALAPPDATA%\BG3ControllerActionMenu`.
+The one-click folder is portable. Its `installer-work` directory beside the VBS launcher contains downloads, logs, status and diagnostics.
 
 The lower-level `install-xbox-dev.ps1` remains available for manual diagnosis/development.
 
-See [Xbox App installation](docs/xbox-app-installation.md) and [Xbox App research](docs/research/xbox-app-modding.md).
+See [Development VBS contract](docs/development-vbs.md), [Xbox App installation](docs/xbox-app-installation.md), and [Xbox App research](docs/research/xbox-app-modding.md).
 
 ## Architecture
 
 ```text
-installed Game.pak
-      |
-      v
-native PreloadedActionRadials_c.xaml
-      |
-      | local extraction
-      v
-exact native ActionRadialWidgetTemplate_P8
-      |
-      +-- native A / B / nested / swap unchanged
-      |
-      +-- page slot renderer:
-            native assignment-grid focus pattern
-            LSListBox -> LocalFocusSelector -> LSGrid
-      |
-      v
-locally generated Lib_Controller.xaml
+development evidence capture
+  current BG3 XAML / native contracts
+            |
+            v
+project-owned controller resources
+  Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml
+            |
+            v
+CI-built self-contained CAM .pak
+            |
+            v
+development VBS
+  download PAK -> copy to Mods -> update modsettings.lsx
 ```
 
 See:
@@ -149,3 +132,10 @@ See:
 - [Release process](docs/release-process.md)
 - [Xbox App installation](docs/xbox-app-installation.md)
 - [First in-game run](docs/first-run.md)
+
+
+## Developer-only native capture
+
+If the implementation needs fresh native UI evidence, use `Capture-BG3ControllerArtifacts.vbs` together with `capture-self-contained-inputs.ps1`.
+
+The capture is separate from installation: it reads the installed game without modifying it and writes the downloaded extraction tool, log, extracted UI files, manifest and final ZIP beside the VBS launcher. The ZIP is then used as development input for the self-contained package; end users do not need this step.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repository-level static validation for the native-derived no-SE package."""
+"""Repository-level static validation for the self-contained no-SE package."""
 
 from __future__ import annotations
 
@@ -19,18 +19,22 @@ BOOTSTRAP_TEST = ROOT / "tools/test-bootstrap-latest.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
-NATIVE_OVERLAY = ROOT / "tools/native-overlay.ps1"
-NATIVE_OVERLAY_TEST = ROOT / "tools/test-native-overlay.ps1"
+SELF_CONTAINED_RUNTIME = MOD_ROOT / "GUI/Library/Lib_Controller.xaml"
+SELF_CONTAINED_RUNTIME_TEST = ROOT / "tools/test-self-contained-runtime.ps1"
+PATCH8_RUNTIME_EVIDENCE = ROOT / "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
+DEV_CAPTURE = ROOT / "tools/capture-self-contained-inputs.ps1"
+DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
+DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
+DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
+DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
+SELF_CONTAINED_RELEASE_GUARD = ROOT / "tools/assert-self-contained-release.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
 FORBIDDEN_STATIC_RUNTIME_PATHS = [
-    MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml",
-    MOD_ROOT / "GUI/StateMachines/Controller.xaml",
-    MOD_ROOT / "GUI/Library/Lib_Controller.xaml",
-    MOD_ROOT / "GUI/Library/Lib_Keyboard.xaml",
-    MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml",
+    # Never publish copied game-owned resource paths. Self-contained CAM runtime
+    # resources must live under Mods/BG3ControllerActionMenu.
     PACKAGE_ROOT / "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
     PACKAGE_ROOT / "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml",
 ]
@@ -80,165 +84,109 @@ def validate_semantics() -> list[str]:
             f"{script_extender.relative_to(ROOT)}: runtime package must not contain Script Extender files"
         )
 
-    # Published source package must not contain either a reconstructed CAM page/template
-    # or copied proprietary native XAML. The installer derives the two native files
-    # locally from the user's exact installed Game.pak.
+    # Raw copied game resources are forbidden. Project-owned self-contained
+    # runtime XAML belongs under Mods/BG3ControllerActionMenu and is expected
+    # once the migration is completed.
     for forbidden_path in FORBIDDEN_STATIC_RUNTIME_PATHS:
         if forbidden_path.exists():
             errors.append(
-                f"{forbidden_path.relative_to(ROOT)}: static runtime XAML is forbidden; native radial XAML must be derived locally"
+                f"{forbidden_path.relative_to(ROOT)}: copied game-owned runtime XAML path is forbidden"
             )
 
     errors.extend(
         require_text(
-            NATIVE_OVERLAY,
+            SELF_CONTAINED_RUNTIME,
             [
-                '$LslibVersion = "v1.20.4"',
-                '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"',
-                '"Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml"',
-                '$KeyboardHotBarPath = "Mods/MainUI/GUI/Pages/HotBar.xaml"',
-                '"Game.pak"',
-                "New-ControllerLibraryFromNative",
-                "New-AutomaticActionCatalog",
-                "Get-CurrentCantripFilterParameter",
-                "Convert-NativeRadialFocusTriggerForGrid",
-                "Preserve-MainSurfaceForHotBarFilters",
-                "Disable-RadialCustomizationCommands",
-                "Convert-WidgetToAutomaticCatalog",
-                "Convert-PageStyleToGrid",
-                "Hide-RadialBackdrop",
-                "CurrentPlayer.UIData.ActionResourcesCostPreview",
-                "FilterActionResourceCommand",
-                "FilterCantripsCommand",
-                "SetCurrentShownDeckCommand",
-                "ClearSingleHotbarCommand",
-                "CurrentShownDeck.SlotList",
-                "CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList",
-                'Value="{Binding SingleHotBar.SlotList}"',
-                'Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"',
-                'Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"',
-                'Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"',
-                'x:Name="CAM_AutoCatalogFocusRoot"',
+                'x:Key="ActionRadialWidgetTemplate_P8"',
                 'x:Name="CAM_FilterTabs"',
-                'ActionPrevEvent="UITabPrev"',
-                'ActionNextEvent="UITabNext"',
-                'x:Name="CAM_CommonFilterTab"',
-                'x:Name="CAM_ClassFilterTab"',
-                'x:Name="CAM_ItemsFilterTab"',
-                'x:Name="CAM_PassivesFilterTab"',
-                'x:Name="CAM_CantripsFilterTab"',
-                'x:Name="CAM_ResourceFilterList"',
-                'x:Name="CAM_FilteredSlotList"',
+                'CurrentPlayer.UIData.ActionResourcesCostPreview',
+                'FilterActionResourceCommand',
+                'FilterCantripsCommand',
+                'SetCurrentShownDeckCommand',
+                'CurrentShownDeck.SlotList',
+                'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList',
+                'SingleHotBar.SlotList',
+                'KeyboardNavigation.DirectionalNavigation="Contained"',
                 'KeyboardNavigation.DirectionalNavigation="Continue"',
-                'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
-                'Property="Tag" Value="{Binding .}"',
-                'x:Key="CAM_ActionGridPanel"',
-                'x:Key="CAM_ResourceFilterContainer"',
-                'x:Key="CAM_ResourceFilterPanel"',
-                'x:Name="ShowContextMenu" Visibility="Collapsed" IsEnabled="False" IsHitTestVisible="False" Focusable="False"',
+                'LocalFocus.DataContext',
+                'MillisecondsPerTick="70"',
+                'CreateFocusedTooltipDataCommand',
+                'HighlightResourcesCommand',
+                'Command="{Binding UseSlotCommand}"',
+                'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
+                'Command="{Binding ClearSingleHotbarCommand}"',
+                'x:Name="ButtonHintsContainer"',
+                'x:Name="ShowContextMenu"',
                 'Command="{x:Null}"',
-                'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
-                "--action extract-single-file",
-                "--packaged-path $KeyboardHotBarPath",
-                "--action create-package",
-                "-PatchOnlySourceXaml",
-                "-PatchOnlyHotBarSourceXaml",
             ],
         )
     )
-
-    if NATIVE_OVERLAY.exists():
-        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
-
-        for forbidden in (
-            "Packed controller library is missing required seam",
-            "Assert-GridChromeContract",
-            "Assert-CurrentHotBarFilterContract",
-            "missing required filter seam",
-            "$verifiedText",
-            "$verifiedLibrary",
-        ):
-            if forbidden in overlay_text:
-                errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: install-time semantic post-pack verifier is forbidden: {forbidden}"
-                )
-
-        # 0.0.35/0.0.36 proved that source tabs and assignment-catalog objects
-        # are not a valid gameplay-dispatch architecture.
-        for obsolete_main_seam in (
-            "CAM_AutoCatalogSelector",
-            "CAM_ActionsFocusRoot",
-            "CAM_ItemsFocusRoot",
-            "CAM_PassivesFocusRoot",
-            "CAM_MetamagicFocusRoot",
-            "CAM_TabPrevHint",
-            "CAM_TabNextHint",
-            "PlayerCharacterProperties.SpellsAndActions",
-            "CurrentPlayer.SelectedCharacter.Inventory.Slots",
-            "CurrentPlayer.SelectedCharacter.Stats.Passives",
-            'Height="376"',
-        ):
-            if obsolete_main_seam in overlay_text:
-                errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: obsolete 0.0.35/0.0.36 main-grid seam must not return: {obsolete_main_seam}"
-                )
-
-        for unproven_predicate in (
-            "CantripGroupPredicate",
-            "SpellLevelsGroupPredicate",
-            "AllActionsGroupPredicate",
-        ):
-            if unproven_predicate in overlay_text:
-                errors.append(
-                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: historical SpellBook predicate must not enter shipping XAML without current Patch 8 proof: {unproven_predicate}"
-                )
 
     errors.extend(
         require_text(
-            NATIVE_OVERLAY_TEST,
+            SELF_CONTAINED_RUNTIME_TEST,
             [
-                "PatchOnlySourceXaml",
-                "PatchOnlyHotBarSourceXaml",
-                "gameplay candidates are VMHotBarSlot collections",
-                'CurrentPlayer.UIData.ActionResourcesCostPreview',
-                'x:Name="CAM_FilterTabs"',
-                'ActionPrevEvent="UITabPrev"',
-                'ActionNextEvent="UITabNext"',
-                'x:Name="CAM_ResourceFilterList"',
-                'Command="{Binding FilterActionResourceCommand}"',
-                'x:Name="CAM_FilteredSlotList"',
-                'Value="{Binding CurrentShownDeck.SlotList}"',
-                'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
-                'Value="{Binding SingleHotBar.SlotList}"',
-                'Command="{Binding FilterCantripsCommand}" CommandParameter="hfixturecantrips"',
-                'Setter TargetName="singleBarHolder" Property="Visibility" Value="Collapsed"',
-                'Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Visible"',
-                'Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"',
-                'KeyboardNavigation.DirectionalNavigation="Continue"',
-                'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
-                "Main selector did not preserve current native SelectorAssign geometry/binding.",
-                'Value="{Binding LocalFocus.Tag, ElementName=CAM_FilteredSlotList}"',
-                "CreateFocusedTooltipDataCommand",
-                "HighlightResourcesCommand",
-                "Main action grid must not keep the old fixed three-row height.",
-                "Installed native ButtonHintsContainer layout was not preserved exactly.",
-                "0.0.36 duplicate tab-hint chrome must not return.",
-                'ItemsSource="{Binding SingleHotBar.SlotList}"',
-                '<ls:LSListBox x:Name="SingleBar"',
-                'Command="{Binding UseSlotCommand}"',
-                'Command="{Binding ClearSingleHotbarCommand}"',
-                "Radial ContextMenu/X must be inert, hidden, and have no input binding.",
-                "Native hotbar-filter grid fixture passed",
+                "1.8.910.0",
+                "LocalFocus.DataContext",
+                "LocalFocus.Tag",
+                "PlayerCharacterProperties.ControllerHotBars",
+                "ShowContextMenuCommand",
+                "Self-contained Patch 8 runtime contract passed",
             ],
         )
     )
+
+    errors.extend(
+        require_text(
+            PATCH8_RUNTIME_EVIDENCE,
+            [
+                '"gamePackageVersion": "1.8.910.0"',
+                '"focusValuePath": "LocalFocus.DataContext"',
+                '"selectorHasFixedGeometry": false',
+                '"cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3"',
+                '"Public/Game/GUI/Library/PreloadedActionRadials_c.xaml": "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b"',
+                '"Mods/MainUI/GUI/Pages/HotBar.xaml": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728"',
+            ],
+        )
+    )
+
+    if SELF_CONTAINED_RUNTIME.exists():
+        runtime_text = SELF_CONTAINED_RUNTIME.read_text(encoding="utf-8")
+        for forbidden in (
+            "LocalFocus.Tag",
+            "PlayerCharacterProperties.ControllerHotBars",
+            "PlayerCharacterProperties.SpellsAndActions",
+            "CurrentPlayer.SelectedCharacter.Inventory.Slots",
+            "CurrentPlayer.SelectedCharacter.Stats.Passives",
+            "ShowContextMenuCommand",
+            "AssignSlotCommand",
+            "SwapSlotCommand",
+            "AddRadialCommand",
+            "RemoveRadialCommand",
+            "Public/Game/GUI/",
+            "ScriptExtender",
+        ):
+            if forbidden in runtime_text:
+                errors.append(
+                    f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: forbidden obsolete/native-copy seam: {forbidden}"
+                )
+
+    for obsolete in (
+        ROOT / "tools/native-overlay.ps1",
+        ROOT / "tools/test-native-overlay.ps1",
+        ROOT / "tools/prepare-self-contained-reference.ps1",
+        ROOT / "tools/test-self-contained-reference.ps1",
+    ):
+        if obsolete.exists():
+            errors.append(
+                f"{obsolete.relative_to(ROOT)}: obsolete install-time derivation/reference tool must be removed"
+            )
 
     errors.extend(
         require_text(
             XBOX_INSTALLER,
             [
                 "[switch]$Apply",
-                "[string]$NativeOverlayPath",
                 "Get-AppxPackage",
                 "LocalCache\\Local",
                 "ExistingPakFound",
@@ -249,12 +197,27 @@ def validate_semantics() -> list[str]:
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
                 "BG3ControllerActionMenu-backups",
-                "Building a native-derived radial overlay",
-                "& $NativeOverlayPath @overlayArgs",
-                "BG3ControllerActionMenu-native-derived.pak",
+                "The release PAK is self-contained",
+                "Copy-Item -LiteralPath $PackagePath -Destination $destPak -Force",
             ],
         )
     )
+
+    if XBOX_INSTALLER.exists():
+        xbox_text = XBOX_INSTALLER.read_text(encoding="utf-8")
+        for forbidden in (
+            "NativeOverlayPath",
+            "native-overlay.ps1",
+            "Game.pak",
+            "divine.exe",
+            "--action extract-single-file",
+            "--action create-package",
+            "BG3ControllerActionMenu-native-derived.pak",
+        ):
+            if forbidden in xbox_text:
+                errors.append(
+                    f"{XBOX_INSTALLER.relative_to(ROOT)}: normal installer must install the self-contained PAK directly: {forbidden}"
+                )
 
     errors.extend(
         require_text(
@@ -265,6 +228,9 @@ def validate_semantics() -> list[str]:
                 "Invoke-RestMethod",
                 "Invoke-WebRequest",
                 "& $installer @installerArgs",
+                '$PortableStateRoot = Join-Path $ScriptRoot "installer-work"',
+                'CacheRoot = Join-Path (Split-Path -Parent $CacheRoot) "release-cache"',
+                'LauncherRoot = $ScriptRoot',
             ],
         )
     )
@@ -287,17 +253,34 @@ def validate_semantics() -> list[str]:
                 "Sort-Object { [DateTimeOffset]$_.published_at } -Descending",
                 'BG3ControllerActionMenu-$version.pak',
                 'install-xbox-dev.ps1',
-                'native-overlay.ps1',
                 "browser_download_url",
                 "Save-Asset",
-                "& $xboxPath -Apply",
+                "& $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath",
+                "Update-DevelopmentLauncher",
+                '"Install-BG3ControllerActionMenu.vbs"',
+                '"bootstrap-latest.ps1"',
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
         )
     )
 
-    for runtime_installer in (BOOTSTRAP_INSTALLER, LATEST_INSTALLER, NATIVE_OVERLAY):
+    if LATEST_INSTALLER.exists():
+        latest_text = LATEST_INSTALLER.read_text(encoding="utf-8")
+        for forbidden in (
+            "native-overlay.ps1",
+            "NativeOverlayPath",
+            "Game.pak",
+            "divine.exe",
+            "--action extract-single-file",
+            "--action create-package",
+        ):
+            if forbidden in latest_text:
+                errors.append(
+                    f"{LATEST_INSTALLER.relative_to(ROOT)}: canonical installer must not rebuild the release PAK: {forbidden}"
+                )
+
+    for runtime_installer in (BOOTSTRAP_INSTALLER, LATEST_INSTALLER):
         if runtime_installer.exists():
             runtime_text = runtime_installer.read_text(encoding="utf-8")
             for forbidden in (
@@ -324,10 +307,38 @@ def validate_semantics() -> list[str]:
                 "install-latest.log",
                 "install-status.txt",
                 "Installation completed.",
+                'stateRoot = fso.BuildPath(baseDir, "installer-work")',
+                '" -CacheRoot "',
                 "--self-test",
             ],
         )
     )
+
+    errors.extend(
+        require_text(
+            DEVELOPMENT_VBS_DOC,
+            [
+                "temporary development delivery tool",
+                "no manual replacement or update of the VBS is required",
+                "A change that would require the tester to download a newer VBS manually is an installer architecture regression.",
+                "official delivery path",
+                "development helper scripts",
+            ],
+        )
+    )
+
+    if ONE_CLICK_LAUNCHER.exists():
+        launcher_text = ONE_CLICK_LAUNCHER.read_text(encoding="utf-8")
+        for forbidden in (
+            "native-overlay.ps1",
+            "Game.pak",
+            "divine.exe",
+            "BG3ControllerActionMenu-0.",
+        ):
+            if forbidden in launcher_text:
+                errors.append(
+                    f"{ONE_CLICK_LAUNCHER.relative_to(ROOT)}: stable development VBS must not contain version/build-specific behavior: {forbidden}"
+                )
 
     errors.extend(
         require_text(
@@ -336,6 +347,7 @@ def validate_semantics() -> list[str]:
                 "Install-BG3ControllerActionMenu.vbs",
                 "bootstrap-latest.ps1",
                 "BG3ControllerActionMenu-OneClickInstaller.zip",
+                "installer-work",
                 "Compress-Archive",
             ],
         )
@@ -354,26 +366,65 @@ def validate_semantics() -> list[str]:
                 [
                     "Test minimal installer bootstrap",
                     "test-bootstrap-latest.ps1",
-                    "Test native hotbar filter grid",
-                    "test-native-overlay.ps1",
+                    "Test self-contained Patch 8 runtime",
+                    "test-self-contained-runtime.ps1",
                 ],
             )
         )
 
     errors.extend(
         require_text(
+            BUILD_WORKFLOW,
+            [
+                "Test release boundary",
+                "assert-self-contained-release.ps1",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
             RELEASE_WORKFLOW,
             [
-                '"tools/native-overlay.ps1"',
                 '"tools/bootstrap-latest.ps1"',
                 '"tools/install-latest.ps1"',
-                '$overlay = "tools/native-overlay.ps1"',
                 '$bootstrap = "tools/bootstrap-latest.ps1"',
                 '$latestInstaller = "tools/install-latest.ps1"',
-                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay, $bootstrap, $latestInstaller',
+                '$launcher = "tools/Install-BG3ControllerActionMenu.vbs"',
+                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $bootstrap, $latestInstaller',
                 '$deadline = (Get-Date).ToUniversalTime().AddMinutes(5)',
                 '$delaySeconds = [Math]::Min(15, $delaySeconds * 2)',
                 'within the five-minute publication propagation window',
+            ],
+        )
+    )
+
+    if RELEASE_WORKFLOW.exists():
+        release_text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        if '"native-overlay.ps1"' in release_text or '$overlay = "tools/native-overlay.ps1"' in release_text:
+            errors.append(
+                f"{RELEASE_WORKFLOW.relative_to(ROOT)}: native overlay builder must not be a normal release/install asset"
+            )
+
+    errors.extend(
+        require_text(
+            SELF_CONTAINED_RELEASE_GUARD,
+            [
+                "Release blocked: the self-contained controller runtime is not present.",
+                "Lib_Controller.xaml",
+                "native-overlay.ps1",
+                "Game.pak",
+                "Self-contained release boundary passed.",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            RELEASE_WORKFLOW,
+            [
+                "Require self-contained runtime",
+                "./tools/assert-self-contained-release.ps1",
             ],
         )
     )
@@ -392,6 +443,66 @@ def validate_semantics() -> list[str]:
             ],
         )
     )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE,
+            [
+                '$PortableRoot = Split-Path -Parent $MyInvocation.MyCommand.Path',
+                '$WorkRoot = Join-Path $PortableRoot "capture-work"',
+                '*PreloadedActionRadials*.xaml',
+                '*ActionRadials*.xaml',
+                '*HotBar*.xaml',
+                '*DataTemplates.xaml',
+                '*Controller.xaml',
+                '*Lib_Controller.xaml',
+                'bg3-controller-action-menu-inputs-$stamp',
+                'No BG3 files, saves, profiles, or mods were modified.',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE_LAUNCHER,
+            [
+                'capture-self-contained-inputs.ps1',
+                'capture.log',
+                'capture-status.txt',
+                'Upload this ZIP to the development chat.',
+                '--self-test',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE_TEST,
+            [
+                'Portable developer capture fixture passed.',
+                '%LOCALAPPDATA%',
+                'No BG3 files, saves, profiles, or mods were modified.',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE_BUILDER,
+            [
+                'Capture-BG3ControllerArtifacts.vbs',
+                'capture-self-contained-inputs.ps1',
+                'BG3ControllerActionMenu-DevCapture.zip',
+                'Compress-Archive',
+            ],
+        )
+    )
+
+    for portable_path in (ONE_CLICK_LAUNCHER, BOOTSTRAP_INSTALLER, LATEST_INSTALLER, DEV_CAPTURE, DEV_CAPTURE_LAUNCHER):
+        if portable_path.exists() and "%LOCALAPPDATA%" in portable_path.read_text(encoding="utf-8"):
+            errors.append(
+                f"{portable_path.relative_to(ROOT)}: portable launcher path must not use %LOCALAPPDATA%"
+            )
 
     if not VERSION.exists():
         errors.append("VERSION: required file is missing")
@@ -422,7 +533,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "native hotbar-filter/controller-focus contract present; published package contains no proprietary native XAML; "
+        "pinned Patch 8 self-contained runtime contract present; normal installer is direct/self-contained; "
         "runtime remains Script-Extender-free)."
     )
     return 0

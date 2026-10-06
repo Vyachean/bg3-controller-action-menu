@@ -14,23 +14,23 @@ try {
     $version = "9.9.9-fixture"
     $pak = Join-Path $assetRoot "BG3ControllerActionMenu-$version.pak"
     $xbox = Join-Path $assetRoot "install-xbox-dev.ps1"
-    $overlay = Join-Path $assetRoot "native-overlay.ps1"
+    $launcherAsset = Join-Path $assetRoot "Install-BG3ControllerActionMenu.vbs"
+    $bootstrapAsset = Join-Path $assetRoot "bootstrap-latest.ps1"
 
+    Set-Content -LiteralPath $launcherAsset -Value "' new launcher fixture" -Encoding ASCII
+    Set-Content -LiteralPath $bootstrapAsset -Value "# new bootstrap fixture" -Encoding UTF8
     Set-Content -LiteralPath $pak -Value "fake-pak" -NoNewline
-    Set-Content -LiteralPath $overlay -Value "param() Write-Output overlay-fixture" -Encoding UTF8
 
 @'
 param(
     [switch]$Apply,
     [string]$PackagePath,
-    [string]$NativeOverlayPath,
     [string]$ReportPath
 )
 if (-not $Apply) { throw "Expected -Apply." }
 @{
     Applied = $true
     Package = (Split-Path -Leaf $PackagePath)
-    Overlay = (Split-Path -Leaf $NativeOverlayPath)
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
 exit 0
 '@ | Set-Content -LiteralPath $xbox -Encoding UTF8
@@ -57,8 +57,12 @@ exit 0
                     browser_download_url = $xbox
                 },
                 [ordered]@{
-                    name = "native-overlay.ps1"
-                    browser_download_url = $overlay
+                    name = "Install-BG3ControllerActionMenu.vbs"
+                    browser_download_url = $launcherAsset
+                },
+                [ordered]@{
+                    name = "bootstrap-latest.ps1"
+                    browser_download_url = $bootstrapAsset
                 }
             )
         }
@@ -69,7 +73,11 @@ exit 0
     $log = Join-Path $caseRoot "install.log"
     $status = Join-Path $caseRoot "status.txt"
     $report = Join-Path $caseRoot "report.json"
+    $launcherRoot = Join-Path $caseRoot "launcher"
     New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
+    New-Item -ItemType Directory -Force -Path $launcherRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $launcherRoot "Install-BG3ControllerActionMenu.vbs") -Value "' old launcher fixture" -Encoding ASCII
+    Set-Content -LiteralPath (Join-Path $launcherRoot "bootstrap-latest.ps1") -Value "# old bootstrap fixture" -Encoding UTF8
 
     $args = @(
         "-NoLogo",
@@ -80,7 +88,8 @@ exit 0
         "-CacheRoot", $cache,
         "-LogPath", $log,
         "-StatusPath", $status,
-        "-ReportPath", $report
+        "-ReportPath", $report,
+        "-LauncherRoot", $launcherRoot
     )
     & powershell.exe @args
 
@@ -95,9 +104,44 @@ exit 0
 
     $result = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
     if (-not $result.Applied -or
-        $result.Package -ne "BG3ControllerActionMenu-$version.pak" -or
-        $result.Overlay -ne "native-overlay.ps1") {
-        throw "Installer did not pass the latest release assets to the Xbox installer."
+        $result.Package -ne "BG3ControllerActionMenu-$version.pak") {
+        throw "Installer did not pass the self-contained release PAK to the Xbox installer."
+    }
+
+    if ((Get-Content -Raw -LiteralPath (Join-Path $launcherRoot "Install-BG3ControllerActionMenu.vbs")).Trim() -ne "' new launcher fixture") {
+        throw "Canonical installer did not refresh the existing development VBS automatically."
+    }
+    if ((Get-Content -Raw -LiteralPath (Join-Path $launcherRoot "bootstrap-latest.ps1")).Trim() -ne "# new bootstrap fixture") {
+        throw "Canonical installer did not refresh the existing development bootstrap automatically."
+    }
+
+    # Legacy extracted launchers do not know the newer -LauncherRoot parameter.
+    # Prove that install-latest can recover the caller bootstrap directory from
+    # MyInvocation.ScriptName and upgrade that already-extracted folder anyway.
+    $legacyRoot = Join-Path $caseRoot "legacy-launcher"
+    $legacyCache = Join-Path $caseRoot "legacy-cache"
+    $legacyLog = Join-Path $caseRoot "legacy-install.log"
+    $legacyStatus = Join-Path $caseRoot "legacy-status.txt"
+    $legacyReport = Join-Path $caseRoot "legacy-report.json"
+    New-Item -ItemType Directory -Force -Path $legacyRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $legacyRoot "Install-BG3ControllerActionMenu.vbs") -Value "' legacy launcher fixture" -Encoding ASCII
+
+    $legacyBootstrap = Join-Path $legacyRoot "bootstrap-latest.ps1"
+@"
+param()
+& '$Installer' -ReleaseMetadataPath '$metadata' -CacheRoot '$legacyCache' -LogPath '$legacyLog' -StatusPath '$legacyStatus' -ReportPath '$legacyReport'
+exit `$LASTEXITCODE
+"@ | Set-Content -LiteralPath $legacyBootstrap -Encoding UTF8
+
+    & $legacyBootstrap
+    if ($LASTEXITCODE -ne 0) {
+        throw "Legacy launcher compatibility fixture failed with exit code $LASTEXITCODE."
+    }
+    if ((Get-Content -Raw -LiteralPath (Join-Path $legacyRoot "Install-BG3ControllerActionMenu.vbs")).Trim() -ne "' new launcher fixture") {
+        throw "Installer could not auto-refresh a legacy VBS without an explicit LauncherRoot."
+    }
+    if ((Get-Content -Raw -LiteralPath $legacyBootstrap).Trim() -ne "# new bootstrap fixture") {
+        throw "Installer could not auto-refresh the running legacy bootstrap without an explicit LauncherRoot."
     }
 
     $launcherOutput = & cscript.exe //nologo $Launcher --self-test

@@ -16,8 +16,9 @@ Examples:
 - required project paths/files;
 - duplicate resource keys where detectable;
 - forbidden placeholder/experimental markers in release builds;
-- deterministic fixture tests for categorization and navigation helpers;
-- packaging manifest consistency;
+- pinned Patch 8 runtime evidence and project-owned XAML contract checks;
+- rejection of stale `LocalFocus.Tag` / fixed-selector fixtures and raw assignment catalogs;
+- normal-installer checks proving no `Game.pak`, LSLib, XAML generation or repack seam;
 - documentation checks for unverified assumptions.
 
 A failure here must block a test build.
@@ -29,9 +30,10 @@ Runs when packaging is available.
 Examples:
 
 - mod folder shape is valid;
-- generated archive/PAK contains expected files;
+- built PAK contains project-owned `GUI/Library/Lib_Controller.xaml` byte-for-byte;
 - metadata references the correct module UUID/name;
-- no development-only fixtures are packaged;
+- copied `Public/Game/GUI` XAML is absent;
+- Script Extender and native executable payloads are absent;
 - reproducible artifact naming.
 
 This proves only that the artifact is structurally valid, not that BG3 will render it correctly.
@@ -664,3 +666,31 @@ CI now explicitly rejects reintroduction of:
 - install-time "missing required filter seam" checks.
 
 The 0.0.37 UI/filter implementation itself is unchanged by this release.
+
+
+### 2026-10-06 — self-contained runtime migration
+
+The fresh developer capture from Xbox App package `1.8.910.0` has been consumed. It closed two stale fixture assumptions before project-owned XAML was authored:
+
+- current radial focus passes `LocalFocus.DataContext` after the native 70 ms delay, not `LocalFocus.Tag`;
+- current `SelectorAssign` has no hard-coded `118x118` geometry or margin.
+
+The shipping source now contains project-owned `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`. It composes current native filter commands, native `VMHotBarSlot` collections, current radial focus/tooltip/resource-highlight behavior, native A/B, `SingleHotBar.SlotList`, assignment-style navigation, and the captured button-hint layout.
+
+The old install-time derivation path is obsolete and removed:
+
+- `native-overlay.ps1`;
+- `test-native-overlay.ps1`;
+- capture-to-reference generator/fixture tooling.
+
+The developer capture remains read-only evidence tooling only. It does not generate or patch the shipping runtime.
+
+Current automated proof must establish:
+
+1. `tools/test-self-contained-runtime.ps1` passes against the pinned `1.8.910.0` evidence;
+2. normal VBS/bootstrap/latest/Xbox installer paths contain no game-PAK/LSLib/build/repack seam;
+3. the built PAK contains the project-owned controller library byte-for-byte;
+4. copied `Public/Game` XAML, Script Extender and native executable payloads are absent;
+5. repository/build CI is green.
+
+Only after those checks pass is another in-game test justified. The next run must combine the remaining runtime-only questions: long-grid up/down navigation, Common/Class/Items/Passives/Cantrips switching, resource filtering/preview, one direct A dispatch, one natural container/variant/upcast path if available, native hint layout, and top-level/nested B.
