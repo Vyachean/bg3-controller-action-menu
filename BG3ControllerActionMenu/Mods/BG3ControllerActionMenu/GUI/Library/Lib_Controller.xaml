@@ -403,17 +403,17 @@
             </Grid>
 
             <Grid x:Name="MainHotbarListHolder" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid x:Name="CAM_AutoCatalogFocusRoot" Width="840" Height="950" Background="Transparent">
+                <Grid x:Name="CAM_AutoCatalogFocusRoot" Width="960" Height="950" Background="Transparent">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="72"/>
-                        <RowDefinition Height="878"/>
+                        <RowDefinition Height="84"/>
+                        <RowDefinition Height="866"/>
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center">
                         <ls:LSNineSliceImage Height="84"
-                                             Width="820"
+                                             Width="920"
                                              ImageSource="{StaticResource CAM_TabBarBackground}"
                                              Slices="170,0"
                                              MinWidth="340"
@@ -455,7 +455,7 @@
                     </ls:LSListBox>
                     </Grid>
 
-                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="820" Height="878" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="940" Height="866" HorizontalAlignment="Center" VerticalAlignment="Top">
                         <b:Interaction.Triggers>
                             <b:EventTrigger EventName="Loaded">
                                 <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
@@ -488,8 +488,8 @@
                         </b:Interaction.Triggers>
 
                         <ls:LSListBox x:Name="HotBarList"
-                                      Width="800"
-                                      Height="850"
+                                      Width="920"
+                                      Height="838"
                                       SelectedIndex="1"
                                       Background="Transparent"
                                       KeyboardNavigation.DirectionalNavigation="Contained"
@@ -546,6 +546,8 @@
                                                  Margin="4,0"
                                                  Padding="0"
                                                  Focusable="True"
+                                                 BoundEvent="UIAccept"
+                                                 EatInput="True"
                                                  Template="{StaticResource CAM_CantripFilterTemplate}"
                                                  Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips, Converter={StaticResource BoolToVisibleConverter}}">
                                         <ls:LSButton.ToolTip>
