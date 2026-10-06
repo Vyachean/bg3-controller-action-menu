@@ -103,10 +103,10 @@ Every run:
 
 - starts from a tiny stable `bootstrap-latest.ps1` bundled beside the VBS launcher;
 - checks the newest published GitHub Release;
-- downloads and SHA-256 verifies that release's current `bootstrap-latest.ps1` and `install-latest.ps1`;
-- automatically hands off to the newer bootstrap first if the bundled bootstrap is stale;
-- the current canonical installer then downloads and verifies the release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-- installs the release's already-built self-contained CAM PAK; it does not read or rebuild from BG3 game PAKs.
+- resolves the newest published development release;
+- downloads that release's current `install-latest.ps1`;
+- the canonical installer downloads only the self-contained CAM `.pak` and `install-xbox-dev.ps1`;
+- installs that prebuilt PAK directly; it does not read or rebuild from BG3 game PAKs.
 
 The extracted development-installer folder is intentionally reusable. Internal helper scripts/builds may change, but an existing VBS/bootstrap contract must continue to work without asking the tester to download a replacement launcher.
 
@@ -121,23 +121,19 @@ See [Development VBS contract](docs/development-vbs.md), [Xbox App installation]
 ## Architecture
 
 ```text
-installed Game.pak
-      |
-      v
-native PreloadedActionRadials_c.xaml
-      |
-      | local extraction
-      v
-exact native ActionRadialWidgetTemplate_P8
-      |
-      +-- native A / B / nested / swap unchanged
-      |
-      +-- page slot renderer:
-            native assignment-grid focus pattern
-            LSListBox -> LocalFocusSelector -> LSGrid
-      |
-      v
-locally generated Lib_Controller.xaml
+development evidence capture
+  current BG3 XAML / native contracts
+            |
+            v
+project-owned controller resources
+  Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml
+            |
+            v
+CI-built self-contained CAM .pak
+            |
+            v
+development VBS
+  download PAK -> copy to Mods -> update modsettings.lsx
 ```
 
 See:
