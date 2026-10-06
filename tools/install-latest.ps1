@@ -6,6 +6,7 @@ param(
     [string]$LogPath,
     [string]$StatusPath,
     [string]$ReportPath,
+    [string]$LauncherRoot,
     [switch]$ResolveOnly
 )
 
@@ -13,7 +14,26 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$PortableStateRoot = Join-Path $ScriptRoot "installer-work"
+
+# New bootstraps pass LauncherRoot explicitly. For already-extracted legacy
+# development launchers, PowerShell exposes the calling bootstrap path through
+# MyInvocation.ScriptName, allowing this installer to upgrade that launcher
+# without asking the tester to download a new VBS manually.
+if (-not $LauncherRoot -and $MyInvocation.ScriptName) {
+    $callerRoot = Split-Path -Parent $MyInvocation.ScriptName
+    if (Test-Path -LiteralPath (Join-Path $callerRoot "Install-BG3ControllerActionMenu.vbs") -PathType Leaf) {
+        $LauncherRoot = $callerRoot
+    }
+}
+if ($LauncherRoot -and (Test-Path -LiteralPath $LauncherRoot -PathType Container)) {
+    $LauncherRoot = (Resolve-Path -LiteralPath $LauncherRoot).Path
+}
+
+$PortableStateRoot = if ($LauncherRoot) {
+    Join-Path $LauncherRoot "installer-work"
+} else {
+    Join-Path $ScriptRoot "installer-work"
+}
 
 if (-not $ReleaseApiUrl) {
     $ReleaseApiUrl = "https://api.github.com/repos/$Repository/releases?per_page=20"
@@ -92,6 +112,29 @@ function Save-Asset {
     }
 }
 
+function Update-DevelopmentLauncher {
+    param(
+        $Release,
+        [string]$ReleaseDirectory
+    )
+
+    if (-not $LauncherRoot) { return }
+
+    $launcherAsset = Get-Asset -Release $Release -Name "Install-BG3ControllerActionMenu.vbs"
+    $bootstrapAsset = Get-Asset -Release $Release -Name "bootstrap-latest.ps1"
+
+    $launcherDownload = Join-Path $ReleaseDirectory "Install-BG3ControllerActionMenu.vbs"
+    $bootstrapDownload = Join-Path $ReleaseDirectory "bootstrap-latest.ps1"
+
+    Save-Asset -Asset $launcherAsset -Destination $launcherDownload
+    Save-Asset -Asset $bootstrapAsset -Destination $bootstrapDownload
+
+    # WScript has already parsed the VBS before PowerShell starts, so replacing
+    # the source file here updates the next run without changing this one.
+    Copy-Item -LiteralPath $launcherDownload -Destination (Join-Path $LauncherRoot "Install-BG3ControllerActionMenu.vbs") -Force
+    Copy-Item -LiteralPath $bootstrapDownload -Destination (Join-Path $LauncherRoot "bootstrap-latest.ps1") -Force
+}
+
 $transcriptStarted = $false
 $version = ""
 
@@ -137,6 +180,8 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Installer failed with exit code $LASTEXITCODE."
     }
+
+    Update-DevelopmentLauncher -Release $release -ReleaseDirectory $releaseDir
 
     Write-InstallStatus -State "SUCCESS" -Version $version -Message "Installation completed."
     exit 0
