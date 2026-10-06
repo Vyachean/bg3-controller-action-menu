@@ -30,7 +30,7 @@ The key correction is the execution data type. Current Patch 8 `HotBarSlotStyle`
 0.0.37 keeps the native `DCHotBar` workflow and composes two current BG3 contracts:
 
 ```text
-installed keyboard HotBar.xaml
+captured current HotBar contract
   type/resource filter commands
           |
           v
@@ -40,7 +40,7 @@ native VMHotBarSlot collections
   SingleHotBar.SlotList
           |
           v
-installed controller radial focus lifecycle
+captured controller-radial focus lifecycle
   LocalFocus.Tag -> ActionRadials.Tag
   CreateFocusedTooltipDataCommand
   HighlightResourcesCommand
@@ -57,13 +57,13 @@ The top LB/RB tabs are now **filters**, not independent catalogs:
 - Passives;
 - Cantrips.
 
-A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the current installed `FilterCantripsCommand`. Deck filters use the current installed `SetCurrentShownDeckCommand`.
+A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the currently proven `FilterCantripsCommand` contract. Deck filters use the currently proven `SetCurrentShownDeckCommand` contract.
 
 The target architecture is a **self-contained release PAK**. Game UI files may be captured read-only during development to establish the current native contract, but normal installation must not extract or transform `Game.pak`.
 
 Navigation also returns to the complete native assignment hierarchy: **one outer scrollable `LSListBox`** owns vertical continuation, while the resource/action grids inside it use `KeyboardNavigation.DirectionalNavigation="Continue"`. The old fixed three-row action-grid height is removed.
 
-The installed native `ButtonHintsContainer` is preserved instead of restyled. CAM only disables the X/radial-customisation entry point. The extra custom LB/RB hint presenters from 0.0.36 are gone.
+The captured native `ButtonHintsContainer` layout/behavior contract is preserved instead of restyled. CAM only disables the X/radial-customisation entry point. The extra custom LB/RB hint presenters from 0.0.36 are gone.
 
 `SingleHotBar.SlotList` remains BG3-owned for filters, variants, containers and upcast choices. Radial customization (assign/swap/clear/add/remove wheel slots) remains outside CAM.
 
