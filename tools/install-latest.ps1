@@ -167,7 +167,7 @@ try {
             Version = $version
             Pak = $pakName
         } | ConvertTo-Json
-        exit 0
+        return
     }
 
     $releaseDir = Join-Path $CacheRoot $tag
@@ -186,17 +186,16 @@ try {
     # for the next retry.
     Update-DevelopmentLauncher -Release $release -ReleaseDirectory $releaseDir
 
+    # PowerShell scripts invoked with & are in-process helpers, not native
+    # executables. Their success contract is "returned without a terminating
+    # exception"; $LASTEXITCODE may be null or stale from an unrelated process.
     & $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "Installer failed with exit code $LASTEXITCODE."
-    }
 
     Write-InstallStatus -State "SUCCESS" -Version $version -Message "Installation completed."
-    exit 0
+    return
 } catch {
     Write-InstallStatus -State "ERROR" -Version $version -Message $_.Exception.Message
-    Write-Error $_.Exception.Message
-    exit 1
+    throw
 } finally {
     if ($transcriptStarted) {
         try { Stop-Transcript | Out-Null } catch {}
