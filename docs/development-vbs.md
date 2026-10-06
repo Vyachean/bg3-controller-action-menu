@@ -1,80 +1,136 @@
-# Development VBS contract
+# Universal development VBS contract
 
 ## Role
 
-`Install-BG3ControllerActionMenu.vbs` is a **temporary development delivery tool**.
+`Install-BG3ControllerActionMenu.vbs` is the **one operator-facing VBS** used during active CAM development.
 
-It exists only while BG3 Controller Action Menu is under active development and is not yet distributed through the intended official mod-delivery path. It is not part of the long-term runtime architecture and must not influence the design of the shipping mod.
+Despite the historical filename, it is not semantically an installer anymore. It is a universal development shortcut.
 
-Its job is deliberately narrow:
+The operator keeps the same VBS and always starts development operations by double-clicking that file. The VBS itself does not decide what work should happen.
 
-1. the tester keeps one extracted development-installer folder;
-2. the tester double-clicks the same VBS for every install or update;
-3. the launcher/bootstrap resolves the newest development build and installs it;
-4. no manual replacement or update of the VBS is required during normal development iteration;
-5. after a successful install, the canonical installer refreshes the VBS/bootstrap in that same folder from the published development release, so future launcher changes migrate automatically.
+Its stable flow is:
 
-When CAM moves to the official delivery path, this VBS workflow can be retired.
+```text
+double-click the same VBS
+  -> query the newest published development release
+  -> download that release's dev-entry.ps1
+  -> execute dev-entry.ps1 hidden
+  -> show the task result
+```
+
+The release-controlled `dev-entry.ps1` owns the actual behavior.
+
+A release may therefore make the same VBS perform, for example:
+
+- normal install/update of the ready self-contained PAK;
+- read-only capture of current BG3 resources;
+- diagnostics;
+- install followed by diagnostics;
+- another temporary development operation.
+
+Changing those behaviors must not require the operator to download or learn a new launcher.
+
+When CAM moves to the intended official delivery path, this development shortcut can be retired.
 
 ## Stability contract
 
-The VBS itself must remain tiny and stable.
+The VBS must remain tiny and backward-compatible.
 
-It may know only the stable bootstrap entry point and portable state paths. It must not know:
+It may know only:
 
-- release-specific asset sets;
+- the repository/release discovery endpoint;
+- the stable release asset name `dev-entry.ps1`;
+- portable state paths beside itself;
+- the generic status contract used to show success/failure.
+
+It must not know:
+
+- which development task is current;
+- release-specific asset sets beyond `dev-entry.ps1`;
 - mod-version-specific behavior;
 - XAML contracts;
-- LSLib/game-PAK extraction logic;
+- LSLib/game-PAK extraction rules;
 - package-generation logic;
 - validation/test policy.
 
-Version-specific behavior belongs in scripts downloaded by the stable bootstrap. The bootstrap/VBS interface must remain backward-compatible so an already extracted development-installer folder continues to work without a manual refresh.
+All changeable behavior belongs behind `dev-entry.ps1`.
 
-A change that would require the tester to download a newer VBS manually is an installer architecture regression. The canonical installer therefore publishes the VBS as a standalone release asset and refreshes the already-extracted launcher folder after a successful update. It also recovers the caller bootstrap directory for older launchers that predate the explicit `LauncherRoot` argument.
+A change that would require the operator to download a newer VBS manually is a development-launcher architecture regression.
 
-## One-click development workflow
+## One-file operator contract
 
-The expected interaction is always:
+The reusable operator-facing bundle contains only:
+
+`Install-BG3ControllerActionMenu.vbs`
+
+All downloaded scripts, caches, logs, metadata and diagnostics are runtime state created beside it under:
+
+`installer-work\`
+
+The operator must not need to keep a second bootstrap VBS/PS1 or a separate capture launcher.
+
+The old `bootstrap-latest.ps1` two-file protocol is obsolete. The canonical installer keeps a migration path for an already extracted legacy launcher: one successful legacy run refreshes the VBS and retires the old local bootstrap.
+
+## Release-controlled development entry
+
+Every development release must publish:
+
+`dev-entry.ps1`
+
+The universal VBS downloads a fresh copy on every invocation.
+
+That script is intentionally allowed to change between releases. It is the control plane for the current development operation.
+
+For the present release the task is normal install/update:
 
 ```text
-double-click the existing VBS
-  -> resolve current development delivery metadata
-  -> download current helper scripts/build
-  -> install or update CAM
-  -> show success/error
+VBS
+  -> current release dev-entry.ps1
+  -> current release install-latest.ps1
+  -> current release install-xbox-dev.ps1
+  -> copy ready self-contained PAK
+  -> update modsettings.lsx
 ```
 
-The VBS must not expose PowerShell consoles or require command-line parameters for normal development installation.
+If fresh game evidence is needed later, a release can instead make `dev-entry.ps1` download and run `capture-self-contained-inputs.ps1`. The operator still launches the same VBS.
 
-All installer-owned caches, logs, downloaded helpers and diagnostics belong beside the VBS under a portable working directory. Writes elsewhere are limited to the actual BG3 mod/profile installation and safety backups required for that installation.
+## Capture boundary
 
-## Development evidence / capture
+Capture is a development operation, not part of the shipping mod or normal installation.
 
-During development, implementation work may require fresh evidence from the installed game.
+A release-controlled development task may:
 
-In that case, repository scripts may be added or updated to:
+- inspect the installed BG3 files read-only;
+- download development-only tooling such as LSLib;
+- read selected resources from `Game.pak`;
+- produce manifests/reports;
+- create a ZIP beside the universal VBS for upload to the development chat.
 
-- inspect BG3 files read-only;
-- extract selected UI/resources;
-- build manifests/reports;
-- package the resulting evidence for upload back to the development chat.
+Those operations are allowed because they sit behind the universal development entry, outside the normal install/runtime boundary.
 
-Those are **development helper scripts**, not requirements of the final mod.
-
-They may be exposed through a one-click VBS helper when useful, but they must remain separate from the normal install/update path unless a specific development build genuinely needs them. Their output should be created beside the launcher so the tester can simply return the generated archive.
-
-The final self-contained mod must not depend on these capture/extraction steps.
+There must not be a second permanent `Capture-BG3ControllerArtifacts.vbs`.
 
 ## Self-contained runtime boundary
 
-The target release PAK is self-contained. Development tooling may inspect the game to discover or verify the current native UI contract, but normal installation must not turn the tester's machine into a build environment.
+The final PAK remains self-contained regardless of what development task the universal launcher performs.
 
-In particular, the permanent mod architecture must not require:
+The **normal install/update helper** must not:
 
-- reading `Game.pak` during installation;
-- installing/downloading LSLib during installation;
-- generating runtime XAML during installation;
-- repacking the mod on the tester's machine.
+- read `Game.pak`;
+- install or invoke LSLib;
+- generate runtime XAML;
+- rebuild/repack the PAK;
+- require Script Extender, a DLL, or a native loader.
 
-Those activities, if needed, belong to development/release preparation before the build is delivered.
+Development capture may read the game to discover or verify contracts. That does not make capture a runtime or install dependency.
+
+The distinction is:
+
+```text
+universal development shortcut
+  -> release-controlled task
+       -> install path: ready PAK only
+       -> capture path: read-only game inspection is allowed
+```
+
+This keeps the operator workflow universal while preserving a genuinely self-contained shipping mod.
