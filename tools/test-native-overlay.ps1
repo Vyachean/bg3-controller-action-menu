@@ -373,6 +373,8 @@ $overlaySource = Get-Content -Raw -LiteralPath $Script
 foreach ($forbiddenRuntimeVerifier in @(
     "Packed controller library is missing required seam",
     "Assert-GridChromeContract",
+    "Assert-CurrentHotBarFilterContract",
+    "missing required filter seam",
     '$verifiedText',
     '$verifiedLibrary'
 )) {
@@ -381,4 +383,4 @@ foreach ($forbiddenRuntimeVerifier in @(
     }
 }
 
-Write-Host "Native hotbar-filter grid fixture passed: gameplay candidates are VMHotBarSlot collections, one assignment-style navigation shell owns vertical continuation, current radial focus drives Tag/resource preview, native right-stacked hints are preserved, and radial customization is unreachable."
+Write-Host "Native hotbar-filter grid fixture passed: gameplay candidates are VMHotBarSlot collections, one assignment-style navigation shell owns vertical continuation, current radial focus drives Tag/resource preview, native button hints are preserved, radial customization is unreachable, and install-time semantic contract assertions are absent."
