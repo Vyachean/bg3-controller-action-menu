@@ -152,3 +152,68 @@ jobs:
 
           gh @args
           if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+
+      - name: Verify published release is installer-visible
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+            "User-Agent" = "BG3ControllerActionMenu-ReleaseVerifier"
+          }
+
+          $releases = @(Invoke-RestMethod -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases?per_page=20" -Headers $headers)
+          $published = @(
+            $releases |
+              Where-Object { -not $_.draft -and $_.published_at -and $_.tag_name } |
+              Sort-Object { [DateTimeOffset]$_.published_at } -Descending
+          )
+
+          if ($published.Count -eq 0) {
+            throw "No published release found after release publication."
+          }
+
+          $latest = $published[0]
+          if ([string]$latest.tag_name -ne $env:TAG) {
+            throw "Expected newest published release '$env:TAG', got '$($latest.tag_name)'."
+          }
+
+          $requiredAssets = @(
+            "BG3ControllerActionMenu-$env:VERSION.pak",
+            "BG3ControllerActionMenu-OneClickInstaller.zip",
+            "bootstrap-latest.ps1",
+            "install-latest.ps1",
+            "install-xbox-dev.ps1",
+            "native-overlay.ps1"
+          )
+          $assetNames = @($latest.assets | ForEach-Object { [string]$_.name })
+          foreach ($required in $requiredAssets) {
+            if ($assetNames -notcontains $required) {
+              throw "Published release '$env:TAG' is missing required asset '$required'."
+            }
+          }
+
+          $resolveRoot = Join-Path $env:RUNNER_TEMP "release-resolve-proof"
+          New-Item -ItemType Directory -Force -Path $resolveRoot | Out-Null
+          $status = Join-Path $resolveRoot "status.txt"
+          $log = Join-Path $resolveRoot "install.log"
+          $report = Join-Path $resolveRoot "report.json"
+          $cache = Join-Path $resolveRoot "cache"
+
+          ./tools/install-latest.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Canonical installer resolver failed against live GitHub Releases."
+          }
+
+          $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
+          if ($statusLines.Count -lt 2 -or $statusLines[0] -ne "SUCCESS" -or $statusLines[1] -ne $env:VERSION) {
+            throw "Canonical installer resolver did not select expected version '$env:VERSION'."
+          }
+
+          Write-Host "Published release $env:TAG is complete and selected by the canonical installer."
