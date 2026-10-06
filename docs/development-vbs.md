@@ -30,6 +30,8 @@ A release may therefore make the same VBS perform, for example:
 
 Changing those behaviors must not require the operator to download or learn a new launcher.
 
+No manual replacement or update of the VBS is required when release behavior changes.
+
 When CAM moves to the intended official delivery path, this development shortcut can be retired.
 
 ## Stability contract
