@@ -192,15 +192,36 @@ jobs:
           $report = Join-Path $resolveRoot "report.json"
           $cache = Join-Path $resolveRoot "cache"
 
-          ./tools/install-latest.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
+          # GitHub's exact-tag endpoint can expose a newly created release a few
+          # seconds before the releases collection used by the real installer does.
+          # Prove eventual installer visibility without duplicating selection logic.
+          $resolved = $false
+          for ($attempt = 1; $attempt -le 6; $attempt++) {
+            Remove-Item -LiteralPath $status -Force -ErrorAction SilentlyContinue
+            ./tools/install-latest.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
 
-          if ($LASTEXITCODE -ne 0) {
-            throw "Canonical installer resolver failed against live GitHub Releases."
+            if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $status)) {
+              $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
+              if ($statusLines.Count -ge 2 -and
+                  $statusLines[0] -eq "SUCCESS" -and
+                  $statusLines[1] -eq $env:VERSION) {
+                $resolved = $true
+                break
+              }
+
+              $observed = if ($statusLines.Count -ge 2) { $statusLines[1] } else { "<none>" }
+              Write-Host "Installer visibility attempt $attempt still resolves '$observed'."
+            } else {
+              Write-Host "Installer visibility attempt $attempt did not resolve successfully."
+            }
+
+            if ($attempt -lt 6) {
+              Start-Sleep -Seconds 2
+            }
           }
 
-          $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
-          if ($statusLines.Count -lt 2 -or $statusLines[0] -ne "SUCCESS" -or $statusLines[1] -ne $env:VERSION) {
-            throw "Canonical installer resolver did not select expected version '$env:VERSION'."
+          if (-not $resolved) {
+            throw "Canonical installer resolver did not select expected version '$env:VERSION' after publication propagation checks."
           }
 
           Write-Host "Published release $env:TAG is complete and selected by the canonical installer."
