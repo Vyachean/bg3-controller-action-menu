@@ -69,6 +69,10 @@ All downloaded scripts, caches, logs, metadata and diagnostics are runtime state
 
 `installer-work\`
 
+The launcher itself must create `installer-work\launcher-bootstrap.log` **before the first network request**. This log covers the part of execution that happens before `dev-entry.ps1` exists: GitHub release discovery, asset lookup/download and handoff to the downloaded entry.
+
+If bootstrap fails, the error dialog must point to that existing bootstrap log. It must never claim that a diagnostic file was written when that file does not exist.
+
 The operator must not need to keep a second bootstrap VBS/PS1 or a separate capture launcher.
 
 The old `bootstrap-latest.ps1` two-file protocol is obsolete. The canonical installer keeps a migration path for an already extracted legacy launcher: one successful legacy run refreshes the VBS and retires the old local bootstrap.
