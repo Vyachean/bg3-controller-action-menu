@@ -149,4 +149,83 @@
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}"/>
                 </b:DataTrigger>
             </b:Interaction.Triggers>
-            <Grid x:Name="MainHotbarListHol
+            <Grid x:Name="MainHotbarListHolder"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Background="Transparent">
+                <Grid Width="840" Height="950" Background="Transparent">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="72"/>
+                        <RowDefinition Height="878"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- LB/RB selects semantic filters; they are not independent source catalogs. -->
+                    <ls:LSListBox x:Name="CAM_FilterTabs"
+                                  Grid.Row="0"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  ActionPrevEvent="UITabPrev"
+                                  ActionNextEvent="UITabNext"
+                                  KeyboardNavigation.DirectionalNavigation="Cycle"
+                                  SelectedIndex="0">
+                        <ls:LSListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ls:LSListBox.ItemsPanel>
+                        <ls:LSListBoxItem x:Name="CAM_CommonFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
+                            <TextBlock Text="{Binding Source='haf48b625gb2f0g449egb3aegfddfa1be81c2', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                        </ls:LSListBoxItem>
+                        <ls:LSListBoxItem x:Name="CAM_ClassFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}"
+                                          Visibility="{Binding CurrentPlayer.SelectedCharacter.IsShapeShifted, Converter={StaticResource BoolToCollapsedConverter}}">
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.Stats.ClassList[0].ClassDisplayName}" FontSize="24"/>
+                        </ls:LSListBoxItem>
+                        <ls:LSListBoxItem x:Name="CAM_ItemsFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
+                            <TextBlock Text="{Binding Source='h9dc5cd87g62b9g452ag8b97gdb226aa037d8', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                        </ls:LSListBoxItem>
+                        <ls:LSListBoxItem x:Name="CAM_PassivesFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
+                            <TextBlock Text="{Binding Source='hccb74959ga789g46f6g8cc2g73edf1536b6a', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                        </ls:LSListBoxItem>
+                        <ls:LSListBoxItem x:Name="CAM_CantripsFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
+                            <TextBlock Text="{Binding Source='h7d02199dg44ecg4a1egbcacg9cc1cec197b3', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                        </ls:LSListBoxItem>
+                    </ls:LSListBox>
+
+                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="820" Height="878"
+                          HorizontalAlignment="Center" VerticalAlignment="Top">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="Loaded">
+                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"/>
+                                <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}"/>
+                            </b:EventTrigger>
+                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="0">
+                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"/>
+                                <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}"/>
+                            </b:DataTrigger>
+                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="1">
+                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"/>
+                                <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}"/>
+                            </b:DataTrigger>
+                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2">
+                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
+                                <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}"/>
+                            </b:DataTrigger>
+                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="3">
+                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
+                                <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}"/>
+                            </b:DataTrigger>
+                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="4">
+                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                <b:I
