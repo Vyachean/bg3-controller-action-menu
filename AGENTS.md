@@ -57,6 +57,8 @@ Do not reconstruct the visible grid from `HotbarContainer` component memory. Com
 
 The public `ActionRadials.xaml` dump from 2023-09-06 is Patch 2 Hotfix 1 and is historical evidence only.
 
+The public SpellBook dump that exposes the names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` is likewise historical evidence, not sufficient Patch 8 proof by itself. Do not put those predicate names, a hand-written `SpellSlotLevel` classifier, or any equivalent CAM-owned spell-level heuristic into shipping XAML until the exact current installed-game contract is captured. Until then, preserve the current native `SpellsAndActions` grouping instead of guessing how to split it.
+
 Runtime evidence additionally proves:
 
 - `0.0.18` had the correct controller data/rendering path but dead navigation/B;
@@ -88,6 +90,14 @@ Current mandatory architecture:
   - `CurrentPlayer.SelectedCharacter.Stats.Passives` filtered by `Data.TogglablePassivePredicate`;
   - the same passives collection filtered by `Data.TogglableMetaMagicPassivePredicate`;
   - `CurrentPlayer.SelectedCharacter.Inventory.Slots` for the Items section;
+- the main catalog is presented as native-source tabs, not as a duplicated action model:
+  - `Actions / Spells` = the current `SpellsAndActions` collection with BG3-owned group membership/order preserved;
+  - `Items` = current `Inventory.Slots`;
+  - `Passives` = current passives filtered by `TogglablePassivePredicate`;
+  - `Metamagic` = current passives filtered by `TogglableMetaMagicPassivePredicate`, hidden when the native filter is empty;
+- the tab strip uses an `LSListBox` with `ActionPrevEvent="UITabPrev"` / `ActionNextEvent="UITabNext"`; changing a tab may change only presentation/focus composition, never action semantics;
+- after a tab selection change, clear the stale `ActionRadials.Tag` and use BG3's `SetMoveFocusAction` to return focus to the automatic grid root; preserve per-list selection where the native controls do so;
+- there is no `Custom` tab and no user-managed layout in CAM;
 - the catalog must reuse the proven `AssignList + LocalFocusSelector + LSGrid` controller-focus hierarchy rather than rebuild navigation;
 - focus changes must feed the selected native candidate into the existing `ActionRadials.Tag -> UseSlotCommand` path; no custom gameplay dispatch;
 - `SingleHotBar.SlotList` remains the native nested/upcast/variant surface and may keep the already-proven grid renderer;
@@ -99,7 +109,7 @@ Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
 The end-user installer is not a verifier. `0.0.29` proved that duplicating release semantics inside the install path creates stale false failures. Detailed generated-XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer performs only the operations required to download, derive and install the package; it should fail only when an operation itself cannot be completed.
 
-The next in-game test is justified only after CI proves that the main surface no longer binds `ControllerHotBars`, contains the native automatic catalog sources and focus hierarchy, disables radial customization completely, preserves B and nested `SingleHotBar`, and routes A through the existing `UseSlotCommand` command. The runtime-only proof is whether `UseSlotCommand` accepts the focused native catalog candidates exactly as the current UI model exposes them.
+The next in-game test is justified only after CI proves that the main surface no longer binds `ControllerHotBars`, contains the native automatic catalog sources, action tabs and focus hierarchy, disables radial customization completely, preserves B and nested `SingleHotBar`, and routes A through the existing `UseSlotCommand` command. One milestone run must then prove the runtime-only seams together: `UITabPrev/UITabNext` selection, empty-tab skipping, focus return into the selected grid, one simple A dispatch, top-level B, and nested B/SingleHotBar if naturally encountered.
 
 ## Installer boundary
 
