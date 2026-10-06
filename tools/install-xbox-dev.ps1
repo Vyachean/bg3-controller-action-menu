@@ -611,6 +611,15 @@ if (-not (Test-Path -LiteralPath $PackagePath)) {
 }
 $PackagePath = (Resolve-Path -LiteralPath $PackagePath).Path
 
+$target = $report.Selected
+$targetMods = $target.Mods[0].Path
+$targetSettings = $target.SelectedModSettings.Path
+$schema = $target.SelectedModSettings.WriteSchema
+if (-not $schema) {
+    throw "Refusing to modify Xbox data: no reusable LSX schema was proven from an existing active mod."
+}
+$destPak = Join-Path $targetMods "BG3ControllerActionMenu.pak"
+
 # The release PAK is self-contained. Normal installation copies it directly;
 # game-file extraction/repacking belongs to development/release preparation.
 [xml]$settingsXml = Get-Content -Raw -LiteralPath $targetSettings
