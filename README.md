@@ -59,7 +59,7 @@ The top LB/RB tabs are now **filters**, not independent catalogs:
 
 A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the current installed `FilterCantripsCommand`. Deck filters use the current installed `SetCurrentShownDeckCommand`.
 
-The installer extracts the controller radial dictionary and keyboard `HotBar.xaml` needed for the deterministic transformation. It does not run a separate semantic compatibility scan over those files; those contract assertions live in CI fixtures. No Larian XAML is committed or published.
+The target architecture is a **self-contained release PAK**. Game UI files may be captured read-only during development to establish the current native contract, but normal installation must not extract or transform `Game.pak`.
 
 Navigation also returns to the complete native assignment hierarchy: **one outer scrollable `LSListBox`** owns vertical continuation, while the resource/action grids inside it use `KeyboardNavigation.DirectionalNavigation="Continue"`. The old fixed three-row action-grid height is removed.
 
@@ -83,8 +83,7 @@ The reusable launcher is intentionally small:
 VBS
  -> bootstrap-latest.ps1
  -> newest release's install-latest.ps1
- -> download required release files
- -> build local BG3-derived PAK
+ -> download the prebuilt self-contained PAK
  -> install it
 ```
 
@@ -107,13 +106,13 @@ Every run:
 - downloads and SHA-256 verifies that release's current `bootstrap-latest.ps1` and `install-latest.ps1`;
 - automatically hands off to the newer bootstrap first if the bundled bootstrap is stale;
 - the current canonical installer then downloads and verifies the release's base CAM `.pak`, `install-xbox-dev.ps1`, and `native-overlay.ps1`;
-- extracts the exact current radial XAML from the installed BG3 `Game.pak`, derives a controller library whose action pages use the native slot-assignment grid focus pattern, packs it locally, and runs the fail-closed Xbox installer.
+- installs the release's already-built self-contained CAM PAK; it does not read or rebuild from BG3 game PAKs.
 
 After installing the self-updating launcher once, the extracted folder is intended to remain reusable even when the internal installer contract changes.
 
 One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
 
-Logs and diagnostics are stored under `%LOCALAPPDATA%\BG3ControllerActionMenu`.
+The one-click folder is portable. Its `installer-work` directory beside the VBS launcher contains downloads, logs, status and diagnostics.
 
 The lower-level `install-xbox-dev.ps1` remains available for manual diagnosis/development.
 
@@ -149,3 +148,10 @@ See:
 - [Release process](docs/release-process.md)
 - [Xbox App installation](docs/xbox-app-installation.md)
 - [First in-game run](docs/first-run.md)
+
+
+## Developer-only native capture
+
+If the implementation needs fresh native UI evidence, use `Capture-BG3ControllerArtifacts.vbs` together with `capture-self-contained-inputs.ps1`.
+
+The capture is separate from installation: it reads the installed game without modifying it and writes the downloaded extraction tool, log, extracted UI files, manifest and final ZIP beside the VBS launcher. The ZIP is then used as development input for the self-contained package; end users do not need this step.
