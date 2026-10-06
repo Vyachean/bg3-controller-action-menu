@@ -18,6 +18,7 @@ DEV_ENTRY = ROOT / "tools/dev-entry.ps1"
 DEV_ENTRY_TEST = ROOT / "tools/test-dev-entry.ps1"
 STANDALONE_VBS_TEST = ROOT / "tools/test-standalone-vbs.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
+LATEST_INSTALLER_TEST = ROOT / "tools/test-install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
 SELF_CONTAINED_RUNTIME = MOD_ROOT / "GUI/Library/Lib_Controller.xaml"
@@ -235,6 +236,7 @@ def validate_semantics() -> list[str]:
                 'Task = "install"',
                 "Current release task: install/update the self-contained PAK.",
                 "& $installer @installerArgs",
+                "failures propagate as terminating exceptions",
             ],
         )
     )
@@ -245,6 +247,8 @@ def validate_semantics() -> list[str]:
             [
                 "Universal release-controlled development entry fixture passed.",
                 "Release-controlled helper was not executed.",
+                'cmd.exe /c "exit 23"',
+                "must use exception semantics instead",
             ],
         )
     )
@@ -275,14 +279,37 @@ def validate_semantics() -> list[str]:
                 "& $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath",
                 "Update-DevelopmentLauncher",
                 '"Install-BG3ControllerActionMenu.vbs"',
+                'success contract is "returned without a terminating',
+                "$global:LASTEXITCODE = 0",
+                "Compatibility only: obsolete bootstrap-latest.ps1 callers",
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
         )
     )
 
+    errors.extend(
+        require_text(
+            LATEST_INSTALLER_TEST,
+            [
+                'cmd.exe /c "exit 37"',
+                "return normally without calling exit",
+                "mistake that value for",
+            ],
+        )
+    )
+
+    if DEV_ENTRY.exists() and "exit $LASTEXITCODE" in DEV_ENTRY.read_text(encoding="utf-8"):
+        errors.append(
+            f"{DEV_ENTRY.relative_to(ROOT)}: in-process PowerShell helper result must not be taken from LASTEXITCODE"
+        )
+
     if LATEST_INSTALLER.exists():
         latest_text = LATEST_INSTALLER.read_text(encoding="utf-8")
+        if 'if ($LASTEXITCODE -ne 0)' in latest_text:
+            errors.append(
+                f"{LATEST_INSTALLER.relative_to(ROOT)}: in-process PowerShell helper result must use exception semantics"
+            )
         for forbidden in (
             "native-overlay.ps1",
             "NativeOverlayPath",

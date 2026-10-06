@@ -39,7 +39,10 @@ param(
     CacheRoot = $CacheRoot
     LauncherRoot = $LauncherRoot
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
-exit 0
+
+# A successful PowerShell helper may leave LASTEXITCODE unset or stale.
+# The universal entry must use exception semantics instead.
+& cmd.exe /c "exit 23"
 '@ | Set-Content -LiteralPath $installer -Encoding UTF8
 
     $metadata = Join-Path $TestRoot "release.json"

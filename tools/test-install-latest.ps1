@@ -29,7 +29,11 @@ if (-not $Apply) { throw "Expected -Apply." }
     Applied = $true
     Package = (Split-Path -Leaf $PackagePath)
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
-exit 0
+
+# Simulate the real helper contract: return normally without calling exit.
+# Also leave a stale native-process exit code behind; install-latest must not
+# mistake that value for the result of this PowerShell script.
+& cmd.exe /c "exit 37"
 '@ | Set-Content -LiteralPath $xbox -Encoding UTF8
 
     $metadata = Join-Path $TestRoot "releases.json"
