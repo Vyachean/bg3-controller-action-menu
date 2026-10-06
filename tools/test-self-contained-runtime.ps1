@@ -33,6 +33,12 @@ if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb
 if ($evidence.sourceHashes.'Mods/MainUI/GUI/StateMachines/Controller.xaml' -ne "53389126eb75eaa275609fce981b15339ea8cacab58df3af0d97c370658a573c") {
     throw "Unexpected MainUI controller state-machine capture hash."
 }
+if ($evidence.runtimeContract.controllerPresentation.mainSlotStyle -ne "SlotIconStyle" -or $evidence.runtimeContract.controllerPresentation.mainSlotSize -ne 104) {
+    throw "Controller slot presentation must remain pinned to captured SlotIconStyle at 104px."
+}
+if ($evidence.runtimeContract.controllerPresentation.keyboardStyleRejected -ne "HotBarSlotStyle" -or $evidence.runtimeContract.controllerPresentation.keyboardOverlayRejected -ne "HotKey") {
+    throw "Keyboard HotBarSlotStyle/HotKey presentation regression guard is missing from capture evidence."
+}
 
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
