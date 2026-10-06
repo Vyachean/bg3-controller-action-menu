@@ -112,7 +112,6 @@ try {
     $pakName = "BG3ControllerActionMenu-$version.pak"
     $pakAsset = Get-Asset -Release $release -Name $pakName
     $xboxAsset = Get-Asset -Release $release -Name "install-xbox-dev.ps1"
-    $overlayAsset = Get-Asset -Release $release -Name "native-overlay.ps1"
 
     if ($ResolveOnly) {
         Write-InstallStatus -State "SUCCESS" -Version $version -Message "Latest release resolved."
@@ -129,14 +128,12 @@ try {
 
     $pakPath = Join-Path $releaseDir $pakName
     $xboxPath = Join-Path $releaseDir "install-xbox-dev.ps1"
-    $overlayPath = Join-Path $releaseDir "native-overlay.ps1"
 
     Write-Host "Installing $tag..."
     Save-Asset -Asset $pakAsset -Destination $pakPath
     Save-Asset -Asset $xboxAsset -Destination $xboxPath
-    Save-Asset -Asset $overlayAsset -Destination $overlayPath
 
-    & $xboxPath -Apply -PackagePath $pakPath -NativeOverlayPath $overlayPath -ReportPath $ReportPath
+    & $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath
     if ($LASTEXITCODE -ne 0) {
         throw "Installer failed with exit code $LASTEXITCODE."
     }
