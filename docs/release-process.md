@@ -22,7 +22,6 @@ A version may be called **released**, **ready to install**, or **the newest inst
    - `bootstrap-latest.ps1`
    - `install-latest.ps1`
    - `install-xbox-dev.ps1`
-   - `native-overlay.ps1`
 6. The new tag is the newest published release selected by the same release ordering used by `install-latest.ps1`.
 7. `install-latest.ps1 -ResolveOnly`, against the live GitHub Releases API, resolves exactly `<VERSION>`.
 
@@ -71,7 +70,7 @@ Before merging:
 - repository validation must pass;
 - installer fixture tests must pass;
 - Xbox installer tests must pass;
-- native-overlay/static contract tests must pass;
+- development native-contract/static fixture tests must pass;
 - package verification must pass;
 - documentation must describe any changed architecture or runtime proof boundary;
 - the PR must state what remains runtime-only.
