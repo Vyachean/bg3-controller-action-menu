@@ -44,10 +44,18 @@ $headers = @{
 }
 
 function Get-Releases {
-    if ($ReleaseMetadataPath) {
-        return @(Get-Content -Raw -LiteralPath $ReleaseMetadataPath | ConvertFrom-Json)
+    $payload = if ($ReleaseMetadataPath) {
+        Get-Content -Raw -LiteralPath $ReleaseMetadataPath | ConvertFrom-Json
+    } else {
+        Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers
     }
-    return @(Invoke-RestMethod -Uri $ReleaseApiUrl -Headers $headers)
+
+    # Invoke-RestMethod may surface a top-level JSON array as one Object[] in
+    # the pipeline. Enumerate explicitly so callers always receive one release
+    # object at a time, matching the single-object fixture contract as well.
+    foreach ($release in @($payload)) {
+        Write-Output $release
+    }
 }
 
 function Get-LatestRelease {
