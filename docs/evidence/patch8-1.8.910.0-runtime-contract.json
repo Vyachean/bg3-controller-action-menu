@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-10-06T17:34:41.6428619Z",
+  "gamePackageVersion": "1.8.910.0",
+  "sourceHashes": {
+    "Mods/MainUI/GUI/Pages/ActionRadials.xaml": "bce01b1043915eda64277e4f5a3d9b9f0893ac9226b32cb9d394a4bea325371a",
+    "Mods/MainUI/GUI/Pages/HotBar.xaml": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728",
+    "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml": "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b",
+    "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml": "cbd5141734063dce4e41b319775eefc3b905e4b42c86bbe37f3fbf16e20e2bba",
+    "Public/Game/GUI/Library/DataTemplates.xaml": "e536956cdfa04fc2a737bdc41e70696e5b712dfada966a90e7d7e69374911850",
+    "Public/Game/GUI/Library/FocusableControls_c.xaml": "a2f1cce1fa77376db6ec9155bf45ab047c47c3e2f4bda07fc1fb0f63cf015679",
+    "Public/Game/GUI/Library/Tooltips.xaml": "0f271719fbc453cad0e902cefcd9e0f31394e0fe37c678a5da344ae528ebf7ad",
+    "Mods/MainUI/GUI/Library/Lib_Controller.xaml": "d96acb50948c23770b8e57cb9fedc120def6bb501fdb955ab33447d4e22673b1"
+  },
+  "runtimeContract": {
+    "state": "ActionRadials",
+    "context": "HotBar",
+    "templateKey": "ActionRadialWidgetTemplate_P8",
+    "mainSlotType": "VMHotBarSlot",
+    "mainSlotSources": [
+      "CurrentShownDeck.SlotList",
+      "CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList",
+      "SingleHotBar.SlotList"
+    ],
+    "deckCommands": {
+      "CommonHotBar": "SetCurrentShownDeckCommand",
+      "ClassHotBar": "SetCurrentShownDeckCommand",
+      "ItemHotBar": "SetCurrentShownDeckCommand"
+    },
+    "cantripFilterCommand": "FilterCantripsCommand",
+    "cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
+    "resourcePreviewSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
+    "resourceFilterCommand": "FilterActionResourceCommand",
+    "focusValuePath": "LocalFocus.DataContext",
+    "focusDelayMilliseconds": 70,
+    "focusCommands": [
+      "CreateFocusedTooltipDataCommand",
+      "HighlightResourcesCommand"
+    ],
+    "focusHoverSound": "UI_HUD_Controller_RadialMenu_SlotHover",
+    "acceptEvent": "UIAccept",
+    "acceptCommand": "UseSlotCommand",
+    "acceptParameter": "ActionRadials.Tag",
+    "cancelEvent": "UICancel",
+    "defaultCancelCommand": "ClearSingleHotbarCommand",
+    "topLevelCancelCommand": "CustomEvent:CloseWidget",
+    "assignmentNavigation": {
+      "outer": "LSListBox",
+      "outerDirectionalNavigation": "Contained",
+      "outerNextEvent": "UIDown",
+      "outerPrevEvent": "UIUp",
+      "childDirectionalNavigation": "Continue",
+      "grid": "LSGrid",
+      "gridEvents": ["UIUp", "UIDown", "UILeft", "UIRight"],
+      "selectorTemplate": "SelectorTemplate",
+      "selectorHasFixedGeometry": false
+    },
+    "buttonHintsContainer": {
+      "style": "ButtonHint.Container.CenterWrap",
+      "horizontalAlignment": "Right",
+      "horizontalContentAlignment": "Right",
+      "flowDirection": "RightToLeft",
+      "width": 1000,
+      "margin": "26,0,26,56"
+    },
+    "radialCustomizationAllowed": false
+  }
+}
