@@ -260,42 +260,6 @@ function Hide-RadialBackdrop {
         $StyleText.Substring($match.Index + $match.Length)
 }
 
-function Set-NamedElementAttribute {
-    param(
-        [Parameter(Mandatory = $true)][string]$Text,
-        [Parameter(Mandatory = $true)][string]$Tag,
-        [Parameter(Mandatory = $true)][string]$Name,
-        [Parameter(Mandatory = $true)][string]$Attribute,
-        [Parameter(Mandatory = $true)][string]$Value
-    )
-
-    $span = Get-ElementSpan -Text $Text -Tag $Tag -AttributeName "x:Name" -AttributeValue $Name
-    $open = $span.OpenText
-    $escapedAttribute = [regex]::Escape($Attribute)
-    $attributePattern = '\s' + $escapedAttribute + '="[^"]*"'
-
-    if ([regex]::IsMatch($open, $attributePattern)) {
-        $patchedOpen = [regex]::Replace(
-            $open,
-            $attributePattern,
-            ' ' + $Attribute + '="' + $Value + '"',
-            1
-        )
-    } else {
-        if ($open.EndsWith("/>", [System.StringComparison]::Ordinal)) {
-            $patchedOpen = $open.Substring(0, $open.Length - 2) +
-                ' ' + $Attribute + '="' + $Value + '"/>'
-        } else {
-            $patchedOpen = $open.Substring(0, $open.Length - 1) +
-                ' ' + $Attribute + '="' + $Value + '">'
-        }
-    }
-
-    return $Text.Substring(0, $span.Start) +
-        $patchedOpen +
-        $Text.Substring($span.Start + $span.OpenLength)
-}
-
 function Disable-RadialCustomizationCommands {
     param([Parameter(Mandatory = $true)][string]$Text)
 
@@ -331,35 +295,6 @@ function Convert-WidgetChromeForGrid {
         $WidgetText.Substring($contextMenuButton.End)
 
     return Disable-RadialCustomizationCommands -Text $WidgetText
-}
-
-function Rename-NativeResource {
-    param(
-        [Parameter(Mandatory = $true)][string]$Text,
-        [Parameter(Mandatory = $true)][string]$OldKey,
-        [Parameter(Mandatory = $true)][string]$NewKey
-    )
-
-    return $Text.Replace(
-        'x:Key="' + $OldKey + '"',
-        'x:Key="' + $NewKey + '"'
-    )
-}
-
-function Convert-SpellGroupTemplateForCatalog {
-    param([Parameter(Mandatory = $true)][string]$TemplateText)
-
-    $TemplateText = Rename-NativeResource -Text $TemplateText -OldKey "SpellGroupListTemplate" -NewKey "CAM_SpellGroupListTemplate"
-    $TemplateText = $TemplateText.Replace(
-        "{StaticResource AvailableSlotContainer}",
-        "{StaticResource CAM_AvailableSlotContainer}"
-    )
-    $TemplateText = $TemplateText.Replace(
-        "{StaticResource AvailableSlotsListPanelTemplate}",
-        "{StaticResource CAM_AvailableSlotsListPanelTemplate}"
-    )
-
-    return $TemplateText
 }
 
 
