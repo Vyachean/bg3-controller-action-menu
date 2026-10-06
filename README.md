@@ -14,65 +14,58 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Per-tab native focus/dispatch milestone candidate (`0.0.36-tab-focus-dispatch`).**
+**Native hotbar-filter milestone candidate (`0.0.37-native-hotbar-filters`).**
 
-Runtime evidence through `0.0.25` now rules out three earlier approaches:
+Runtime through 0.0.36 has narrowed the architecture substantially:
 
-- CAM-owned replacement page: rendered data but controller focus/B stayed dead;
-- hand-written replacement `ActionRadialWidgetTemplate_P8`: native page loaded but interaction still died;
-- `Public/Game/GUI/...` resource override from the mod PAK: `0.0.25` produced no visible change at all.
+- 0.0.27 proved BG3's own assignment-style controller grid can navigate inside `ActionRadials`;
+- 0.0.29 proved cells and the native-derived focus selector can be aligned correctly;
+- 0.0.35 proved LB/RB tabs render and switch;
+- 0.0.36 disproved the remaining source-tab design: navigation breaks at longer grids, A/container opening still fails, resource preview is absent, and custom hint composition does not match the native radial.
 
-The current Patch 8 `PreloadedActionRadials_c.xaml` already contains the controller grid we need: the UI used when choosing an action to insert into a radial. It uses `LSListBox + LocalFocusSelector + focusable ListBoxItem + LSGrid` with `UIUp/UIDown/UILeft/UIRight`.
+The key correction is the execution data type. Current Patch 8 `HotBarSlotStyle` renders `VMCharacterAction`, `VMUpcast`, `VMItem` and `VMPassive` as **content of a native hotbar slot**; its command parameter is the surrounding `VMHotBarSlot`. The assignment catalog objects used by 0.0.35/0.0.36 are therefore no longer used as gameplay-dispatch candidates.
 
-`0.0.27-native-slot-assignment-grid` proved that exact focus/navigation pattern works in-game. It rendered real grids, but they inherited radial-page positioning/chrome: upper-left anchoring, circular radial shadows and the “Radial Customisation” hint.
-
-`0.0.28-grid-presentation-cleanup` centered the grids and removed the radial backdrop. Runtime then exposed a narrower layout bug: the focus selector stayed in the PageView's old upper-left coordinate space because it was no longer colocated with the centered list.
-
-`0.0.29-focus-origin-fix` completed the grid/focus proof: cells and focus now align correctly in-game.
-
-`0.0.35-native-action-tabs` proved that the native tabs themselves render and switch in-game, but also exposed a composition defect: all tabs shared one outer `HotBarList.LocalFocus`. The visible tab changed while tooltip/dispatch focus could remain owned by the first tab, A received the wrong/stale candidate, the generic selector no longer matched assignment-cell geometry, and the centered footer hints overlapped the native action-resource lane.
-
-`0.0.36-tab-focus-dispatch` removes that shared focus owner. Each tab now has its own assignment-style list, its own exact locally extracted `SelectorAssign`, and its own single writer to `ActionRadials.Tag`. Tab changes move focus directly to the selected list. The native footer hints return to their right-side lane.
-
-The next architecture removes the remaining radial dependency. The main grid no longer reads `ControllerHotBars[*].SlotList`. Instead it uses the same automatic collections as BG3's native “choose action for radial slot” screen: `SpellsAndActions`, togglable passives/metamagic and inventory items. That means available actions appear automatically instead of requiring radial-wheel maintenance.
-
-Radial customization (X / assign / swap / clear / add / remove wheel slots) is removed from CAM entirely.
-
-The main catalog is now presented as controller tabs over those same native sources: `Actions / Spells`, `Items`, `Passives`, and an empty-filtered `Metamagic` tab. `UITabPrev` / `UITabNext` switch tabs. There is no `Custom` tab and tab selection never changes gameplay semantics.
-
-Fine-grained Cantrip / spell-level headings are intentionally **not** guessed from `SpellSlotLevel` or the old public SpellBook dump. The historical predicate names remain research evidence until the current installed Patch 8 SpellBook contract proves them.
-
-At install time CAM extracts the exact native radial dictionary from the user's installed `Game.pak` and locally generates `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`.
-
-The generated library preserves the exact native outer/template lifecycle needed for:
-
-- `ActionRadialWidgetTemplate_P8`;
-- A/B bindings;
-- nested/upcast/container switching;
-- `SingleHotBar` second-stage behavior;
-- PageView and state-machine lifecycle.
-
-The main surface itself uses locally extracted assignment-grid resources instead of radial slot containers. Radial editing commands are not retained as CAM functionality.
-
-The main surface now reuses the native assignment catalog:
+0.0.37 keeps the native `DCHotBar` workflow and composes two current BG3 contracts:
 
 ```text
-[Actions / Spells] [Items] [Passives] [Metamagic*]
-            ↓  UITabPrev / UITabNext
-native automatic source selected for presentation
-            ↓
-AssignList-style LSListBox + LocalFocusSelector
-            ↓
-nested LSGrid groups
-            ↓
-ActionRadials.Tag
-            ↓
-UseSlotCommand
+installed keyboard HotBar.xaml
+  type/resource filter commands
+          |
+          v
+native VMHotBarSlot collections
+  CurrentShownDeck.SlotList
+  PassivesHotBar.SlotList
+  SingleHotBar.SlotList
+          |
+          v
+installed controller radial focus lifecycle
+  LocalFocus.Tag -> ActionRadials.Tag
+  CreateFocusedTooltipDataCommand
+  HighlightResourcesCommand
+          |
+          v
+UIAccept -> UseSlotCommand(slot)
 ```
 
-`SingleHotBar.SlotList` remains the native nested/upcast/variant surface. B remains BG3's native close/nested-cancel path.
+The top LB/RB tabs are now **filters**, not independent catalogs:
 
-No Larian XAML is committed to or distributed by this repository. The generated controller library exists only on the user's machine. Runtime remains Script-Extender/DLL/native-loader free.
+- Common;
+- current class;
+- Items;
+- Passives;
+- Cantrips.
+
+A resource-filter row is populated from `CurrentPlayer.UIData.ActionResourcesCostPreview`; focusing a resource uses BG3's own `FilterActionResourceCommand`. Cantrips use the current installed `FilterCantripsCommand`. Deck filters use the current installed `SetCurrentShownDeckCommand`.
+
+The installer extracts both the current controller radial dictionary and the current keyboard `HotBar.xaml` from the user's installed `Game.pak`. Generation proceeds only against the exact command/property names present in that game version; no Larian XAML is committed or published.
+
+Navigation also returns to the complete native assignment hierarchy: **one outer scrollable `LSListBox`** owns vertical continuation, while the resource/action grids inside it use `KeyboardNavigation.DirectionalNavigation="Continue"`. The old fixed three-row action-grid height is removed.
+
+The installed native `ButtonHintsContainer` is preserved instead of restyled. CAM only disables the X/radial-customisation entry point. The extra custom LB/RB hint presenters from 0.0.36 are gone.
+
+`SingleHotBar.SlotList` remains BG3-owned for filters, variants, containers and upcast choices. Radial customization (assign/swap/clear/add/remove wheel slots) remains outside CAM.
+
+This candidate is statically/CI proof-gated but is **not yet claimed runtime-correct** until one milestone game test confirms navigation, action/container dispatch, resource highlighting, native button hints and filter behavior together.
 
 ## Installer principle
 

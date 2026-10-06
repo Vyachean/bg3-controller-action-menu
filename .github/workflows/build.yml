@@ -43,7 +43,7 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test native action tabs
+      - name: Test native hotbar filter grid
         shell: pwsh
         run: ./tools/test-native-overlay.ps1
 

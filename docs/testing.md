@@ -603,3 +603,48 @@ Static proof for 0.0.36 must reject the old `CAM_AutoCatalogSelector` / tab-inde
 
 The next game run should be a single milestone check of: tab switching, selector alignment, description following the current tab/cell, A on one simple direct action, B at top level, and nested/upcast B if naturally available.
 
+
+
+### 2026-10-06 — 0.0.36 runtime result and 0.0.37 architecture correction
+
+The Xbox App runtime test rejects the remaining 0.0.36 source-tab composition:
+
+- grid navigation becomes unstable at the lower row and can no longer reliably return to the upper rows;
+- A does not execute the focused action;
+- A does not open action containers/variants;
+- the bottom action-resource bar does not highlight the resources that the focused action would spend;
+- controller button hints are not in the original vertical stack;
+- extra presentation symbols appear beside the RB hint;
+- the product-level tab semantics are wrong: tabs should filter the action set by native type/resource semantics like the keyboard hotbar, not switch between independent Actions/Items/Passives/Metamagic source catalogs.
+
+This runtime result also corrects a prior static inference. Patch 8 `HotBarSlotStyle` does **not** prove that a raw `VMCharacterAction` is the direct `UseSlotCommand` parameter. The style's button DataContext is `VMHotBarSlot`; its `VMCharacterAction`, `VMUpcast`, `VMItem` and `VMPassive` DataTemplates render the slot's content. Its command parameter is the slot VM itself.
+
+The 0.0.37 correction therefore has these proof obligations before another game run:
+
+1. executable main cells come only from native slot collections such as `CurrentShownDeck.SlotList` / `PassivesHotBar.SlotList`;
+2. raw radial-assignment `SpellsAndActions`, inventory and passive objects are absent from the main dispatch path;
+3. the exact installed keyboard `HotBar.xaml` is extracted locally and must expose the current deck/resource/cantrip filter commands before derivation continues;
+4. resource filters use `CurrentPlayer.UIData.ActionResourcesCostPreview` and `FilterActionResourceCommand`;
+5. cantrips use the parameter attached to the current installed `FilterCantripsCommand`, not a frozen historical handle;
+6. one outer assignment-style `LSListBox + LocalFocusSelector` owns scrolling/vertical continuation; inner resource/action grids use `DirectionalNavigation=Continue`;
+7. the action grid has no old fixed three-row height;
+8. the current installed `HotBarRadial.LocalFocusChanged` trigger is reused for `ActionRadials.Tag`, focused tooltip data, `HighlightResourcesCommand` and hover feedback;
+9. slot containers expose `Tag="{Binding .}"` so the native radial lifecycle receives `VMHotBarSlot`;
+10. page A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+11. nested/filter/container state remains BG3-owned through `SingleHotBar`;
+12. the installed native `ButtonHintsContainer` is preserved and 0.0.36's extra LB/RB hint presenters are absent;
+13. radial customization remains unreachable;
+14. generated XAML parses and build/package/release CI is green.
+
+Only after those checks pass should the next milestone runtime test be requested. One run should answer all of the remaining runtime-only questions:
+
+1. navigate several rows down and back to the first row;
+2. switch Common/Class/Items/Passives/Cantrips with LB/RB;
+3. focus at least one action-resource filter and confirm the action set changes;
+4. execute one simple direct action with A;
+5. open one natural container/variant/upcast choice if available;
+6. verify the bottom resource bar highlights the cost of the currently focused action;
+7. verify button hints use the native vertical stack with no extra RB symbols;
+8. verify top-level B and nested/filter B.
+
+Do not request intermediate in-game tests for individual bindings.

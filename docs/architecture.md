@@ -6,7 +6,7 @@ Replace Baldur's Gate 3 controller action radial browsing with a native-style gr
 
 ## Runtime architecture
 
-The main grid is no longer a presentation of configured controller radial slots.
+The main grid is not a presentation of user-configured controller radial slots and is no longer built from raw radial-assignment catalog objects.
 
 ```text
 native ActionRadials state/page
@@ -14,75 +14,110 @@ native ActionRadials state/page
           v
 locally derived ActionRadialWidgetTemplate_P8
           |
-          +-- MAIN: automatic native action catalog
+          +-- type/resource filters from installed HotBar.xaml
           |     |
-          |     +-- SpellsAndActions[*].Actions
-          |     +-- togglable Passives
-          |     +-- togglable Metamagic
-          |     +-- Inventory.Slots (Items)
+          |     +-- SetCurrentShownDeckCommand
+          |     +-- FilterActionResourceCommand
+          |     +-- FilterCantripsCommand
           |     |
           |     v
-          |  AssignList-style LSListBox
-          |     + LocalFocusSelector
-          |     + nested LSGrid groups
+          |  native VMHotBarSlot collections
+          |     +-- CurrentShownDeck.SlotList
+          |     +-- PassivesHotBar.SlotList
+          |     +-- SingleHotBar.SlotList
           |
-          +-- NESTED: native SingleHotBar.SlotList
+          +-- focus lifecycle from installed controller radial
+                |
+                +-- LocalFocus.Tag -> ActionRadials.Tag
+                +-- CreateFocusedTooltipDataCommand
+                +-- HighlightResourcesCommand
                 |
                 v
-          proven assignment-style grid renderer
-
-A / B / targeting / costs / upcast rules remain BG3-owned.
+          UIAccept -> UseSlotCommand(slot)
 ```
 
-The installed Patch 8 `PreloadedActionRadials_c.xaml` already contains the complete automatic source catalog used when the player chooses an action to insert into a radial:
+### Why 0.0.35/0.0.36 were wrong
 
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions`;
-- each spell/action group exposes `Actions`;
-- `CurrentPlayer.SelectedCharacter.Stats.Passives` filtered with `Data.TogglablePassivePredicate`;
-- the same passives collection filtered with `Data.TogglableMetaMagicPassivePredicate`;
-- `CurrentPlayer.SelectedCharacter.Inventory.Slots`.
+The assignment screen is valid evidence for **controller navigation**, but its catalog objects are not the same contract as hotbar execution slots.
 
-### Native action tabs
+Current Patch 8 `HotBarSlotStyle` has `VMHotBarSlot` as its button data context. Its local DataTemplates render `VMCharacterAction`, `VMUpcast`, `VMItem` and `VMPassive` as the slot's content. The style's command parameter is the slot object itself.
 
-The milestone UI partitions those **same current native sources** into four presentation tabs:
+Therefore the previous inference:
 
-| Tab | Source |
+```text
+SpellsAndActions item -> UseSlotCommand
+```
+
+is rejected. Runtime 0.0.36 confirms the consequence: A and container opening remain dead even though the actions render.
+
+The current execution rule is:
+
+```text
+native VMHotBarSlot
+      |
+      v
+ActionRadials.Tag
+      |
+      v
+UseSlotCommand(slot)
+```
+
+### Filter model
+
+Tabs now behave like filters rather than source pages. LB/RB selects a native type/deck filter:
+
+| Filter | Native source/command |
 | --- | --- |
-| Actions / Spells | `PlayerCharacterProperties.SpellsAndActions` |
-| Items | `Inventory.Slots` |
-| Passives | `Stats.Passives` + `TogglablePassivePredicate` |
-| Metamagic | `Stats.Passives` + `TogglableMetaMagicPassivePredicate` |
+| Common | `SetCurrentShownDeckCommand("CommonHotBar")` -> `CurrentShownDeck.SlotList` |
+| Class | `SetCurrentShownDeckCommand("ClassHotBar")` -> `CurrentShownDeck.SlotList` |
+| Items | `SetCurrentShownDeckCommand("ItemHotBar")` -> `CurrentShownDeck.SlotList` |
+| Passives | `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList` |
+| Cantrips | current installed `FilterCantripsCommand` |
 
-This is not a second catalog. CAM does not copy, normalize, classify or persist action entries. The tab index only selects which native source is visible. Empty filtered Passives/Metamagic tabs collapse from navigation.
+Resource filters are populated from `CurrentPlayer.UIData.ActionResourcesCostPreview` and invoke the current installed `FilterActionResourceCommand` with the native resource-preview VM.
 
-The tab strip uses the native controller pattern `LSListBox(ActionPrevEvent=UITabPrev, ActionNextEvent=UITabNext)` and native controller hint bindings. Runtime 0.0.35 rejected a single automatic focus list: changing only the visible/selected outer item left `LocalFocus`, tooltip data and dispatch ownership on the first tab. Each tab therefore owns an independent assignment-style `LSListBox + LocalFocusSelector` pair. A tab change clears `ActionRadials.Tag` and invokes `SetMoveFocusAction` directly on that tab's visible list. Each list alone writes its current native candidate back to `ActionRadials.Tag`.
+The command/property names above are not frozen from historical XAML. At install time CAM extracts the current keyboard `Mods/MainUI/GUI/Pages/HotBar.xaml` from the same installed `Game.pak`, verifies that those exact seams still exist, extracts the current cantrip command parameter, and derives the controller library locally.
 
-There is deliberately no `Custom` tab.
+This means BG3 continues to own action membership, resource membership, ordering and filtering semantics.
 
-### Spell grouping proof boundary
+### Navigation model
 
-Historical SpellBook XAML shows useful concepts such as `VMActionGroup.Name`, cantrip groups, spell-level groups and action groups. However, the exact names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` have not been independently re-established from the current installed Patch 8 SpellBook resource in this repository.
+Runtime 0.0.36 proved that splitting the surface into independent focus roots still breaks long-grid traversal. The current assignment screen already shows the correct composition:
 
-Therefore 0.0.35 does **not** hard-code those historical predicate names and does not infer groups from `SpellSlotLevel`, slot type or action names. It preserves the current `SpellsAndActions` membership/order supplied by BG3. Native spell-level/cantrip sub-group presentation can be enabled only after the current contract is captured; that change must remain presentation-only.
+```text
+one outer scrollable LSListBox
+  LocalFocusSelector -> exact SelectorAssign clone
+  DirectionalNavigation = Contained
+        |
+        +-- resource filter LSListBox
+        |     DirectionalNavigation = Continue
+        |     LSGrid
+        |
+        +-- action slot LSListBox
+              DirectionalNavigation = Continue
+              LSGrid
+```
 
-That screen also proves the focus hierarchy CAM needs: `AssignList` + `SelectorAssign`, nested `LSListBox` groups, and `LSGrid(UIUp/UIDown/UILeft/UIRight)`.
+The outer list owns vertical continuation and scrolling. The inner grids own four-way cell movement. The old fixed action-grid height is removed.
 
-The previous 0.0.27–0.0.29 line reused only the **navigation** from that screen while still binding content to `ControllerHotBars[*].SlotList`. Runtime proved the grid mechanics work, but that data source is semantically wrong for CAM: it only shows whatever the user has configured in radial wheels.
+### Focus, dispatch and resource preview
 
-The new main catalog therefore reuses both halves of the native assignment screen:
+The installed controller radial remains authoritative for focus lifecycle. CAM extracts the current `HotBarRadial` `LocalFocusChanged` trigger and retargets it to the main slot grid. The retained lifecycle feeds the focused slot through:
 
-1. its automatic data collections;
-2. its controller-focus composition.
+- `ActionRadials.Tag`;
+- `CreateFocusedTooltipDataCommand`;
+- `HighlightResourcesCommand`;
+- native controller hover feedback.
 
-On focus change, the **currently selected tab's list only** stores its native candidate in `ActionRadials.Tag`. Actions/Spells, Passives and Metamagic use their direct `LocalFocus.DataContext`; Inventory uses the native inventory wrapper's `.Object`. The existing page-level `UIAccept -> UseSlotCommand(Tag)` remains the execution boundary. This does not add spell/item/passive execution logic to CAM.
+This restores the same resource-cost preview path that the radial uses. CAM does not calculate or paint resource costs itself.
 
-There is independent native precedent for `UseSlotCommand` receiving non-radial action objects directly: the game hotbar uses `HotBarSlotStyle`/direct action bindings for fixed actions such as the main attack and direct call-allies entries. The exact current catalog-candidate dispatch still requires one runtime proof and is kept isolated to this single seam.
+`SingleHotBar.SlotList` remains BG3-owned for filtered/nested/upcast/variant/container state.
 
-`SingleHotBar.SlotList` remains unchanged as the native second-stage source for upcast, variants, containers and other nested selections after A.
+### Native button hints
 
-Radial customization is outside CAM's product boundary. The generated template keeps an inert named `ShowContextMenu` control only for native-template compatibility, removes its `ContextMenu` input binding, disables/hides it, replaces its command with null, neutralizes Assign/Swap/Clear/Add/Remove radial mutation command bindings, and makes `SlotAssignHolder` inert.
+The installed `ButtonHintsContainer` is preserved rather than re-laid out. CAM removes only the radial-customisation/X entry point and its mutation commands. The extra LB/RB presentation-only hints introduced by 0.0.36 are gone.
 
-No Larian XAML is committed to or distributed by this repository. `Lib_Controller.xaml` is derived locally from the installed game. The shipping runtime remains Script-Extender/DLL/native-loader free.
+No Larian XAML is committed to or distributed by this repository. The locally generated `Lib_Controller.xaml` remains Script-Extender/DLL/native-loader free.
 
 ## Primary target
 
@@ -98,25 +133,23 @@ A change that requires Script Extender is not acceptable for the primary package
 
 CAM owns:
 
-- tab/grid presentation over BG3-owned automatic collections;
-- controller focus composition reused from native BG3 UI patterns;
-- hiding empty presentation tabs;
-- transition between the automatic main catalog and BG3's native `SingleHotBar` nested results.
-
-CAM does **not** own membership or semantic classification inside those native collections.
+- the controller presentation of native type/resource filters;
+- grid column/spacing composition;
+- the one-outer-list controller focus shell;
+- local retargeting of already-native focus/resource-preview actions.
 
 BG3 owns:
 
-- which actions/spells/passives/items exist for the selected character;
-- usability/cost/resource/targeting state;
-- `UseSlotCommand` execution;
-- `ClearSingleHotbarCommand` and nested-state lifecycle;
-- upcast/variant/container generation;
-- action tooltips and native view models.
+- which native hotbar slots exist;
+- type/resource filter semantics;
+- action usability, costs, targeting and cooldowns;
+- `UseSlotCommand`;
+- `HighlightResourcesCommand` / `ClearResourceHighlightsCommand`;
+- `SingleHotBar` filter/variant/upcast/container lifecycle;
+- A/B and state-machine transitions;
+- button-hint localization/input glyphs.
 
-CAM explicitly does **not** own radial-wheel customization. The generated UI must not expose `ShowContextMenu`, `RequestAssignSlotCommand`, `AssignSlotCommand`, slot swap/clear, or add/remove radial commands.
-
-The main catalog must not depend on `ControllerHotBars` membership. A newly learned/obtained native action should appear because the corresponding native automatic collection changed, without asking the player to edit a radial.
+CAM explicitly does not own radial-wheel customization and does not classify raw spells/items/passives into gameplay categories.
 
 ## Native widget contract
 
@@ -170,42 +203,40 @@ A separate September-2026 production mod still proves `PlayerCharacterProperties
 
 ## Native grid focus and action dispatch
 
-The installed Patch 8 slot-assignment UI already proves the controller-grid mechanics CAM needs:
+The installed Patch 8 assignment UI proves the controller navigation hierarchy, while the installed radial proves the gameplay-facing focus lifecycle.
+
+Navigation:
 
 ```text
-AssignList
-  LocalFocusSelector -> SelectorAssign
+outer HotBarList
+  LocalFocusSelector -> CAM_MainSelector (exact SelectorAssign clone)
   KeyboardNavigation.DirectionalNavigation = Contained
           |
           v
-nested LSListBox
+child LSListBox
+  KeyboardNavigation.DirectionalNavigation = Continue
           |
           v
 LSGrid
-  ActionUpEvent    = UIUp
-  ActionDownEvent  = UIDown
-  ActionLeftEvent  = UILeft
-  ActionRightEvent = UIRight
-  AutoIndex        = True
+  UIUp / UIDown / UILeft / UIRight
 ```
 
-CAM reuses that focus hierarchy for the automatic top-level catalog and keeps the proven grid renderer for native `SingleHotBar.SlotList` nested choices. The top-level list no longer materializes any controller `SlotList`. Radial swap/context-menu editing is intentionally not preserved on the CAM surface.
-
-The native delayed dispatch seam remains:
+Dispatch:
 
 ```text
-grid LocalFocusChanged
-        |
-        v
-ActionRadials.Tag = LocalFocus.DataContext
-        |
-        v
-UIAccept -> UseSlotCommand(Tag)
+CAM_FilteredSlotList.LocalFocus.Tag = VMHotBarSlot
+          |
+          +--> ActionRadials.Tag
+          +--> CreateFocusedTooltipDataCommand(slot)
+          +--> HighlightResourcesCommand(slot)
+          |
+          v
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-Top-level/nested B remains the untouched native `CancelButton` command switch.
+The item-container `Tag` binding is therefore not presentation metadata: it is the native slot handoff consumed by the radial lifecycle.
 
-This is distinct from the failed 0.0.18–0.0.25 approaches: CAM is no longer reconstructing the page/template lifecycle and no longer attempting to mirror a radial. It substitutes the radial **slot renderer** with a grid using a controller-focus pattern already working in the same current native XAML file.
+Top-level/nested B remains the native `CancelButton` command switch. No CAM-owned targeting, resource calculation or container-opening command is introduced.
 
 ## First-run diagnostics without Script Extender
 

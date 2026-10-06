@@ -11,7 +11,8 @@ if (Test-Path -LiteralPath $FixtureRoot) {
 }
 New-Item -ItemType Directory -Force -Path $FixtureRoot | Out-Null
 
-$source = Join-Path $FixtureRoot "native.xaml"
+$source = Join-Path $FixtureRoot "native-radials.xaml"
+$hotBarSource = Join-Path $FixtureRoot "native-hotbar.xaml"
 $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
 
 @'
@@ -20,63 +21,26 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                     xmlns:ls="clr-namespace:ls;assembly=Code"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors">
 
-  <!-- Current native assignment-grid resources. -->
-  <Style x:Key="AvailableSlotContainer" TargetType="ListBoxItem">
-    <Setter Property="Focusable" Value="True"/>
-    <Setter Property="ContentTemplate">
-      <Setter.Value>
-        <DataTemplate>
-          <Rectangle Fill="{Binding Icon}" Width="104" Height="104"/>
-        </DataTemplate>
-      </Setter.Value>
-    </Setter>
-  </Style>
-
-  <ItemsPanelTemplate x:Key="AvailableSlotsListPanelTemplate">
-    <ls:LSGrid ActionUpEvent="UIUp"
-               ActionDownEvent="UIDown"
-               ActionRightEvent="UIRight"
-               ActionLeftEvent="UILeft"
-               AutoIndex="True"
-               ContainerData="{Binding}"
-               Columns="5"
-               CellWidth="120"
-               CellHeight="120"
-               DisableScrolling="True"/>
-  </ItemsPanelTemplate>
-
-  <ControlTemplate x:Key="SpellGroupListTemplate">
-    <ls:LSListBox x:Name="ListBox"
-                  ItemsSource="{Binding Actions}"
-                  Focusable="False"
-                  ItemContainerStyle="{StaticResource AvailableSlotContainer}"
-                  ItemsPanel="{StaticResource AvailableSlotsListPanelTemplate}">
+  <!-- Exact current-style radial focus lifecycle used as the gameplay seam. -->
+  <ControlTemplate x:Key="NativeMainRadialFocusFixture">
+    <ls:Radial x:Name="HotBarRadial">
       <b:Interaction.Triggers>
-        <b:PropertyChangedTrigger Binding="{Binding FocusIndex, ElementName=ListBox}">
-          <ls:LSPlaySound Sound="UI_Shared_Hover"/>
-        </b:PropertyChangedTrigger>
+        <b:EventTrigger EventName="LocalFocusChanged">
+          <b:ChangePropertyAction TargetName="ActionRadials"
+                                  PropertyName="Tag"
+                                  Value="{Binding LocalFocus.Tag, ElementName=HotBarRadial}"/>
+          <b:InvokeCommandAction Command="{Binding DataContext.ShowTooltipOnUIElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                 CommandParameter="{Binding ., RelativeSource={RelativeSource Mode=TemplatedParent}}"/>
+          <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                 CommandParameter="{Binding LocalFocus.Tag, ElementName=HotBarRadial}"/>
+          <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                 CommandParameter="{Binding LocalFocus.Tag, ElementName=HotBarRadial}"/>
+          <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
+        </b:EventTrigger>
       </b:Interaction.Triggers>
-    </ls:LSListBox>
+    </ls:Radial>
   </ControlTemplate>
 
-  <ControlTemplate x:Key="InventoryCellTemplate">
-    <ls:LSEntityObject Context="Inventory" EntityRef="{Binding EntityHandle}" DataContext="{Binding Object}">
-      <ContentPresenter Content="{Binding .}"/>
-    </ls:LSEntityObject>
-  </ControlTemplate>
-
-  <Style TargetType="ListBox" x:Key="InventoryGrid">
-    <Setter Property="ItemContainerStyle">
-      <Setter.Value>
-        <Style TargetType="ListBoxItem">
-          <Setter Property="Focusable" Value="True"/>
-          <Setter Property="Template" Value="{StaticResource InventoryCellTemplate}"/>
-        </Style>
-      </Setter.Value>
-    </Setter>
-  </Style>
-
-  <!-- Only nested SingleHotBar keeps a native radial renderer before conversion. -->
   <Style x:Key="SingleBarPageViewStyle" TargetType="{x:Type ls:PageView}">
     <Setter Property="ls:MoveFocus.Focusable" Value="True"/>
     <Setter Property="Template">
@@ -86,17 +50,17 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
             <Ellipse Margin="0,36,0,0" Opacity="0.9" Height="1260" Width="1260"/>
             <ls:Radial x:Name="SingleBar"
                        ItemsSource="{Binding ItemsSource,RelativeSource={RelativeSource TemplatedParent}}"
-                       Visibility="Collapsed"
                        IsEnabled="False">
               <b:Interaction.Triggers>
                 <b:EventTrigger EventName="LocalFocusChanged">
-                  <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                </b:EventTrigger>
-                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
                   <b:ChangePropertyAction TargetName="ActionRadials"
                                           PropertyName="Tag"
-                                          Value="{Binding LocalFocus.DataContext, ElementName=SingleBar}"/>
-                </b:TimerTrigger>
+                                          Value="{Binding LocalFocus.Tag, ElementName=SingleBar}"/>
+                  <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                         CommandParameter="{Binding LocalFocus.Tag, ElementName=SingleBar}"/>
+                  <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                         CommandParameter="{Binding LocalFocus.Tag, ElementName=SingleBar}"/>
+                </b:EventTrigger>
               </b:Interaction.Triggers>
             </ls:Radial>
           </Grid>
@@ -121,14 +85,11 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
         </Control.Template>
       </Control>
 
-      <!-- Old main source: generation must remove this completely. -->
       <Grid x:Name="MainHotbarListHolder">
         <ListBox x:Name="HotBarList"
                  ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"/>
       </Grid>
 
-      <!-- Current native assignment focus pair. Generator copies the exact
-           SelectorAssign geometry before disabling this editor holder. -->
       <Control x:Name="SlotAssignHolder" Visibility="Visible">
         <Grid>
           <ls:LSListBox x:Name="AssignList"
@@ -149,52 +110,37 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
         </Grid>
       </Control>
 
+      <!-- Production must leave this native right-stacked composition intact. -->
       <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
                              HorizontalAlignment="Right"
-                             HorizontalContentAlignment="Right"
-                             Width="1000"
-                             FlowDirection="RightToLeft"
-                             Margin="26,0,26,56">
+                             VerticalAlignment="Bottom"
+                             Width="913"
+                             Tag="NativeHintLayoutSentinel">
         <ls:LSButton x:Name="SelectButtonVisual"
-                     BoundEvent="UIAccept"
-                     Width="1000"/>
+                     BoundEvent="UIAccept"/>
         <ls:LSButton x:Name="ShowContextMenu"
                      Command="{Binding ShowContextMenuCommand}"
                      CommandParameter="{Binding FocusedElement, ElementName=ActionRadials}"
-                     BoundEvent="ContextMenu"
-                     Width="1000"/>
-        <StackPanel x:Name="LegacyRadialCustomization">
-          <ls:ContextMenuItem x:Name="AssignSlotItem"
-                              Command="{Binding DataContext.RequestAssignSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-          <ls:ContextMenuItem x:Name="DirectAssignSlotItem"
-                              Command="{Binding DataContext.AssignSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-          <ls:ContextMenuItem x:Name="SwapSlotItem"
-                              Command="{Binding DataContext.SwapSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-          <ls:ContextMenuItem x:Name="ClearSlotItem"
-                              Command="{Binding DataContext.ClearSlotCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-          <ls:ContextMenuItem x:Name="AddRadialItem"
-                              Command="{Binding DataContext.AddRadialCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-          <ls:ContextMenuItem x:Name="RemoveRadialItem"
-                              Command="{Binding DataContext.RemoveRadialCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-        </StackPanel>
+                     BoundEvent="ContextMenu"/>
         <ls:LSButton x:Name="CancelConcentrationButton"
-                     BoundEvent="UIEndTurn"
-                     Width="1000"/>
-        <ls:LSButton x:Name="ToggleWeaponSet"
-                     BoundEvent="UISelectionLeft"
-                     Width="1000"/>
-        <ls:LSButton x:Name="ToggleDualWield"
-                     BoundEvent="UISelectionRight"
-                     Width="1000"/>
-        <ls:LSButton x:Name="UseSlotBinding"
-                     BoundEvent="UIAccept"
-                     Command="{Binding UseSlotCommand}"
-                     CommandParameter="{Binding Tag, ElementName=ActionRadials}"/>
+                     BoundEvent="UIEndTurn"/>
+        <ls:LSInputBinding x:Name="UseSlotBinding"
+                           BoundEvent="UIAccept"
+                           Command="{Binding UseSlotCommand}"
+                           CommandParameter="{Binding Tag, ElementName=ActionRadials}"/>
         <ls:LSButton x:Name="CancelButton"
                      BoundEvent="UICancel"
-                     Command="{Binding ClearSingleHotbarCommand}"
-                     Width="1000"/>
+                     Command="{Binding ClearSingleHotbarCommand}"/>
       </ls:AlignableWrapPanel>
+
+      <StackPanel x:Name="LegacyRadialCustomization">
+        <ls:ContextMenuItem Command="{Binding RequestAssignSlotCommand}"/>
+        <ls:ContextMenuItem Command="{Binding AssignSlotCommand}"/>
+        <ls:ContextMenuItem Command="{Binding SwapSlotCommand}"/>
+        <ls:ContextMenuItem Command="{Binding ClearSlotCommand}"/>
+        <ls:ContextMenuItem Command="{Binding AddRadialCommand}"/>
+        <ls:ContextMenuItem Command="{Binding RemoveRadialCommand}"/>
+      </StackPanel>
 
       <ControlTemplate.Triggers>
         <MultiDataTrigger>
@@ -214,89 +160,99 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
 </ResourceDictionary>
 '@ | Set-Content -LiteralPath $source -Encoding UTF8
 
-$sourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $source).Hash
+@'
+<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ls="clr-namespace:ls;assembly=Code">
+  <ItemsControl ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"/>
+  <ls:LSButton Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"/>
+  <ls:LSButton Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"/>
+  <ls:LSButton Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
+  <ls:LSButton Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding}"/>
+  <ls:LSButton Command="{Binding FilterCantripsCommand}" CommandParameter="hfixturecantrips"/>
+  <ls:LSButton Command="{Binding ClearSingleHotbarCommand}"/>
+  <ItemsControl ItemsSource="{Binding CurrentShownDeck.SlotList}"/>
+  <ItemsControl ItemsSource="{Binding SingleHotBar.SlotList}"/>
+  <ItemsControl ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"/>
+</Grid>
+'@ | Set-Content -LiteralPath $hotBarSource -Encoding UTF8
 
-& $Script -PatchOnlySourceXaml $source -PatchOnlyDestinationXaml $generated
+$sourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $source).Hash
+$hotBarHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $hotBarSource).Hash
+
+& $Script -PatchOnlySourceXaml $source -PatchOnlyHotBarSourceXaml $hotBarSource -PatchOnlyDestinationXaml $generated
 if ($LASTEXITCODE -ne 0) {
     throw "native-overlay.ps1 patch-only mode failed."
 }
 
 if ((Get-FileHash -Algorithm SHA256 -LiteralPath $source).Hash -ne $sourceHash) {
-    throw "Patch-only mode modified the source XAML."
+    throw "Patch-only mode modified the radial source XAML."
+}
+if ((Get-FileHash -Algorithm SHA256 -LiteralPath $hotBarSource).Hash -ne $hotBarHash) {
+    throw "Patch-only mode modified the hotbar source XAML."
 }
 
 [xml]$xml = Get-Content -Raw -LiteralPath $generated
 $text = Get-Content -Raw -LiteralPath $generated
 
-# Main menu must no longer depend on user-configured radial membership.
-if ($text.Contains("ControllerHotBars")) {
-    throw "Automatic main catalog must not bind ControllerHotBars."
+# Main execution candidates must be VMHotBarSlot collections, never raw
+# assignment-catalog objects.
+foreach ($forbiddenSource in @(
+    "ControllerHotBars",
+    "PlayerCharacterProperties.SpellsAndActions",
+    "CurrentPlayer.SelectedCharacter.Inventory.Slots",
+    "CurrentPlayer.SelectedCharacter.Stats.Passives",
+    "CAM_ActionsFocusRoot",
+    "CAM_ItemsFocusRoot",
+    "CAM_PassivesFocusRoot",
+    "CAM_MetamagicFocusRoot",
+    "CAM_TabPrevHint",
+    "CAM_TabNextHint"
+)) {
+    if ($text.Contains($forbiddenSource)) {
+        throw "Obsolete/raw main source leaked into generated controller library: $forbiddenSource"
+    }
 }
 
 foreach ($needle in @(
     'x:Name="CAM_AutoCatalogFocusRoot"',
-    'x:Name="CAM_TabList"',
+    'x:Name="CAM_FilterTabs"',
     'ActionPrevEvent="UITabPrev"',
     'ActionNextEvent="UITabNext"',
-    '<ContentPresenter x:Name="CAM_TabPrevHint"',
-    '<ContentPresenter x:Name="CAM_TabNextHint"',
-    'ConverterParameter=UITabPrev',
-    'ConverterParameter=UITabNext',
-    'x:Name="CAM_ActionsTab"',
-    'x:Name="CAM_ItemsTab"',
-    'x:Name="CAM_PassivesTab"',
-    'x:Name="CAM_MetamagicTab"',
-    'Text="Actions / Spells"',
-    'Text="Items"',
-    'Text="Passives"',
-    'Text="Metamagic"',
-    'x:Name="CAM_ActionsFocusRoot"',
-    'x:Name="CAM_ItemsFocusRoot"',
-    'x:Name="CAM_PassivesFocusRoot"',
-    'x:Name="CAM_MetamagicFocusRoot"',
-    '<ls:SetMoveFocusAction TargetName="ActionRadials"',
-    'FocusElement="{Binding ElementName=HotBarList}"',
-    'FocusElement="{Binding ElementName=CAM_InventoryListbox}"',
-    'FocusElement="{Binding ElementName=CAM_PassivesListbox}"',
-    'FocusElement="{Binding ElementName=CAM_MetamagicListbox}"',
-    '<ls:LSListBox x:Name="HotBarList"',
-    '<ls:LSListBox x:Name="CAM_InventoryListbox"',
-    '<ls:LSListBox x:Name="CAM_PassivesListbox"',
-    '<ls:LSListBox x:Name="CAM_MetamagicListbox"',
-    'LocalFocusSelector="{Binding ElementName=CAM_ActionsSelector,Mode=OneWay}"',
-    'LocalFocusSelector="{Binding ElementName=CAM_ItemsSelector,Mode=OneWay}"',
-    'LocalFocusSelector="{Binding ElementName=CAM_PassivesSelector,Mode=OneWay}"',
-    'LocalFocusSelector="{Binding ElementName=CAM_MetamagicSelector,Mode=OneWay}"',
-    'x:Name="CAM_ActionsSelector"',
-    'x:Name="CAM_ItemsSelector"',
-    'x:Name="CAM_PassivesSelector"',
-    'x:Name="CAM_MetamagicSelector"',
-    'Width="118"',
-    'Height="118"',
-    'Margin="1,2,0,0"',
-    'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions',
-    'CurrentPlayer.SelectedCharacter.Stats.Passives',
-    'Data.TogglablePassivePredicate',
-    'Data.TogglableMetaMagicPassivePredicate',
-    'CurrentPlayer.SelectedCharacter.Inventory.Slots',
-    'x:Key="CAM_AvailableSlotContainer"',
-    'x:Key="CAM_AvailableSlotsListPanelTemplate"',
-    'x:Key="CAM_SpellGroupListTemplate"',
-    'ItemsSource="{Binding Actions}"',
-    'x:Key="CAM_InventoryCellTemplate"',
-    'x:Key="CAM_InventoryGrid"',
-    'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
-    'Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"',
-    'Value="{Binding LocalFocus.DataContext, ElementName=CAM_PassivesListbox}"',
-    'Value="{Binding LocalFocus.DataContext, ElementName=CAM_MetamagicListbox}"',
-    'x:Name="CAM_ActionsTooltip"',
-    'x:Name="CAM_ItemsTooltip"',
-    'x:Name="CAM_PassivesTooltip"',
-    'x:Name="CAM_MetamagicTooltip"',
+    'x:Name="CAM_CommonFilterTab"',
+    'x:Name="CAM_ClassFilterTab"',
+    'x:Name="CAM_ItemsFilterTab"',
+    'x:Name="CAM_PassivesFilterTab"',
+    'x:Name="CAM_CantripsFilterTab"',
+    'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"',
+    'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"',
+    'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"',
+    'CurrentPlayer.UIData.ActionResourcesCostPreview',
+    'x:Name="CAM_ResourceFilterList"',
+    'Command="{Binding FilterActionResourceCommand}"',
+    'CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_ResourceFilterList}"',
+    'x:Name="CAM_FilteredSlotList"',
+    'Value="{Binding CurrentShownDeck.SlotList}"',
+    'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
+    'Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"',
+    'Value="{Binding SingleHotBar.SlotList}"',
+    'Command="{Binding FilterCantripsCommand}" CommandParameter="hfixturecantrips"',
+    'Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"',
+    'Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"',
+    'Setter TargetName="singleBarHolder" Property="Visibility" Value="Collapsed"',
+    'Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Visible"',
+    'Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"',
+    'KeyboardNavigation.DirectionalNavigation="Continue"',
+    'x:Name="CAM_MainSelector"',
+    'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
+    'x:Key="CAM_ActionGridSlotContainer"',
+    '<Setter Property="Tag" Value="{Binding .}"/>',
+    'x:Key="CAM_ActionGridPanel"',
+    'x:Key="CAM_ResourceFilterContainer"',
+    'x:Key="CAM_ResourceFilterPanel"',
     'x:Name="singleBarHolder"',
     'ItemsSource="{Binding SingleHotBar.SlotList}"',
     '<ls:LSListBox x:Name="SingleBar"',
-    'LocalFocusSelector="{Binding ElementName=CAM_SingleBarSelector,Mode=OneWay}"',
     'x:Name="UseSlotBinding"',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
@@ -305,82 +261,85 @@ foreach ($needle in @(
     'Property="CommandParameter" Value="CloseWidget"'
 )) {
     if (-not $text.Contains($needle)) {
-        throw "Generated automatic catalog is missing: $needle"
+        throw "Generated native filter grid is missing: $needle"
     }
 }
 
-# Tab hints are visual only; the tab list is the sole UITab event owner.
-foreach ($hintName in @('CAM_TabPrevHint', 'CAM_TabNextHint')) {
-    $hintMatch = [regex]::Match(
-        $text,
-        '<ContentPresenter\b[^>]*x:Name="' + $hintName + '"[^>]*/>',
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
-    )
-    if (-not $hintMatch.Success -or $hintMatch.Value.Contains('BoundEvent=')) {
-        throw "Controller tab hint must be presentation-only: $hintName"
-    }
-}
-
-# Each visible tab owns a native-style list+selector pair in one coordinate root.
-foreach ($focusPair in @(
-    @("CAM_ActionsFocusRoot", "HotBarList", "CAM_ActionsSelector"),
-    @("CAM_ItemsFocusRoot", "CAM_InventoryListbox", "CAM_ItemsSelector"),
-    @("CAM_PassivesFocusRoot", "CAM_PassivesListbox", "CAM_PassivesSelector"),
-    @("CAM_MetamagicFocusRoot", "CAM_MetamagicListbox", "CAM_MetamagicSelector")
-)) {
-    $rootName = $focusPair[0]
-    $listName = $focusPair[1]
-    $selectorName = $focusPair[2]
-    $pattern = '<Grid\b[^>]*x:Name="' + $rootName + '"[\s\S]*?<ls:LSListBox\b[^>]*x:Name="' + $listName + '"[\s\S]*?<Control\b[^>]*x:Name="' + $selectorName + '"'
-    if (-not [regex]::IsMatch($text, $pattern)) {
-        throw "Tab focus owner must colocate list and native selector: $rootName"
-    }
-}
-
-if ($text.Contains('CAM_AutoCatalogSelector') -or
-    $text.Contains('SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"')) {
-    throw "0.0.35 shared outer focus model must not survive tab-focus repair."
-}
-
-# Exact native SelectorAssign geometry must be cloned, not reconstructed.
-foreach ($selectorName in @("CAM_ActionsSelector", "CAM_ItemsSelector", "CAM_PassivesSelector", "CAM_MetamagicSelector")) {
-    $selectorMatch = [regex]::Match(
-        $text,
-        '<Control\b[^>]*x:Name="' + $selectorName + '"[^>]*/>',
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
-    )
-    if (-not $selectorMatch.Success -or
-        -not $selectorMatch.Value.Contains('Width="118"') -or
-        -not $selectorMatch.Value.Contains('Height="118"') -or
-        -not $selectorMatch.Value.Contains('Margin="1,2,0,0"')) {
-        throw "Tab selector did not preserve current native SelectorAssign geometry: $selectorName"
-    }
-}
-
-# Footer hints stay in the native right-side lane instead of covering the
-# center-bottom action resource display.
-$footerMatch = [regex]::Match(
+# The main focus trigger is taken from the native radial lifecycle and retargeted
+# to the VMHotBarSlot list. It must update Tag and resource preview with the slot.
+$mainFocus = [regex]::Match(
     $text,
-    '<ls:AlignableWrapPanel\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+    '<ls:LSListBox\b[^>]*x:Name="CAM_FilteredSlotList"[\s\S]*?</ls:LSListBox>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $footerMatch.Success -or
-    -not $footerMatch.Value.Contains('HorizontalAlignment="Right"') -or
-    -not $footerMatch.Value.Contains('HorizontalContentAlignment="Right"') -or
-    -not $footerMatch.Value.Contains('FlowDirection="RightToLeft"') -or
-    -not $footerMatch.Value.Contains('Margin="26,0,26,56"')) {
-    throw "Controller footer hints must remain in the native right-side lane."
+if (-not $mainFocus.Success) {
+    throw "CAM_FilteredSlotList block was not generated."
+}
+foreach ($needle in @(
+    'EventName="LocalFocusChanged"',
+    'Value="{Binding LocalFocus.Tag, ElementName=CAM_FilteredSlotList}"',
+    'CreateFocusedTooltipDataCommand',
+    'HighlightResourcesCommand',
+    'CommandParameter="{Binding LocalFocus.Tag, ElementName=CAM_FilteredSlotList}"',
+    'UI_HUD_Controller_RadialMenu_SlotHover'
+)) {
+    if (-not $mainFocus.Value.Contains($needle)) {
+        throw "Main slot focus lifecycle lost native radial seam: $needle"
+    }
+}
+if ($mainFocus.Value.Contains("ShowTooltipOnUIElement")) {
+    throw "PageView-specific radial tooltip target leaked into main grid focus trigger."
 }
 
-# Nested/upcast/variant renderer remains the proven SingleHotBar grid.
-if ($text.Contains("<ls:Radial ")) {
-    throw "Generated controller library still contains a radial renderer."
+# One exact installed SelectorAssign clone owns the whole main shell.
+$selectorMatch = [regex]::Match(
+    $text,
+    '<Control\b[^>]*x:Name="CAM_MainSelector"[^>]*/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $selectorMatch.Success -or
+    -not $selectorMatch.Value.Contains('Width="118"') -or
+    -not $selectorMatch.Value.Contains('Height="118"') -or
+    -not $selectorMatch.Value.Contains('Margin="1,2,0,0"') -or
+    -not $selectorMatch.Value.Contains('ElementName=HotBarList')) {
+    throw "Main selector did not preserve current native SelectorAssign geometry/binding."
 }
-if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="SingleBar"').Count -ne 1) {
-    throw "Expected exactly one nested SingleHotBar grid renderer."
+if ([regex]::Matches($text, 'x:Name="CAM_MainSelector"').Count -ne 1) {
+    throw "Exactly one main selector must own the main navigation shell."
 }
 
-# Radial customization must be completely unreachable from CAM.
+# Long action sets must not be clipped to the old hard-coded three-row height.
+$actionPanel = [regex]::Match(
+    $text,
+    '<ItemsPanelTemplate\b[^>]*x:Key="CAM_ActionGridPanel"[\s\S]*?</ItemsPanelTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $actionPanel.Success -or $actionPanel.Value.Contains('Height="376"')) {
+    throw "Main action grid must not keep the old fixed three-row height."
+}
+
+# Preserve the installed native hint-container opening tag byte-for-byte.
+# CAM may remove the X child, but must not restyle the container itself.
+$sourceText = Get-Content -Raw -LiteralPath $source
+$sourceHintMatch = [regex]::Match(
+    $sourceText,
+    '<(?<tag>[A-Za-z_][A-Za-z0-9_.:-]*)\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$hintMatch = [regex]::Match(
+    $text,
+    '<(?<tag>[A-Za-z_][A-Za-z0-9_.:-]*)\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sourceHintMatch.Success -or -not $hintMatch.Success -or
+    $sourceHintMatch.Value -ne $hintMatch.Value) {
+    throw "Installed native ButtonHintsContainer layout was not preserved exactly."
+}
+if ($text.Contains("CAM_TabPrevHint") -or $text.Contains("CAM_TabNextHint")) {
+    throw "0.0.36 duplicate tab-hint chrome must not return."
+}
+
+# Radial customization remains unreachable.
 $contextMatch = [regex]::Match(
     $text,
     '<ls:LSButton\b[^>]*x:Name="ShowContextMenu"[^>]*>',
@@ -390,57 +349,30 @@ if (-not $contextMatch.Success -or
     -not $contextMatch.Value.Contains('IsEnabled="False"') -or
     -not $contextMatch.Value.Contains('IsHitTestVisible="False"') -or
     -not $contextMatch.Value.Contains('Visibility="Collapsed"') -or
-    -not $contextMatch.Value.Contains('Width="0"') -or
     -not $contextMatch.Value.Contains('Command="{x:Null}"') -or
     $contextMatch.Value.Contains('BoundEvent=')) {
     throw "Radial ContextMenu/X must be inert, hidden, and have no input binding."
 }
-
 foreach ($forbidden in @(
-    'ShowContextMenuCommand',
-    'RequestAssignSlotCommand',
-    'AssignSlotCommand',
-    'SwapSlotCommand',
-    'ClearSlotCommand',
-    'AddRadialCommand',
-    'RemoveRadialCommand'
+    "ShowContextMenuCommand",
+    "RequestAssignSlotCommand",
+    "AssignSlotCommand",
+    "SwapSlotCommand",
+    "ClearSlotCommand",
+    "AddRadialCommand",
+    "RemoveRadialCommand"
 )) {
     if ($text.Contains($forbidden)) {
-        throw "Radial customization command leaked into automatic catalog: $forbidden"
+        throw "Radial customization command leaked into automatic filter grid: $forbidden"
     }
 }
 
-# Historical SpellBook predicate names are not a current Patch 8 proof.
-# Do not silently turn them into shipping classification heuristics.
-foreach ($unprovenPredicate in @(
-    'CantripGroupPredicate',
-    'SpellLevelsGroupPredicate',
-    'AllActionsGroupPredicate'
-)) {
-    if ($text.Contains($unprovenPredicate)) {
-        throw "Unproven SpellBook predicate leaked into milestone XAML: $unprovenPredicate"
-    }
-}
-if ($text.Contains('Text="Custom"')) {
-    throw "CAM must not expose a Custom tab."
-}
-
-$slotAssignMatch = [regex]::Match(
-    $text,
-    '<Control\b[^>]*x:Name="SlotAssignHolder"[^>]*/>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $slotAssignMatch.Success -or
-    -not $slotAssignMatch.Value.Contains('Visibility="Collapsed"') -or
-    -not $slotAssignMatch.Value.Contains('IsEnabled="False"')) {
-    throw "SlotAssignHolder must be inert in automatic-catalog mode."
-}
-
-# The runtime installer stays operational/minimal; semantic proof remains CI-owned.
+# The runtime installer remains operational/minimal; compatibility extraction is
+# allowed, duplicated semantic post-pack verification is not.
 $overlaySource = Get-Content -Raw -LiteralPath $Script
 foreach ($forbiddenRuntimeVerifier in @(
-    'Packed controller library is missing required seam',
-    'Assert-GridChromeContract',
+    "Packed controller library is missing required seam",
+    "Assert-GridChromeContract",
     '$verifiedText',
     '$verifiedLibrary'
 )) {
@@ -449,4 +381,4 @@ foreach ($forbiddenRuntimeVerifier in @(
     }
 }
 
-Write-Host "Automatic action-tab fixture passed: every tab owns its native focus/selector pair and candidate writer, footer hints stay out of the resource lane, radial customization is unreachable, nested SingleHotBar and native A/B dispatch remain intact."
+Write-Host "Native hotbar-filter grid fixture passed: gameplay candidates are VMHotBarSlot collections, one assignment-style navigation shell owns vertical continuation, current radial focus drives Tag/resource preview, native right-stacked hints are preserved, and radial customization is unreachable."
