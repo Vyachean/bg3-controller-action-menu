@@ -53,17 +53,31 @@ foreach ($relative in $forbidden) {
     }
 }
 
-if (Test-Path -LiteralPath $sourceLibrary -PathType Leaf) {
-    if (-not (Test-Path -LiteralPath $packedLibrary -PathType Leaf)) {
-        throw "Self-contained controller library exists in source but is missing from the PAK."
-    }
-
-    [xml]$packedLibraryXml = Get-Content -Raw -LiteralPath $packedLibrary
-    if (-not $packedLibraryXml.DocumentElement) {
-        throw "Packaged self-contained Lib_Controller.xaml has no XML document element."
-    }
-
-    Write-Host "Package verification passed: self-contained controller runtime is embedded; copied Public native XAML and Script Extender are absent."
-} else {
-    Write-Host "Package verification passed for development migration state: metadata package is structurally valid. Release publication remains blocked until the self-contained controller library is added."
+if (-not (Test-Path -LiteralPath $sourceLibrary -PathType Leaf)) {
+    throw "Self-contained controller library is missing from source."
 }
+if (-not (Test-Path -LiteralPath $packedLibrary -PathType Leaf)) {
+    throw "Self-contained controller library is missing from the PAK."
+}
+
+[xml]$packedLibraryXml = Get-Content -Raw -LiteralPath $packedLibrary
+if (-not $packedLibraryXml.DocumentElement) {
+    throw "Packaged self-contained Lib_Controller.xaml has no XML document element."
+}
+
+$sourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $sourceLibrary).Hash
+$packedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $packedLibrary).Hash
+if ($sourceHash -ne $packedHash) {
+    throw "Packaged self-contained Lib_Controller.xaml does not match the project-owned source."
+}
+
+$nativePayloads = @(
+    Get-ChildItem -LiteralPath $Extract -File -Recurse |
+        Where-Object { $_.Extension.ToLowerInvariant() -in @(".dll", ".exe", ".asi", ".so", ".dylib") }
+)
+if ($nativePayloads.Count -gt 0) {
+    $names = ($nativePayloads | ForEach-Object { $_.FullName.Substring($Extract.Length + 1) }) -join ", "
+    throw "Published package contains forbidden native executable payloads: $names"
+}
+
+Write-Host "Package verification passed: project-owned controller runtime is embedded byte-for-byte; copied Public native XAML, Script Extender and native executable payloads are absent."
