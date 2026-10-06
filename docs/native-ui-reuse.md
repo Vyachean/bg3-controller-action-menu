@@ -20,10 +20,10 @@ The mod should not imitate Baldur's Gate 3 UI or gameplay semantics when an equi
 
 CAM owns only thin composition:
 
-- which native type/resource filters are presented;
+- which proven native type/resource filters are presented;
 - grid columns/spacing;
 - the one-outer-list controller navigation shell;
-- retargeting an installed native radial focus trigger from the radial control to the grid list.
+- a project-owned equivalent of the proven radial focus handoff from the focused grid slot into BG3-owned commands.
 
 BG3 owns:
 
@@ -39,9 +39,9 @@ BG3 owns:
 
 ### Keyboard HotBar.xaml: filter semantics
 
-At install time CAM extracts the current `Mods/MainUI/GUI/Pages/HotBar.xaml` from the user's own `Game.pak`.
+The current `Mods/MainUI/GUI/Pages/HotBar.xaml` is development evidence, not an installer input.
 
-Generation requires the installed file to expose the current equivalents of:
+A fresh developer capture is used when the contract must be checked. The self-contained runtime then records only the project-owned bindings needed to call the proven BG3 model:
 
 - `CurrentPlayer.UIData.ActionResourcesCostPreview`;
 - `FilterActionResourceCommand`;
@@ -53,13 +53,11 @@ Generation requires the installed file to expose the current equivalents of:
 - Common/Class/Item deck identifiers;
 - `CurrentPlayer.SelectedCharacter.PassivesHotBar`.
 
-The cantrip filter parameter is read from the same current command element because that concrete value is required to construct the generated XAML. It is not copied from historical public XAML.
-
-This read is part of the transformation itself, not a compatibility scan. CI fixtures own the semantic assertions for the surrounding HotBar contract.
+Any concrete filter parameter that cannot be proven stable from current evidence remains a development blocker rather than being discovered dynamically on the tester's machine.
 
 ### Controller radial: focus/dispatch semantics
 
-The installed `PreloadedActionRadials_c.xaml` remains authoritative for:
+Captured current `PreloadedActionRadials_c.xaml` evidence remains authoritative for:
 
 - `ActionRadialWidgetTemplate_P8`;
 - exact `SelectorAssign` geometry;
@@ -68,7 +66,7 @@ The installed `PreloadedActionRadials_c.xaml` remains authoritative for:
 - `SingleHotBar.SlotList`;
 - `HotBarRadial.LocalFocusChanged` behavior.
 
-CAM extracts the current main radial `LocalFocusChanged` trigger and retargets its focused-element references to `CAM_FilteredSlotList`. The retained actions include:
+The self-contained controller resource must reproduce the proven main-radial `LocalFocusChanged` handoff for `CAM_FilteredSlotList`. The required BG3-owned actions are:
 
 - writing `LocalFocus.Tag` to `ActionRadials.Tag`;
 - `CreateFocusedTooltipDataCommand`;
@@ -94,7 +92,7 @@ outer LSListBox
 
 0.0.36 split sources into independent focus roots and runtime showed navigation could break after reaching lower rows. 0.0.37 returns to one outer navigation/scroll owner and removes the fixed three-row action-grid height.
 
-The exact installed `SelectorAssign` control is cloned for that one outer list rather than rebuilding focus geometry.
+The self-contained selector must be authored from the captured current `SelectorAssign` contract and verified against that evidence; normal installation does not clone anything from the game.
 
 ## Action cells
 
@@ -110,7 +108,7 @@ The visible cell continues to use BG3-owned slot/icon resources. CAM does not de
 
 ## Type and resource filters
 
-LB/RB type filters use current installed native commands/decks:
+LB/RB type filters use the currently proven native commands/decks:
 
 - Common;
 - current class;
@@ -124,7 +122,7 @@ CAM does not classify actions by resource names, action names, spell levels or i
 
 ## Button hints
 
-The installed native `ButtonHintsContainer` is preserved as-is. CAM does not change it to a horizontal wrap panel and does not add separate LB/RB hint presenters.
+The self-contained template preserves the captured native `ButtonHintsContainer` behavior/layout contract. CAM does not replace it with a horizontal wrap panel and does not add separate LB/RB hint presenters.
 
 Only radial customization is removed:
 
