@@ -280,6 +280,8 @@ def validate_semantics() -> list[str]:
                 "Update-DevelopmentLauncher",
                 '"Install-BG3ControllerActionMenu.vbs"',
                 'success contract is "returned without a terminating',
+                "$global:LASTEXITCODE = 0",
+                "Compatibility only: obsolete bootstrap-latest.ps1 callers",
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
