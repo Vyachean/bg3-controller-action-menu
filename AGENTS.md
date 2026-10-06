@@ -90,7 +90,7 @@ Current mandatory architecture:
 - `PlayerCharacterProperties.SpellsAndActions`, `Inventory.Slots`, and raw/passive assignment collections may be research/presentation evidence but must not be used as the main `ActionRadials.Tag -> UseSlotCommand` candidate path;
 - type tabs are native **filters**, not independent data catalogs. Reuse the exact current installed hotbar seams for `SetCurrentShownDeckCommand` / `CurrentShownDeck.SlotList`, passives, cantrip filtering and `ClearSingleHotbarCommand`;
 - resource filters come from the current `CurrentPlayer.UIData.ActionResourcesCostPreview` model and invoke the current native `FilterActionResourceCommand`; do not infer resource membership from action names, icons or CAM-owned rules;
-- current HotBar filter names/parameters must be read from the user's installed `HotBar.xaml` and fail closed if the installed game no longer exposes the required contract. Do not freeze historical command parameters into the shipping release;
+- the installer may read only concrete source values required by the deterministic transformation (for example the current cantrip command parameter). Semantic compatibility of HotBar command/property names is CI-owned; do not scan/assert the installed file for an expected contract before transforming it;
 - the main navigation hierarchy is one assignment-style outer `LSListBox + LocalFocusSelector` with scrolling. Child resource/action lists use `KeyboardNavigation.DirectionalNavigation="Continue"` and `LSGrid(UIUp/UIDown/UILeft/UIRight)`; do not split each filter into an independent focus root;
 - do not hard-code a short/fixed action-grid height that truncates the navigation space;
 - each action cell container must expose the native slot VM as its `Tag`, because the native radial focus lifecycle consumes `LocalFocus.Tag`;
@@ -100,7 +100,7 @@ Current mandatory architecture:
 - preserve the installed `ButtonHintsContainer` composition. Do not restyle it horizontally and do not add duplicate LB/RB hint presenters;
 - X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must remain unreachable from CAM;
 - historical SpellBook predicates and CAM-owned spell/resource classifiers remain forbidden without current installed-game proof;
-- install-time generation may validate that the installed source exposes the exact native seams required to derive the UI, but it must not duplicate CI's generated-XAML/package/release semantic verification.
+- install-time generation must not run semantic/contract assertions over the installed XAML. It should perform the requested extraction/transformation directly and fail only when a required operation cannot be completed.
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 

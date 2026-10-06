@@ -348,31 +348,6 @@ function New-AssignSelectorClone {
     return $clone
 }
 
-function Assert-CurrentHotBarFilterContract {
-    param([Parameter(Mandatory = $true)][string]$HotBarText)
-
-    # This is a source-compatibility gate, not a post-pack installer verifier.
-    # CAM consumes these exact current DCHotBar seams to obtain VMHotBarSlot
-    # collections instead of feeding assignment-catalog objects to UseSlotCommand.
-    foreach ($required in @(
-        "CurrentPlayer.UIData.ActionResourcesCostPreview",
-        "FilterActionResourceCommand",
-        "FilterCantripsCommand",
-        "SetCurrentShownDeckCommand",
-        "ClearSingleHotbarCommand",
-        "CurrentShownDeck",
-        "SingleHotBar.SlotList",
-        "CommonHotBar",
-        "ClassHotBar",
-        "ItemHotBar",
-        "CurrentPlayer.SelectedCharacter.PassivesHotBar"
-    )) {
-        if (-not $HotBarText.Contains($required)) {
-            throw "Installed Patch 8 HotBar.xaml is missing required filter seam: $required"
-        }
-    }
-}
-
 function Get-CurrentCantripFilterParameter {
     param([Parameter(Mandatory = $true)][string]$HotBarText)
 
@@ -770,7 +745,6 @@ function New-ControllerLibraryFromNative {
 
     $native = [System.IO.File]::ReadAllText($Source)
     $hotBar = [System.IO.File]::ReadAllText($HotBarFilterSource)
-    Assert-CurrentHotBarFilterContract -HotBarText $hotBar
     $cantripFilterParameter = Get-CurrentCantripFilterParameter -HotBarText $hotBar
 
     # Reuse the exact installed assignment selector geometry for the one outer
@@ -922,8 +896,9 @@ $widget
 </ResourceDictionary>
 "@
 
-    # Install-time generation remains operational only. CI owns the semantic
-    # assertions; this step only derives exact current native seams.
+    # Install-time generation performs transformation only. CI owns semantic
+    # contract assertions. Runtime failures here mean a required extraction or
+    # transformation operation itself could not be completed.
     $parent = Split-Path -Parent $Destination
     if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
 

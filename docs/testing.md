@@ -461,7 +461,7 @@ The install-time contract is now intentionally minimal:
 1. resolve and SHA-256 verify release assets;
 2. locate the installed BG3 and safe mod target;
 3. extract the exact current native radial XAML;
-4. require only the native **input compatibility seams** needed before transformation;
+4. read only concrete source fragments/values required by the transformation;
 5. generate the controller library;
 6. require only that generated XAML parses;
 7. create the PAK;
@@ -648,3 +648,19 @@ Only after those checks pass should the next milestone runtime test be requested
 8. verify top-level B and nested/filter B.
 
 Do not request intermediate in-game tests for individual bindings.
+
+
+### 2026-10-06 — 0.0.38 install-path simplification
+
+The 0.0.37 runtime architecture accidentally reintroduced an installer-side semantic gate through `Assert-CurrentHotBarFilterContract`. That duplicated CI knowledge on the user's machine and violated the single-purpose installer rule established after 0.0.29/0.0.31.
+
+0.0.38 removes that contract scan entirely.
+
+The runtime installer may still fail when an operation it actually needs cannot be performed — for example the required source file cannot be extracted, a concrete value needed by the transformation cannot be read, package creation fails, or the Xbox target is unsafe. It must not iterate through expected HotBar command/property names merely to approve the installed game before transformation.
+
+CI now explicitly rejects reintroduction of:
+
+- `Assert-CurrentHotBarFilterContract`;
+- install-time "missing required filter seam" checks.
+
+The 0.0.37 UI/filter implementation itself is unchanged by this release.

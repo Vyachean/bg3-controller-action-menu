@@ -53,9 +53,9 @@ Generation requires the installed file to expose the current equivalents of:
 - Common/Class/Item deck identifiers;
 - `CurrentPlayer.SelectedCharacter.PassivesHotBar`.
 
-The cantrip filter parameter is read from the same current command element. It is not copied from historical public XAML.
+The cantrip filter parameter is read from the same current command element because that concrete value is required to construct the generated XAML. It is not copied from historical public XAML.
 
-This is a derivation compatibility gate, not a second generated-package verifier.
+This read is part of the transformation itself, not a compatibility scan. CI fixtures own the semantic assertions for the surrounding HotBar contract.
 
 ### Controller radial: focus/dispatch semantics
 
