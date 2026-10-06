@@ -14,8 +14,8 @@ MOD_ROOT = PACKAGE_ROOT / "Mods/BG3ControllerActionMenu"
 VERSION = ROOT / "VERSION"
 
 XBOX_INSTALLER = ROOT / "tools/install-xbox-dev.ps1"
-BOOTSTRAP_INSTALLER = ROOT / "tools/bootstrap-latest.ps1"
-BOOTSTRAP_TEST = ROOT / "tools/test-bootstrap-latest.ps1"
+DEV_ENTRY = ROOT / "tools/dev-entry.ps1"
+DEV_ENTRY_TEST = ROOT / "tools/test-dev-entry.ps1"
 LATEST_INSTALLER = ROOT / "tools/install-latest.ps1"
 ONE_CLICK_LAUNCHER = ROOT / "tools/Install-BG3ControllerActionMenu.vbs"
 ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
@@ -24,9 +24,7 @@ SELF_CONTAINED_RUNTIME_TEST = ROOT / "tools/test-self-contained-runtime.ps1"
 PATCH8_RUNTIME_EVIDENCE = ROOT / "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
 DEV_CAPTURE = ROOT / "tools/capture-self-contained-inputs.ps1"
-DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
 DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
-DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
 DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
 SELF_CONTAINED_RELEASE_GUARD = ROOT / "tools/assert-self-contained-release.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
@@ -176,6 +174,10 @@ def validate_semantics() -> list[str]:
         ROOT / "tools/test-native-overlay.ps1",
         ROOT / "tools/prepare-self-contained-reference.ps1",
         ROOT / "tools/test-self-contained-reference.ps1",
+        ROOT / "tools/bootstrap-latest.ps1",
+        ROOT / "tools/test-bootstrap-latest.ps1",
+        ROOT / "tools/Capture-BG3ControllerArtifacts.vbs",
+        ROOT / "tools/build-dev-capture.ps1",
     ):
         if obsolete.exists():
             errors.append(
@@ -221,26 +223,26 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
-            BOOTSTRAP_INSTALLER,
+            DEV_ENTRY,
             [
                 "releases?per_page=20",
                 'install-latest.ps1',
-                "Invoke-RestMethod",
-                "Invoke-WebRequest",
+                "ReleaseMetadataPath",
+                "Save-Asset",
+                "LauncherRoot",
+                'Task = "install"',
+                "Current release task: install/update the self-contained PAK.",
                 "& $installer @installerArgs",
-                '$PortableStateRoot = Join-Path $ScriptRoot "installer-work"',
-                'CacheRoot = Join-Path (Split-Path -Parent $CacheRoot) "release-cache"',
-                'LauncherRoot = $ScriptRoot',
             ],
         )
     )
 
     errors.extend(
         require_text(
-            BOOTSTRAP_TEST,
+            DEV_ENTRY_TEST,
             [
-                "Minimal latest-installer bootstrap fixture passed.",
-                "Downloaded latest installer was not executed.",
+                "Universal release-controlled development entry fixture passed.",
+                "Release-controlled helper was not executed.",
             ],
         )
     )
@@ -258,7 +260,6 @@ def validate_semantics() -> list[str]:
                 "& $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath",
                 "Update-DevelopmentLauncher",
                 '"Install-BG3ControllerActionMenu.vbs"',
-                '"bootstrap-latest.ps1"',
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
@@ -280,7 +281,7 @@ def validate_semantics() -> list[str]:
                     f"{LATEST_INSTALLER.relative_to(ROOT)}: canonical installer must not rebuild the release PAK: {forbidden}"
                 )
 
-    for runtime_installer in (BOOTSTRAP_INSTALLER, LATEST_INSTALLER):
+    for runtime_installer in (LATEST_INSTALLER,):
         if runtime_installer.exists():
             runtime_text = runtime_installer.read_text(encoding="utf-8")
             for forbidden in (
@@ -301,14 +302,16 @@ def validate_semantics() -> list[str]:
         require_text(
             ONE_CLICK_LAUNCHER,
             [
-                "bootstrap-latest.ps1",
-                "Installing the newest BG3 Controller Action Menu release",
+                "dev-entry.ps1",
+                "releases?per_page=20",
+                "Invoke-RestMethod",
+                "Invoke-WebRequest",
+                "Running the current BG3 Controller Action Menu development task",
                 "shell.Run(command, 0, True)",
-                "install-latest.log",
-                "install-status.txt",
-                "Installation completed.",
+                "dev-task.log",
+                "dev-status.txt",
+                "Development task completed.",
                 'stateRoot = fso.BuildPath(baseDir, "installer-work")',
-                '" -CacheRoot "',
                 "--self-test",
             ],
         )
@@ -318,11 +321,15 @@ def validate_semantics() -> list[str]:
         require_text(
             DEVELOPMENT_VBS_DOC,
             [
-                "temporary development delivery tool",
-                "no manual replacement or update of the VBS is required",
-                "A change that would require the tester to download a newer VBS manually is an installer architecture regression.",
+                "universal development shortcut",
+                "one operator-facing VBS",
+                "dev-entry.ps1",
+                "No manual replacement or update of the VBS is required",
+                "A change that would require the operator to download a newer VBS manually is a development-launcher architecture regression.",
+                "normal install/update",
+                "read-only capture",
+                "diagnostics",
                 "official delivery path",
-                "development helper scripts",
             ],
         )
     )
@@ -345,27 +352,31 @@ def validate_semantics() -> list[str]:
             ONE_CLICK_BUILDER,
             [
                 "Install-BG3ControllerActionMenu.vbs",
-                "bootstrap-latest.ps1",
                 "BG3ControllerActionMenu-OneClickInstaller.zip",
-                "installer-work",
+                "single-file universal development launcher bundle",
                 "Compress-Archive",
             ],
         )
     )
 
     builder_text = ONE_CLICK_BUILDER.read_text(encoding="utf-8") if ONE_CLICK_BUILDER.exists() else ""
-    if 'Copy-Item -LiteralPath $latestInstaller' in builder_text or 'Join-Path $Stage "install-latest.ps1"' in builder_text:
-        errors.append(
-            f"{ONE_CLICK_BUILDER.relative_to(ROOT)}: reusable one-click ZIP must not embed install-latest.ps1"
-        )
+    for forbidden_bundle_seam in (
+        'Join-Path $Stage "install-latest.ps1"',
+        'Join-Path $Stage "dev-entry.ps1"',
+        'Join-Path $Stage "bootstrap-latest.ps1"',
+    ):
+        if forbidden_bundle_seam in builder_text:
+            errors.append(
+                f"{ONE_CLICK_BUILDER.relative_to(ROOT)}: reusable one-click ZIP must contain only the universal VBS: {forbidden_bundle_seam}"
+            )
 
     for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
         errors.extend(
             require_text(
                 workflow,
                 [
-                    "Test minimal installer bootstrap",
-                    "test-bootstrap-latest.ps1",
+                    "Test universal development entry",
+                    "test-dev-entry.ps1",
                     "Test self-contained Patch 8 runtime",
                     "test-self-contained-runtime.ps1",
                 ],
@@ -386,12 +397,14 @@ def validate_semantics() -> list[str]:
         require_text(
             RELEASE_WORKFLOW,
             [
-                '"tools/bootstrap-latest.ps1"',
+                '"tools/dev-entry.ps1"',
                 '"tools/install-latest.ps1"',
-                '$bootstrap = "tools/bootstrap-latest.ps1"',
+                '"tools/capture-self-contained-inputs.ps1"',
+                '$devEntry = "tools/dev-entry.ps1"',
                 '$latestInstaller = "tools/install-latest.ps1"',
                 '$launcher = "tools/Install-BG3ControllerActionMenu.vbs"',
-                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $bootstrap, $latestInstaller',
+                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $devEntry, $latestInstaller, $capture',
+                './tools/dev-entry.ps1 -ResolveOnly',
                 '$deadline = (Get-Date).ToUniversalTime().AddMinutes(5)',
                 '$delaySeconds = [Math]::Min(15, $delaySeconds * 2)',
                 'within the five-minute publication propagation window',
@@ -464,41 +477,16 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
-            DEV_CAPTURE_LAUNCHER,
-            [
-                'capture-self-contained-inputs.ps1',
-                'capture.log',
-                'capture-status.txt',
-                'Upload this ZIP to the development chat.',
-                '--self-test',
-            ],
-        )
-    )
-
-    errors.extend(
-        require_text(
             DEV_CAPTURE_TEST,
             [
-                'Portable developer capture fixture passed.',
+                'Portable developer capture helper fixture passed.',
                 '%LOCALAPPDATA%',
                 'No BG3 files, saves, profiles, or mods were modified.',
             ],
         )
     )
 
-    errors.extend(
-        require_text(
-            DEV_CAPTURE_BUILDER,
-            [
-                'Capture-BG3ControllerArtifacts.vbs',
-                'capture-self-contained-inputs.ps1',
-                'BG3ControllerActionMenu-DevCapture.zip',
-                'Compress-Archive',
-            ],
-        )
-    )
-
-    for portable_path in (ONE_CLICK_LAUNCHER, BOOTSTRAP_INSTALLER, LATEST_INSTALLER, DEV_CAPTURE, DEV_CAPTURE_LAUNCHER):
+    for portable_path in (ONE_CLICK_LAUNCHER, DEV_ENTRY, LATEST_INSTALLER, DEV_CAPTURE):
         if portable_path.exists() and "%LOCALAPPDATA%" in portable_path.read_text(encoding="utf-8"):
             errors.append(
                 f"{portable_path.relative_to(ROOT)}: portable launcher path must not use %LOCALAPPDATA%"

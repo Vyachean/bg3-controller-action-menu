@@ -15,10 +15,7 @@ try {
     $pak = Join-Path $assetRoot "BG3ControllerActionMenu-$version.pak"
     $xbox = Join-Path $assetRoot "install-xbox-dev.ps1"
     $launcherAsset = Join-Path $assetRoot "Install-BG3ControllerActionMenu.vbs"
-    $bootstrapAsset = Join-Path $assetRoot "bootstrap-latest.ps1"
-
     Set-Content -LiteralPath $launcherAsset -Value "' new launcher fixture" -Encoding ASCII
-    Set-Content -LiteralPath $bootstrapAsset -Value "# new bootstrap fixture" -Encoding UTF8
     Set-Content -LiteralPath $pak -Value "fake-pak" -NoNewline
 
 @'
@@ -59,10 +56,6 @@ exit 0
                 [ordered]@{
                     name = "Install-BG3ControllerActionMenu.vbs"
                     browser_download_url = $launcherAsset
-                },
-                [ordered]@{
-                    name = "bootstrap-latest.ps1"
-                    browser_download_url = $bootstrapAsset
                 }
             )
         }
@@ -111,8 +104,8 @@ exit 0
     if ((Get-Content -Raw -LiteralPath (Join-Path $launcherRoot "Install-BG3ControllerActionMenu.vbs")).Trim() -ne "' new launcher fixture") {
         throw "Canonical installer did not refresh the existing development VBS automatically."
     }
-    if ((Get-Content -Raw -LiteralPath (Join-Path $launcherRoot "bootstrap-latest.ps1")).Trim() -ne "# new bootstrap fixture") {
-        throw "Canonical installer did not refresh the existing development bootstrap automatically."
+    if (Test-Path -LiteralPath (Join-Path $launcherRoot "bootstrap-latest.ps1")) {
+        throw "Canonical installer did not retire the obsolete local bootstrap."
     }
 
     # Legacy extracted launchers do not know the newer -LauncherRoot parameter.
@@ -140,8 +133,8 @@ exit `$LASTEXITCODE
     if ((Get-Content -Raw -LiteralPath (Join-Path $legacyRoot "Install-BG3ControllerActionMenu.vbs")).Trim() -ne "' new launcher fixture") {
         throw "Installer could not auto-refresh a legacy VBS without an explicit LauncherRoot."
     }
-    if ((Get-Content -Raw -LiteralPath $legacyBootstrap).Trim() -ne "# new bootstrap fixture") {
-        throw "Installer could not auto-refresh the running legacy bootstrap without an explicit LauncherRoot."
+    if (Test-Path -LiteralPath $legacyBootstrap) {
+        throw "Installer did not retire the running legacy bootstrap after migrating the VBS."
     }
 
     $launcherOutput = & cscript.exe //nologo $Launcher --self-test

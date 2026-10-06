@@ -688,7 +688,7 @@ The developer capture remains read-only evidence tooling only. It does not gener
 Current automated proof must establish:
 
 1. `tools/test-self-contained-runtime.ps1` passes against the pinned `1.8.910.0` evidence;
-2. normal VBS/bootstrap/latest/Xbox installer paths contain no game-PAK/LSLib/build/repack seam;
+2. the universal VBS stays task-agnostic and the normal install helpers contain no game-PAK/LSLib/build/repack seam;
 3. the built PAK contains the project-owned controller library byte-for-byte;
 4. copied `Public/Game` XAML, Script Extender and native executable payloads are absent;
 5. repository/build CI is green.

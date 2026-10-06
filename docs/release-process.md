@@ -16,15 +16,16 @@ A version may be called **released**, **ready to install**, or **the newest inst
 2. `VERSION` on `main` contains the intended new version.
 3. The **Release** workflow for the merge commit completed successfully.
 4. GitHub contains a published, non-draft release whose tag is exactly `v<VERSION>`.
-5. That release contains every installer-required asset:
+5. That release contains every development-entry asset:
    - `BG3ControllerActionMenu-<VERSION>.pak`
    - `BG3ControllerActionMenu-OneClickInstaller.zip`
    - `Install-BG3ControllerActionMenu.vbs`
-   - `bootstrap-latest.ps1`
+   - `dev-entry.ps1`
    - `install-latest.ps1`
    - `install-xbox-dev.ps1`
-6. The new tag is the newest published release selected by the same release ordering used by `install-latest.ps1`.
-7. `install-latest.ps1 -ResolveOnly`, against the live GitHub Releases API, resolves exactly `<VERSION>`.
+   - `capture-self-contained-inputs.ps1`
+6. The new tag is the newest published release selected by the same published-release ordering used by the universal launcher.
+7. `dev-entry.ps1 -ResolveOnly`, against the live GitHub Releases API, resolves exactly `<VERSION>`.
 
 Until all seven checks pass, describe the version as a **candidate** or **CI artifact**, not as a released version.
 
@@ -119,15 +120,15 @@ Verification must therefore use the same model as the installer: published, non-
 
 The final proof is not "the release page exists"; it is "the installer resolves the intended version."
 
-Run the canonical installer resolver against live GitHub metadata:
+Run the universal development entry resolver against live GitHub metadata:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install-latest.ps1 -ResolveOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\dev-entry.ps1 -ResolveOnly
 ```
 
 The output/status must identify exactly the version in `VERSION`.
 
-The Release workflow also performs this check automatically after publication. Because GitHub can expose a newly created exact tag before the releases collection used by the installer reflects it, the workflow retries the **canonical resolver** within a bounded five-minute wall-clock window, using exponential backoff capped at 15 seconds. It does not replace the resolver with a second implementation or accept an older version as success. The 0.0.37 publication demonstrated that a 12-second fixed retry window was too short even though the release became visible normally shortly afterward.
+The Release workflow also performs this check automatically after publication. Because GitHub can expose a newly created exact tag before the releases collection used by the installer reflects it, the workflow retries the **universal entry resolver** within a bounded five-minute wall-clock window, using exponential backoff capped at 15 seconds. It does not replace the resolver with a second implementation or accept an older version as success. The 0.0.37 publication demonstrated that a 12-second fixed retry window was too short even though the release became visible normally shortly afterward.
 
 ### 7. Only then announce or test the release
 
@@ -147,7 +148,7 @@ If the installer still selects the previous version:
 2. Check whether `v<VERSION>` exists and is non-draft.
 3. Check the **Release** workflow for the merge commit.
 4. Check that the required assets exist on that release.
-5. Run `install-latest.ps1 -ResolveOnly`.
+5. Run `dev-entry.ps1 -ResolveOnly`.
 6. Only investigate or change installer selection logic if the intended release is published correctly and the resolver still chooses another version.
 
 Do not modify the user-side installer to compensate for a release that was never published.
@@ -158,7 +159,7 @@ The release workflow must fail unless, after publication:
 
 - the expected tag is the newest published non-draft release;
 - all required installer assets are present;
-- the canonical installer resolver selects the expected version;
+- the universal development entry selects the expected version;
 - transient GitHub publication propagation is tolerated for up to five minutes without accepting a stale release as success.
 
 This is a release-system invariant, not an optional manual check.

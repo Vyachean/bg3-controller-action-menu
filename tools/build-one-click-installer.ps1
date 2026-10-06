@@ -18,30 +18,14 @@ if (Test-Path -LiteralPath $Stage) {
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
 
 $launcher = Join-Path $Root "tools\Install-BG3ControllerActionMenu.vbs"
-$bootstrap = Join-Path $Root "tools\bootstrap-latest.ps1"
-
-foreach ($path in @($launcher, $bootstrap)) {
-    if (-not (Test-Path -LiteralPath $path)) {
-        throw "Missing one-click installer component: $path"
-    }
+if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
+    throw "Missing universal development VBS: $launcher"
 }
 
+# The operator-facing development bundle deliberately contains one executable
+# shortcut only. On every launch the VBS resolves the newest published release,
+# downloads dev-entry.ps1, and lets that release choose the current task.
 Copy-Item -LiteralPath $launcher -Destination (Join-Path $Stage "Install-BG3ControllerActionMenu.vbs") -Force
-Copy-Item -LiteralPath $bootstrap -Destination (Join-Path $Stage "bootstrap-latest.ps1") -Force
-
-@"
-BG3 Controller Action Menu - One-click installer
-
-1. Extract this ZIP once.
-2. Double-click Install-BG3ControllerActionMenu.vbs.
-3. The bundled bootstrap only downloads the newest release's install-latest.ps1 and runs it.
-4. The current installer keeps its downloads, logs and diagnostics under installer-work beside this launcher.
-5. The target architecture installs an already-built self-contained release PAK; normal installation must not read or rebuild BG3 game PAKs.
-6. Validation belongs to CI/release publication, not to the user's installation run.
-
-Portable state:
-.\installer-work\
-"@ | Set-Content -LiteralPath (Join-Path $Stage "README.txt") -Encoding UTF8
 
 $outputParent = Split-Path -Parent $OutputPath
 if ($outputParent) {
@@ -51,5 +35,5 @@ if (Test-Path -LiteralPath $OutputPath) {
     Remove-Item -LiteralPath $OutputPath -Force
 }
 
-Compress-Archive -Path (Join-Path $Stage "*") -DestinationPath $OutputPath -CompressionLevel Optimal
-Write-Host "Created one-click installer: $OutputPath"
+Compress-Archive -Path (Join-Path $Stage "Install-BG3ControllerActionMenu.vbs") -DestinationPath $OutputPath -CompressionLevel Optimal
+Write-Host "Created single-file universal development launcher bundle: $OutputPath"

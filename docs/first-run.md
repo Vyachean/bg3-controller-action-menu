@@ -18,16 +18,13 @@ Double-click:
 
 `Install-BG3ControllerActionMenu.vbs`
 
-No console window is shown. The bundled bootstrap resolves the newest published development release and hands off to its canonical installer. The current installer downloads the already-built self-contained PAK and installs it directly; it does not inspect `Game.pak` or build UI resources on this machine.
+No console window is shown. The VBS resolves the newest published development release, downloads its `dev-entry.ps1`, and runs the current release-controlled task. For the current milestone that task installs the already-built self-contained PAK directly; it does not inspect `Game.pak` or build UI resources on this machine.
 
-After this self-updating OneClickInstaller has been extracted once, future installer-internal changes should not require replacing the folder.
+After this VBS has been extracted once, future development-task changes should not require replacing the launcher.
 
 On success a normal Windows dialog shows the installed version.
 
-On failure, inspect:
-
-- `%LOCALAPPDATA%\BG3ControllerActionMenu\install-latest.log`;
-- `%LOCALAPPDATA%\BG3ControllerActionMenu\xbox-dev-environment.json`.
+On failure, inspect `installer-work\dev-task.log` and `installer-work\dev-report.json` beside the VBS.
 
 Do not manually copy files when the installer refuses the target.
 
