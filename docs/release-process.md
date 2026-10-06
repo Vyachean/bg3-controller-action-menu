@@ -19,6 +19,7 @@ A version may be called **released**, **ready to install**, or **the newest inst
 5. That release contains every installer-required asset:
    - `BG3ControllerActionMenu-<VERSION>.pak`
    - `BG3ControllerActionMenu-OneClickInstaller.zip`
+   - `Install-BG3ControllerActionMenu.vbs`
    - `bootstrap-latest.ps1`
    - `install-latest.ps1`
    - `install-xbox-dev.ps1`
