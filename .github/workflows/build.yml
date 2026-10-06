@@ -31,9 +31,9 @@ jobs:
         shell: pwsh
         run: python tools/validate.py
 
-      - name: Test minimal installer bootstrap
+      - name: Test universal development entry
         shell: pwsh
-        run: ./tools/test-bootstrap-latest.ps1
+        run: ./tools/test-dev-entry.ps1
 
       - name: Test latest-release install flow
         shell: pwsh
@@ -75,10 +75,6 @@ jobs:
         shell: pwsh
         run: ./tools/build-one-click-installer.ps1
 
-      - name: Build portable developer capture
-        shell: pwsh
-        run: ./tools/build-dev-capture.ps1
-
       - name: Upload package and installer
         uses: actions/upload-artifact@v4
         with:
@@ -87,9 +83,9 @@ jobs:
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
             tools/install-xbox-dev.ps1
             tools/Install-BG3ControllerActionMenu.vbs
-            tools/bootstrap-latest.ps1
+            tools/dev-entry.ps1
             tools/install-latest.ps1
             build/BG3ControllerActionMenu-OneClickInstaller.zip
-            build/BG3ControllerActionMenu-DevCapture.zip
             tools/capture-native-radials.ps1
+            tools/capture-self-contained-inputs.ps1
           if-no-files-found: error
