@@ -21,6 +21,7 @@ param(
     [string]$ReleaseApiUrl,
     [string]$ReleaseMetadataPath,
     [string]$CacheRoot,
+    [string]$LauncherRoot,
     [string]$LogPath,
     [string]$StatusPath,
     [string]$ReportPath
@@ -36,6 +37,7 @@ param(
     Executed = $true
     ReleaseMetadataPath = $ReleaseMetadataPath
     CacheRoot = $CacheRoot
+    LauncherRoot = $LauncherRoot
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
 exit 0
 '@ | Set-Content -LiteralPath $installer -Encoding UTF8
@@ -82,6 +84,9 @@ exit 0
     }
     if ($result.CacheRoot -ne (Join-Path $TestRoot "release-cache")) {
         throw "Bootstrap did not keep the downloaded installer cache under the supplied portable root."
+    }
+    if (-not $result.LauncherRoot -or (Split-Path -Leaf $result.LauncherRoot) -ne "tools") {
+        throw "Bootstrap did not pass its stable launcher root to the current installer."
     }
 
     Write-Host "Minimal latest-installer bootstrap fixture passed."
