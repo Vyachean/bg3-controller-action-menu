@@ -17,6 +17,9 @@ $TargetExpressions = @(
     "*ActionRadials*.xaml",
     "*HotBar*.xaml",
     "*DataTemplates.xaml",
+    "*FocusableControls*.xaml",
+    "*Tooltips*.xaml",
+    "*SpellBook*.xaml",
     "*Controller.xaml",
     "*Lib_Controller.xaml"
 )
