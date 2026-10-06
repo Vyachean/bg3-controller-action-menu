@@ -56,6 +56,7 @@ exit 0
                 [ordered]@{
                     name = "Install-BG3ControllerActionMenu.vbs"
                     browser_download_url = $launcherAsset
+                }
             )
         }
     ) | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $metadata -Encoding UTF8
