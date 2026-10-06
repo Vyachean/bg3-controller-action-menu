@@ -374,6 +374,16 @@ def validate_semantics() -> list[str]:
 
     errors.extend(
         require_text(
+            BUILD_WORKFLOW,
+            [
+                "Test release boundary",
+                "assert-self-contained-release.ps1",
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
             RELEASE_WORKFLOW,
             [
                 '"tools/bootstrap-latest.ps1"',
@@ -523,7 +533,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "development hotbar/controller contract fixtures present; normal installer is direct/self-contained; "
+        "pinned Patch 8 self-contained runtime contract present; normal installer is direct/self-contained; "
         "runtime remains Script-Extender-free)."
     )
     return 0
