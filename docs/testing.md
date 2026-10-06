@@ -577,3 +577,29 @@ The one remaining proof boundary is runtime behavior. One milestone run should a
 8. nested `SingleHotBar` / upcast / variant B still works when available.
 
 Do not request an earlier game run for spell-level headings. Fine-grained Cantrip/Level I/Level II presentation stays blocked until the current installed SpellBook contract is captured rather than inferred from the old public dump.
+
+### 2026-10-06 — 0.0.35 runtime result and 0.0.36 correction
+
+The real Xbox App run proves:
+
+- the four native-source tabs render;
+- `UITabPrev` / `UITabNext` switch the visible tab;
+- the 0.0.35 shared outer focus model is wrong: after switching tabs, focus/tooltip ownership can remain on the first tab;
+- action description therefore remains sourced from first-tab cells;
+- A does not execute the visually selected action because `ActionRadials.Tag` is not reliably owned by the visible tab;
+- the generic shared selector frame does not match the current assignment-cell geometry;
+- centering `ButtonHintsContainer` puts native controller hints over the center-bottom action-resource display.
+
+0.0.36 corrects these as one focus/dispatch architecture change rather than independent visual patches:
+
+1. every tab gets its own assignment-style `LSListBox + LocalFocusSelector`;
+2. every tab gets a clone of the exact current installed `SelectorAssign` element, preserving native selector geometry;
+3. tab change clears the stale tag and moves focus directly to that tab's list;
+4. only the active list's local-focus trigger writes its candidate to `ActionRadials.Tag`;
+5. Inventory keeps its required `.Object` unwrap; other native candidates use direct `LocalFocus.DataContext`;
+6. footer hints return to the native right-side lane while remaining compact.
+
+Static proof for 0.0.36 must reject the old `CAM_AutoCatalogSelector` / tab-index-driven outer `HotBarList` model and prove all four focus-owner/selector/candidate-writer pairs.
+
+The next game run should be a single milestone check of: tab switching, selector alignment, description following the current tab/cell, A on one simple direct action, B at top level, and nested/upcast B if naturally available.
+
