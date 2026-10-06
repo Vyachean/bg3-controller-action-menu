@@ -126,7 +126,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install-latest.ps1 -
 
 The output/status must identify exactly the version in `VERSION`.
 
-The Release workflow also performs this check automatically after publication.
+The Release workflow also performs this check automatically after publication. Because GitHub can expose a newly created exact tag slightly before the releases collection used by the installer reflects it, the workflow retries the **canonical resolver** for a bounded number of attempts. It does not replace the resolver with a second implementation or accept an older version as success.
 
 ### 7. Only then announce or test the release
 
