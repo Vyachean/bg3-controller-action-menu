@@ -16,6 +16,7 @@ on:
       - "tools/install-xbox-dev.ps1"
       - "tools/dev-entry.ps1"
       - "tools/test-dev-entry.ps1"
+      - "tools/test-standalone-vbs.ps1"
       - "tools/install-latest.ps1"
       - "tools/Install-BG3ControllerActionMenu.vbs"
       - "tools/test-install-latest.ps1"
