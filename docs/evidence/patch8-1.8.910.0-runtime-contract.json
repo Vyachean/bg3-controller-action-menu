@@ -97,7 +97,35 @@
       "filterTabInactiveAsset": "Assets/BottomBar/btn_pil_d.png",
       "filterTabActiveAsset": "Assets/BottomBar/btn_pil_active_d.png",
       "filterTabFontResource": "SmallFontSize",
-      "filterTabTextStyle": "BtnTextGlow"
+      "filterTabTextStyle": "BtnTextGlow",
+      "nativeSelectorOutset": 12,
+      "camSelectorTemplate": "CAM_SelectorTemplate",
+      "camSelectorOutset": 0,
+      "filterTabActiveMarkerAsset": "Assets/BottomBar/btn_pil_inactivemod_d.png",
+      "filterTabActiveMarkerArrow": "ActiveModArrow",
+      "spellSlotLevelStyle": "RomanNumeralLevelImage"
+    },
+    "tooltipPresentation": {
+      "pattern": "assignment-list-ui-tooltip",
+      "contentPath": "LocalFocus.DataContext.Content",
+      "command": "ShowTooltipOnUIElementCommand",
+      "context": "Hotbar",
+      "placement": "Right"
+    },
+    "organization": {
+      "primaryTabs": [
+        "CommonHotBar",
+        "ClassHotBar",
+        "Cantrips",
+        "ItemHotBar",
+        "PassivesHotBar"
+      ],
+      "secondaryFilterSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
+      "secondaryFilterCommand": "FilterActionResourceCommand",
+      "secondaryFilterPlacement": "before-action-catalog",
+      "initialOuterListIndex": 1,
+      "spellLevelPresentation": "RomanNumeralLevelImage",
+      "slotOrdering": "BG3-native"
     }
   },
   "captureMatchCount": 22,
