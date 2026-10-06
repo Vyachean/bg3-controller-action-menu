@@ -20,6 +20,7 @@ param(
     [string]$Repository,
     [string]$ReleaseApiUrl,
     [string]$ReleaseMetadataPath,
+    [string]$CacheRoot,
     [string]$LogPath,
     [string]$StatusPath,
     [string]$ReportPath
@@ -34,6 +35,7 @@ param(
 @{
     Executed = $true
     ReleaseMetadataPath = $ReleaseMetadataPath
+    CacheRoot = $CacheRoot
 } | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
 exit 0
 '@ | Set-Content -LiteralPath $installer -Encoding UTF8
@@ -77,6 +79,9 @@ exit 0
     $result = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
     if (-not $result.Executed) {
         throw "Latest installer execution marker is missing."
+    }
+    if ($result.CacheRoot -ne (Join-Path $TestRoot "release-cache")) {
+        throw "Bootstrap did not keep the downloaded installer cache under the supplied portable root."
     }
 
     Write-Host "Minimal latest-installer bootstrap fixture passed."
