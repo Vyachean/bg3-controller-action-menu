@@ -38,6 +38,12 @@ The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM
 
 The tabs are semantic filters, not independent source catalogs. CAM does not classify actions by names, icons, spell levels or custom resource rules.
 
+## SpellBook evidence boundary
+
+The same 1.8.910.0 capture confirms current SpellBook predicates `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate`. Their captured input is `SelectedItem.ActionGroups`, not `VMHotBarSlot`.
+
+They remain useful evidence for how BG3 groups SpellBook presentation, but they are not CAM gameplay-dispatch sources and are not copied into the main grid. Spell-slot/resource filtering stays on the native HotBar/resource model until BG3 exposes a current VMHotBarSlot-compatible level filter.
+
 ## Controller focus and dispatch
 
 The current native radial lifecycle uses the focused item's **DataContext**.
