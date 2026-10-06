@@ -32,14 +32,15 @@
     </Style>
 
     <DataTemplate x:Key="CAM_ActionGridSlotTemplate">
-        <!-- HotBarSlotStyle is the current Patch 8 VMHotBarSlot renderer. CAM owns dispatch. -->
-        <ls:LSButton Style="{StaticResource HotBarSlotStyle}"
-                     Content="{Binding Content}"
-                     Command="{x:Null}"
-                     BoundEvent="{x:Null}"
-                     EatInput="False"
-                     IsHitTestVisible="False"
-                     Focusable="False"/>
+        <!-- Controller-native radial/assignment presentation. The focused item remains VMHotBarSlot. -->
+        <ContentControl Style="{StaticResource SlotIconStyle}"
+                        Content="{Binding Content}"
+                        Width="104"
+                        Height="104"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False"
+                        Focusable="False"/>
     </DataTemplate>
 
     <ItemsPanelTemplate x:Key="CAM_ActionGridPanel">
@@ -60,27 +61,58 @@
                    DisableScrolling="True"/>
     </ItemsPanelTemplate>
 
+    <Style x:Key="CAM_FilterTabTextStyle" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="MaxWidth" Value="126"/>
+    </Style>
+
+    <!-- Visual-only controller tabs, using the current HotBar filter-pill assets.
+         Filtering itself remains the proven DCHotBar command path below. -->
     <Style x:Key="CAM_FilterTabItemStyle"
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="Padding" Value="18,8"/>
-        <Setter Property="Opacity" Value="0.55"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="-2,0"/>
+        <Setter Property="Width" Value="150"/>
+        <Setter Property="Height" Value="64"/>
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="Foreground" Value="#D8C69B"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Border Background="Transparent">
-                        <ContentPresenter/>
-                    </Border>
+                    <ls:LSNineSliceImage x:Name="TabBackground"
+                                         ImageSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_d.png"
+                                         Slices="36"
+                                         Padding="12,4">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </ls:LSNineSliceImage>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="TabBackground"
+                                    Property="ImageSource"
+                                    Value="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_active_d.png"/>
+                            <Setter Property="Foreground" Value="#FFF1C7"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="TabBackground"
+                                    Property="ImageSource"
+                                    Value="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_disabled.png"/>
+                            <Setter Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Style.Triggers>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Opacity" Value="1"/>
-            </Trigger>
-        </Style.Triggers>
     </Style>
 
     <Style x:Key="CAM_ResourceFilterContainer"
@@ -210,7 +242,7 @@
                             </ItemsPanelTemplate>
                         </ls:LSListBox.ItemsPanel>
                         <ls:LSListBoxItem x:Name="CAM_CommonFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
-                            <TextBlock Text="{Binding Source='haf48b625gb2f0g449egb3aegfddfa1be81c2', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                            <TextBlock Text="{Binding Source='haf48b625gb2f0g449egb3aegfddfa1be81c2', Converter={StaticResource TranslatedStringConverter}}" Style="{StaticResource CAM_FilterTabTextStyle}"/>
                         </ls:LSListBoxItem>
                         <ls:LSListBoxItem x:Name="CAM_ClassFilterTab">
                             <ls:LSListBoxItem.Style>
@@ -223,16 +255,16 @@
                                     </Style.Triggers>
                                 </Style>
                             </ls:LSListBoxItem.Style>
-                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.Stats.ClassList[0].ClassDisplayName}" FontSize="24"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.Stats.ClassList[0].ClassDisplayName}" Style="{StaticResource CAM_FilterTabTextStyle}"/>
                         </ls:LSListBoxItem>
                         <ls:LSListBoxItem x:Name="CAM_ItemsFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
-                            <TextBlock Text="{Binding Source='h9dc5cd87g62b9g452ag8b97gdb226aa037d8', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                            <TextBlock Text="{Binding Source='h9dc5cd87g62b9g452ag8b97gdb226aa037d8', Converter={StaticResource TranslatedStringConverter}}" Style="{StaticResource CAM_FilterTabTextStyle}"/>
                         </ls:LSListBoxItem>
                         <ls:LSListBoxItem x:Name="CAM_PassivesFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
-                            <TextBlock Text="{Binding Source='hccb74959ga789g46f6g8cc2g73edf1536b6a', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                            <TextBlock Text="{Binding Source='hccb74959ga789g46f6g8cc2g73edf1536b6a', Converter={StaticResource TranslatedStringConverter}}" Style="{StaticResource CAM_FilterTabTextStyle}"/>
                         </ls:LSListBoxItem>
                         <ls:LSListBoxItem x:Name="CAM_CantripsFilterTab" Style="{StaticResource CAM_FilterTabItemStyle}">
-                            <TextBlock Text="{Binding Source='h7d02199dg44ecg4a1egbcacg9cc1cec197b3', Converter={StaticResource TranslatedStringConverter}}" FontSize="24"/>
+                            <TextBlock Text="{Binding Source='h7d02199dg44ecg4a1egbcacg9cc1cec197b3', Converter={StaticResource TranslatedStringConverter}}" Style="{StaticResource CAM_FilterTabTextStyle}"/>
                         </ls:LSListBoxItem>
                     </ls:LSListBox>
 
