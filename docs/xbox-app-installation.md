@@ -20,7 +20,7 @@ The development launcher is deliberately reusable across builds. Its bootstrap i
 2. download that release's `install-latest.ps1`;
 3. run it.
 
-The downloaded current installer downloads the already-built self-contained release PAK and installs it. It does not inspect or extract the BG3 installation files.
+The downloaded current installer downloads the already-built self-contained release PAK and installs it. It does not inspect or extract the BG3 installation files. After a successful development install it also refreshes the VBS/bootstrap files in the same extracted launcher folder, so routine development updates do not require a manual launcher download.
 
 There is no bootstrap self-update protocol, release-asset hash verification, or duplicated UI/package validation on the user's PC. Those checks belong to CI before a release is published.
 
