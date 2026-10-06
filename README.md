@@ -56,25 +56,23 @@ The obsolete install-time `native-overlay.ps1` derivation path and its synthetic
 
 This candidate is not yet claimed runtime-correct. Static/package CI must be green first; after that, one milestone in-game run should verify long-grid navigation, semantic filters, resource preview, A dispatch, one natural nested/container case, native hints, and top-level/nested B together.
 
-## Development installer principle
+## Universal development shortcut
 
-The VBS installer is a **temporary development tool** used only until CAM is delivered through the intended official mod-distribution path. It has one job during development: one-click install/update of the newest usable build.
+`Install-BG3ControllerActionMenu.vbs` is a **temporary universal development shortcut** used only until CAM is delivered through the intended official mod-distribution path. The historical filename is kept for backward compatibility; the VBS is not limited to installation.
 
-For maintainers, a CI artifact is **not** a release. A version is installer-ready only after the Release workflow publishes it and the canonical resolver confirms that it is the newest published version. See [Release process](docs/release-process.md).
-
-It does **not** run semantic XAML checks, package round-trip verification, focus-contract assertions, SHA assertions, or release-test logic on the user's PC. Those belong to CI before publication.
-
-The reusable launcher is intentionally small:
+The operator keeps one VBS and double-clicks that same file for every development operation. On each run it resolves the newest published development release, downloads that release's `dev-entry.ps1`, and runs it hidden.
 
 ```text
-VBS
- -> bootstrap-latest.ps1
- -> newest release's install-latest.ps1
- -> download the prebuilt self-contained PAK
- -> install it
+same VBS
+ -> newest published release
+ -> dev-entry.ps1
+ -> release-controlled task
+      install/update | capture | diagnostics | ...
 ```
 
-The bootstrap never needs to understand a release-specific installer contract. It only downloads the newest `install-latest.ps1` and hands off.
+Today `dev-entry.ps1` performs normal install/update of the ready self-contained PAK. A later release can make the same VBS collect a read-only capture or diagnostics without requiring a new launcher.
+
+For maintainers, a CI artifact is **not** a release. A development task becomes operator-visible only after the Release workflow publishes the corresponding `dev-entry.ps1` and assets. See [Release process](docs/release-process.md).
 
 ## Xbox App installation
 
@@ -88,15 +86,13 @@ There is no visible PowerShell or Command Prompt window. The launcher runs in th
 
 Every run:
 
-- starts from a tiny stable `bootstrap-latest.ps1` bundled beside the VBS launcher;
-- checks the newest published GitHub Release;
-- resolves the newest published development release;
-- downloads that release's current `install-latest.ps1`;
-- the canonical installer downloads only the self-contained CAM `.pak` and `install-xbox-dev.ps1` for installation;
-- installs that prebuilt PAK directly; it does not read or rebuild from BG3 game PAKs;
-- after success, refreshes the VBS/bootstrap in the already-extracted development-installer folder from standalone release assets.
+- the VBS itself checks the newest published GitHub Release;
+- downloads that release's current `dev-entry.ps1` into `installer-work`;
+- runs the release-controlled task;
+- for the current install task, `dev-entry.ps1` downloads `install-latest.ps1`, which installs only the ready self-contained CAM PAK;
+- after a successful legacy migration, the canonical installer refreshes the VBS and retires the obsolete local `bootstrap-latest.ps1`.
 
-The extracted development-installer folder is intentionally reusable. Internal helper scripts/builds may change, but an existing VBS/bootstrap contract must continue to work without asking the tester to download a replacement launcher.
+The extracted development folder is intentionally reusable. Internal scripts and even the kind of development task may change, but the same VBS remains the operator entry point.
 
 One-time prerequisite: install and enable one small mod through BG3's built-in Mod Manager and exit BG3 normally. That proves the real Xbox Mods cache and provides the machine's actual `modsettings.lsx` schema.
 
@@ -136,6 +132,6 @@ See:
 
 ## Developer-only native capture
 
-If the implementation needs fresh native UI evidence, use `Capture-BG3ControllerArtifacts.vbs` together with `capture-self-contained-inputs.ps1`.
+There is no second permanent capture VBS.
 
-The capture is separate from installation: it reads the installed game without modifying it and writes the downloaded extraction tool, log, extracted UI files, manifest and final ZIP beside the VBS launcher. The ZIP is then used as development input for the self-contained package; end users do not need this step.
+If fresh native UI evidence is needed, the next development release can make the same universal `Install-BG3ControllerActionMenu.vbs` run `capture-self-contained-inputs.ps1` through `dev-entry.ps1`. Capture may inspect `Game.pak` read-only and produce the evidence ZIP beside the launcher, but it remains development tooling and is never a dependency of the shipping PAK or normal install path.
