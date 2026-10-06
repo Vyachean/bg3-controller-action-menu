@@ -32,7 +32,7 @@ The compact, reviewable evidence record is:
 docs/evidence/patch8-1.8.910.0-runtime-contract.json
 ```
 
-It pins the source hashes and the exact seams used by CAM, including:
+It pins all 22 captured XAML paths/hashes (with zero scan errors) and the exact seams used by CAM, including:
 
 - `ActionRadials` / `HotBar`;
 - `ActionRadialWidgetTemplate_P8`;
