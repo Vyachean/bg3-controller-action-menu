@@ -18,20 +18,22 @@ The launcher is reusable across releases. Its bootstrap has one stable responsib
 2. download that release's `install-latest.ps1`;
 3. run it.
 
-The downloaded current installer then downloads only the files required by that release, derives the local PAK from the installed BG3 files, and installs it.
+The downloaded current installer downloads the already-built self-contained release PAK and installs it. It does not inspect or extract the BG3 installation files.
 
 There is no bootstrap self-update protocol, release-asset hash verification, or duplicated UI/package validation on the user's PC. Those checks belong to CI before a release is published.
 
-Installer state is stored under:
+The extracted installer folder is portable. Runtime installer state is stored beside the launcher under:
 
-`%LOCALAPPDATA%\BG3ControllerActionMenu`
+`installer-work`
 
-Useful files:
+Useful files there include:
 
 - `install-latest.log`;
 - `install-status.txt`;
 - `xbox-dev-environment.json`;
-- verified downloads under `installer-cache\<release-tag>`.
+- bootstrap/release download caches.
+
+The normal installer does not place its own cache, logs or temporary build output in `%LOCALAPPDATA%`.
 
 The old console launcher is no longer the recommended path. The release ZIP is the normal user-facing installer.
 
@@ -56,16 +58,16 @@ This is a one-time prerequisite. Later CAM updates use the same one-click launch
 
 The normal installer performs only the operations needed to install:
 
-- find the Xbox BG3 package/profile paths;
-- download the current release payload;
-- extract the native radial XAML from the installed game;
-- generate the local CAM controller library;
-- create the derived PAK;
-- copy it into the Mods directory and update `modsettings.lsx`.
+- find the Xbox BG3 profile/mod target;
+- download the current self-contained release PAK;
+- copy it into the Mods directory;
+- update `modsettings.lsx`.
+
+It does not read `Game.pak`, extract XAML, download LSLib, generate UI resources, or create a new PAK on the user's machine.
 
 Semantic XAML checks, focus/A/B assertions, presentation literals, package round-trip checks and release-integrity test suites do **not** run during installation. They are CI/release gates.
 
-Operational failures still stop installation naturally: missing game files, failed download/extraction/packing, no usable target profile, or failed file writes.
+Operational failures still stop installation naturally: failed release download, no usable target profile, or failed file writes.
 
 ## Advanced/manual mode
 
@@ -90,3 +92,14 @@ Normal users should use the extracted one-click ZIP instead.
 Microsoft documents modern PC GDK games as flat-file installs under a configurable `[drive]:\XboxGames`, so `C:\WpSystem` is not a universal game location. Microsoft also documents package-scoped user data under `%LOCALAPPDATA%\Packages\<PackageFamilyName>` for GDK storage scenarios.
 
 CAM therefore discovers the real Xbox cache/profile on the machine and keeps that evidence-based, fail-closed write path. The one-click launcher changes only how the latest release is acquired and invoked.
+
+
+## Developer capture (not part of installation)
+
+When fresh game UI evidence is required, the development bundle uses:
+
+`Capture-BG3ControllerArtifacts.vbs`
+
+It launches the read-only `capture-self-contained-inputs.ps1`, downloads its extraction tool into `capture-work` beside the VBS file, scans the installed game PAKs, and creates `bg3-controller-action-menu-inputs-*.zip` beside the launcher.
+
+This capture never writes to the game installation, profile, saves, or Mods directory. It exists only to supply development evidence for the self-contained release package.
