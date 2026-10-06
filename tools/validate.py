@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repository-level static validation for the native-derived no-SE package."""
+"""Repository-level static validation for the self-contained no-SE package."""
 
 from __future__ import annotations
 
@@ -31,11 +31,8 @@ BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
 FORBIDDEN_STATIC_RUNTIME_PATHS = [
-    MOD_ROOT / "GUI/Pages/CAM_ActionMenu_c.xaml",
-    MOD_ROOT / "GUI/StateMachines/Controller.xaml",
-    MOD_ROOT / "GUI/Library/Lib_Controller.xaml",
-    MOD_ROOT / "GUI/Library/Lib_Keyboard.xaml",
-    MOD_ROOT / "GUI/Library/CAM_ActionRadials.xaml",
+    # Never publish copied game-owned resource paths. Self-contained CAM runtime
+    # resources must live under Mods/BG3ControllerActionMenu.
     PACKAGE_ROOT / "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
     PACKAGE_ROOT / "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml",
 ]
@@ -85,13 +82,13 @@ def validate_semantics() -> list[str]:
             f"{script_extender.relative_to(ROOT)}: runtime package must not contain Script Extender files"
         )
 
-    # Published source package must not contain either a reconstructed CAM page/template
-    # or copied proprietary native XAML. The installer derives the two native files
-    # locally from the user's exact installed Game.pak.
+    # Raw copied game resources are forbidden. Project-owned self-contained
+    # runtime XAML belongs under Mods/BG3ControllerActionMenu and is expected
+    # once the migration is completed.
     for forbidden_path in FORBIDDEN_STATIC_RUNTIME_PATHS:
         if forbidden_path.exists():
             errors.append(
-                f"{forbidden_path.relative_to(ROOT)}: static runtime XAML is forbidden; native radial XAML must be derived locally"
+                f"{forbidden_path.relative_to(ROOT)}: copied game-owned runtime XAML path is forbidden"
             )
 
     errors.extend(
@@ -243,7 +240,6 @@ def validate_semantics() -> list[str]:
             XBOX_INSTALLER,
             [
                 "[switch]$Apply",
-                "[string]$NativeOverlayPath",
                 "Get-AppxPackage",
                 "LocalCache\\Local",
                 "ExistingPakFound",
@@ -254,12 +250,27 @@ def validate_semantics() -> list[str]:
                 "ReadyForApply",
                 "Refusing to modify Xbox data",
                 "BG3ControllerActionMenu-backups",
-                "Building a native-derived radial overlay",
-                "& $NativeOverlayPath @overlayArgs",
-                "BG3ControllerActionMenu-native-derived.pak",
+                "The release PAK is self-contained",
+                "Copy-Item -LiteralPath $PackagePath -Destination $destPak -Force",
             ],
         )
     )
+
+    if XBOX_INSTALLER.exists():
+        xbox_text = XBOX_INSTALLER.read_text(encoding="utf-8")
+        for forbidden in (
+            "NativeOverlayPath",
+            "native-overlay.ps1",
+            "Game.pak",
+            "divine.exe",
+            "--action extract-single-file",
+            "--action create-package",
+            "BG3ControllerActionMenu-native-derived.pak",
+        ):
+            if forbidden in xbox_text:
+                errors.append(
+                    f"{XBOX_INSTALLER.relative_to(ROOT)}: normal installer must install the self-contained PAK directly: {forbidden}"
+                )
 
     errors.extend(
         require_text(
@@ -294,17 +305,31 @@ def validate_semantics() -> list[str]:
                 "Sort-Object { [DateTimeOffset]$_.published_at } -Descending",
                 'BG3ControllerActionMenu-$version.pak',
                 'install-xbox-dev.ps1',
-                'native-overlay.ps1',
                 "browser_download_url",
                 "Save-Asset",
-                "& $xboxPath -Apply",
+                "& $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath",
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
         )
     )
 
-    for runtime_installer in (BOOTSTRAP_INSTALLER, LATEST_INSTALLER, NATIVE_OVERLAY):
+    if LATEST_INSTALLER.exists():
+        latest_text = LATEST_INSTALLER.read_text(encoding="utf-8")
+        for forbidden in (
+            "native-overlay.ps1",
+            "NativeOverlayPath",
+            "Game.pak",
+            "divine.exe",
+            "--action extract-single-file",
+            "--action create-package",
+        ):
+            if forbidden in latest_text:
+                errors.append(
+                    f"{LATEST_INSTALLER.relative_to(ROOT)}: canonical installer must not rebuild the release PAK: {forbidden}"
+                )
+
+    for runtime_installer in (BOOTSTRAP_INSTALLER, LATEST_INSTALLER):
         if runtime_installer.exists():
             runtime_text = runtime_installer.read_text(encoding="utf-8")
             for forbidden in (
@@ -400,19 +425,24 @@ def validate_semantics() -> list[str]:
         require_text(
             RELEASE_WORKFLOW,
             [
-                '"tools/native-overlay.ps1"',
                 '"tools/bootstrap-latest.ps1"',
                 '"tools/install-latest.ps1"',
-                '$overlay = "tools/native-overlay.ps1"',
                 '$bootstrap = "tools/bootstrap-latest.ps1"',
                 '$latestInstaller = "tools/install-latest.ps1"',
-                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay, $bootstrap, $latestInstaller',
+                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $bootstrap, $latestInstaller',
                 '$deadline = (Get-Date).ToUniversalTime().AddMinutes(5)',
                 '$delaySeconds = [Math]::Min(15, $delaySeconds * 2)',
                 'within the five-minute publication propagation window',
             ],
         )
     )
+
+    if RELEASE_WORKFLOW.exists():
+        release_text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        if '"native-overlay.ps1"' in release_text or '$overlay = "tools/native-overlay.ps1"' in release_text:
+            errors.append(
+                f"{RELEASE_WORKFLOW.relative_to(ROOT)}: native overlay builder must not be a normal release/install asset"
+            )
 
     errors.extend(
         require_text(
@@ -518,7 +548,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "native hotbar-filter/controller-focus contract present; published package contains no proprietary native XAML; "
+        "development hotbar/controller contract fixtures present; normal installer is direct/self-contained; "
         "runtime remains Script-Extender-free)."
     )
     return 0
