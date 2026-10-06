@@ -11,6 +11,8 @@ on:
       - "tools/verify-package.ps1"
       - "tools/validate.py"
       - "tools/assert-self-contained-release.ps1"
+      - "tools/test-self-contained-runtime.ps1"
+      - "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
       - "tools/install-xbox-dev.ps1"
       - "tools/bootstrap-latest.ps1"
       - "tools/test-bootstrap-latest.ps1"
