@@ -57,7 +57,7 @@ Do not reconstruct the visible grid from `HotbarContainer` component memory. Com
 
 The public `ActionRadials.xaml` dump from 2023-09-06 is Patch 2 Hotfix 1 and is historical evidence only.
 
-The public SpellBook dump that exposes the names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` is likewise historical evidence, not sufficient Patch 8 proof by itself. Do not put those predicate names, a hand-written `SpellSlotLevel` classifier, or any equivalent CAM-owned spell-level heuristic into shipping XAML until the exact current installed-game contract is captured. Until then, preserve the current native `SpellsAndActions` grouping instead of guessing how to split it.
+The fresh Xbox App 1.8.910.0 capture now confirms that current `SpellBook_c.xaml` still uses `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate`. That does **not** make them valid CAM execution filters: the captured predicates consume SpellBook `SelectedItem.ActionGroups`, not executable `VMHotBarSlot` objects. Do not route those raw ActionGroups into `UseSlotCommand` or recreate spell-level classification in CAM. Spell-slot/resource filtering must stay on the proven HotBar/resource model unless a future current-game contract proves a VMHotBarSlot-compatible level filter.
 
 Runtime evidence additionally proves:
 
