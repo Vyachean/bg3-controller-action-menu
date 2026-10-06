@@ -42,6 +42,29 @@ The installed Patch 8 `PreloadedActionRadials_c.xaml` already contains the compl
 - the same passives collection filtered with `Data.TogglableMetaMagicPassivePredicate`;
 - `CurrentPlayer.SelectedCharacter.Inventory.Slots`.
 
+### Native action tabs
+
+The milestone UI partitions those **same current native sources** into four presentation tabs:
+
+| Tab | Source |
+| --- | --- |
+| Actions / Spells | `PlayerCharacterProperties.SpellsAndActions` |
+| Items | `Inventory.Slots` |
+| Passives | `Stats.Passives` + `TogglablePassivePredicate` |
+| Metamagic | `Stats.Passives` + `TogglableMetaMagicPassivePredicate` |
+
+This is not a second catalog. CAM does not copy, normalize, classify or persist action entries. The tab index only selects which native source is visible. Empty filtered Passives/Metamagic tabs collapse from navigation.
+
+The tab strip uses the native controller pattern `LSListBox(ActionPrevEvent=UITabPrev, ActionNextEvent=UITabNext)` and native controller hint bindings. The selected tab index drives the single automatic focus list. On `SelectionChanged`, CAM clears the previous `ActionRadials.Tag` and invokes `SetMoveFocusAction` back to `HotBarList`, so the next A press cannot intentionally reuse a stale candidate.
+
+There is deliberately no `Custom` tab.
+
+### Spell grouping proof boundary
+
+Historical SpellBook XAML shows useful concepts such as `VMActionGroup.Name`, cantrip groups, spell-level groups and action groups. However, the exact names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` have not been independently re-established from the current installed Patch 8 SpellBook resource in this repository.
+
+Therefore 0.0.35 does **not** hard-code those historical predicate names and does not infer groups from `SpellSlotLevel`, slot type or action names. It preserves the current `SpellsAndActions` membership/order supplied by BG3. Native spell-level/cantrip sub-group presentation can be enabled only after the current contract is captured; that change must remain presentation-only.
+
 That screen also proves the focus hierarchy CAM needs: `AssignList` + `SelectorAssign`, nested `LSListBox` groups, and `LSGrid(UIUp/UIDown/UILeft/UIRight)`.
 
 The previous 0.0.27–0.0.29 line reused only the **navigation** from that screen while still binding content to `ControllerHotBars[*].SlotList`. Runtime proved the grid mechanics work, but that data source is semantically wrong for CAM: it only shows whatever the user has configured in radial wheels.
@@ -57,7 +80,7 @@ There is independent native precedent for `UseSlotCommand` receiving non-radial 
 
 `SingleHotBar.SlotList` remains unchanged as the native second-stage source for upcast, variants, containers and other nested selections after A.
 
-Radial customization is outside CAM's product boundary. `ShowContextMenu`/X and Assign/Swap/Clear/Add/Remove wheel operations are disabled from the generated grid UI.
+Radial customization is outside CAM's product boundary. The generated template keeps an inert named `ShowContextMenu` control only for native-template compatibility, removes its `ContextMenu` input binding, disables/hides it, replaces its command with null, neutralizes Assign/Swap/Clear/Add/Remove radial mutation command bindings, and makes `SlotAssignHolder` inert.
 
 No Larian XAML is committed to or distributed by this repository. `Lib_Controller.xaml` is derived locally from the installed game. The shipping runtime remains Script-Extender/DLL/native-loader free.
 
@@ -75,10 +98,12 @@ A change that requires Script Extender is not acceptable for the primary package
 
 CAM owns:
 
-- composition and ordering of the automatic action catalog;
-- controller grid layout/focus composition reused from the native assignment UI;
-- section presentation for Actions/Spells, Passives/Metamagic and Items;
+- tab/grid presentation over BG3-owned automatic collections;
+- controller focus composition reused from native BG3 UI patterns;
+- hiding empty presentation tabs;
 - transition between the automatic main catalog and BG3's native `SingleHotBar` nested results.
+
+CAM does **not** own membership or semantic classification inside those native collections.
 
 BG3 owns:
 
@@ -141,7 +166,7 @@ Current installed-game UI evidence:
 - nested slots: `SingleHotBar.SlotList`;
 - nested-state filter: `CurrentSingleHotbarFilter`.
 
-A separate September-2026 production mod still proves `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`. The names are now directly symmetrical and must remain distinct: CAM renders `ControllerHotBars`, never `KeyboardHotBars`.
+A separate September-2026 production mod still proves `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`. Both keyboard and controller hotbar collections are persisted player layouts. They must remain distinct, and neither is the source for CAM's automatic main catalog. `ControllerHotBars` remains relevant only as the vanilla radial/storage contract; `KeyboardHotBars` must never be substituted for it.
 
 ## Native grid focus and action dispatch
 
@@ -164,7 +189,7 @@ LSGrid
   AutoIndex        = True
 ```
 
-CAM adapts that mechanism to each native controller `SlotList`. The list keeps the existing element names `HotBarRadial` / `SingleBar` deliberately so the untouched native triggers, swap bindings and context-menu bindings continue to address the same local-focus source.
+CAM reuses that focus hierarchy for the automatic top-level catalog and keeps the proven grid renderer for native `SingleHotBar.SlotList` nested choices. The top-level list no longer materializes any controller `SlotList`. Radial swap/context-menu editing is intentionally not preserved on the CAM surface.
 
 The native delayed dispatch seam remains:
 
