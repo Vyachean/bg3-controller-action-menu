@@ -287,7 +287,7 @@ function Disable-RadialCustomizationCommands {
         "RemoveRadialCommand"
     )) {
         $escaped = [regex]::Escape($commandName)
-        $pattern = 'Command\\s*=\\s*"\\{Binding[^"]*' + $escaped + '[^"]*\\}"'
+        $pattern = 'Command\s*=\s*"\{Binding[^"]*' + $escaped + '[^"]*\}"'
         $Text = [regex]::Replace($Text, $pattern, 'Command="{x:Null}"')
     }
 
