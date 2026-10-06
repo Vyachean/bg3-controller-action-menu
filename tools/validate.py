@@ -104,7 +104,7 @@ def validate_semantics() -> list[str]:
                 'FilterCantripsCommand',
                 'SetCurrentShownDeckCommand',
                 'CurrentShownDeck.SlotList',
-                'CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList',
+                'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList',
                 'SingleHotBar.SlotList',
                 'KeyboardNavigation.DirectionalNavigation="Contained"',
                 'KeyboardNavigation.DirectionalNavigation="Continue"',
