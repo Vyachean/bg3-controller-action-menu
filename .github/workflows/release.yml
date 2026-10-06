@@ -160,27 +160,14 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          $headers = @{
-            "Authorization" = "Bearer $env:GH_TOKEN"
-            "Accept" = "application/vnd.github+json"
-            "X-GitHub-Api-Version" = "2022-11-28"
-            "User-Agent" = "BG3ControllerActionMenu-ReleaseVerifier"
+          $releaseJson = gh release view $env:TAG --repo $env:GITHUB_REPOSITORY --json tagName,isDraft,publishedAt,assets
+          if ($LASTEXITCODE -ne 0) {
+            throw "Expected published release '$env:TAG' was not found."
           }
 
-          $releases = @(Invoke-RestMethod -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases?per_page=20" -Headers $headers)
-          $published = @(
-            $releases |
-              Where-Object { -not $_.draft -and $_.published_at -and $_.tag_name } |
-              Sort-Object { [DateTimeOffset]$_.published_at } -Descending
-          )
-
-          if ($published.Count -eq 0) {
-            throw "No published release found after release publication."
-          }
-
-          $latest = $published[0]
-          if ([string]$latest.tag_name -ne $env:TAG) {
-            throw "Expected newest published release '$env:TAG', got '$($latest.tag_name)'."
+          $release = $releaseJson | ConvertFrom-Json
+          if ([string]$release.tagName -ne $env:TAG -or $release.isDraft) {
+            throw "Release '$env:TAG' is missing or still a draft."
           }
 
           $requiredAssets = @(
@@ -191,7 +178,7 @@ jobs:
             "install-xbox-dev.ps1",
             "native-overlay.ps1"
           )
-          $assetNames = @($latest.assets | ForEach-Object { [string]$_.name })
+          $assetNames = @($release.assets | ForEach-Object { [string]$_.name })
           foreach ($required in $requiredAssets) {
             if ($assetNames -notcontains $required) {
               throw "Published release '$env:TAG' is missing required asset '$required'."
