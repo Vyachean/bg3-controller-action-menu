@@ -176,12 +176,16 @@ try {
     Save-Asset -Asset $pakAsset -Destination $pakPath
     Save-Asset -Asset $xboxAsset -Destination $xboxPath
 
+    # Update the temporary development launcher before touching BG3 data.
+    # A non-writable launcher folder therefore fails before any mod/profile
+    # mutation; if the mod apply itself fails, the launcher is still current
+    # for the next retry.
+    Update-DevelopmentLauncher -Release $release -ReleaseDirectory $releaseDir
+
     & $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath
     if ($LASTEXITCODE -ne 0) {
         throw "Installer failed with exit code $LASTEXITCODE."
     }
-
-    Update-DevelopmentLauncher -Release $release -ReleaseDirectory $releaseDir
 
     Write-InstallStatus -State "SUCCESS" -Version $version -Message "Installation completed."
     exit 0
