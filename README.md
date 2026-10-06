@@ -32,7 +32,7 @@ captured Patch 8 HotBar contract
             v
 native VMHotBarSlot collections
   CurrentShownDeck.SlotList
-  PassivesHotBar.SlotList
+  CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList
   SingleHotBar.SlotList
             |
             v
