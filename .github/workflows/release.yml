@@ -217,9 +217,20 @@ jobs:
           while ((Get-Date).ToUniversalTime() -lt $deadline) {
             $attempt++
             Remove-Item -LiteralPath $status -Force -ErrorAction SilentlyContinue
-            ./tools/dev-entry.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
 
-            if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $status)) {
+            $resolverExitCode = 1
+            try {
+              ./tools/dev-entry.ps1 -ResolveOnly -CacheRoot $cache -StatusPath $status -LogPath $log -ReportPath $report
+              $resolverExitCode = $LASTEXITCODE
+            } catch {
+              # Empty/stale Releases responses are expected briefly after
+              # publication. Treat resolver exceptions as a failed attempt so
+              # the bounded retry loop can do the job it was designed to do.
+              Write-Host "Universal entry visibility attempt $attempt failed transiently: $($_.Exception.Message)"
+              $global:LASTEXITCODE = 0
+            }
+
+            if ($resolverExitCode -eq 0 -and (Test-Path -LiteralPath $status)) {
               $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
               if ($statusLines.Count -ge 2 -and
                   $statusLines[0] -eq "SUCCESS" -and
@@ -230,7 +241,7 @@ jobs:
 
               $observed = if ($statusLines.Count -ge 2) { $statusLines[1] } else { "<none>" }
               Write-Host "Universal entry visibility attempt $attempt still resolves '$observed'."
-            } else {
+            } elseif ($resolverExitCode -ne 0) {
               Write-Host "Universal entry visibility attempt $attempt did not resolve successfully."
             }
 
