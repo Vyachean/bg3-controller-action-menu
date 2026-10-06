@@ -37,7 +37,7 @@ The mapping is deliberately mechanical:
 
 The tabs do not decide whether an action is a spell, common action, class action, usable item, or valid target. They only choose which BG3-owned source is visible.
 
-Controller navigation uses `UITabPrev` / `UITabNext` on an `LSListBox`. The content stays in the already-proven two-dimensional assignment-style grid. On tab selection change, stale `ActionRadials.Tag` is cleared and native `SetMoveFocusAction` returns focus to the automatic grid root. Per-list focus/selection is otherwise left to the native controls, allowing a reasonable restore when a tab is revisited.
+Controller navigation uses `UITabPrev` / `UITabNext` on an `LSListBox`. The content stays in the already-proven two-dimensional assignment-style grid. Runtime 0.0.35 showed that one shared outer focus root is not sufficient: visual selection changed while tooltip/dispatch focus could remain on the first tab. Each tab now owns its own assignment-style focus list and native-derived selector; `SetMoveFocusAction` targets the newly selected list directly, and only that list updates `ActionRadials.Tag`.
 
 ### Spell-level grouping
 
@@ -118,7 +118,7 @@ Radial editing commands (X/context menu, assign, swap, clear, add/remove slots) 
 
 Do not implement spell execution, targeting, resource checks, upcast rules, recasts, passive semantics or inventory use ourselves.
 
-## Current milestone target — 0.0.35
+## Current milestone target — 0.0.36
 
 Before another in-game run, static/package proof must establish all of the following together:
 
@@ -126,12 +126,15 @@ Before another in-game run, static/package proof must establish all of the follo
 2. the four tab definitions map only to current BG3-owned automatic sources;
 3. `UITabPrev` / `UITabNext` are wired on the tab `LSListBox`;
 4. filtered empty Passives/Metamagic tabs collapse;
-5. tab changes clear stale `ActionRadials.Tag` and return focus to `HotBarList` through `SetMoveFocusAction`;
-6. the existing `AssignList + LocalFocusSelector + LSGrid` focus model remains the content renderer;
-7. X/context-menu editing and Assign/Swap/Clear/Add/Remove radial mutations are unreachable;
-8. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
-9. B and nested `SingleHotBar.SlotList` remain BG3-owned;
-10. the package builds and survives package verification/round-trip checks.
+5. every tab owns a separate assignment-style focus list and exact native-derived `SelectorAssign` clone;
+6. tab changes clear stale `ActionRadials.Tag` and move focus directly to the selected tab list through `SetMoveFocusAction`;
+7. only the selected tab list writes the current native candidate to `ActionRadials.Tag`;
+8. the existing `AssignList + LocalFocusSelector + LSGrid` focus model remains the content renderer;
+9. X/context-menu editing and Assign/Swap/Clear/Add/Remove radial mutations are unreachable;
+10. A remains `UIAccept -> UseSlotCommand(ActionRadials.Tag)`;
+11. B and nested `SingleHotBar.SlotList` remain BG3-owned;
+12. native footer hints remain in the right-side lane and do not occupy the center-bottom resource lane;
+13. the package builds and survives package verification/round-trip checks.
 
 The next game run is one milestone test, not a sequence of one-binding experiments. It should verify tab switching, empty-tab behavior, focus after switching, representative automatic content, one simple A dispatch, top-level B, and nested/upcast B if naturally available.
 

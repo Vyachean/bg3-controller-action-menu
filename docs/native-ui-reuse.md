@@ -1,6 +1,6 @@
 # Native UI reuse
 
-## 0.0.35 tab composition
+## 0.0.36 tab focus/dispatch composition
 
 CAM adds only a thin tab/presentation layer over current installed-game sources:
 
@@ -9,7 +9,7 @@ CAM adds only a thin tab/presentation layer over current installed-game sources:
 - `Passives` → native `TogglablePassivePredicate`;
 - `Metamagic` → native `TogglableMetaMagicPassivePredicate`.
 
-The tab strip itself uses BG3 controller primitives: `LSListBox`, `UITabPrev`, `UITabNext`, controller input hints, and `SetMoveFocusAction`. The content continues to use the exact assignment-grid resources extracted from the installed radial dictionary.
+The tab strip itself uses BG3 controller primitives: `LSListBox`, `UITabPrev`, `UITabNext`, controller input hints, and `SetMoveFocusAction`. Runtime 0.0.35 proved that each visible source must also own its own focus list; sharing one outer `LocalFocus` lets a hidden tab retain tooltip/dispatch ownership. The 0.0.36 composition therefore gives every tab a separate assignment-style list and clones the exact installed `SelectorAssign` element for that list.
 
 No user hotbar/radial `SlotList` is read for top-level content. No `Custom` tab is created.
 
@@ -45,7 +45,7 @@ The main catalog derives exact current resources from the installed radial-assig
 - `SpellGroupListTemplate`;
 - `InventoryCellTemplate`;
 - `InventoryGrid`;
-- `SelectorTemplate`;
+- the exact assignment-screen `SelectorAssign` control geometry (cloned locally per tab, still using its native template);
 - native font/color/tooltip resources.
 
 Nested `SingleHotBar` cells continue to reuse the existing native slot visuals.
@@ -78,7 +78,7 @@ The current Patch 8 radial-assignment UI already maintains the lists CAM needs:
 
 CAM reuses those collections directly. Learning a spell, gaining an action or changing inventory should therefore change the catalog without editing a radial wheel.
 
-The grid focus hierarchy is also copied from the same native assignment screen: outer `AssignList` semantics, nested lists, `LocalFocusSelector` and directional `LSGrid`.
+The grid focus hierarchy is also copied from the same native assignment screen: `AssignList` semantics, `SelectorAssign`, nested lists, `LocalFocusSelector` and directional `LSGrid`. Each tab has an independent copy of that focus-owner pair so hidden content cannot retain active tooltip or dispatch state.
 
 ## Why not copy the entire SpellBook page
 

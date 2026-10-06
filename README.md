@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Native-source action tabs milestone candidate (`0.0.35-native-action-tabs`).**
+**Per-tab native focus/dispatch milestone candidate (`0.0.36-tab-focus-dispatch`).**
 
 Runtime evidence through `0.0.25` now rules out three earlier approaches:
 
@@ -29,6 +29,10 @@ The current Patch 8 `PreloadedActionRadials_c.xaml` already contains the control
 `0.0.28-grid-presentation-cleanup` centered the grids and removed the radial backdrop. Runtime then exposed a narrower layout bug: the focus selector stayed in the PageView's old upper-left coordinate space because it was no longer colocated with the centered list.
 
 `0.0.29-focus-origin-fix` completed the grid/focus proof: cells and focus now align correctly in-game.
+
+`0.0.35-native-action-tabs` proved that the native tabs themselves render and switch in-game, but also exposed a composition defect: all tabs shared one outer `HotBarList.LocalFocus`. The visible tab changed while tooltip/dispatch focus could remain owned by the first tab, A received the wrong/stale candidate, the generic selector no longer matched assignment-cell geometry, and the centered footer hints overlapped the native action-resource lane.
+
+`0.0.36-tab-focus-dispatch` removes that shared focus owner. Each tab now has its own assignment-style list, its own exact locally extracted `SelectorAssign`, and its own single writer to `ActionRadials.Tag`. Tab changes move focus directly to the selected list. The native footer hints return to their right-side lane.
 
 The next architecture removes the remaining radial dependency. The main grid no longer reads `ControllerHotBars[*].SlotList`. Instead it uses the same automatic collections as BG3's native “choose action for radial slot” screen: `SpellsAndActions`, togglable passives/metamagic and inventory items. That means available actions appear automatically instead of requiring radial-wheel maintenance.
 

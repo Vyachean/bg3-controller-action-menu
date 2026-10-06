@@ -70,6 +70,7 @@ Runtime evidence additionally proves:
 - `0.0.27` proves the native slot-assignment grid focus model works inside ActionRadials: grids render and replace radial slot layouts;
 - `0.0.28` centers the visible grids and removes the radial backdrop, but runtime proves the `LocalFocusSelector` visual stayed at the old upper-left coordinate origin because the list was centered independently from its selector;
 - `0.0.29` fixes the focus-selector coordinate origin in-game. The remaining architectural mismatch is now explicit: the main grid still mirrors user-configured `ControllerHotBars[*].SlotList`, so it cannot satisfy CAM's original “all available actions automatically” goal. X/ContextMenu radial customization also behaves poorly against the grid and is no longer part of the product.
+- `0.0.35` proves the native-source tabs render and switch, but rejects the "one shared outer `HotBarList.LocalFocus` for all tabs" composition: runtime showed the first tab could retain focus/tooltip ownership after a visual tab switch, A did not execute the selected action, the generic selector frame no longer matched the assignment cells, and centered footer hints collided with the action-resource display.
 
 The current Patch 8 native XAML also proves a working controller grid inside radial slot assignment:
 
@@ -96,7 +97,11 @@ Current mandatory architecture:
   - `Passives` = current passives filtered by `TogglablePassivePredicate`;
   - `Metamagic` = current passives filtered by `TogglableMetaMagicPassivePredicate`, hidden when the native filter is empty;
 - the tab strip uses an `LSListBox` with `ActionPrevEvent="UITabPrev"` / `ActionNextEvent="UITabNext"`; changing a tab may change only presentation/focus composition, never action semantics;
-- after a tab selection change, clear the stale `ActionRadials.Tag` and use BG3's `SetMoveFocusAction` to return focus to the automatic grid root; preserve per-list selection where the native controls do so;
+- every tab must own its own assignment-style `LSListBox + LocalFocusSelector` pair; never drive all tab content through one shared outer `LocalFocus`;
+- after a tab selection change, clear stale `ActionRadials.Tag` and use BG3's `SetMoveFocusAction` to move focus directly to that tab's visible list; preserve per-list selection where the native controls do so;
+- each visible tab has exactly one candidate-to-`ActionRadials.Tag` writer; hidden/other tabs must not overwrite it;
+- main-tab focus selectors must be cloned from the exact current native `SelectorAssign` element extracted from the installed radial dictionary, not reconstructed from a generic `SelectorTemplate`;
+- native controller footer hints remain in their right-side lane so they do not cover the center-bottom action-resource display;
 - there is no `Custom` tab and no user-managed layout in CAM;
 - the catalog must reuse the proven `AssignList + LocalFocusSelector + LSGrid` controller-focus hierarchy rather than rebuild navigation;
 - focus changes must feed the selected native candidate into the existing `ActionRadials.Tag -> UseSlotCommand` path; no custom gameplay dispatch;
@@ -109,7 +114,7 @@ Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
 The end-user installer is not a verifier. `0.0.29` proved that duplicating release semantics inside the install path creates stale false failures. Detailed generated-XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer performs only the operations required to download, derive and install the package; it should fail only when an operation itself cannot be completed.
 
-The next in-game test is justified only after CI proves that the main surface no longer binds `ControllerHotBars`, contains the native automatic catalog sources, action tabs and focus hierarchy, disables radial customization completely, preserves B and nested `SingleHotBar`, and routes A through the existing `UseSlotCommand` command. One milestone run must then prove the runtime-only seams together: `UITabPrev/UITabNext` selection, empty-tab skipping, focus return into the selected grid, one simple A dispatch, top-level B, and nested B/SingleHotBar if naturally encountered.
+The next in-game test is justified only after CI proves the 0.0.35 shared-focus composition is absent, every tab has its own native-derived selector/focus owner and candidate writer, footer hints are back in the native right-side lane, radial customization remains disabled, and native A/B plus nested `SingleHotBar` seams remain. One milestone run should then re-check tab focus/tooltip ownership, selector alignment, one simple A dispatch, top-level B, and nested B/SingleHotBar if naturally encountered.
 
 ## Installer boundary
 

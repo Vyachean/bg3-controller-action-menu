@@ -127,8 +127,27 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
                  ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"/>
       </Grid>
 
-      <!-- Native radial customization holder: generation must disable it. -->
-      <Control x:Name="SlotAssignHolder" Visibility="Collapsed"/>
+      <!-- Current native assignment focus pair. Generator copies the exact
+           SelectorAssign geometry before disabling this editor holder. -->
+      <Control x:Name="SlotAssignHolder" Visibility="Visible">
+        <Grid>
+          <ls:LSListBox x:Name="AssignList"
+                        SelectedIndex="0"
+                        LocalFocusSelector="{Binding ElementName=SelectorAssign,Mode=OneWay}"
+                        KeyboardNavigation.DirectionalNavigation="Contained"
+                        ActionNextEvent="UIDown"
+                        ActionPrevEvent="UIUp"/>
+          <Control x:Name="SelectorAssign"
+                   Width="118"
+                   Height="118"
+                   Margin="1,2,0,0"
+                   IsHitTestVisible="False"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Left"
+                   Template="{StaticResource SelectorTemplate}"
+                   Visibility="{Binding Visibility, ElementName=AssignList}"/>
+        </Grid>
+      </Control>
 
       <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
                              HorizontalAlignment="Right"
@@ -231,12 +250,30 @@ foreach ($needle in @(
     'Text="Items"',
     'Text="Passives"',
     'Text="Metamagic"',
-    'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+    'x:Name="CAM_ActionsFocusRoot"',
+    'x:Name="CAM_ItemsFocusRoot"',
+    'x:Name="CAM_PassivesFocusRoot"',
+    'x:Name="CAM_MetamagicFocusRoot"',
     '<ls:SetMoveFocusAction TargetName="ActionRadials"',
     'FocusElement="{Binding ElementName=HotBarList}"',
+    'FocusElement="{Binding ElementName=CAM_InventoryListbox}"',
+    'FocusElement="{Binding ElementName=CAM_PassivesListbox}"',
+    'FocusElement="{Binding ElementName=CAM_MetamagicListbox}"',
     '<ls:LSListBox x:Name="HotBarList"',
-    'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
-    'x:Name="CAM_AutoCatalogSelector"',
+    '<ls:LSListBox x:Name="CAM_InventoryListbox"',
+    '<ls:LSListBox x:Name="CAM_PassivesListbox"',
+    '<ls:LSListBox x:Name="CAM_MetamagicListbox"',
+    'LocalFocusSelector="{Binding ElementName=CAM_ActionsSelector,Mode=OneWay}"',
+    'LocalFocusSelector="{Binding ElementName=CAM_ItemsSelector,Mode=OneWay}"',
+    'LocalFocusSelector="{Binding ElementName=CAM_PassivesSelector,Mode=OneWay}"',
+    'LocalFocusSelector="{Binding ElementName=CAM_MetamagicSelector,Mode=OneWay}"',
+    'x:Name="CAM_ActionsSelector"',
+    'x:Name="CAM_ItemsSelector"',
+    'x:Name="CAM_PassivesSelector"',
+    'x:Name="CAM_MetamagicSelector"',
+    'Width="118"',
+    'Height="118"',
+    'Margin="1,2,0,0"',
     'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions',
     'CurrentPlayer.SelectedCharacter.Stats.Passives',
     'Data.TogglablePassivePredicate',
@@ -250,6 +287,12 @@ foreach ($needle in @(
     'x:Key="CAM_InventoryGrid"',
     'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
     'Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"',
+    'Value="{Binding LocalFocus.DataContext, ElementName=CAM_PassivesListbox}"',
+    'Value="{Binding LocalFocus.DataContext, ElementName=CAM_MetamagicListbox}"',
+    'x:Name="CAM_ActionsTooltip"',
+    'x:Name="CAM_ItemsTooltip"',
+    'x:Name="CAM_PassivesTooltip"',
+    'x:Name="CAM_MetamagicTooltip"',
     'x:Name="singleBarHolder"',
     'ItemsSource="{Binding SingleHotBar.SlotList}"',
     '<ls:LSListBox x:Name="SingleBar"',
@@ -278,10 +321,55 @@ foreach ($hintName in @('CAM_TabPrevHint', 'CAM_TabNextHint')) {
     }
 }
 
-# Main focus uses the same shared list+selector coordinate model already proven in-game.
-$catalogRootPattern = '<Grid\b[^>]*x:Name="CAM_AutoCatalogFocusRoot"[^>]*>[\s\S]*?<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?<Control\b[^>]*x:Name="CAM_AutoCatalogSelector"'
-if (-not [regex]::IsMatch($text, $catalogRootPattern)) {
-    throw "Automatic catalog list and selector must share one centered focus root."
+# Each visible tab owns a native-style list+selector pair in one coordinate root.
+foreach ($focusPair in @(
+    @("CAM_ActionsFocusRoot", "HotBarList", "CAM_ActionsSelector"),
+    @("CAM_ItemsFocusRoot", "CAM_InventoryListbox", "CAM_ItemsSelector"),
+    @("CAM_PassivesFocusRoot", "CAM_PassivesListbox", "CAM_PassivesSelector"),
+    @("CAM_MetamagicFocusRoot", "CAM_MetamagicListbox", "CAM_MetamagicSelector")
+)) {
+    $rootName = $focusPair[0]
+    $listName = $focusPair[1]
+    $selectorName = $focusPair[2]
+    $pattern = '<Grid\b[^>]*x:Name="' + $rootName + '"[\s\S]*?<ls:LSListBox\b[^>]*x:Name="' + $listName + '"[\s\S]*?<Control\b[^>]*x:Name="' + $selectorName + '"'
+    if (-not [regex]::IsMatch($text, $pattern)) {
+        throw "Tab focus owner must colocate list and native selector: $rootName"
+    }
+}
+
+if ($text.Contains('CAM_AutoCatalogSelector') -or
+    $text.Contains('SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"')) {
+    throw "0.0.35 shared outer focus model must not survive tab-focus repair."
+}
+
+# Exact native SelectorAssign geometry must be cloned, not reconstructed.
+foreach ($selectorName in @("CAM_ActionsSelector", "CAM_ItemsSelector", "CAM_PassivesSelector", "CAM_MetamagicSelector")) {
+    $selectorMatch = [regex]::Match(
+        $text,
+        '<Control\b[^>]*x:Name="' + $selectorName + '"[^>]*/>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    if (-not $selectorMatch.Success -or
+        -not $selectorMatch.Value.Contains('Width="118"') -or
+        -not $selectorMatch.Value.Contains('Height="118"') -or
+        -not $selectorMatch.Value.Contains('Margin="1,2,0,0"')) {
+        throw "Tab selector did not preserve current native SelectorAssign geometry: $selectorName"
+    }
+}
+
+# Footer hints stay in the native right-side lane instead of covering the
+# center-bottom action resource display.
+$footerMatch = [regex]::Match(
+    $text,
+    '<ls:AlignableWrapPanel\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $footerMatch.Success -or
+    -not $footerMatch.Value.Contains('HorizontalAlignment="Right"') -or
+    -not $footerMatch.Value.Contains('HorizontalContentAlignment="Right"') -or
+    -not $footerMatch.Value.Contains('FlowDirection="RightToLeft"') -or
+    -not $footerMatch.Value.Contains('Margin="26,0,26,56"')) {
+    throw "Controller footer hints must remain in the native right-side lane."
 }
 
 # Nested/upcast/variant renderer remains the proven SingleHotBar grid.
@@ -361,4 +449,4 @@ foreach ($forbiddenRuntimeVerifier in @(
     }
 }
 
-Write-Host "Automatic action-tab fixture passed: native sources populate controller tabs, tab focus returns to the grid, empty filtered tabs can collapse, radial customization is unreachable, nested SingleHotBar and native A/B dispatch remain intact."
+Write-Host "Automatic action-tab fixture passed: every tab owns its native focus/selector pair and candidate writer, footer hints stay out of the resource lane, radial customization is unreachable, nested SingleHotBar and native A/B dispatch remain intact."
