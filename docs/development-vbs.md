@@ -57,6 +57,8 @@ It must not know:
 
 All changeable behavior belongs behind `dev-entry.ps1`.
 
+Downloaded PowerShell helpers use normal PowerShell semantics: a helper invoked with `&` succeeds when it returns without a terminating exception and fails by throwing. `$LASTEXITCODE` is reserved for native/child-process boundaries and must not be used as the result of an in-process `.ps1` helper because it may be null or stale.
+
 A change that would require the operator to download a newer VBS manually is a development-launcher architecture regression.
 
 ## One-file operator contract
