@@ -176,7 +176,7 @@ jobs:
             "BG3ControllerActionMenu-OneClickInstaller.zip",
             "bootstrap-latest.ps1",
             "install-latest.ps1",
-            "install-xbox-dev.ps1",
+            "install-xbox-dev.ps1"
           )
           $assetNames = @($release.assets | ForEach-Object { [string]$_.name })
           foreach ($required in $requiredAssets) {
