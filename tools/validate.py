@@ -99,6 +99,7 @@ def validate_semantics() -> list[str]:
                 '"Game.pak"',
                 "New-ControllerLibraryFromNative",
                 "New-AutomaticActionCatalog",
+                "Disable-RadialCustomizationCommands",
                 "Convert-WidgetToAutomaticCatalog",
                 "Convert-SpellGroupTemplateForCatalog",
                 "Convert-PageStyleToGrid",
@@ -114,6 +115,16 @@ def validate_semantics() -> list[str]:
                 'CAM_InventoryCellTemplate',
                 'CAM_InventoryGrid',
                 'x:Name="CAM_AutoCatalogFocusRoot"',
+                'x:Name="CAM_TabList"',
+                'ActionPrevEvent="UITabPrev"',
+                'ActionNextEvent="UITabNext"',
+                'x:Name="CAM_ActionsTab"',
+                'x:Name="CAM_ItemsTab"',
+                'x:Name="CAM_PassivesTab"',
+                'x:Name="CAM_MetamagicTab"',
+                'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+                '<ls:SetMoveFocusAction TargetName="ActionRadials"',
+                'FocusElement="{Binding ElementName=HotBarList}"',
                 'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
                 'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
                 'Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"',
@@ -141,6 +152,18 @@ def validate_semantics() -> list[str]:
                     f"{NATIVE_OVERLAY.relative_to(ROOT)}: install-time semantic post-pack verifier is forbidden: {forbidden}"
                 )
 
+    if NATIVE_OVERLAY.exists():
+        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
+        for unproven_predicate in (
+            "CantripGroupPredicate",
+            "SpellLevelsGroupPredicate",
+            "AllActionsGroupPredicate",
+        ):
+            if unproven_predicate in overlay_text:
+                errors.append(
+                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: historical SpellBook predicate must not enter shipping XAML without current Patch 8 proof: {unproven_predicate}"
+                )
+
     errors.extend(
         require_text(
             NATIVE_OVERLAY_TEST,
@@ -152,6 +175,12 @@ def validate_semantics() -> list[str]:
                 'Data.TogglableMetaMagicPassivePredicate',
                 'CurrentPlayer.SelectedCharacter.Inventory.Slots',
                 'x:Name="CAM_AutoCatalogFocusRoot"',
+                'x:Name="CAM_TabList"',
+                'ActionPrevEvent="UITabPrev"',
+                'ActionNextEvent="UITabNext"',
+                'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+                '<ls:SetMoveFocusAction TargetName="ActionRadials"',
+                'FocusElement="{Binding ElementName=HotBarList}"',
                 'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
                 'x:Key="CAM_SpellGroupListTemplate"',
                 'x:Key="CAM_InventoryGrid"',
@@ -159,9 +188,13 @@ def validate_semantics() -> list[str]:
                 '<ls:LSListBox x:Name="SingleBar"',
                 'Command="{Binding UseSlotCommand}"',
                 'Command="{Binding ClearSingleHotbarCommand}"',
-                "Radial ContextMenu/X must be disabled and hidden.",
+                "Radial ContextMenu/X must be inert, hidden, and have no input binding.",
+                "AddRadialCommand",
+                "RemoveRadialCommand",
+                "Unproven SpellBook predicate leaked into milestone XAML",
+                "CAM must not expose a Custom tab.",
                 "SlotAssignHolder must be inert in automatic-catalog mode.",
-                "Automatic action catalog fixture passed",
+                "Automatic action-tab fixture passed",
             ],
         )
     )
@@ -350,7 +383,7 @@ def main() -> int:
 
     print(
         f"Static validation passed ({checked_xml} XML/XAML/LSX files checked; "
-        "automatic native action catalog contract present; published package contains no proprietary native XAML; "
+        "automatic native action-tab contract present; published package contains no proprietary native XAML; "
         "runtime remains Script-Extender-free)."
     )
     return 0
