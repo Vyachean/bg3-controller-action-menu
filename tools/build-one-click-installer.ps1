@@ -35,11 +35,12 @@ BG3 Controller Action Menu - One-click installer
 1. Extract this ZIP once.
 2. Double-click Install-BG3ControllerActionMenu.vbs.
 3. The bundled bootstrap only downloads the newest release's install-latest.ps1 and runs it.
-4. The current installer downloads the files required by that release, builds the local BG3-derived PAK, and installs it.
-5. Validation belongs to CI/release publication, not to the user's installation run.
+4. The current installer keeps its downloads, logs and diagnostics under installer-work beside this launcher.
+5. The target architecture installs an already-built self-contained release PAK; normal installation must not read or rebuild BG3 game PAKs.
+6. Validation belongs to CI/release publication, not to the user's installation run.
 
-Logs:
-%LOCALAPPDATA%\BG3ControllerActionMenu\install-latest.log
+Portable state:
+.\installer-work\
 "@ | Set-Content -LiteralPath (Join-Path $Stage "README.txt") -Encoding UTF8
 
 $outputParent = Split-Path -Parent $OutputPath
