@@ -126,7 +126,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install-latest.ps1 -
 
 The output/status must identify exactly the version in `VERSION`.
 
-The Release workflow also performs this check automatically after publication. Because GitHub can expose a newly created exact tag slightly before the releases collection used by the installer reflects it, the workflow retries the **canonical resolver** for a bounded number of attempts. It does not replace the resolver with a second implementation or accept an older version as success.
+The Release workflow also performs this check automatically after publication. Because GitHub can expose a newly created exact tag before the releases collection used by the installer reflects it, the workflow retries the **canonical resolver** within a bounded five-minute wall-clock window, using exponential backoff capped at 15 seconds. It does not replace the resolver with a second implementation or accept an older version as success. The 0.0.37 publication demonstrated that a 12-second fixed retry window was too short even though the release became visible normally shortly afterward.
 
 ### 7. Only then announce or test the release
 
@@ -157,6 +157,7 @@ The release workflow must fail unless, after publication:
 
 - the expected tag is the newest published non-draft release;
 - all required installer assets are present;
-- the canonical installer resolver selects the expected version.
+- the canonical installer resolver selects the expected version;
+- transient GitHub publication propagation is tolerated for up to five minutes without accepting a stale release as success.
 
 This is a release-system invariant, not an optional manual check.
