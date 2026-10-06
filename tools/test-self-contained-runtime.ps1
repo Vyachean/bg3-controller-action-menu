@@ -66,8 +66,13 @@ $required = @(
     'HighlightResourcesCommand',
     'UI_HUD_Controller_RadialMenu_SlotHover',
     'x:Name="UseSlotBinding"',
-    'Style="{StaticResource HotBarSlotStyle}"',
-    'BoundEvent="{x:Null}"',
+    'Style="{StaticResource SlotIconStyle}"',
+    'Width="104"',
+    'Height="104"',
+    'x:Key="CAM_FilterTabTextStyle"',
+    '<Setter Property="FontSize" Value="32"/>',
+    'btn_pil_d.png',
+    'btn_pil_active_d.png',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
     'BoundEvent="UIAccept"',
@@ -134,6 +139,8 @@ foreach ($forbidden in @(
     'RemoveRadialCommand',
     'Height="376"',
     'ShowTooltipOnUIElement',
+    'HotBarSlotStyle',
+    'HotKey',
     'Public/Game/GUI/',
     'ScriptExtender'
 )) {
@@ -154,4 +161,4 @@ foreach ($needle in @(
     }
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/focus/native B are retained, stale selector/focus fixtures are rejected, and radial customization/raw assignment catalogs are absent."
+Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/focus/native B are retained, controller-native 104px slot presentation and styled filter tabs are enforced, keyboard HotBarSlotStyle/HotKey overlays are rejected, and radial customization/raw assignment catalogs are absent."
