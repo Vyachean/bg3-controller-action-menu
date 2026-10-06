@@ -1,19 +1,21 @@
 # Native UI reuse
 
-## 0.0.36 tab focus/dispatch composition
+## 0.0.37 hotbar-slot filter composition
 
-CAM adds only a thin tab/presentation layer over current installed-game sources:
+0.0.36 proves the assignment screen is the wrong top-level execution source even when its focus geometry is copied correctly.
 
-- `Actions / Spells` → `PlayerCharacterProperties.SpellsAndActions`;
-- `Items` → `Inventory.Slots`;
-- `Passives` → native `TogglablePassivePredicate`;
-- `Metamagic` → native `TogglableMetaMagicPassivePredicate`.
+CAM now reuses two current installed-game contracts for different purposes:
 
-The tab strip itself uses BG3 controller primitives: `LSListBox`, `UITabPrev`, `UITabNext`, controller input hints, and `SetMoveFocusAction`. Runtime 0.0.35 proved that each visible source must also own its own focus list; sharing one outer `LocalFocus` lets a hidden tab retain tooltip/dispatch ownership. The 0.0.36 composition therefore gives every tab a separate assignment-style list and clones the exact installed `SelectorAssign` element for that list.
+- `PreloadedActionRadials_c.xaml` — controller lifecycle, A/B bindings, selector/focus primitives and `SingleHotBar` second stage;
+- `HotBar.xaml` — DCHotBar deck/resource filter semantics and the VMHotBarSlot execution model.
 
-No user hotbar/radial `SlotList` is read for top-level content. No `Custom` tab is created.
+Current Patch 8 `HotBarSlotStyle` confirms that the slot wrapper is the command/resource-preview parameter and its `Content` owns the visible action/item/passive representation.
 
-The older public SpellBook names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` remain research evidence only until the current installed SpellBook resource proves them. CAM preserves current native `SpellsAndActions` grouping instead of replacing that uncertainty with a `SpellSlotLevel` or name-based classifier.
+The top-level surface therefore has one flat slot grid. It does not copy `AvailableSlotContainer`, `SpellGroupListTemplate`, `InventoryGrid` or other assignment-catalog presentation resources anymore.
+
+The deck/type filter set is Common / current Class / Items / Passives. `Custom` remains excluded. Resource/action filter semantics are accepted only from the current installed DCHotBar contract; CAM does not classify by names, slot type or spell level.
+
+Controller button hints are also native-owned. CAM keeps the installed `ButtonHintsContainer` layout untouched and only disables the radial-customization entry points.
 
 ## Principle
 
@@ -78,7 +80,7 @@ The current Patch 8 radial-assignment UI already maintains the lists CAM needs:
 
 CAM reuses those collections directly. Learning a spell, gaining an action or changing inventory should therefore change the catalog without editing a radial wheel.
 
-The grid focus hierarchy is also copied from the same native assignment screen: `AssignList` semantics, `SelectorAssign`, nested lists, `LocalFocusSelector` and directional `LSGrid`. Each tab has an independent copy of that focus-owner pair so hidden content cannot retain active tooltip or dispatch state.
+The assignment screen contributes only proven controller focus primitives (`SelectorAssign`, `LocalFocusSelector`, directional `LSGrid`). Top-level CAM uses one flat focus domain; nested assignment-group list composition is no longer reused.
 
 ## Why not copy the entire SpellBook page
 
