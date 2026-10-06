@@ -71,6 +71,7 @@ Before merging:
 - installer fixture tests must pass;
 - Xbox installer tests must pass;
 - development native-contract/static fixture tests must pass;
+- `tools/assert-self-contained-release.ps1` must pass: the project-owned controller runtime exists and normal installation contains no local-build/game-PAK seam;
 - package verification must pass;
 - documentation must describe any changed architecture or runtime proof boundary;
 - the PR must state what remains runtime-only.
