@@ -22,6 +22,10 @@ ONE_CLICK_BUILDER = ROOT / "tools/build-one-click-installer.ps1"
 NATIVE_OVERLAY = ROOT / "tools/native-overlay.ps1"
 NATIVE_OVERLAY_TEST = ROOT / "tools/test-native-overlay.ps1"
 NATIVE_CAPTURE = ROOT / "tools/capture-native-radials.ps1"
+DEV_CAPTURE = ROOT / "tools/capture-self-contained-inputs.ps1"
+DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
+DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
+DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
@@ -265,6 +269,8 @@ def validate_semantics() -> list[str]:
                 "Invoke-RestMethod",
                 "Invoke-WebRequest",
                 "& $installer @installerArgs",
+                '$PortableStateRoot = Join-Path $ScriptRoot "installer-work"',
+                'CacheRoot = Join-Path (Split-Path -Parent $CacheRoot) "release-cache"',
             ],
         )
     )
@@ -324,6 +330,8 @@ def validate_semantics() -> list[str]:
                 "install-latest.log",
                 "install-status.txt",
                 "Installation completed.",
+                'stateRoot = fso.BuildPath(baseDir, "installer-work")',
+                '" -CacheRoot "',
                 "--self-test",
             ],
         )
@@ -336,6 +344,7 @@ def validate_semantics() -> list[str]:
                 "Install-BG3ControllerActionMenu.vbs",
                 "bootstrap-latest.ps1",
                 "BG3ControllerActionMenu-OneClickInstaller.zip",
+                "installer-work",
                 "Compress-Archive",
             ],
         )
@@ -392,6 +401,66 @@ def validate_semantics() -> list[str]:
             ],
         )
     )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE,
+            [
+                '$PortableRoot = Split-Path -Parent $MyInvocation.MyCommand.Path',
+                '$WorkRoot = Join-Path $PortableRoot "capture-work"',
+                '*PreloadedActionRadials*.xaml',
+                '*ActionRadials*.xaml',
+                '*HotBar*.xaml',
+                '*DataTemplates.xaml',
+                '*Controller.xaml',
+                '*Lib_Controller.xaml',
+                'bg3-controller-action-menu-inputs-$stamp',
+                'No BG3 files, saves, profiles, or mods were modified.',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE_LAUNCHER,
+            [
+                'capture-self-contained-inputs.ps1',
+                'capture.log',
+                'capture-status.txt',
+                'Upload this ZIP to the development chat.',
+                '--self-test',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE_TEST,
+            [
+                'Portable developer capture fixture passed.',
+                '%LOCALAPPDATA%',
+                'No BG3 files, saves, profiles, or mods were modified.',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            DEV_CAPTURE_BUILDER,
+            [
+                'Capture-BG3ControllerArtifacts.vbs',
+                'capture-self-contained-inputs.ps1',
+                'BG3ControllerActionMenu-DevCapture.zip',
+                'Compress-Archive',
+            ],
+        )
+    )
+
+    for portable_path in (ONE_CLICK_LAUNCHER, BOOTSTRAP_INSTALLER, LATEST_INSTALLER, DEV_CAPTURE, DEV_CAPTURE_LAUNCHER):
+        if portable_path.exists() and "%LOCALAPPDATA%" in portable_path.read_text(encoding="utf-8"):
+            errors.append(
+                f"{portable_path.relative_to(ROOT)}: portable launcher path must not use %LOCALAPPDATA%"
+            )
 
     if not VERSION.exists():
         errors.append("VERSION: required file is missing")
