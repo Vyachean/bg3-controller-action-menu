@@ -228,6 +228,7 @@ def validate_semantics() -> list[str]:
                 "releases?per_page=20",
                 'install-latest.ps1',
                 "ReleaseMetadataPath",
+                "foreach ($release in @($payload))",
                 "Save-Asset",
                 "LauncherRoot",
                 'Task = "install"',

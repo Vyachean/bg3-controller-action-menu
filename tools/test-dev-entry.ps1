@@ -43,17 +43,31 @@ exit 0
 '@ | Set-Content -LiteralPath $installer -Encoding UTF8
 
     $metadata = Join-Path $TestRoot "release.json"
-    [ordered]@{
-        tag_name = "v9.9.9-fixture"
-        draft = $false
-        published_at = "2030-01-02T00:00:00Z"
-        assets = @(
-            [ordered]@{
-                name = "install-latest.ps1"
-                browser_download_url = $installer
-            }
-        )
-    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $metadata -Encoding UTF8
+    @(
+        [ordered]@{
+            tag_name = "v10.0.0-draft"
+            draft = $true
+            published_at = "2030-01-03T00:00:00Z"
+            assets = @()
+        },
+        [ordered]@{
+            tag_name = "v9.9.9-fixture"
+            draft = $false
+            published_at = "2030-01-02T00:00:00Z"
+            assets = @(
+                [ordered]@{
+                    name = "install-latest.ps1"
+                    browser_download_url = $installer
+                }
+            )
+        },
+        [ordered]@{
+            tag_name = "v9.9.8-older"
+            draft = $false
+            published_at = "2030-01-01T00:00:00Z"
+            assets = @()
+        }
+    ) | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $metadata -Encoding UTF8
 
     & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Entry `
         -ReleaseMetadataPath $metadata `
