@@ -100,7 +100,6 @@ def validate_semantics() -> list[str]:
                 '"Game.pak"',
                 "New-ControllerLibraryFromNative",
                 "New-AutomaticActionCatalog",
-                "Assert-CurrentHotBarFilterContract",
                 "Get-CurrentCantripFilterParameter",
                 "Convert-NativeRadialFocusTriggerForGrid",
                 "Preserve-MainSurfaceForHotBarFilters",
@@ -154,6 +153,8 @@ def validate_semantics() -> list[str]:
         for forbidden in (
             "Packed controller library is missing required seam",
             "Assert-GridChromeContract",
+            "Assert-CurrentHotBarFilterContract",
+            "missing required filter seam",
             "$verifiedText",
             "$verifiedLibrary",
         ):
@@ -303,6 +304,8 @@ def validate_semantics() -> list[str]:
                 "Get-FileHash",
                 "Assert-AssetDigest",
                 "Save-VerifiedReleaseAsset",
+                "Assert-CurrentHotBarFilterContract",
+                "missing required filter seam",
                 "Packed controller library is missing required seam",
                 "Generated controller library is missing required seam",
             ):
