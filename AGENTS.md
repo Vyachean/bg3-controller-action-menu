@@ -117,6 +117,26 @@ The stable bootstrap contract must remain tiny: newest release -> download `inst
 
 Do not add SHA/digest gates, XAML semantic assertions, expected UI literals, or package round-trip verification to `bootstrap-latest.ps1`, `install-latest.ps1`, or the runtime path in `native-overlay.ps1`. Those belong in CI before publication.
 
+## Release readiness contract
+
+A CI artifact is not a release. The reusable installer consumes **published GitHub Releases**, not pull-request or workflow artifacts.
+
+Before describing a version as released, ready to install, or available through the one-click installer, all of these must be proven:
+
+- the implementation PR is merged to `main`;
+- `VERSION` on `main` is the intended version;
+- the **Release** workflow for that merge completed successfully;
+- the exact `v<VERSION>` GitHub Release is published and non-draft;
+- every installer-required release asset exists;
+- that tag is the newest published release under the same ordering used by `install-latest.ps1`;
+- the canonical `install-latest.ps1 -ResolveOnly` path resolves that exact version against live GitHub metadata.
+
+Never treat a green **Build package** workflow or an Actions artifact as proof that the one-click installer can see the version.
+
+If the installer resolves an older version, verify publication first. Do not change installer selection logic to compensate for a release that was never published.
+
+The complete release procedure and recovery checklist are in [docs/release-process.md](docs/release-process.md).
+
 ## Pull request expectations
 
 Every PR must state:
