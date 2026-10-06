@@ -603,3 +603,32 @@ Static proof for 0.0.36 must reject the old `CAM_AutoCatalogSelector` / tab-inde
 
 The next game run should be a single milestone check of: tab switching, selector alignment, description following the current tab/cell, A on one simple direct action, B at top level, and nested/upcast B if naturally available.
 
+### 2026-10-06 — 0.0.36 runtime result: assignment execution model rejected
+
+The Xbox App run of `0.0.36-tab-focus-dispatch` proves:
+
+- navigation can become trapped after reaching the bottom row;
+- A still does not execute the focused action;
+- action containers do not open;
+- the bottom action-resource display does not highlight the selected action's real cost;
+- CAM-authored controller hints do not match the original radial layout;
+- source tabs are not equivalent to keyboard hotbar filters.
+
+Current Patch 8 `HotBarSlotStyle` identifies the shared root cause: native execution and resource preview consume a **VMHotBarSlot wrapper**, while 0.0.34–0.0.36 supplied raw assignment candidates.
+
+0.0.37 static/package proof must therefore establish:
+
+- current installed `HotBar.xaml` is extracted locally;
+- required deck/resource filter seams are source-gated by that current file;
+- one flat result grid replaces nested top-level assignment lists;
+- result items are VMHotBarSlot wrappers;
+- focus passes the same slot to `ActionRadials.Tag`, tooltip creation and resource highlighting;
+- A remains native `UseSlotCommand(slot)`;
+- `SingleHotBar.SlotList` remains the native second-stage/filter result set;
+- no top-level `SpellsAndActions`, passive-predicate or `Inventory.Slots` candidate execution path remains;
+- native `ButtonHintsContainer` layout attributes are left unchanged;
+- `CAM_TabPrevHint` / `CAM_TabNextHint` do not exist;
+- Custom and radial editing remain absent.
+
+Only after these checks are green should one combined runtime milestone be requested.
+
