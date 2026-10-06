@@ -105,8 +105,9 @@ Every run:
 - checks the newest published GitHub Release;
 - resolves the newest published development release;
 - downloads that release's current `install-latest.ps1`;
-- the canonical installer downloads only the self-contained CAM `.pak` and `install-xbox-dev.ps1`;
-- installs that prebuilt PAK directly; it does not read or rebuild from BG3 game PAKs.
+- the canonical installer downloads only the self-contained CAM `.pak` and `install-xbox-dev.ps1` for installation;
+- installs that prebuilt PAK directly; it does not read or rebuild from BG3 game PAKs;
+- after success, refreshes the VBS/bootstrap in the already-extracted development-installer folder from standalone release assets.
 
 The extracted development-installer folder is intentionally reusable. Internal helper scripts/builds may change, but an existing VBS/bootstrap contract must continue to work without asking the tester to download a replacement launcher.
 
