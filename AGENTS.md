@@ -71,6 +71,7 @@ Runtime evidence additionally proves:
 - `0.0.28` centers the visible grids and removes the radial backdrop, but runtime proves the `LocalFocusSelector` visual stayed at the old upper-left coordinate origin because the list was centered independently from its selector;
 - `0.0.29` fixes the focus-selector coordinate origin in-game. The remaining architectural mismatch is now explicit: the main grid still mirrors user-configured `ControllerHotBars[*].SlotList`, so it cannot satisfy CAM's original “all available actions automatically” goal. X/ContextMenu radial customization also behaves poorly against the grid and is no longer part of the product.
 - `0.0.35` proves the native-source tabs render and switch, but rejects the "one shared outer `HotBarList.LocalFocus` for all tabs" composition: runtime showed the first tab could retain focus/tooltip ownership after a visual tab switch, A did not execute the selected action, the generic selector frame no longer matched the assignment cells, and centered footer hints collided with the action-resource display.
+- `0.0.36` disproves the assignment-catalog execution architecture itself: per-tab focus ownership no longer explains the failures. Runtime shows bottom-row navigation can trap focus, A still does not execute, containers do not open, and resource-cost highlighting is absent. Current Patch 8 `HotBarSlotStyle` explains the boundary: native hotbar execution/highlighting consumes a `VMHotBarSlot` wrapper whose `Content` is the visible action/item/passive; CAM 0.0.34–0.0.36 passed raw assignment candidates instead.
 
 The current Patch 8 native XAML also proves a working controller grid inside radial slot assignment:
 
@@ -84,37 +85,31 @@ Current mandatory architecture:
 - do not override `Public/Game/GUI/...` from the CAM PAK;
 - do not ship a hand-written replacement ActionRadials page/template;
 - installer must extract the exact current native radial dictionary from local `Game.pak`;
+- installer must also extract the exact current keyboard `HotBar.xaml` contract needed for deck/resource filtering;
 - installer must locally generate `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`;
-- the main CAM surface must **not** use `ControllerHotBars[*].SlotList` as its data source;
-- the main catalog must reuse the current native radial-assignment collections:
-  - `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions`;
-  - `CurrentPlayer.SelectedCharacter.Stats.Passives` filtered by `Data.TogglablePassivePredicate`;
-  - the same passives collection filtered by `Data.TogglableMetaMagicPassivePredicate`;
-  - `CurrentPlayer.SelectedCharacter.Inventory.Slots` for the Items section;
-- the main catalog is presented as native-source tabs, not as a duplicated action model:
-  - `Actions / Spells` = the current `SpellsAndActions` collection with BG3-owned group membership/order preserved;
-  - `Items` = current `Inventory.Slots`;
-  - `Passives` = current passives filtered by `TogglablePassivePredicate`;
-  - `Metamagic` = current passives filtered by `TogglableMetaMagicPassivePredicate`, hidden when the native filter is empty;
-- the tab strip uses an `LSListBox` with `ActionPrevEvent="UITabPrev"` / `ActionNextEvent="UITabNext"`; changing a tab may change only presentation/focus composition, never action semantics;
-- every tab must own its own assignment-style `LSListBox + LocalFocusSelector` pair; never drive all tab content through one shared outer `LocalFocus`;
-- after a tab selection change, clear stale `ActionRadials.Tag` and use BG3's `SetMoveFocusAction` to move focus directly to that tab's visible list; preserve per-list selection where the native controls do so;
-- each visible tab has exactly one candidate-to-`ActionRadials.Tag` writer; hidden/other tabs must not overwrite it;
-- main-tab focus selectors must be cloned from the exact current native `SelectorAssign` element extracted from the installed radial dictionary, not reconstructed from a generic `SelectorTemplate`;
-- native controller footer hints remain in their right-side lane so they do not cover the center-bottom action-resource display;
-- there is no `Custom` tab and no user-managed layout in CAM;
-- the catalog must reuse the proven `AssignList + LocalFocusSelector + LSGrid` controller-focus hierarchy rather than rebuild navigation;
-- focus changes must feed the selected native candidate into the existing `ActionRadials.Tag -> UseSlotCommand` path; no custom gameplay dispatch;
-- `SingleHotBar.SlotList` remains the native nested/upcast/variant surface and may keep the already-proven grid renderer;
-- X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must be unreachable from CAM;
-- no copied Larian XAML may be committed or published; generation is local-only;
-- install-time compatibility checks remain operational/minimal; detailed semantics belong in CI.
+- the top-level execution model must use native **VMHotBarSlot wrappers**; raw `SpellsAndActions`, passive or inventory assignment candidates are discovery evidence only and must never be sent directly to `UseSlotCommand`;
+- one visible result set uses one flat `LSListBox + LSGrid + LocalFocusSelector` focus owner. Do not compose top-level results from nested assignment-group lists;
+- top-level filter semantics come from the current installed DCHotBar contract:
+  - deck/type axis: Common, Class, Items and Passives;
+  - resource/action axis: native action resources, spell-slot resources, cantrips and class-specific resources exposed by the current hotbar;
+  - `Custom` remains excluded because CAM is not a user-managed layout;
+- do not infer filter membership from `SlotType`, `SpellSlotLevel`, action names, icons or CAM-owned resource tables;
+- current installed `HotBar.xaml` must prove any concrete filter property/command name before it is used by generated shipping XAML. Historical `HotBar.xaml` is design precedent only;
+- focus changes must write the focused VMHotBarSlot to `ActionRadials.Tag` and invoke the native tooltip/resource-preview commands for that slot;
+- A remains the native page-level `UIAccept -> UseSlotCommand(ActionRadials.Tag)`; no custom gameplay dispatch;
+- `SingleHotBar.SlotList` remains the native second-stage surface for containers, upcast, variants and native filters;
+- B remains BG3's native `ClearSingleHotbarCommand` / top-level close lifecycle;
+- preserve the installed native `ButtonHintsContainer` layout. CAM may remove radial-edit controls but must not reposition/reflow the surviving native hints and must not add custom LB/RB hint presenters;
+- X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must remain unreachable;
+- no copied Larian XAML may be committed or published; all native derivation is local-only;
+- install-time compatibility checks remain operational: generation may fail when a required current native element cannot be extracted, but detailed duplicated semantic verification belongs in CI.
+
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
 The end-user installer is not a verifier. `0.0.29` proved that duplicating release semantics inside the install path creates stale false failures. Detailed generated-XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer performs only the operations required to download, derive and install the package; it should fail only when an operation itself cannot be completed.
 
-The next in-game test is justified only after CI proves the 0.0.35 shared-focus composition is absent, every tab has its own native-derived selector/focus owner and candidate writer, footer hints are back in the native right-side lane, radial customization remains disabled, and native A/B plus nested `SingleHotBar` seams remain. One milestone run should then re-check tab focus/tooltip ownership, selector alignment, one simple A dispatch, top-level B, and nested B/SingleHotBar if naturally encountered.
+The next in-game test is justified only after CI proves the 0.0.36 assignment-candidate architecture is absent, the visible grid contains VMHotBarSlot wrappers under one flat focus owner, current installed hotbar filter seams are source-gated, slot focus drives tooltip/resource preview, native button-hint layout is preserved, and native A/B plus `SingleHotBar` seams remain. One milestone run should then verify full-row navigation, resource preview, one simple A dispatch, one container/upcast transition, filter switching and B.
 
 ## Installer boundary
 
