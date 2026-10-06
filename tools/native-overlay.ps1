@@ -381,16 +381,28 @@ function Get-CurrentCantripFilterParameter {
         throw "Installed HotBar.xaml has no FilterCantripsCommand."
     }
 
-    $windowStart = [Math]::Max(0, $commandIndex - 500)
-    $windowLength = [Math]::Min(1800, $HotBarText.Length - $windowStart)
+    $windowStart = [Math]::Max(0, $commandIndex - 1200)
+    $windowLength = [Math]::Min(2400, $HotBarText.Length - $windowStart)
     $window = $HotBarText.Substring($windowStart, $windowLength)
-    $match = [regex]::Match(
+
+    # Capture the opening element that owns FilterCantripsCommand, then read
+    # CommandParameter from that same element. Do not accept a nearby unrelated
+    # localization handle.
+    $commandElement = [regex]::Match(
         $window,
+        '<(?<tag>[A-Za-z_][A-Za-z0-9_.:-]*)\b(?=[^>]*Command\s*=\s*"\{Binding\s+FilterCantripsCommand\}")[^>]*>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    if (-not $commandElement.Success) {
+        throw "Installed HotBar.xaml does not expose a concrete FilterCantripsCommand element."
+    }
+    $match = [regex]::Match(
+        $commandElement.Value,
         'CommandParameter\s*=\s*"(?<value>h[0-9A-Za-z]+)"',
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     )
     if (-not $match.Success) {
-        throw "Installed HotBar.xaml does not expose the cantrip filter parameter beside FilterCantripsCommand."
+        throw "Installed HotBar.xaml does not expose the cantrip filter parameter on FilterCantripsCommand."
     }
     return $match.Groups["value"].Value
 }
@@ -737,8 +749,7 @@ function New-ControllerLibraryFromNative {
     # gameplay-facing actions. This keeps ActionRadials.Tag, focused tooltip
     # data, resource preview and hover sound aligned with vanilla.
     $nativeMainRadial = (Get-NamedElementSpan -Text $native -Name "HotBarRadial").Text
-    $nativeMainInteractions = Get-FirstInteractionTriggers -Text $nativeMainRadial
-    $nativeMainFocusTrigger = (Get-ElementSpan -Text $nativeMainInteractions -Tag "b:EventTrigger" -AttributeName "EventName" -AttributeValue "LocalFocusChanged").Text
+    $nativeMainFocusTrigger = (Get-ElementSpan -Text $nativeMainRadial -Tag "b:EventTrigger" -AttributeName "EventName" -AttributeValue "LocalFocusChanged").Text
     $nativeMainFocusTrigger = Convert-NativeRadialFocusTriggerForGrid -NativeTriggerText $nativeMainFocusTrigger
 
     # Nested variants/upcasts/filtered SingleHotBar state keeps the same
