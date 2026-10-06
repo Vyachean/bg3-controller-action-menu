@@ -26,8 +26,9 @@ A version may be called **released**, **ready to install**, or **the newest inst
    - `capture-self-contained-inputs.ps1`
 6. The new tag is the newest published release selected by the same published-release ordering used by the universal launcher.
 7. `dev-entry.ps1 -ResolveOnly`, against the live GitHub Releases API, resolves exactly `<VERSION>`.
+8. A clean-folder standalone invocation of `Install-BG3ControllerActionMenu.vbs --resolve-only --no-ui` succeeds, downloads `dev-entry.ps1`, and creates `installer-work\launcher-bootstrap.log`.
 
-Until all seven checks pass, describe the version as a **candidate** or **CI artifact**, not as a released version.
+Until all eight checks pass, describe the version as a **candidate** or **CI artifact**, not as a released version.
 
 ## Important: CI artifacts are not releases
 
@@ -128,7 +129,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\dev-entry.ps1 -Resol
 
 The output/status must identify exactly the version in `VERSION`.
 
-The Release workflow also performs this check automatically after publication. Because GitHub can expose a newly created exact tag before the releases collection used by the installer reflects it, the workflow retries the **universal entry resolver** within a bounded five-minute wall-clock window, using exponential backoff capped at 15 seconds. It does not replace the resolver with a second implementation or accept an older version as success. The 0.0.37 publication demonstrated that a 12-second fixed retry window was too short even though the release became visible normally shortly afterward.
+The Release workflow must then exercise the operator-facing VBS itself from an otherwise empty temporary folder. This second proof is mandatory because failures in release discovery or downloading `dev-entry.ps1` happen before the entry script can create its own diagnostics.
+
+The Release workflow also performs these checks automatically after publication. Because GitHub can expose a newly created exact tag before the releases collection used by the installer reflects it, the workflow retries the **universal entry resolver** within a bounded five-minute wall-clock window, using exponential backoff capped at 15 seconds. It does not replace the resolver with a second implementation or accept an older version as success. The 0.0.37 publication demonstrated that a 12-second fixed retry window was too short even though the release became visible normally shortly afterward.
 
 ### 7. Only then announce or test the release
 
@@ -160,6 +163,7 @@ The release workflow must fail unless, after publication:
 - the expected tag is the newest published non-draft release;
 - all required installer assets are present;
 - the universal development entry selects the expected version;
+- the standalone one-file VBS resolves the same release and leaves a bootstrap log;
 - transient GitHub publication propagation is tolerated for up to five minutes without accepting a stale release as success.
 
 This is a release-system invariant, not an optional manual check.
