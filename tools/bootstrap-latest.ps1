@@ -12,20 +12,23 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PortableStateRoot = Join-Path $ScriptRoot "installer-work"
+
 if (-not $ReleaseApiUrl) {
     $ReleaseApiUrl = "https://api.github.com/repos/$Repository/releases?per_page=20"
 }
 if (-not $CacheRoot) {
-    $CacheRoot = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\bootstrap"
+    $CacheRoot = Join-Path $PortableStateRoot "bootstrap-cache"
 }
 if (-not $LogPath) {
-    $LogPath = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\install-latest.log"
+    $LogPath = Join-Path $PortableStateRoot "install-latest.log"
 }
 if (-not $StatusPath) {
-    $StatusPath = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\install-status.txt"
+    $StatusPath = Join-Path $PortableStateRoot "install-status.txt"
 }
 if (-not $ReportPath) {
-    $ReportPath = Join-Path $env:LOCALAPPDATA "BG3ControllerActionMenu\xbox-dev-environment.json"
+    $ReportPath = Join-Path $PortableStateRoot "xbox-dev-environment.json"
 }
 
 New-Item -ItemType Directory -Force -Path $CacheRoot | Out-Null
@@ -68,6 +71,7 @@ $installerArgs = @{
     LogPath = $LogPath
     StatusPath = $StatusPath
     ReportPath = $ReportPath
+    CacheRoot = Join-Path (Split-Path -Parent $CacheRoot) "release-cache"
 }
 if ($ReleaseMetadataPath) {
     $installerArgs.ReleaseMetadataPath = $ReleaseMetadataPath
