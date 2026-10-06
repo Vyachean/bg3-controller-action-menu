@@ -664,3 +664,24 @@ CI now explicitly rejects reintroduction of:
 - install-time "missing required filter seam" checks.
 
 The 0.0.37 UI/filter implementation itself is unchanged by this release.
+
+
+### 2026-10-06 — self-contained runtime migration
+
+The install-time derivation model used by 0.0.25 through 0.0.38 is now historical. It is retained above only as incident/runtime evidence.
+
+The current target contract is:
+
+1. development capture may inspect the installed game read-only;
+2. current native UI evidence is analyzed before implementation/release;
+3. project-owned controller XAML is stored under `Mods/BG3ControllerActionMenu`;
+4. CI builds that source into the release PAK;
+5. `install-latest.ps1` downloads only the prebuilt PAK and `install-xbox-dev.ps1`;
+6. `install-xbox-dev.ps1` copies that PAK directly and updates the proven Xbox profile order;
+7. no normal install step reads `Game.pak`, downloads LSLib, generates XAML, or creates a PAK.
+
+`native-overlay.ps1` and its fixture remain development/migration tools while the self-contained XAML is being authored. They are no longer part of the release/install asset contract.
+
+Publication is separately fail-closed through `tools/assert-self-contained-release.ps1`. Until the project-owned `GUI/Library/Lib_Controller.xaml` exists, a development PR may exercise installer/capture fixtures but the Release workflow must refuse to publish a new version.
+
+The next runtime milestone should therefore be tested only after the self-contained library is built from current captured evidence and package verification proves it is embedded in the release PAK.
