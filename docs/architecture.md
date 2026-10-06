@@ -102,7 +102,7 @@ The outer list owns vertical continuation and scrolling. The inner grids own fou
 
 ### Focus, dispatch and resource preview
 
-The installed controller radial remains authoritative for focus lifecycle. CAM extracts the current `HotBarRadial` `LocalFocusChanged` trigger and retargets it to the main slot grid. The retained lifecycle feeds the focused slot through:
+Captured current controller-radial evidence remains authoritative for the focus lifecycle. The self-contained CAM template reproduces the proven `HotBarRadial.LocalFocusChanged` handoff for the main slot grid. That lifecycle feeds the focused slot through:
 
 - `ActionRadials.Tag`;
 - `CreateFocusedTooltipDataCommand`;
@@ -115,7 +115,7 @@ This restores the same resource-cost preview path that the radial uses. CAM does
 
 ### Native button hints
 
-The installed `ButtonHintsContainer` is preserved rather than re-laid out. CAM removes only the radial-customisation/X entry point and its mutation commands. The extra LB/RB presentation-only hints introduced by 0.0.36 are gone.
+The captured `ButtonHintsContainer` layout/behavior contract is preserved rather than re-laid out. CAM removes only the radial-customisation/X entry point and its mutation commands. The extra LB/RB presentation-only hints introduced by 0.0.36 are gone.
 
 Raw captured Larian XAML is not committed or distributed as runtime source. CAM ships project-owned `Lib_Controller.xaml` built from the proven contract and remains Script-Extender/DLL/native-loader free.
 
