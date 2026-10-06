@@ -16,8 +16,9 @@ Examples:
 - required project paths/files;
 - duplicate resource keys where detectable;
 - forbidden placeholder/experimental markers in release builds;
-- deterministic fixture tests for categorization and navigation helpers;
-- packaging manifest consistency;
+- pinned Patch 8 runtime evidence and project-owned XAML contract checks;
+- rejection of stale `LocalFocus.Tag` / fixed-selector fixtures and raw assignment catalogs;
+- normal-installer checks proving no `Game.pak`, LSLib, XAML generation or repack seam;
 - documentation checks for unverified assumptions.
 
 A failure here must block a test build.
@@ -29,9 +30,10 @@ Runs when packaging is available.
 Examples:
 
 - mod folder shape is valid;
-- generated archive/PAK contains expected files;
+- built PAK contains project-owned `GUI/Library/Lib_Controller.xaml` byte-for-byte;
 - metadata references the correct module UUID/name;
-- no development-only fixtures are packaged;
+- copied `Public/Game/GUI` XAML is absent;
+- Script Extender and native executable payloads are absent;
 - reproducible artifact naming.
 
 This proves only that the artifact is structurally valid, not that BG3 will render it correctly.
@@ -668,20 +670,27 @@ The 0.0.37 UI/filter implementation itself is unchanged by this release.
 
 ### 2026-10-06 — self-contained runtime migration
 
-The install-time derivation model used by 0.0.25 through 0.0.38 is now historical. It is retained above only as incident/runtime evidence.
+The fresh developer capture from Xbox App package `1.8.910.0` has been consumed. It closed two stale fixture assumptions before project-owned XAML was authored:
 
-The current target contract is:
+- current radial focus passes `LocalFocus.DataContext` after the native 70 ms delay, not `LocalFocus.Tag`;
+- current `SelectorAssign` has no hard-coded `118x118` geometry or margin.
 
-1. development capture may inspect the installed game read-only;
-2. current native UI evidence is analyzed before implementation/release;
-3. project-owned controller XAML is stored under `Mods/BG3ControllerActionMenu`;
-4. CI builds that source into the release PAK;
-5. `install-latest.ps1` downloads only the prebuilt PAK and `install-xbox-dev.ps1`;
-6. `install-xbox-dev.ps1` copies that PAK directly and updates the proven Xbox profile order;
-7. no normal install step reads `Game.pak`, downloads LSLib, generates XAML, or creates a PAK.
+The shipping source now contains project-owned `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`. It composes current native filter commands, native `VMHotBarSlot` collections, current radial focus/tooltip/resource-highlight behavior, native A/B, `SingleHotBar.SlotList`, assignment-style navigation, and the captured button-hint layout.
 
-`native-overlay.ps1` and its fixture remain development/migration tools while the self-contained XAML is being authored. They are no longer part of the release/install asset contract.
+The old install-time derivation path is obsolete and removed:
 
-Publication is separately fail-closed through `tools/assert-self-contained-release.ps1`. Until the project-owned `GUI/Library/Lib_Controller.xaml` exists, a development PR may exercise installer/capture fixtures but the Release workflow must refuse to publish a new version.
+- `native-overlay.ps1`;
+- `test-native-overlay.ps1`;
+- capture-to-reference generator/fixture tooling.
 
-The next runtime milestone should therefore be tested only after the self-contained library is built from current captured evidence and package verification proves it is embedded in the release PAK.
+The developer capture remains read-only evidence tooling only. It does not generate or patch the shipping runtime.
+
+Current automated proof must establish:
+
+1. `tools/test-self-contained-runtime.ps1` passes against the pinned `1.8.910.0` evidence;
+2. normal VBS/bootstrap/latest/Xbox installer paths contain no game-PAK/LSLib/build/repack seam;
+3. the built PAK contains the project-owned controller library byte-for-byte;
+4. copied `Public/Game` XAML, Script Extender and native executable payloads are absent;
+5. repository/build CI is green.
+
+Only after those checks pass is another in-game test justified. The next run must combine the remaining runtime-only questions: long-grid up/down navigation, Common/Class/Items/Passives/Cantrips switching, resource filtering/preview, one direct A dispatch, one natural container/variant/upcast path if available, native hint layout, and top-level/nested B.
