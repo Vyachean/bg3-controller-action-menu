@@ -167,6 +167,10 @@ try {
             Version = $version
             Pak = $pakName
         } | ConvertTo-Json
+        # Legacy bootstrap-latest.ps1 callers used exit $LASTEXITCODE after
+        # invoking this script in-process. Preserve a zero compatibility signal
+        # without using LASTEXITCODE as the truth source for PowerShell helpers.
+        $global:LASTEXITCODE = 0
         return
     }
 
@@ -192,6 +196,11 @@ try {
     & $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath
 
     Write-InstallStatus -State "SUCCESS" -Version $version -Message "Installation completed."
+
+    # Compatibility only: obsolete bootstrap-latest.ps1 callers may still do
+    # 'exit $LASTEXITCODE' after this in-process call. The actual success
+    # decision above is exception-based; publish 0 only for that legacy caller.
+    $global:LASTEXITCODE = 0
     return
 } catch {
     Write-InstallStatus -State "ERROR" -Version $version -Message $_.Exception.Message
