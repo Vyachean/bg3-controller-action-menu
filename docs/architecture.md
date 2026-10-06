@@ -14,10 +14,12 @@ native ActionRadials state/page
           v
 project-owned ActionRadialWidgetTemplate_P8
           |
-          +-- semantic filters
-          |     SetCurrentShownDeckCommand
-          |     FilterCantripsCommand
-          |     FilterActionResourceCommand
+          +-- hierarchical semantic filters
+          |     primary: Common / Class / Items / Passives
+          |       SetCurrentShownDeckCommand / PassivesHotBar
+          |     secondary (Common/Class):
+          |       Cantrips + ActionResourcesCostPreview
+          |       FilterCantripsCommand / FilterActionResourceCommand
           |             |
           |             v
           |     native VMHotBarSlot collections
@@ -35,6 +37,7 @@ project-owned ActionRadialWidgetTemplate_P8
                      +--> ActionRadials.Tag
                      +--> CreateFocusedTooltipDataCommand
                      +--> HighlightResourcesCommand
+                     +--> ShowTooltipOnUIElementCommand(slot.Content)
                      |
                      v
                 UIAccept -> UseSlotCommand(slot)
@@ -86,11 +89,13 @@ LB/RB selects native semantic filters:
 | Class | `SetCurrentShownDeckCommand("ClassHotBar")` -> `CurrentShownDeck.SlotList` |
 | Items | `SetCurrentShownDeckCommand("ItemHotBar")` -> `CurrentShownDeck.SlotList` |
 | Passives | `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList` |
-| Cantrips | captured current `FilterCantripsCommand` contract |
 
-Resource filters use `CurrentPlayer.UIData.ActionResourcesCostPreview` and `FilterActionResourceCommand`.
+Cantrips are **not** a fifth primary tab. The current HotBar presents Cantrips beside action-resource/spell-slot filters, so CAM uses one compact secondary-filter row for Common/Class:
 
-CAM does not calculate resource membership or create a parallel action taxonomy.
+- Cantrips -> captured `FilterCantripsCommand`;
+- resources/spell slots -> `CurrentPlayer.UIData.ActionResourcesCostPreview` + `FilterActionResourceCommand`.
+
+The action grid remains the next row and is the initial focus target. Within each native deck/filter result CAM preserves `SlotList` order. It does not calculate resource membership, infer spell levels, or create a parallel action taxonomy/sorter.
 
 ## Controller navigation
 
@@ -103,9 +108,9 @@ HotBarList: LSListBox
   ActionNextEvent = UIDown
   ActionPrevEvent = UIUp
         |
-        +-- resource LSListBox
+        +-- compact secondary-filter row
+        |     Cantrips + resource/spell-slot filters
         |     DirectionalNavigation = Continue
-        |     ItemsPanel = LSGrid(UI directions)
         |
         +-- action LSListBox
               DirectionalNavigation = Continue
@@ -114,7 +119,7 @@ HotBarList: LSListBox
 
 The outer list owns scrolling/vertical continuation. Child grids own cell movement. There is no fixed three-row action-grid height.
 
-The fresh Patch 8 `SelectorAssign` contract is reproduced without the stale synthetic `118x118` selector geometry.
+The native assignment selector control has no fixed geometry, but its captured `SelectorTemplate` deliberately expands the visible chrome by 12 px. CAM keeps dynamic selector positioning but uses the same native selector artwork with zero visual expansion so the frame follows the 104×104 action image.
 
 ## Focus, tooltip and resource preview
 
@@ -125,7 +130,9 @@ On action-cell focus change the project-owned template follows the current radia
 - play native hover feedback;
 - after 70 ms, write the current `LocalFocus.DataContext` (`VMHotBarSlot`) to `ActionRadials.Tag`;
 - call `CreateFocusedTooltipDataCommand(slot)`;
-- call `HighlightResourcesCommand(slot)`.
+- call `HighlightResourcesCommand(slot)`;
+- set the outer `LSTooltip` content to `slot.Content`;
+- call `ShowTooltipOnUIElementCommand(outerFocusOwner)`.
 
 CAM does not calculate tooltip or resource-cost semantics itself.
 
