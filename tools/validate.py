@@ -124,14 +124,31 @@ def validate_semantics() -> list[str]:
                 'x:Name="CAM_ItemsTab"',
                 'x:Name="CAM_PassivesTab"',
                 'x:Name="CAM_MetamagicTab"',
-                'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+                'x:Name="CAM_ActionsFocusRoot"',
+                'x:Name="CAM_ItemsFocusRoot"',
+                'x:Name="CAM_PassivesFocusRoot"',
+                'x:Name="CAM_MetamagicFocusRoot"',
                 '<ls:SetMoveFocusAction TargetName="ActionRadials"',
                 'FocusElement="{Binding ElementName=HotBarList}"',
+                'FocusElement="{Binding ElementName=CAM_InventoryListbox}"',
+                'FocusElement="{Binding ElementName=CAM_PassivesListbox}"',
+                'FocusElement="{Binding ElementName=CAM_MetamagicListbox}"',
                 'x:Name="ShowContextMenu" Visibility="Collapsed" IsEnabled="False" IsHitTestVisible="False" Focusable="False"',
                 'Command="{x:Null}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_ActionsSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_ItemsSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_PassivesSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_MetamagicSelector,Mode=OneWay}"',
                 'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
                 'Value="{Binding LocalFocus.DataContext.Object, ElementName=CAM_InventoryListbox}"',
+                'Value="{Binding LocalFocus.DataContext, ElementName=CAM_PassivesListbox}"',
+                'Value="{Binding LocalFocus.DataContext, ElementName=CAM_MetamagicListbox}"',
+                'New-AssignSelectorClone',
+                'Get-NamedElementSpan -Text $native -Name "SelectorAssign"',
+                '@("HorizontalAlignment", "Right")',
+                '@("HorizontalContentAlignment", "Right")',
+                '@("FlowDirection", "RightToLeft")',
+                '@("Margin", "26,0,26,56")',
                 'Mods\\BG3ControllerActionMenu\\GUI\\Library\\Lib_Controller.xaml',
                 "--action extract-single-file",
                 "--action create-package",
@@ -151,6 +168,17 @@ def validate_semantics() -> list[str]:
             if forbidden in overlay_text:
                 errors.append(
                     f"{NATIVE_OVERLAY.relative_to(ROOT)}: install-time semantic post-pack verifier is forbidden: {forbidden}"
+                )
+
+    if NATIVE_OVERLAY.exists():
+        overlay_text = NATIVE_OVERLAY.read_text(encoding="utf-8")
+        for broken_focus_seam in (
+            'CAM_AutoCatalogSelector',
+            'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
+        ):
+            if broken_focus_seam in overlay_text:
+                errors.append(
+                    f"{NATIVE_OVERLAY.relative_to(ROOT)}: broken 0.0.35 shared tab-focus seam must not return: {broken_focus_seam}"
                 )
 
     if NATIVE_OVERLAY.exists():
@@ -182,10 +210,19 @@ def validate_semantics() -> list[str]:
                 '<ContentPresenter x:Name="CAM_TabPrevHint"',
                 '<ContentPresenter x:Name="CAM_TabNextHint"',
                 "Controller tab hint must be presentation-only",
-                'SelectedIndex="{Binding SelectedIndex, ElementName=CAM_TabList, Mode=OneWay}"',
                 '<ls:SetMoveFocusAction TargetName="ActionRadials"',
                 'FocusElement="{Binding ElementName=HotBarList}"',
-                'LocalFocusSelector="{Binding ElementName=CAM_AutoCatalogSelector,Mode=OneWay}"',
+                'FocusElement="{Binding ElementName=CAM_InventoryListbox}"',
+                'FocusElement="{Binding ElementName=CAM_PassivesListbox}"',
+                'FocusElement="{Binding ElementName=CAM_MetamagicListbox}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_ActionsSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_ItemsSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_PassivesSelector,Mode=OneWay}"',
+                'LocalFocusSelector="{Binding ElementName=CAM_MetamagicSelector,Mode=OneWay}"',
+                "Tab focus owner must colocate list and native selector",
+                "Tab selector did not preserve current native SelectorAssign geometry",
+                "Controller footer hints must remain in the native right-side lane.",
+                "0.0.35 shared outer focus model must not survive tab-focus repair.",
                 'x:Key="CAM_SpellGroupListTemplate"',
                 'x:Key="CAM_InventoryGrid"',
                 'ItemsSource="{Binding SingleHotBar.SlotList}"',
