@@ -111,8 +111,11 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
       </Control>
 
       <!-- Production must leave this native right-stacked composition intact. -->
-      <StackPanel x:Name="ButtonHintsContainer"
-                  Style="{StaticResource ButtonHint.Container.RightStacked}">
+      <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Bottom"
+                             Width="913"
+                             Tag="NativeHintLayoutSentinel">
         <ls:LSButton x:Name="SelectButtonVisual"
                      BoundEvent="UIAccept"/>
         <ls:LSButton x:Name="ShowContextMenu"
@@ -128,7 +131,7 @@ $generated = Join-Path $FixtureRoot "Lib_Controller.xaml"
         <ls:LSButton x:Name="CancelButton"
                      BoundEvent="UICancel"
                      Command="{Binding ClearSingleHotbarCommand}"/>
-      </StackPanel>
+      </ls:AlignableWrapPanel>
 
       <StackPanel x:Name="LegacyRadialCustomization">
         <ls:ContextMenuItem Command="{Binding RequestAssignSlotCommand}"/>
@@ -231,7 +234,14 @@ foreach ($needle in @(
     'x:Name="CAM_FilteredSlotList"',
     'Value="{Binding CurrentShownDeck.SlotList}"',
     'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
+    'Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"',
+    'Value="{Binding SingleHotBar.SlotList}"',
     'Command="{Binding FilterCantripsCommand}" CommandParameter="hfixturecantrips"',
+    'Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"',
+    'Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"',
+    'Setter TargetName="singleBarHolder" Property="Visibility" Value="Collapsed"',
+    'Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Visible"',
+    'Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"',
     'KeyboardNavigation.DirectionalNavigation="Continue"',
     'x:Name="CAM_MainSelector"',
     'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
@@ -290,7 +300,7 @@ $selectorMatch = [regex]::Match(
 if (-not $selectorMatch.Success -or
     -not $selectorMatch.Value.Contains('Width="118"') -or
     -not $selectorMatch.Value.Contains('Height="118"') -or
-    -not $selectorMatch.Value.Contains('Margin="1,2,0,0') -or
+    -not $selectorMatch.Value.Contains('Margin="1,2,0,0"') -or
     -not $selectorMatch.Value.Contains('ElementName=HotBarList')) {
     throw "Main selector did not preserve current native SelectorAssign geometry/binding."
 }
@@ -308,21 +318,25 @@ if (-not $actionPanel.Success -or $actionPanel.Value.Contains('Height="376"')) {
     throw "Main action grid must not keep the old fixed three-row height."
 }
 
-# Preserve the native vertical/right-stacked hint container. No custom LB/RB
-# presenters are allowed; the extra RB glyphs in 0.0.36 came from those.
-$hintMatch = [regex]::Match(
-    $text,
-    '<StackPanel\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+# Preserve the installed native hint-container opening tag byte-for-byte.
+# CAM may remove the X child, but must not restyle the container itself.
+$sourceText = Get-Content -Raw -LiteralPath $source
+$sourceHintMatch = [regex]::Match(
+    $sourceText,
+    '<(?<tag>[A-Za-z_][A-Za-z0-9_.:-]*)\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $hintMatch.Success -or
-    -not $hintMatch.Value.Contains('Style="{StaticResource ButtonHint.Container.RightStacked}"')) {
-    throw "Installed native right-stacked button hint container was not preserved."
+$hintMatch = [regex]::Match(
+    $text,
+    '<(?<tag>[A-Za-z_][A-Za-z0-9_.:-]*)\b[^>]*x:Name="ButtonHintsContainer"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sourceHintMatch.Success -or -not $hintMatch.Success -or
+    $sourceHintMatch.Value -ne $hintMatch.Value) {
+    throw "Installed native ButtonHintsContainer layout was not preserved exactly."
 }
-if ($text.Contains("FlowDirection=\"RightToLeft\"") -or
-    $text.Contains("CAM_TabPrevHint") -or
-    $text.Contains("CAM_TabNextHint")) {
-    throw "0.0.36 custom horizontal/tab-hint chrome must not return."
+if ($text.Contains("CAM_TabPrevHint") -or $text.Contains("CAM_TabNextHint")) {
+    throw "0.0.36 duplicate tab-hint chrome must not return."
 }
 
 # Radial customization remains unreachable.
