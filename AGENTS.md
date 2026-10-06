@@ -82,15 +82,18 @@ The current Patch 8 native XAML also proves a working controller grid inside rad
 
 Current mandatory architecture:
 
+- the **shipping PAK is self-contained**. Normal installation must not read, extract, patch, or rebuild from BG3 game PAKs;
 - do not override `Public/Game/GUI/...` from the CAM PAK;
-- do not ship a hand-written replacement ActionRadials page/template;
-- installer must extract the exact current native controller radial dictionary **and** current keyboard `Mods/MainUI/GUI/Pages/HotBar.xaml` from the local `Game.pak`;
-- installer must locally generate `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`; no extracted Larian XAML may be committed or published;
+- runtime UI resources required by CAM live inside `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu` and are built into the release PAK by CI;
+- raw captured Larian XAML is development evidence only and must not be committed as runtime source. Project-owned XAML may be authored from the proven contract and shipped normally;
+- the end-user installer only resolves/downloads the prebuilt release PAK, locates the Xbox mod/profile target, copies the PAK, and updates `modsettings.lsx`;
+- normal installation must never invoke LSLib, `native-overlay.ps1`, `Game.pak` extraction, or local PAK creation;
+- if new native evidence is needed, use the separate portable `Capture-BG3ControllerArtifacts.vbs` developer tool. It is read-only against the game and writes its tools/logs/captured artifacts beside the launcher;
 - main gameplay candidates passed to `UseSlotCommand` must be native hotbar slot VMs (`VMHotBarSlot`), not raw radial-assignment catalog objects;
 - `PlayerCharacterProperties.SpellsAndActions`, `Inventory.Slots`, and raw/passive assignment collections may be research/presentation evidence but must not be used as the main `ActionRadials.Tag -> UseSlotCommand` candidate path;
 - type tabs are native **filters**, not independent data catalogs. Reuse the exact current installed hotbar seams for `SetCurrentShownDeckCommand` / `CurrentShownDeck.SlotList`, passives, cantrip filtering and `ClearSingleHotbarCommand`;
 - resource filters come from the current `CurrentPlayer.UIData.ActionResourcesCostPreview` model and invoke the current native `FilterActionResourceCommand`; do not infer resource membership from action names, icons or CAM-owned rules;
-- the installer may read only concrete source values required by the deterministic transformation (for example the current cantrip command parameter). Semantic compatibility of HotBar command/property names is CI-owned; do not scan/assert the installed file for an expected contract before transforming it;
+- release XAML must not depend on install-time discovery of HotBar command parameters or binding names. Any required current values must be captured during development and represented explicitly in project-owned runtime resources/tests;
 - the main navigation hierarchy is one assignment-style outer `LSListBox + LocalFocusSelector` with scrolling. Child resource/action lists use `KeyboardNavigation.DirectionalNavigation="Continue"` and `LSGrid(UIUp/UIDown/UILeft/UIRight)`; do not split each filter into an independent focus root;
 - do not hard-code a short/fixed action-grid height that truncates the navigation space;
 - each action cell container must expose the native slot VM as its `Tag`, because the native radial focus lifecycle consumes `LocalFocus.Tag`;
@@ -100,11 +103,11 @@ Current mandatory architecture:
 - preserve the installed `ButtonHintsContainer` composition. Do not restyle it horizontally and do not add duplicate LB/RB hint presenters;
 - X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must remain unreachable from CAM;
 - historical SpellBook predicates and CAM-owned spell/resource classifiers remain forbidden without current installed-game proof;
-- install-time generation must not run semantic/contract assertions over the installed XAML. It should perform the requested extraction/transformation directly and fail only when a required operation cannot be completed.
+- there is no install-time XAML generation. Semantic/contract assertions and package construction are CI/development responsibilities.
 
 Do not revive the hidden-radial visual-mirror design from 0.0.25.
 
-The end-user installer is not a verifier. `0.0.29` proved that duplicating release semantics inside the install path creates stale false failures. Detailed generated-XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer performs only the operations required to download, derive and install the package; it should fail only when an operation itself cannot be completed.
+The end-user installer is not a verifier or build pipeline. `0.0.29` and `0.0.37` proved that install-time derivation/contract logic creates avoidable failures. Detailed XAML semantics, presentation literals, focus/A/B contracts, package round-trip checks and release-integrity assertions belong in CI/release workflows only. The runtime installer installs an already-built self-contained PAK.
 
 The next in-game test is justified only after CI proves the 0.0.35/0.0.36 source-tab architecture is absent, all main execution candidates come from native slot collections, the one-outer-list navigation hierarchy is restored, the native radial focus/resource-preview trigger is retained, native button hints are preserved, and A/B plus nested `SingleHotBar` seams remain. One milestone run should then check long-grid up/down navigation, type/resource filters, one simple A dispatch, one container/variant opening if naturally available, resource-cost highlighting, native vertical hints and top-level/nested B together.
 
@@ -112,7 +115,9 @@ The next in-game test is justified only after CI proves the 0.0.35/0.0.36 source
 
 The stable bootstrap contract must remain tiny: newest release -> download `install-latest.ps1` -> execute it. Do not make the bootstrap understand version-specific assets.
 
-Do not add SHA/digest gates, XAML semantic assertions, expected UI literals, or package round-trip verification to `bootstrap-latest.ps1`, `install-latest.ps1`, or the runtime path in `native-overlay.ps1`. Those belong in CI before publication.
+The VBS installer is portable: caches, downloaded release assets, logs, status and diagnostics belong under a directory beside the VBS launcher. The only writes outside that portable directory are the intentional BG3 mod PAK/profile changes and their safety backups.
+
+Do not add LSLib, game-PAK reads, XAML derivation, SHA/digest policy gates, semantic assertions, expected UI literals, or package round-trip verification to the normal install path. Those belong in CI/development capture before publication.
 
 ## Release readiness contract
 
