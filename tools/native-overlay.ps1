@@ -408,7 +408,7 @@ function New-AutomaticActionCatalog {
                                       ActionNextEvent="UITabNext"
                                       KeyboardNavigation.DirectionalNavigation="Cycle"
                                       SelectedIndex="0"
-                                      PlayerId="{Binding CurrentPlayer.PlayerId}">
+                                      >
                             <ls:LSListBox.Resources>
                                 <Style x:Key="CAM_TabItemStyle"
                                        TargetType="{x:Type ListBoxItem}"
