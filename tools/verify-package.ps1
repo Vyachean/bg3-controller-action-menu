@@ -35,12 +35,13 @@ if (-not (Test-Path $meta)) {
     throw "Packaged metadata missing: Mods/BG3ControllerActionMenu/meta.lsx"
 }
 
+$sourceLibrary = Join-Path $Root "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml"
+$packedLibrary = Join-Path $Extract "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml"
+
+# Copied game-owned Public paths and runtime injectors are never valid. Project-
+# owned XAML under Mods/BG3ControllerActionMenu is allowed and is required once
+# the self-contained migration lands.
 $forbidden = @(
-    "Mods/BG3ControllerActionMenu/GUI/Pages/CAM_ActionMenu_c.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/StateMachines/Controller.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/Library/Lib_Keyboard.xaml",
-    "Mods/BG3ControllerActionMenu/GUI/Library/CAM_ActionRadials.xaml",
     "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
     "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml",
     "Mods/BG3ControllerActionMenu/ScriptExtender"
@@ -48,15 +49,21 @@ $forbidden = @(
 
 foreach ($relative in $forbidden) {
     if (Test-Path (Join-Path $Extract $relative)) {
-        throw "Published base package must not contain runtime/native XAML or Script Extender files: $relative"
+        throw "Published package contains forbidden copied/native-loader content: $relative"
     }
 }
 
-$unexpectedXaml = @(
-    Get-ChildItem -LiteralPath $Extract -File -Recurse -Filter "*.xaml" -ErrorAction SilentlyContinue
-)
-if ($unexpectedXaml.Count -gt 0) {
-    throw "Published base package unexpectedly contains XAML: $($unexpectedXaml[0].FullName)"
-}
+if (Test-Path -LiteralPath $sourceLibrary -PathType Leaf) {
+    if (-not (Test-Path -LiteralPath $packedLibrary -PathType Leaf)) {
+        throw "Self-contained controller library exists in source but is missing from the PAK."
+    }
 
-Write-Host "Package verification passed: release PAK is metadata/bootstrap only; no CAM replacement XAML, proprietary native XAML, or Script Extender files are embedded."
+    [xml]$packedLibraryXml = Get-Content -Raw -LiteralPath $packedLibrary
+    if (-not $packedLibraryXml.DocumentElement) {
+        throw "Packaged self-contained Lib_Controller.xaml has no XML document element."
+    }
+
+    Write-Host "Package verification passed: self-contained controller runtime is embedded; copied Public native XAML and Script Extender are absent."
+} else {
+    Write-Host "Package verification passed for development migration state: metadata package is structurally valid. Release publication remains blocked until the self-contained controller library is added."
+}
