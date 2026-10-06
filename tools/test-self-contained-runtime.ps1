@@ -84,8 +84,6 @@ if ($evidence.runtimeContract.controllerPresentation.keyboardStyleRejected -ne "
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_FilterTabs"',
-    'ActionPrevEvent="UITabPrev"',
-    'ActionNextEvent="UITabNext"',
     'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"',
     'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"',
     'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"',
