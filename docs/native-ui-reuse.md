@@ -19,7 +19,7 @@ VMHotBarSlot
 Therefore CAM's executable main cells come only from native hotbar-slot collections:
 
 - `CurrentShownDeck.SlotList`;
-- `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList`;
+- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList`;
 - `SingleHotBar.SlotList`.
 
 Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates.
