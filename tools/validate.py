@@ -26,6 +26,7 @@ DEV_CAPTURE = ROOT / "tools/capture-self-contained-inputs.ps1"
 DEV_CAPTURE_LAUNCHER = ROOT / "tools/Capture-BG3ControllerArtifacts.vbs"
 DEV_CAPTURE_TEST = ROOT / "tools/test-dev-capture.ps1"
 DEV_CAPTURE_BUILDER = ROOT / "tools/build-dev-capture.ps1"
+SELF_CONTAINED_REFERENCE_PREP = ROOT / "tools/prepare-self-contained-reference.ps1"
 DEVELOPMENT_VBS_DOC = ROOT / "docs/development-vbs.md"
 SELF_CONTAINED_RELEASE_GUARD = ROOT / "tools/assert-self-contained-release.ps1"
 BUILD_WORKFLOW = ROOT / ".github/workflows/build.yml"
@@ -526,6 +527,22 @@ def validate_semantics() -> list[str]:
                 'Portable developer capture fixture passed.',
                 '%LOCALAPPDATA%',
                 'No BG3 files, saves, profiles, or mods were modified.',
+            ],
+        )
+    )
+
+    errors.extend(
+        require_text(
+            SELF_CONTAINED_REFERENCE_PREP,
+            [
+                "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+                "Mods/MainUI/GUI/Pages/HotBar.xaml",
+                "PatchOnlySourceXaml",
+                "PatchOnlyHotBarSourceXaml",
+                "Lib_Controller.reference.xaml",
+                "evidence.json",
+                "CantripFilterParameter",
+                "Development-only reference",
             ],
         )
     )
