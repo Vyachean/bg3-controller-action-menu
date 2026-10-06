@@ -1,5 +1,12 @@
 Option Explicit
 
+' Temporary development delivery launcher.
+' Keep this file tiny and backward-compatible: an already extracted copy must
+' continue to install/update current development builds without manual replacement.
+' Version-specific behavior belongs in bootstrap-downloaded helper scripts.
+' Retire this workflow when CAM moves to its official delivery path.
+
+
 Dim shell, fso, baseDir, bootstrap, stateRoot, logPath, statusPath, reportPath
 Dim command, exitCode, state, version, message, stream
 
