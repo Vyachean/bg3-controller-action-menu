@@ -133,6 +133,9 @@ jobs:
           $oneClick = "build/BG3ControllerActionMenu-OneClickInstaller.zip"
           if (-not (Test-Path $oneClick)) { throw "Missing one-click installer bundle: $oneClick" }
 
+          $launcher = "tools/Install-BG3ControllerActionMenu.vbs"
+          if (-not (Test-Path $launcher)) { throw "Missing development VBS launcher: $launcher" }
+
           $bootstrap = "tools/bootstrap-latest.ps1"
           if (-not (Test-Path $bootstrap)) { throw "Missing installer bootstrap: $bootstrap" }
 
@@ -140,7 +143,7 @@ jobs:
           if (-not (Test-Path $latestInstaller)) { throw "Missing canonical latest-release installer: $latestInstaller" }
 
           $args = @(
-            "release", "create", $env:TAG, $pak, $installer, $oneClick, $bootstrap, $latestInstaller,
+            "release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $bootstrap, $latestInstaller,
             "--repo", $env:GITHUB_REPOSITORY,
             "--target", $env:GITHUB_SHA,
             "--title", "BG3 Controller Action Menu $env:TAG",
@@ -174,6 +177,7 @@ jobs:
           $requiredAssets = @(
             "BG3ControllerActionMenu-$env:VERSION.pak",
             "BG3ControllerActionMenu-OneClickInstaller.zip",
+            "Install-BG3ControllerActionMenu.vbs",
             "bootstrap-latest.ps1",
             "install-latest.ps1",
             "install-xbox-dev.ps1"
