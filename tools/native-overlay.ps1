@@ -855,11 +855,11 @@ function New-AutomaticActionCatalog {
             </Grid>
 '@
 
-    return $catalog.
-        Replace("__CAM_ACTIONS_SELECTOR__", $actionsSelector).
-        Replace("__CAM_ITEMS_SELECTOR__", $itemsSelector).
-        Replace("__CAM_PASSIVES_SELECTOR__", $passivesSelector).
-        Replace("__CAM_METAMAGIC_SELECTOR__", $metamagicSelector)
+    $catalog = $catalog.Replace("__CAM_ACTIONS_SELECTOR__", $actionsSelector)
+    $catalog = $catalog.Replace("__CAM_ITEMS_SELECTOR__", $itemsSelector)
+    $catalog = $catalog.Replace("__CAM_PASSIVES_SELECTOR__", $passivesSelector)
+    $catalog = $catalog.Replace("__CAM_METAMAGIC_SELECTOR__", $metamagicSelector)
+    return $catalog
 }
 
 function Convert-WidgetToAutomaticCatalog {
