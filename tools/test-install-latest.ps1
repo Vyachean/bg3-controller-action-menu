@@ -14,7 +14,11 @@ try {
     $version = "9.9.9-fixture"
     $pak = Join-Path $assetRoot "BG3ControllerActionMenu-$version.pak"
     $xbox = Join-Path $assetRoot "install-xbox-dev.ps1"
+    $launcherAsset = Join-Path $assetRoot "Install-BG3ControllerActionMenu.vbs"
+    $bootstrapAsset = Join-Path $assetRoot "bootstrap-latest.ps1"
 
+    Set-Content -LiteralPath $launcherAsset -Value "' new launcher fixture" -Encoding ASCII
+    Set-Content -LiteralPath $bootstrapAsset -Value "# new bootstrap fixture" -Encoding UTF8
     Set-Content -LiteralPath $pak -Value "fake-pak" -NoNewline
 
 @'
@@ -51,6 +55,14 @@ exit 0
                 [ordered]@{
                     name = "install-xbox-dev.ps1"
                     browser_download_url = $xbox
+                },
+                [ordered]@{
+                    name = "Install-BG3ControllerActionMenu.vbs"
+                    browser_download_url = $launcherAsset
+                },
+                [ordered]@{
+                    name = "bootstrap-latest.ps1"
+                    browser_download_url = $bootstrapAsset
                 }
             )
         }
@@ -61,7 +73,11 @@ exit 0
     $log = Join-Path $caseRoot "install.log"
     $status = Join-Path $caseRoot "status.txt"
     $report = Join-Path $caseRoot "report.json"
+    $launcherRoot = Join-Path $caseRoot "launcher"
     New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
+    New-Item -ItemType Directory -Force -Path $launcherRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $launcherRoot "Install-BG3ControllerActionMenu.vbs") -Value "' old launcher fixture" -Encoding ASCII
+    Set-Content -LiteralPath (Join-Path $launcherRoot "bootstrap-latest.ps1") -Value "# old bootstrap fixture" -Encoding UTF8
 
     $args = @(
         "-NoLogo",
@@ -72,7 +88,8 @@ exit 0
         "-CacheRoot", $cache,
         "-LogPath", $log,
         "-StatusPath", $status,
-        "-ReportPath", $report
+        "-ReportPath", $report,
+        "-LauncherRoot", $launcherRoot
     )
     & powershell.exe @args
 
@@ -89,6 +106,13 @@ exit 0
     if (-not $result.Applied -or
         $result.Package -ne "BG3ControllerActionMenu-$version.pak") {
         throw "Installer did not pass the self-contained release PAK to the Xbox installer."
+    }
+
+    if ((Get-Content -Raw -LiteralPath (Join-Path $launcherRoot "Install-BG3ControllerActionMenu.vbs")).Trim() -ne "' new launcher fixture") {
+        throw "Canonical installer did not refresh the existing development VBS automatically."
+    }
+    if ((Get-Content -Raw -LiteralPath (Join-Path $launcherRoot "bootstrap-latest.ps1")).Trim() -ne "# new bootstrap fixture") {
+        throw "Canonical installer did not refresh the existing development bootstrap automatically."
     }
 
     $launcherOutput = & cscript.exe //nologo $Launcher --self-test
