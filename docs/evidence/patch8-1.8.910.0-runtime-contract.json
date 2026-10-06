@@ -3,14 +3,28 @@
   "capturedAtUtc": "2026-10-06T17:34:41.6428619Z",
   "gamePackageVersion": "1.8.910.0",
   "sourceHashes": {
+    "Mods/CrossplayUI/GUI/StateMachines/Controller.xaml": "f9f13b5f745b4a44667e6dee8519ba99464862ca590cc83a9b6b5fe3c63c134f",
+    "Mods/MainUI/GUI/Library/Lib_Controller.xaml": "d96acb50948c23770b8e57cb9fedc120def6bb501fdb955ab33447d4e22673b1",
+    "Mods/MainUI/GUI/Library/Tooltips.xaml": "bc0ea45447d7d5d5e2772764cbc91ea11592c9166d667f4ec0a5fd16ae5b88ad",
     "Mods/MainUI/GUI/Pages/ActionRadials.xaml": "bce01b1043915eda64277e4f5a3d9b9f0893ac9226b32cb9d394a4bea325371a",
     "Mods/MainUI/GUI/Pages/HotBar.xaml": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728",
-    "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml": "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b",
-    "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml": "cbd5141734063dce4e41b319775eefc3b905e4b42c86bbe37f3fbf16e20e2bba",
+    "Mods/MainUI/GUI/Pages/PinnedTooltips.xaml": "a4a373ee16449e08e08053bcfe29168b5ae893bdd9d4c078decf855f20499bb1",
+    "Mods/MainUI/GUI/Pages/PinnedTooltips_c.xaml": "ec2cc192b4012750bf46dc6186bedb39a3f237d7f1ccc1b599864975bb914f6c",
+    "Mods/MainUI/GUI/Pages/SpellBook_c.xaml": "52095cb915375f8cf403dd8398a11c98f5808b2c50c826db1fe3ed43df573542",
+    "Mods/MainUI/GUI/Pages/WorldTooltips.xaml": "e8636c7cf2729abea7d31965f5b53cf4fd9424053f9d6ff4017fef1766506b19",
+    "Mods/MainUI/GUI/StateMachines/Controller.xaml": "53389126eb75eaa275609fce981b15339ea8cacab58df3af0d97c370658a573c",
+    "Mods/ModBrowser/GUI/Library/Lib_Controller.xaml": "af79068849f3299d612b188d1d0d555d9e51836a8306e66d89839800c5c398c4",
+    "Mods/ModBrowser/GUI/StateMachines/Controller.xaml": "1855e30ab4223a6917220b97f759f1562fe422fc01782bbda7942446894f12ef",
+    "Mods/PhotoMode/GUI/Library/Lib_Controller.xaml": "97f374561607cac77986bd69ce94adcdeedc2673f3547fa4ce9f7ff902a2dfe4",
+    "Mods/PhotoMode/GUI/StateMachines/Controller.xaml": "774b3228a0fc43cc4033d6de19f1db2d15b5ba207fd1cd15f60f772ef39aefc6",
     "Public/Game/GUI/Library/DataTemplates.xaml": "e536956cdfa04fc2a737bdc41e70696e5b712dfada966a90e7d7e69374911850",
     "Public/Game/GUI/Library/FocusableControls_c.xaml": "a2f1cce1fa77376db6ec9155bf45ab047c47c3e2f4bda07fc1fb0f63cf015679",
+    "Public/Game/GUI/Library/Libs_Controller.xaml": "2c278590fe7a7964ffc4a0c4f891f073e832c413e78b095f4ace9ddaf86865ab",
+    "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml": "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b",
     "Public/Game/GUI/Library/Tooltips.xaml": "0f271719fbc453cad0e902cefcd9e0f31394e0fe37c678a5da344ae528ebf7ad",
-    "Mods/MainUI/GUI/Library/Lib_Controller.xaml": "d96acb50948c23770b8e57cb9fedc120def6bb501fdb955ab33447d4e22673b1"
+    "Public/Game/GUI/Override/Clairmont/Library/FocusableControls_c.xaml": "14bc5ff64ba644bdcbd6c49d09fcac0adabbeec69dc53517d354dd824838e9b7",
+    "Public/Game/GUI/Override/Clairmont/Library/PreloadedActionRadials_c.xaml": "cbd5141734063dce4e41b319775eefc3b905e4b42c86bbe37f3fbf16e20e2bba",
+    "Public/Game/GUI/Override/Clairmont/Library/Tooltips.xaml": "0ec9e5251b8ba6e75ee81473b37da4e573a330392393a2ea31c33a03648d64f9"
   },
   "runtimeContract": {
     "state": "ActionRadials",
@@ -51,7 +65,12 @@
       "outerPrevEvent": "UIUp",
       "childDirectionalNavigation": "Continue",
       "grid": "LSGrid",
-      "gridEvents": ["UIUp", "UIDown", "UILeft", "UIRight"],
+      "gridEvents": [
+        "UIUp",
+        "UIDown",
+        "UILeft",
+        "UIRight"
+      ],
       "selectorTemplate": "SelectorTemplate",
       "selectorHasFixedGeometry": false
     },
@@ -64,5 +83,7 @@
       "margin": "26,0,26,56"
     },
     "radialCustomizationAllowed": false
-  }
+  },
+  "captureMatchCount": 22,
+  "captureScanErrorCount": 0
 }
