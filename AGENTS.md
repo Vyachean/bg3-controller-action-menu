@@ -41,7 +41,7 @@ Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8
 - the native page uses `ActionRadialWidgetTemplate_P8` from `PreloadedActionRadials_c.xaml`;
 - official BG3 UI documentation confirms `Lib_Controller.xaml` is loaded in controller mode before mod StateMachines, making a controller resource-library override the preferred hook;
 - the vanilla radial still exposes `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`, but that persisted user layout is **not** CAM's automatic main catalog;
-- executable CAM cells come from current native hotbar-slot collections such as `CurrentShownDeck.SlotList`, `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList`, and `SingleHotBar.SlotList`;
+- executable CAM cells come from current native hotbar-slot collections such as `CurrentShownDeck.SlotList`, `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList`, and `SingleHotBar.SlotList`;
 - nested variants/upcasts/containers use `SingleHotBar.SlotList`;
 - `CurrentSingleHotbarFilter`, `IsShowingAContainerWithVariants` and `IsSelectingUpcastedSpell` are current;
 - focus-driven scrolling is `LSScrollViewer.ScrollToElement <- FocusedElement`;
