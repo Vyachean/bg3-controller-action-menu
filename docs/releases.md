@@ -39,12 +39,12 @@ Release packaging verifies that the extracted `.pak` contains no `ScriptExtender
 The primary artifact is intended to remain compatible with the Xbox App / Microsoft Store PC build and therefore must not acquire DLL/native-loader/SE dependencies.
 
 
-## Reusable hidden one-click installer
+## Reusable universal development shortcut
 
-Every release publishes `BG3ControllerActionMenu-OneClickInstaller.zip`.
+Every release publishes `BG3ControllerActionMenu-OneClickInstaller.zip`, containing the single operator-facing file `Install-BG3ControllerActionMenu.vbs`.
 
-After extracting it once, the user launches `Install-BG3ControllerActionMenu.vbs` by double-clicking it. WScript starts the PowerShell bootstrap with window style 0, so no console is shown. A normal Windows dialog reports success or failure.
+After extracting it once, the operator keeps and reuses that same VBS. On every invocation it queries GitHub Releases, selects the newest published release (including prereleases), downloads that release's `dev-entry.ps1`, and executes it hidden.
 
-The bundle is intentionally reusable across releases. On every run its bootstrap queries GitHub Releases, selects the newest published release (including prereleases), downloads that release's exact PAK plus current `install-xbox-dev.ps1`, verifies GitHub SHA-256 digests, and invokes the fail-closed Xbox installer.
+`dev-entry.ps1` is intentionally release-controlled. The current task is install/update of the ready self-contained PAK, but later releases may switch the same VBS to capture, diagnostics, or another development operation.
 
-The bootstrap refuses malformed newest releases instead of silently installing an older one.
+Release publication therefore includes the universal VBS, `dev-entry.ps1`, and the helper assets that the current/future entry may need. There is no permanent second capture VBS and no local bootstrap file required beside the operator shortcut.
