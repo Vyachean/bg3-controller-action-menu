@@ -121,7 +121,7 @@ def validate_semantics() -> list[str]:
                 'ActionNextEvent="UITabNext"',
                 'x:Name="CAM_HotbarGrid"',
                 'LocalFocusSelector="{Binding ElementName=CAM_HotbarSelector,Mode=OneWay}"',
-                'x:Name="CAM_HotbarSelector"',
+                '"CAM_HotbarSelector"',
                 'x:Key="CAM_HotbarGridPanel"',
                 'Value="{Binding CurrentShownDeck.SlotList}"',
                 'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
