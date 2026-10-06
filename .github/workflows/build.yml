@@ -47,6 +47,10 @@ jobs:
         shell: pwsh
         run: ./tools/test-self-contained-runtime.ps1
 
+      - name: Test release boundary
+        shell: pwsh
+        run: ./tools/assert-self-contained-release.ps1
+
       - name: Build .pak
         shell: pwsh
         env:
