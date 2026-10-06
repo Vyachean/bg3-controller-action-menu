@@ -32,11 +32,25 @@ The fresh capture distinguishes three presentation contracts:
 - `SlotIconStyle` belongs to the controller radial renderer, but its own captured inner icon style is 120×120. Wrapping it in a 104×104 control does not make the visible icon 104×104 and was proven in-game to leave the focus frame mismatched.
 - the current controller **assignment grid** uses a real 104×104 icon surface (`Rectangle Fill="{Binding Icon}" Width="104" Height="104"`) inside a 120×120 `LSGrid` cell. This is the geometry CAM now reproduces for `VMHotBarSlot.Content.Icon`.
 
-The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104, while `SelectorTemplate` remains geometry-free and follows that focused item. This keeps selector sizing derived from the real cell instead of hard-coding selector dimensions.
+The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104.
 
-The semantic type tabs now reproduce the current HotBar `FilterButton`/`ActiveFilterButton` presentation: `btn_pil_d.png` / `btn_pil_active_d.png`, `BtnTextGlow`, `SmallFontSize`, native padding and `-4,0` margins. CAM does not invent fixed 150×64 tab geometry or a 32px font.
+The stock `SelectorTemplate` is not size-neutral visually: it draws `c_itemSelector.png` with `Margin="-12"`, so its visible frame extends 12 px outside the focused item on every side. That is appropriate in native assignment UI but was proven too large for CAM's icon grid. CAM therefore owns `CAM_SelectorTemplate`: it reuses the same native selector texture and nine-slice values, keeps selector width/height derived from the focused element, but sets visual outset to zero. No synthetic selector width/height is introduced.
 
-The current HotBar resource controls are a separate compact 72px strip. CAM therefore does not present `ActionResourcesCostPreview` as 104/120px action cells or draw `ActionResource.Name` below them. The resource strip follows the action catalog, and controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`, matching the native click-to-filter semantics.
+The semantic type tabs reproduce the current HotBar `FilterButton`/`ActiveFilterButton` presentation: `btn_pil_d.png` / `btn_pil_active_d.png`, `BtnTextGlow`, `SmallFontSize`, native padding and `-4,0` margins. The selected tab also reproduces the native active marker strip/arrow rather than changing only the pill background.
+
+The current HotBar resource controls are a separate compact 72px strip. CAM does not present `ActionResourcesCostPreview` as action cells or draw `ActionResource.Name` below them. The strip is now the **secondary filter layer above the action catalog**. SpellSlot/WarlockSpellSlot resources use the captured `RomanNumeralLevelImage`, so the same strip naturally becomes a spell-level selector without CAM inventing spell classification. Controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`, matching native click-to-filter semantics.
+
+## Controller organization
+
+CAM uses a two-level organization that stays entirely on proven BG3 models:
+
+1. primary type tabs: **Common -> class -> Cantrips -> Items -> Passives**;
+2. secondary native resource/level strip from `ActionResourcesCostPreview`;
+3. executable `VMHotBarSlot` grid in the order BG3 already exposes.
+
+The resource strip is visually above the grid but `HotBarList.SelectedIndex=1` starts controller focus on actions, so opening CAM does not force the user through filter controls first.
+
+This deliberately avoids CAM-owned alphabetical sorting or classification by names/icons. Spell levels come from native SpellSlot/WarlockSpellSlot resource objects and `RomanNumeralLevelImage`; class resources come from the same current HotBar preview source. Selecting a primary tab clears any secondary filter before switching the deck/filter command.
 
 ## HotBar filter semantics
 
@@ -82,6 +96,22 @@ The capture proves the native sequence:
 The older development fixture's `LocalFocus.Tag` handoff is rejected.
 
 The item container may still expose `Tag="{Binding .}"` as ordinary presentation metadata, but the current gameplay-facing focus lifecycle does not depend on it.
+
+## Focused action descriptions
+
+`CreateFocusedTooltipDataCommand` populates radial-specific focused-slot data, but that command alone does not render a tooltip. The captured slot-assignment UI proves the missing visual bridge: an `LSTooltip` is owned by the outer controller list, its content is updated from local focus, and `ShowTooltipOnUIElementCommand` shows/hides it.
+
+CAM applies that pattern to executable slots:
+
+```text
+HotBarList.LocalFocus.DataContext = VMHotBarSlot
+        |
+        +--> tooltip.Content = VMHotBarSlot.Content
+        +--> ShowTooltipOnUIElementCommand(HotBarList)
+        +--> existing 70 ms ActionRadials.Tag / focused-tooltip-data lifecycle
+```
+
+The tooltip content is the native action/item/passive object, not CAM-authored description text. The same pattern is present on `SingleBar` for variants/upcasts.
 
 ## Navigation reuse
 
