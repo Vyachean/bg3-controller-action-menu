@@ -15,10 +15,10 @@ $ProgressPreference = "SilentlyContinue"
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# New bootstraps pass LauncherRoot explicitly. For already-extracted legacy
-# development launchers, PowerShell exposes the calling bootstrap path through
-# MyInvocation.ScriptName, allowing this installer to upgrade that launcher
-# without asking the tester to download a new VBS manually.
+# The universal development entry passes LauncherRoot explicitly. For already-
+# extracted legacy launchers, PowerShell exposes the calling bootstrap path
+# through MyInvocation.ScriptName, allowing this installer to upgrade the old
+# VBS automatically without asking the operator to download a replacement.
 if (-not $LauncherRoot -and $MyInvocation.ScriptName) {
     $callerRoot = Split-Path -Parent $MyInvocation.ScriptName
     if (Test-Path -LiteralPath (Join-Path $callerRoot "Install-BG3ControllerActionMenu.vbs") -PathType Leaf) {
@@ -121,18 +121,22 @@ function Update-DevelopmentLauncher {
     if (-not $LauncherRoot) { return }
 
     $launcherAsset = Get-Asset -Release $Release -Name "Install-BG3ControllerActionMenu.vbs"
-    $bootstrapAsset = Get-Asset -Release $Release -Name "bootstrap-latest.ps1"
-
     $launcherDownload = Join-Path $ReleaseDirectory "Install-BG3ControllerActionMenu.vbs"
-    $bootstrapDownload = Join-Path $ReleaseDirectory "bootstrap-latest.ps1"
 
     Save-Asset -Asset $launcherAsset -Destination $launcherDownload
-    Save-Asset -Asset $bootstrapAsset -Destination $bootstrapDownload
 
     # WScript has already parsed the VBS before PowerShell starts, so replacing
     # the source file here updates the next run without changing this one.
     Copy-Item -LiteralPath $launcherDownload -Destination (Join-Path $LauncherRoot "Install-BG3ControllerActionMenu.vbs") -Force
-    Copy-Item -LiteralPath $bootstrapDownload -Destination (Join-Path $LauncherRoot "bootstrap-latest.ps1") -Force
+
+    # bootstrap-latest.ps1 belonged to the older two-file launcher protocol.
+    # The new VBS fetches dev-entry.ps1 directly. Clean the obsolete bootstrap
+    # on a best-effort basis so an existing extracted folder naturally converges
+    # to the single-shortcut model after one successful legacy run.
+    $legacyBootstrap = Join-Path $LauncherRoot "bootstrap-latest.ps1"
+    if (Test-Path -LiteralPath $legacyBootstrap -PathType Leaf) {
+        Remove-Item -LiteralPath $legacyBootstrap -Force -ErrorAction SilentlyContinue
+    }
 }
 
 $transcriptStarted = $false
