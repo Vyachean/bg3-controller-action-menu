@@ -26,16 +26,17 @@ Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects ar
 
 ## Controller cell presentation
 
-The fresh controller capture contains two different presentation seams with different purposes:
+The fresh capture distinguishes three presentation contracts:
 
-- `HotBarSlotStyle` is the keyboard hotbar slot style. It proves the important execution-type boundary because its command parameter is the surrounding `VMHotBarSlot`, but its visual template is 88×88 and explicitly renders `HotKey`.
-- `SlotIconStyle` is the current controller radial/assignment icon presentation. CAM uses this style over `VMHotBarSlot.Content` in a 104×104 presentation cell while the focused list item itself remains the `VMHotBarSlot`.
+- `HotBarSlotStyle` is keyboard-hotbar presentation. It proves the execution type boundary, but it also renders `HotKey` and is therefore rejected in CAM.
+- `SlotIconStyle` belongs to the controller radial renderer, but its own captured inner icon style is 120×120. Wrapping it in a 104×104 control does not make the visible icon 104×104 and was proven in-game to leave the focus frame mismatched.
+- the current controller **assignment grid** uses a real 104×104 icon surface (`Rectangle Fill="{Binding Icon}" Width="104" Height="104"`) inside a 120×120 `LSGrid` cell. This is the geometry CAM now reproduces for `VMHotBarSlot.Content.Icon`.
 
-This separation is intentional. Gameplay dispatch still uses `ActionRadials.Tag -> VMHotBarSlot -> UseSlotCommand`; only the renderer consumes `slot.Content`. Using `HotBarSlotStyle` in the controller grid is a presentation regression because keyboard hotkey labels become visible and its 88px geometry no longer matches the assignment-grid focus footprint.
+The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104, while `SelectorTemplate` remains geometry-free and follows that focused item. This keeps selector sizing derived from the real cell instead of hard-coding selector dimensions.
 
-The selector itself remains geometry-free, matching current `SelectorAssign`. Its visual size follows the focused 104px item instead of carrying a synthetic selector width/height.
+The semantic type tabs now reproduce the current HotBar `FilterButton`/`ActiveFilterButton` presentation: `btn_pil_d.png` / `btn_pil_active_d.png`, `BtnTextGlow`, `SmallFontSize`, native padding and `-4,0` margins. CAM does not invent fixed 150×64 tab geometry or a 32px font.
 
-The semantic filter tabs reuse the current HotBar pill artwork for presentation only. Their selected state is owned by `CAM_FilterTabs.SelectedIndex`; all filtering commands and slot sources remain unchanged.
+The current HotBar resource controls are a separate compact 72px strip. CAM therefore does not present `ActionResourcesCostPreview` as 104/120px action cells or draw `ActionResource.Name` below them. The resource strip follows the action catalog, and controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`, matching the native click-to-filter semantics.
 
 ## HotBar filter semantics
 
