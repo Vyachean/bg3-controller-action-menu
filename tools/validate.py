@@ -284,6 +284,7 @@ def validate_semantics() -> list[str]:
                 "& $installer @installerArgs",
                 '$PortableStateRoot = Join-Path $ScriptRoot "installer-work"',
                 'CacheRoot = Join-Path (Split-Path -Parent $CacheRoot) "release-cache"',
+                'LauncherRoot = $ScriptRoot',
             ],
         )
     )
@@ -309,6 +310,9 @@ def validate_semantics() -> list[str]:
                 "browser_download_url",
                 "Save-Asset",
                 "& $xboxPath -Apply -PackagePath $pakPath -ReportPath $ReportPath",
+                "Update-DevelopmentLauncher",
+                '"Install-BG3ControllerActionMenu.vbs"',
+                '"bootstrap-latest.ps1"',
                 "install-status.txt",
                 "xbox-dev-environment.json",
             ],
@@ -430,7 +434,8 @@ def validate_semantics() -> list[str]:
                 '"tools/install-latest.ps1"',
                 '$bootstrap = "tools/bootstrap-latest.ps1"',
                 '$latestInstaller = "tools/install-latest.ps1"',
-                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $bootstrap, $latestInstaller',
+                '$launcher = "tools/Install-BG3ControllerActionMenu.vbs"',
+                '"release", "create", $env:TAG, $pak, $installer, $oneClick, $launcher, $bootstrap, $latestInstaller',
                 '$deadline = (Get-Date).ToUniversalTime().AddMinutes(5)',
                 '$delaySeconds = [Math]::Min(15, $delaySeconds * 2)',
                 'within the five-minute publication propagation window',
