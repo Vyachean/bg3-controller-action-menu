@@ -299,7 +299,7 @@
                                             <Setter Property="ItemsSource" Value="{Binding CurrentShownDeck.SlotList}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="3">
-                                                    <Setter Property="ItemsSource" Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"/>
+                                                    <Setter Property="ItemsSource" Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}" Value="True">
                                                     <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
