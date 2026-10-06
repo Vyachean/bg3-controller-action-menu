@@ -14,7 +14,7 @@ The primary target includes the **Xbox App / Microsoft Store PC build**.
 
 ## Current status
 
-**Automatic native action catalog candidate.**
+**Native-source action tabs milestone candidate (`0.0.35-native-action-tabs`).**
 
 Runtime evidence through `0.0.25` now rules out three earlier approaches:
 
@@ -34,23 +34,30 @@ The next architecture removes the remaining radial dependency. The main grid no 
 
 Radial customization (X / assign / swap / clear / add / remove wheel slots) is removed from CAM entirely.
 
+The main catalog is now presented as controller tabs over those same native sources: `Actions / Spells`, `Items`, `Passives`, and an empty-filtered `Metamagic` tab. `UITabPrev` / `UITabNext` switch tabs. There is no `Custom` tab and tab selection never changes gameplay semantics.
+
+Fine-grained Cantrip / spell-level headings are intentionally **not** guessed from `SpellSlotLevel` or the old public SpellBook dump. The historical predicate names remain research evidence until the current installed Patch 8 SpellBook contract proves them.
+
 At install time CAM extracts the exact native radial dictionary from the user's installed `Game.pak` and locally generates `Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`.
 
-The generated library preserves the exact native:
+The generated library preserves the exact native outer/template lifecycle needed for:
 
 - `ActionRadialWidgetTemplate_P8`;
-- `RadialHotBarListItemContainer`;
 - A/B bindings;
 - nested/upcast/container switching;
-- swap-slot semantics;
+- `SingleHotBar` second-stage behavior;
 - PageView and state-machine lifecycle.
+
+The main surface itself uses locally extracted assignment-grid resources instead of radial slot containers. Radial editing commands are not retained as CAM functionality.
 
 The main surface now reuses the native assignment catalog:
 
 ```text
-SpellsAndActions / Passives / Metamagic / Items
+[Actions / Spells] [Items] [Passives] [Metamagic*]
+            ↓  UITabPrev / UITabNext
+native automatic source selected for presentation
             ↓
-AssignList + LocalFocusSelector
+AssignList-style LSListBox + LocalFocusSelector
             ↓
 nested LSGrid groups
             ↓
