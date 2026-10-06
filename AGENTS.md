@@ -111,6 +111,24 @@ The end-user installer is not a verifier or build pipeline. `0.0.29` and `0.0.37
 
 The next in-game test is justified only after CI proves the 0.0.35/0.0.36 source-tab architecture is absent, all main execution candidates come from native slot collections, the one-outer-list navigation hierarchy is restored, the native radial focus/resource-preview trigger is retained, native button hints are preserved, and A/B plus nested `SingleHotBar` seams remain. One milestone run should then check long-grid up/down navigation, type/resource filters, one simple A dispatch, one container/variant opening if naturally available, resource-cost highlighting, native vertical hints and top-level/nested B together.
 
+## Development VBS contract
+
+`Install-BG3ControllerActionMenu.vbs` is a temporary development delivery bridge, not the final public distribution mechanism.
+
+Until CAM is available through the intended official delivery path:
+
+- the tester must be able to keep one extracted folder and double-click the **same VBS** for every install/update;
+- normal development iteration must never require manually downloading or replacing that VBS;
+- the VBS must stay tiny and stable: stable bootstrap + portable status/log paths only;
+- version-specific assets, migration logic and installer behavior belong in bootstrap-downloaded helper scripts, not in VBS;
+- the VBS/bootstrap compatibility contract is backward-compatible. Requiring an already-installed development launcher to be refreshed manually is an architecture regression;
+- helper scripts may be added for read-only game inspection, resource extraction or preparing an archive to return to the developer, but those are development evidence tools and must not become runtime dependencies of the final mod;
+- installer/capture-owned artifacts belong beside the launcher. Do not scatter development state through machine-global directories.
+
+The VBS workflow is expected to be retired once the official delivery path is in place. Do not optimize the permanent mod architecture around the temporary VBS.
+
+See [docs/development-vbs.md](docs/development-vbs.md).
+
 ## Installer boundary
 
 The stable bootstrap contract must remain tiny: newest release -> download `install-latest.ps1` -> execute it. Do not make the bootstrap understand version-specific assets.
