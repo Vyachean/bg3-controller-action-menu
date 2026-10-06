@@ -18,11 +18,20 @@ $evidence = Get-Content -Raw -LiteralPath $EvidencePath | ConvertFrom-Json
 if ($evidence.gamePackageVersion -ne "1.8.910.0") {
     throw "Runtime evidence must be pinned to the consumed Xbox Patch 8 capture (1.8.910.0)."
 }
+if ($evidence.captureMatchCount -ne 22 -or $evidence.captureScanErrorCount -ne 0) {
+    throw "Runtime evidence must preserve the complete 22-file capture with zero scan errors."
+}
 if ($evidence.sourceHashes.'Public/Game/GUI/Library/PreloadedActionRadials_c.xaml' -ne "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b") {
     throw "Unexpected PreloadedActionRadials capture hash."
 }
 if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/HotBar.xaml' -ne "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728") {
     throw "Unexpected HotBar capture hash."
+}
+if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb915375f8cf403dd8398a11c98f5808b2c50c826db1fe3ed43df573542") {
+    throw "Unexpected SpellBook capture hash."
+}
+if ($evidence.sourceHashes.'Mods/MainUI/GUI/StateMachines/Controller.xaml' -ne "53389126eb75eaa275609fce981b15339ea8cacab58df3af0d97c370658a573c") {
+    throw "Unexpected MainUI controller state-machine capture hash."
 }
 
 $required = @(
