@@ -74,6 +74,8 @@ No Larian XAML is committed to or distributed by this repository. The generated 
 
 The user-side installer has one job: install the newest release.
 
+For maintainers, a CI artifact is **not** a release. A version is installer-ready only after the Release workflow publishes it and the canonical resolver confirms that it is the newest published version. See [Release process](docs/release-process.md).
+
 It does **not** run semantic XAML checks, package round-trip verification, focus-contract assertions, SHA assertions, or release-test logic on the user's PC. Those belong to CI before publication.
 
 The reusable launcher is intentionally small:
@@ -145,5 +147,6 @@ See:
 - [Architecture](docs/architecture.md)
 - [Native UI reuse](docs/native-ui-reuse.md)
 - [Testing strategy](docs/testing.md)
+- [Release process](docs/release-process.md)
 - [Xbox App installation](docs/xbox-app-installation.md)
 - [First in-game run](docs/first-run.md)
