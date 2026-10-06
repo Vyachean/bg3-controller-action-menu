@@ -1,0 +1,152 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ls="clr-namespace:ls;assembly=Code"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors">
+
+    <!-- CAM owns composition only. The data items in this list are native VMHotBarSlot objects. -->
+    <Style x:Key="CAM_ActionGridSlotContainer"
+           TargetType="{x:Type ListBoxItem}"
+           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Tag" Value="{Binding .}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Border Background="Transparent">
+                        <ContentPresenter/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding SlotType}" Value="Empty">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Setter Property="Focusable" Value="False"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="CAM_ActionGridSlotTemplate">
+        <ContentControl Style="{StaticResource SlotIconStyle}"
+                        Content="{Binding Content}"
+                        Width="104"
+                        Height="104"
+                        IsHitTestVisible="False"
+                        Focusable="False"/>
+    </DataTemplate>
+
+    <ItemsPanelTemplate x:Key="CAM_ActionGridPanel">
+        <ls:LSGrid ActionUpEvent="UIUp"
+                   ActionDownEvent="UIDown"
+                   ActionRightEvent="UIRight"
+                   ActionLeftEvent="UILeft"
+                   AutoIndex="True"
+                   ContainerData="{Binding}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Width="632"
+                   Columns="5"
+                   CellWidth="120"
+                   CellHeight="120"
+                   HorizontalSpacing="8"
+                   VerticalSpacing="8"
+                   DisableScrolling="True"/>
+    </ItemsPanelTemplate>
+
+    <Style x:Key="CAM_FilterTabItemStyle"
+           TargetType="{x:Type ListBoxItem}"
+           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Padding" Value="18,8"/>
+        <Setter Property="Opacity" Value="0.55"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Border Background="Transparent">
+                        <ContentPresenter/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Opacity" Value="1"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="CAM_ResourceFilterContainer"
+           TargetType="{x:Type ListBoxItem}"
+           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="Tag" Value="{Binding .}"/>
+        <Setter Property="ContentTemplate" Value="{StaticResource CAM_ResourceFilterTemplate}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ActionResource.MaxValue}" Value="0">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Setter Property="Focusable" Value="False"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="CAM_ResourceFilterTemplate">
+        <Grid x:Name="Root" Width="104" Height="104" Background="Transparent">
+            <ls:LSActionPointResources Background="Transparent"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       MaxActionPoints="{Binding MaxValue}"
+                                       AvailableActionPoints="{Binding Value}"
+                                       HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"
+                                       DataContext="{Binding ActionResource}"
+                                       MaxActionPointGroups="0"
+                                       Style="{StaticResource ActionResourcesTemplateSelector}"/>
+            <TextBlock Text="{Binding ActionResource.Name}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Bottom"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       MaxWidth="104"
+                       FontSize="16"/>
+        </Grid>
+    </DataTemplate>
+
+    <ItemsPanelTemplate x:Key="CAM_ResourceFilterPanel">
+        <ls:LSGrid ActionUpEvent="UIUp"
+                   ActionDownEvent="UIDown"
+                   ActionRightEvent="UIRight"
+                   ActionLeftEvent="UILeft"
+                   AutoIndex="True"
+                   ContainerData="{Binding}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Width="760"
+                   Columns="6"
+                   CellWidth="120"
+                   CellHeight="120"
+                   HorizontalSpacing="8"
+                   VerticalSpacing="8"
+                   DisableScrolling="True"/>
+    </ItemsPanelTemplate>
+
+    <ControlTemplate x:Key="ActionRadialWidgetTemplate_P8">
+        <Grid>
+            <b:Interaction.Triggers>
+                <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}"/>
+                </b:DataTrigger>
+            </b:Interaction.Triggers>
+            <Grid x:Name="MainHotbarListHol
