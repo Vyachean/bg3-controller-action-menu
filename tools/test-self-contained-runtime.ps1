@@ -51,6 +51,17 @@ if ($evidence.runtimeContract.controllerPresentation.filterTabFontResource -ne "
 if ($evidence.runtimeContract.controllerPresentation.keyboardStyleRejected -ne "HotBarSlotStyle" -or $evidence.runtimeContract.controllerPresentation.keyboardOverlayRejected -ne "HotKey") {
     throw "Keyboard HotBarSlotStyle/HotKey presentation regression guard is missing from capture evidence."
 }
+if ($evidence.runtimeContract.controllerPresentation.nativeSelectorVisualExpansion -ne 12 -or $evidence.runtimeContract.controllerPresentation.camSelectorVisualExpansion -ne 0) {
+    throw "Selector presentation must record the captured native 12px expansion and CAM's zero-expansion visual contract."
+}
+if ($evidence.runtimeContract.tooltipDisplay.command -ne "ShowTooltipOnUIElementCommand" -or $evidence.runtimeContract.tooltipDisplay.contentPath -ne "LocalFocus.DataContext.Content") {
+    throw "Focused action tooltip display contract is missing from evidence."
+}
+if ($evidence.runtimeContract.informationArchitecture.cantripsArePrimaryTab -ne $false -or
+    $evidence.runtimeContract.informationArchitecture.semanticSorterOwnedByCam -ne $false -or
+    $evidence.runtimeContract.informationArchitecture.secondaryFilterLocation -ne "beforeActions") {
+    throw "Hierarchical native-filter information architecture is missing from evidence."
+}
 
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
@@ -60,7 +71,11 @@ $required = @(
     'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"',
     'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"',
     'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"',
-    ('Command="{Binding FilterCantripsCommand}" CommandParameter="' + $evidence.runtimeContract.cantripFilterParameter + '"'),
+    'x:Name="CAM_CantripResourceButton"',
+    'x:Key="CAM_CantripFilterTemplate"',
+    'Command="{Binding FilterCantripsCommand}"',
+    ('CommandParameter="' + $evidence.runtimeContract.cantripFilterParameter + '"'),
+    'IconMiniCantrip',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
     'Command="{Binding FilterActionResourceCommand}"',
     'x:Name="ResourceFilterBinding"',
@@ -74,7 +89,10 @@ $required = @(
     'x:Name="CAM_FilteredSlotList"',
     'KeyboardNavigation.DirectionalNavigation="Continue"',
     'x:Name="CAM_MainSelector"',
-    'Template="{StaticResource SelectorTemplate}"',
+    'x:Key="CAM_ActionSelectorTemplate"',
+    'Template="{StaticResource CAM_ActionSelectorTemplate}"',
+    'Core;component/Assets/Shared_c/c_itemSelector.png',
+    'Margin="0"',
     'ActionUpEvent="UIUp"',
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
@@ -84,6 +102,13 @@ $required = @(
     'CreateFocusedTooltipDataCommand',
     'HighlightResourcesCommand',
     'UI_HUD_Controller_RadialMenu_SlotHover',
+    'x:Name="CAM_ActionTooltip"',
+    'x:Name="CAM_SingleActionTooltip"',
+    'ShowTooltipOnUIElementCommand',
+    'PropertyName="Content" Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FilteredSlotList}"',
+    'ToolTipService.Placement="Right"',
+    'ToolTipService.HorizontalOffset="40"',
+    'ToolTipService.VerticalOffset="-40"',
     'x:Name="UseSlotBinding"',
     'Fill="{Binding Content.Icon}"',
     '<Setter Property="Width" Value="104"/>',
@@ -95,13 +120,19 @@ $required = @(
     'Style="{StaticResource BtnTextGlow}"',
     'btn_pil_d.png',
     'btn_pil_active_d.png',
+    'bar_bottom.png',
+    'btn_pil_activemod_d.png',
+    'btn_pil_activemod_arrowRed.png',
     'x:Key="CAM_ResourceFilterTemplate"',
+    'RomanNumeralLevelImage',
+    'box_resourceNum_d.png',
     'Width="72"',
     'Height="72"',
     'Columns="10"',
     'CellWidth="80"',
     'CellHeight="80"',
     'SelectedIndex="0"',
+    'SelectedIndex="1"',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
     'BoundEvent="UIAccept"',
@@ -167,7 +198,6 @@ foreach ($forbidden in @(
     'AddRadialCommand',
     'RemoveRadialCommand',
     'Height="376"',
-    'ShowTooltipOnUIElement',
     'HotBarSlotStyle',
     'HotKey',
     'SlotIconStyle',
@@ -176,6 +206,8 @@ foreach ($forbidden in @(
     'Width="150"',
     'Height="64"',
     'Text="{Binding ActionResource.Name}"',
+    'x:Name="CAM_CantripsFilterTab"',
+    'Margin="-12"',
     'Public/Game/GUI/',
     'ScriptExtender'
 )) {
@@ -184,11 +216,25 @@ foreach ($forbidden in @(
     }
 }
 
-# Action cells must precede the compact resource strip so the main catalog is the initial controller surface.
+# Secondary native filters are one compact row above the action catalog.
+# HotBarList starts at outer index 1 so opening CAM still focuses actions, not filters.
 $actionHolderIndex = $text.IndexOf('x:Name="CAM_FilteredSlotHolder"')
 $resourceHolderIndex = $text.IndexOf('x:Name="CAM_ResourceFilterHolder"')
-if ($actionHolderIndex -lt 0 -or $resourceHolderIndex -lt 0 -or $actionHolderIndex -ge $resourceHolderIndex) {
-    throw "The compact resource strip must follow the action catalog, not occupy the first action rows."
+if ($actionHolderIndex -lt 0 -or $resourceHolderIndex -lt 0 -or $resourceHolderIndex -ge $actionHolderIndex) {
+    throw "The compact cantrip/resource filter row must precede the action catalog."
+}
+if (-not [regex]::IsMatch($text, 'x:Name="HotBarList"[\s\S]*?SelectedIndex="1"', [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+    throw "HotBarList must initially focus the action catalog (outer index 1), not the secondary-filter row."
+}
+
+# Cantrips are a secondary native filter, not a fifth primary category.
+if ($text.Contains('x:Name="CAM_CantripsFilterTab"')) {
+    throw "Cantrips must not return as a top-level primary tab."
+}
+foreach ($primaryTab in @('CAM_CommonFilterTab', 'CAM_ClassFilterTab', 'CAM_ItemsFilterTab', 'CAM_PassivesFilterTab')) {
+    if (-not $text.Contains(('x:Name="' + $primaryTab + '"'))) {
+        throw "Missing primary CAM category: $primaryTab"
+    }
 }
 
 # Resource filtering follows the native click/accept model: focus alone must not mutate the filter.
@@ -216,4 +262,4 @@ foreach ($needle in @(
     }
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/focus/native B are retained, action cells use the captured 104/120 assignment geometry, resource filters use the compact 72px accept-driven HotBar presentation, native FilterButton typography is enforced, and keyboard/radial presentation regressions are rejected."
+Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, VMHotBarSlot dispatch/native B remain authoritative, selector chrome is zero-expansion over the 104px action cell, focused actions explicitly display native Hotbar tooltips, and the UI uses four primary native categories plus compact cantrip/resource secondary filters while preserving native slot order."
