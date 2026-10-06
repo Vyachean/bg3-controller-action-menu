@@ -22,7 +22,7 @@ project-owned ActionRadialWidgetTemplate_P8
           |             v
           |     native VMHotBarSlot collections
           |       CurrentShownDeck.SlotList
-          |       PassivesHotBar.SlotList
+          |       CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList
           |       SingleHotBar.SlotList
           |
           +-- assignment-style controller navigation
@@ -52,7 +52,7 @@ Important current facts:
 - context: `HotBar`;
 - controller resource key: `ActionRadialWidgetTemplate_P8`;
 - executable cells are native `VMHotBarSlot` objects;
-- main filter sources are `CurrentShownDeck.SlotList` and `PassivesHotBar.SlotList`;
+- main filter sources are `CurrentShownDeck.SlotList` and `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList`;
 - nested/filter/container/upcast state remains `SingleHotBar.SlotList`;
 - current focus handoff uses `LocalFocus.DataContext` after the native 70 ms delay;
 - A uses `UseSlotCommand(ActionRadials.Tag)`;
@@ -85,7 +85,7 @@ LB/RB selects native semantic filters:
 | Common | `SetCurrentShownDeckCommand("CommonHotBar")` -> `CurrentShownDeck.SlotList` |
 | Class | `SetCurrentShownDeckCommand("ClassHotBar")` -> `CurrentShownDeck.SlotList` |
 | Items | `SetCurrentShownDeckCommand("ItemHotBar")` -> `CurrentShownDeck.SlotList` |
-| Passives | `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList` |
+| Passives | `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList` |
 | Cantrips | captured current `FilterCantripsCommand` contract |
 
 Resource filters use `CurrentPlayer.UIData.ActionResourcesCostPreview` and `FilterActionResourceCommand`.
