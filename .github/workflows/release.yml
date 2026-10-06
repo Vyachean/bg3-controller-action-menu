@@ -14,8 +14,6 @@ on:
       - "tools/bootstrap-latest.ps1"
       - "tools/test-bootstrap-latest.ps1"
       - "tools/install-latest.ps1"
-      - "tools/native-overlay.ps1"
-      - "tools/test-native-overlay.ps1"
       - "tools/Install-BG3ControllerActionMenu.vbs"
       - "tools/test-install-latest.ps1"
       - "tools/build-one-click-installer.ps1"
@@ -129,9 +127,6 @@ jobs:
           $oneClick = "build/BG3ControllerActionMenu-OneClickInstaller.zip"
           if (-not (Test-Path $oneClick)) { throw "Missing one-click installer bundle: $oneClick" }
 
-          $overlay = "tools/native-overlay.ps1"
-          if (-not (Test-Path $overlay)) { throw "Missing native overlay builder: $overlay" }
-
           $bootstrap = "tools/bootstrap-latest.ps1"
           if (-not (Test-Path $bootstrap)) { throw "Missing installer bootstrap: $bootstrap" }
 
@@ -139,7 +134,7 @@ jobs:
           if (-not (Test-Path $latestInstaller)) { throw "Missing canonical latest-release installer: $latestInstaller" }
 
           $args = @(
-            "release", "create", $env:TAG, $pak, $installer, $oneClick, $overlay, $bootstrap, $latestInstaller,
+            "release", "create", $env:TAG, $pak, $installer, $oneClick, $bootstrap, $latestInstaller,
             "--repo", $env:GITHUB_REPOSITORY,
             "--target", $env:GITHUB_SHA,
             "--title", "BG3 Controller Action Menu $env:TAG",
@@ -176,7 +171,6 @@ jobs:
             "bootstrap-latest.ps1",
             "install-latest.ps1",
             "install-xbox-dev.ps1",
-            "native-overlay.ps1"
           )
           $assetNames = @($release.assets | ForEach-Object { [string]$_.name })
           foreach ($required in $requiredAssets) {
