@@ -14,15 +14,15 @@ For every install or update:
 
 No PowerShell or Command Prompt window is shown.
 
-The development launcher is deliberately reusable across builds. Its bootstrap interface is a backward-compatible contract with one stable responsibility:
+The development launcher is deliberately reusable across builds and development tasks. It has one stable responsibility:
 
 1. find the newest published non-draft release;
-2. download that release's `install-latest.ps1`;
-3. run it.
+2. download that release's `dev-entry.ps1`;
+3. run it hidden.
 
-The downloaded current installer downloads the already-built self-contained release PAK and installs it. It does not inspect or extract the BG3 installation files. After a successful development install it also refreshes the VBS/bootstrap files in the same extracted launcher folder, so routine development updates do not require a manual launcher download.
+The release-controlled entry decides the current task. For the current install task it downloads `install-latest.ps1`, which installs the already-built self-contained release PAK without inspecting or extracting BG3 game files.
 
-There is no bootstrap self-update protocol, release-asset hash verification, or duplicated UI/package validation on the user's PC. Those checks belong to CI before a release is published.
+There is no permanent local bootstrap and no second capture VBS. Existing legacy VBS+bootstrap folders migrate automatically after one successful legacy install.
 
 The extracted installer folder is portable. Runtime installer state is stored beside the launcher under:
 
@@ -30,10 +30,10 @@ The extracted installer folder is portable. Runtime installer state is stored be
 
 Useful files there include:
 
-- `install-latest.log`;
-- `install-status.txt`;
-- `xbox-dev-environment.json`;
-- bootstrap/release download caches.
+- `dev-task.log`;
+- `dev-status.txt`;
+- `dev-report.json`;
+- release-controlled helper/download caches.
 
 The normal installer does not place its own cache, logs or temporary build output in `%LOCALAPPDATA%`.
 
@@ -98,21 +98,19 @@ CAM therefore discovers the real Xbox cache/profile on the machine and keeps tha
 
 ## Developer capture (not part of installation)
 
-When fresh game UI evidence is required, the development bundle uses:
+When fresh game UI evidence is required, the same universal VBS remains the operator entry point. A development release can make `dev-entry.ps1` download and run the read-only `capture-self-contained-inputs.ps1` helper.
 
-`Capture-BG3ControllerArtifacts.vbs`
-
-It launches the read-only `capture-self-contained-inputs.ps1`, downloads its extraction tool into `capture-work` beside the VBS file, scans the installed game PAKs, and creates `bg3-controller-action-menu-inputs-*.zip` beside the launcher.
+That helper may download its extraction tooling under the portable working directory, inspect `Game.pak` read-only, and create `bg3-controller-action-menu-inputs-*.zip` beside the launcher.
 
 This capture never writes to the game installation, profile, saves, or Mods directory. It exists only to supply development evidence for the self-contained release package.
 
 
 ## VBS lifecycle rule
 
-The development VBS must not require routine manual updates. If a new development build needs different helper behavior, the existing stable launcher/bootstrap must obtain the current helper scripts automatically.
+The development VBS must not require routine manual updates. If a new development build needs different behavior, the existing VBS must obtain the current `dev-entry.ps1` automatically.
 
-A change that requires the tester to download a new VBS merely because the installer internals changed is considered a regression.
+A change that requires the operator to download a new VBS merely because the current task changed is considered a regression.
 
-Read-only extraction/capture helpers may be added when development needs fresh evidence from the installed game. Those helpers prepare artifacts for the developer; they are not part of the final mod runtime or official installation design.
+Read-only extraction/capture helpers may be selected by the release-controlled entry when development needs fresh evidence. Those helpers prepare artifacts for development; they are not part of the final mod runtime or normal installation design.
 
 See [Development VBS contract](development-vbs.md).
