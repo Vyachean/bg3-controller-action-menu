@@ -6,7 +6,21 @@ Replace Baldur's Gate 3 controller action radial browsing with a native-style gr
 
 ## Runtime architecture
 
-The main grid is no longer a presentation of configured controller radial slots.
+Runtime 0.0.36 rejects the radial-assignment catalog as CAM's top-level **execution** model.
+
+Current Patch 8 `HotBarSlotStyle` establishes the native boundary:
+
+```text
+VMHotBarSlot
+  Content -> VMCharacterAction / VMItem / VMPassive / VMUpcast / ...
+  Command -> DCHotBar.UseSlotCommand
+  CommandParameter -> VMHotBarSlot
+  resource preview -> HighlightResourcesCommand(VMHotBarSlot)
+```
+
+The visible content object and the executable hotbar slot are therefore not interchangeable. The automatic assignment collections remain useful discovery evidence, but CAM must not send their raw candidates to `UseSlotCommand`.
+
+The next runtime composition is:
 
 ```text
 native ActionRadials state/page
@@ -14,75 +28,75 @@ native ActionRadials state/page
           v
 locally derived ActionRadialWidgetTemplate_P8
           |
-          +-- MAIN: automatic native action catalog
-          |     |
-          |     +-- SpellsAndActions[*].Actions
-          |     +-- togglable Passives
-          |     +-- togglable Metamagic
-          |     +-- Inventory.Slots (Items)
-          |     |
-          |     v
-          |  AssignList-style LSListBox
-          |     + LocalFocusSelector
-          |     + nested LSGrid groups
+          +-- MAIN: installed DCHotBar deck/resource filters
+          |       |
+          |       v
+          |    native VMHotBarSlot result set
+          |       |
+          |       v
+          |    one flat LSListBox + LSGrid + LocalFocusSelector
+          |       |
+          |       +--> tooltip/resource-preview commands(slot)
+          |       |
+          |       v
+          |    ActionRadials.Tag = slot
           |
-          +-- NESTED: native SingleHotBar.SlotList
-                |
-                v
-          proven assignment-style grid renderer
-
-A / B / targeting / costs / upcast rules remain BG3-owned.
+          +-- SECOND STAGE: native SingleHotBar.SlotList
+                  |
+                  v
+              same flat grid
+          |
+          v
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-The installed Patch 8 `PreloadedActionRadials_c.xaml` already contains the complete automatic source catalog used when the player chooses an action to insert into a radial:
+### Native filter semantics
 
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.SpellsAndActions`;
-- each spell/action group exposes `Actions`;
-- `CurrentPlayer.SelectedCharacter.Stats.Passives` filtered with `Data.TogglablePassivePredicate`;
-- the same passives collection filtered with `Data.TogglableMetaMagicPassivePredicate`;
-- `CurrentPlayer.SelectedCharacter.Inventory.Slots`.
+CAM follows the keyboard hotbar's native filter model rather than inventing action categories.
 
-### Native action tabs
+Two conceptual filter axes are relevant:
 
-The milestone UI partitions those **same current native sources** into four presentation tabs:
-
-| Tab | Source |
+| Axis | Native semantics |
 | --- | --- |
-| Actions / Spells | `PlayerCharacterProperties.SpellsAndActions` |
-| Items | `Inventory.Slots` |
-| Passives | `Stats.Passives` + `TogglablePassivePredicate` |
-| Metamagic | `Stats.Passives` + `TogglableMetaMagicPassivePredicate` |
+| deck/type | Common, Class, Items, Passives |
+| action/resource | Action, Bonus Action, spell-slot resources, cantrips and class-specific resources exposed by DCHotBar |
 
-This is not a second catalog. CAM does not copy, normalize, classify or persist action entries. The tab index only selects which native source is visible. Empty filtered Passives/Metamagic tabs collapse from navigation.
+`Custom` is deliberately excluded because CAM is automatic, not a user-managed layout.
 
-The tab strip uses the native controller pattern `LSListBox(ActionPrevEvent=UITabPrev, ActionNextEvent=UITabNext)` and native controller hint bindings. Runtime 0.0.35 rejected a single automatic focus list: changing only the visible/selected outer item left `LocalFocus`, tooltip data and dispatch ownership on the first tab. Each tab therefore owns an independent assignment-style `LSListBox + LocalFocusSelector` pair. A tab change clears `ActionRadials.Tag` and invokes `SetMoveFocusAction` directly on that tab's visible list. Each list alone writes its current native candidate back to `ActionRadials.Tag`.
+Historical `HotBar.xaml` demonstrates this model through `CurrentShownDeck`, `SetCurrentShownDeckCommand`, `CurrentSingleHotbarFilter`, `FilterActionResourceCommand`, `FilterCantripsCommand`, `ActionResourcesCostPreview` and `PassivesHotBar`. Those exact names are not accepted as shipping authority by themselves.
 
-There is deliberately no `Custom` tab.
+The installer must extract the **current installed** keyboard `HotBar.xaml` from `Game.pak`. Generated XAML may use a concrete deck/filter command or property only when that current local source contains the required seam.
 
-### Spell grouping proof boundary
+This is the same local-native-derivation boundary already used for `PreloadedActionRadials_c.xaml`; no Larian XAML is committed or published.
 
-Historical SpellBook XAML shows useful concepts such as `VMActionGroup.Name`, cantrip groups, spell-level groups and action groups. However, the exact names `CantripGroupPredicate`, `SpellLevelsGroupPredicate` and `AllActionsGroupPredicate` have not been independently re-established from the current installed Patch 8 SpellBook resource in this repository.
+### Flat-grid focus and dispatch
 
-Therefore 0.0.35 does **not** hard-code those historical predicate names and does not infer groups from `SpellSlotLevel`, slot type or action names. It preserves the current `SpellsAndActions` membership/order supplied by BG3. Native spell-level/cantrip sub-group presentation can be enabled only after the current contract is captured; that change must remain presentation-only.
+0.0.36 used multiple assignment lists and nested grids. Runtime proved that navigation can become trapped at the bottom row. Top-level CAM therefore has exactly one visible focus owner and one flat grid.
 
-That screen also proves the focus hierarchy CAM needs: `AssignList` + `SelectorAssign`, nested `LSListBox` groups, and `LSGrid(UIUp/UIDown/UILeft/UIRight)`.
+On focus change CAM passes the **VMHotBarSlot wrapper** through the same native controller/hotbar seams:
 
-The previous 0.0.27–0.0.29 line reused only the **navigation** from that screen while still binding content to `ControllerHotBars[*].SlotList`. Runtime proved the grid mechanics work, but that data source is semantically wrong for CAM: it only shows whatever the user has configured in radial wheels.
+```text
+LocalFocus.DataContext (VMHotBarSlot)
+        |
+        +--> CreateFocusedTooltipDataCommand(slot)
+        +--> HighlightResourcesCommand(slot)
+        |
+        v
+ActionRadials.Tag = slot
+        |
+        v
+UIAccept -> UseSlotCommand(slot)
+```
 
-The new main catalog therefore reuses both halves of the native assignment screen:
+When focus leaves or changes, CAM clears the previous resource highlight through the native clear command before highlighting the new slot.
 
-1. its automatic data collections;
-2. its controller-focus composition.
+`SingleHotBar.SlotList` remains BG3-owned for native resource-filter results and for containers, upcast and variants.
 
-On focus change, the **currently selected tab's list only** stores its native candidate in `ActionRadials.Tag`. Actions/Spells, Passives and Metamagic use their direct `LocalFocus.DataContext`; Inventory uses the native inventory wrapper's `.Object`. The existing page-level `UIAccept -> UseSlotCommand(Tag)` remains the execution boundary. This does not add spell/item/passive execution logic to CAM.
+### Controller chrome
 
-There is independent native precedent for `UseSlotCommand` receiving non-radial action objects directly: the game hotbar uses `HotBarSlotStyle`/direct action bindings for fixed actions such as the main attack and direct call-allies entries. The exact current catalog-candidate dispatch still requires one runtime proof and is kept isolated to this single seam.
+CAM no longer reflows `ButtonHintsContainer` and no longer creates CAM-authored LB/RB hint presenters. The installed ActionRadials hint layout is preserved exactly except that radial-edit entry points are disabled/hidden.
 
-`SingleHotBar.SlotList` remains unchanged as the native second-stage source for upcast, variants, containers and other nested selections after A.
-
-Radial customization is outside CAM's product boundary. The generated template keeps an inert named `ShowContextMenu` control only for native-template compatibility, removes its `ContextMenu` input binding, disables/hides it, replaces its command with null, neutralizes Assign/Swap/Clear/Add/Remove radial mutation command bindings, and makes `SlotAssignHolder` inert.
-
-No Larian XAML is committed to or distributed by this repository. `Lib_Controller.xaml` is derived locally from the installed game. The shipping runtime remains Script-Extender/DLL/native-loader free.
+Radial customization remains outside CAM: X/context menu, assign, swap, clear and add/remove radial operations are unreachable.
 
 ## Primary target
 
@@ -150,62 +164,48 @@ Action cells should remain native. Recreating focus frames, disabled overlays, i
 
 ## Controller data
 
-Current evidence now proves both the mode-sensitive storage model and the Patch 8 controller collection exposed to XAML.
+Current engine/component evidence proves the hotbar slot/container model:
 
-Current engine/component evidence:
+- hotbar bars carry index/controller/elements metadata;
+- bar index mapping is `0=Common, 1=Class, 2=Item`;
+- native slot wrappers are the unit passed through hotbar execution;
+- container/deck components remain engine-owned.
 
-- `HotbarContainer.Containers` stores arrays of native bars;
-- each bar has `Index`, `Controller`, `Elements`, dimensions and name;
-- hotbar mutation/event structures explicitly carry `HotBarController` / `IsController`.
+Current installed controller evidence proves:
 
-Current installed-game UI evidence:
+- state/context: `ActionRadials` / `HotBar`;
+- native A: `UseSlotCommand(ActionRadials.Tag)`;
+- nested/filter result surface: `SingleHotBar.SlotList`;
+- current nested/filter state: `CurrentSingleHotbarFilter`;
+- container/upcast state remains DCHotBar-owned.
 
-- top-level widget/context: `ActionRadials` / `HotBar`;
-- controller root collection: `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`;
-- per-bar slots: `SlotList`;
-- nested slots: `SingleHotBar.SlotList`;
-- nested-state filter: `CurrentSingleHotbarFilter`.
+A September-2026 production mod independently proves live Patch 8 `KeyboardHotBars[*].SlotList` VMHotBarSlot wrappers and direct `UseSlotCommand(slot)` use under the HotBar context.
 
-A separate September-2026 production mod still proves `PlayerCharacterProperties.KeyboardHotBars[*].SlotList`. Both keyboard and controller hotbar collections are persisted player layouts. They must remain distinct, and neither is the source for CAM's automatic main catalog. `ControllerHotBars` remains relevant only as the vanilla radial/storage contract; `KeyboardHotBars` must never be substituted for it.
+The previous rule that keyboard hotbar data must never participate in CAM is superseded by the 0.0.36 runtime result. What remains forbidden is treating a persisted/manual keyboard layout as an invented source of truth. CAM uses the **native DCHotBar deck/filter semantics and VMHotBarSlot execution wrappers**, with the concrete current contract sourced from installed `HotBar.xaml`.
 
 ## Native grid focus and action dispatch
 
-The installed Patch 8 slot-assignment UI already proves the controller-grid mechanics CAM needs:
+The assignment UI remains useful only as controller-grid precedent. CAM's top-level result set is no longer a hierarchy of assignment groups.
 
-```text
-AssignList
-  LocalFocusSelector -> SelectorAssign
-  KeyboardNavigation.DirectionalNavigation = Contained
-          |
-          v
-nested LSListBox
-          |
-          v
-LSGrid
-  ActionUpEvent    = UIUp
-  ActionDownEvent  = UIDown
-  ActionLeftEvent  = UILeft
-  ActionRightEvent = UIRight
-  AutoIndex        = True
-```
+The main surface uses one flat `LSListBox` backed by a directional `LSGrid`. This removes cross-list `Continue/Contained` transitions from top-level navigation.
 
-CAM reuses that focus hierarchy for the automatic top-level catalog and keeps the proven grid renderer for native `SingleHotBar.SlotList` nested choices. The top-level list no longer materializes any controller `SlotList`. Radial swap/context-menu editing is intentionally not preserved on the CAM surface.
-
-The native delayed dispatch seam remains:
+The native dispatch seam is:
 
 ```text
 grid LocalFocusChanged
         |
-        v
-ActionRadials.Tag = LocalFocus.DataContext
+        +--> native tooltip/resource preview(slot)
         |
         v
-UIAccept -> UseSlotCommand(Tag)
+ActionRadials.Tag = VMHotBarSlot
+        |
+        v
+UIAccept -> UseSlotCommand(slot)
 ```
 
-Top-level/nested B remains the untouched native `CancelButton` command switch.
+Native A therefore receives the same wrapper type used by `HotBarSlotStyle`; raw `VMCharacterAction`, `VMItem` or `VMPassive` content objects are not command parameters.
 
-This is distinct from the failed 0.0.18–0.0.25 approaches: CAM is no longer reconstructing the page/template lifecycle and no longer attempting to mirror a radial. It substitutes the radial **slot renderer** with a grid using a controller-focus pattern already working in the same current native XAML file.
+Top-level/nested B remains the untouched native `CancelButton` / `ClearSingleHotbarCommand` lifecycle.
 
 ## First-run diagnostics without Script Extender
 
