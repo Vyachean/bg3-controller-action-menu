@@ -43,6 +43,10 @@ foreach ($required in @(
     '*DataTemplates.xaml',
     '*Controller.xaml',
     '*Lib_Controller.xaml',
+    'Get-ChildItem -LiteralPath $Root -Filter "Game.pak"',
+    'Scanned PAKs: 1 (Game.pak only)',
+    'capture-summary.txt',
+    'missing required UI groups',
     'No BG3 files, saves, profiles, or mods were modified.'
 )) {
     if (-not $captureText.Contains($required)) {
