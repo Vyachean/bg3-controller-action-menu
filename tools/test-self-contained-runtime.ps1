@@ -38,7 +38,7 @@ $required = @(
     'Command="{Binding FilterActionResourceCommand}"',
     'CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_ResourceFilterList}"',
     'Value="{Binding CurrentShownDeck.SlotList}"',
-    'Value="{Binding CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList}"',
+    'Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"',
     'Value="{Binding SingleHotBar.SlotList}"',
     'ItemsSource="{Binding SingleHotBar.SlotList}"',
     'x:Name="HotBarList"',
