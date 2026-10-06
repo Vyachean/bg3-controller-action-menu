@@ -577,9 +577,6 @@
                             </ls:LSListBoxItem>
 
                         </ls:LSListBox>
-                            </ls:LSListBoxItem>
-
-                        </ls:LSListBox>
 
                         <Control x:Name="CAM_MainSelector"
                                  IsHitTestVisible="False"
