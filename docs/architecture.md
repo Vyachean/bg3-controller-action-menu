@@ -85,7 +85,7 @@ LB/RB selects native semantic filters:
 | Common | `SetCurrentShownDeckCommand("CommonHotBar")` -> `CurrentShownDeck.SlotList` |
 | Class | `SetCurrentShownDeckCommand("ClassHotBar")` -> `CurrentShownDeck.SlotList` |
 | Items | `SetCurrentShownDeckCommand("ItemHotBar")` -> `CurrentShownDeck.SlotList` |
-| Passives | `CurrentPlayer.SelectedCharacter.PassivesHotBar.SlotList` |
+| Passives | `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList` |
 | Cantrips | captured current `FilterCantripsCommand` contract |
 
 Resource filters use `CurrentPlayer.UIData.ActionResourcesCostPreview` and `FilterActionResourceCommand`.
