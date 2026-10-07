@@ -484,7 +484,6 @@ def validate_semantics() -> list[str]:
             '<ls:AutoScrollBehavior',
             '<b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">',
             'ls:LSScrollViewer.ScrollToElement="{Binding Tag, ElementName=CAM_ResourceTabs}"',
-            'ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"',
             '<b:PropertyChangedTrigger Binding="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
             'TextTrimming="CharacterEllipsis"',
             'Columns="5"',
