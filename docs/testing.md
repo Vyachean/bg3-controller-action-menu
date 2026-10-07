@@ -802,7 +802,7 @@ The next game run should verify only: one moving focus visual with no stale firs
 
 1. resource `SelectionChanged` clears `HotBarList.LocalFocus` and `HotBarList.SelectedItem` before filtering;
 2. no resource-switch code writes `HotBarList.SelectedIndex`;
-3. a delayed/deferred `SetMoveFocusAction` returns focus to the same `HotBarList`, allowing the native `LocalFocusChanged` lifecycle to establish the first actual slot;
+3. `SetMoveFocusAction(..., DeferFocusAction=True)` returns focus to the same `HotBarList` with no separate resource-switch timer, allowing the native `LocalFocusChanged` lifecycle to establish the first actual slot;
 4. resource shoulder actions use `ForceMode=Cycle` but contain no `ForceSelect=True`;
 5. `AutoScrollBehavior.ScrollIntoView` binds to `CAM_ResourceTabs.SelectedItem`, not `SelectedIndex`;
 6. MaxValue=0/null previews remain visually collapsed and are not made forcibly selectable;
