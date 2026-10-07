@@ -484,6 +484,7 @@
                              Width="1000"/>
 
                 <ls:LSButton x:Name="ToggleWeaponSet"
+                             BoundEvent="UISelectionLeft"
                              Style="{StaticResource ControllerHoldButtonStyle}"
                              Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"
                              Command="{Binding SwitchWeaponSetCommand}"
