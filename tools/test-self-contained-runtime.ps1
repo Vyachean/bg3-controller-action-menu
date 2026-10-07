@@ -672,7 +672,7 @@ if (-not $resourceBar.Success -or
     -not $resourceBar.Value.Contains('Height="64"') -or
     -not $resourceBar.Value.Contains('MinWidth="208"') -or
     -not $resourceBar.Value.Contains('Slices="104,0"') -or
-    -not $resourceBar.Value.Contains('ConverterParameter="208"')) {
+    -not $resourceBar.Value.Contains('ConverterParameter=208')) {
     throw "Top tabs must sit on the captured HotBar bar_resources chrome."
 }
 
