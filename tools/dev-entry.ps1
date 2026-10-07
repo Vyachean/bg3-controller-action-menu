@@ -99,6 +99,8 @@ $release = Get-LatestRelease
 $tag = [string]$release.tag_name
 $version = if ($tag.StartsWith("v")) { $tag.Substring(1) } else { $tag }
 
+$task = "capture-hotbar-resource-filter"
+
 if ($ResolveOnly) {
     @(
         "SUCCESS",
@@ -109,35 +111,97 @@ if ($ResolveOnly) {
     [pscustomobject]@{
         Tag = $tag
         Version = $version
-        Task = "install"
+        Task = $task
     } | ConvertTo-Json
     exit 0
 }
 
-# Current release task: install/update the self-contained PAK.
-# This is deliberately the only release-specific decision in the universal
-# development entry. A later release may replace this body with capture,
-# diagnostics, install+capture, or another development operation without
-# changing the operator's VBS shortcut.
-$installerAsset = Get-Asset -Release $release -Name "install-latest.ps1"
+# Current development task: capture the exact installed Patch 8 HotBar/UI inputs
+# read-only. The permanent VBS remains unchanged; only this release-controlled
+# task changes. After the capture is consumed, a later release can restore the
+# normal install task without replacing the operator shortcut.
 $releaseDir = Join-Path $CacheRoot $tag
-$installer = Join-Path $releaseDir "install-latest.ps1"
-Save-Asset -Asset $installerAsset -Destination $installer
+$captureAsset = Get-Asset -Release $release -Name "capture-self-contained-inputs.ps1"
+$captureScript = Join-Path $releaseDir "capture-self-contained-inputs.ps1"
+Save-Asset -Asset $captureAsset -Destination $captureScript
 
-$installerArgs = @{
-    Repository = $Repository
-    ReleaseApiUrl = $ReleaseApiUrl
-    ReleaseMetadataPath = $ReleaseMetadataPath
-    CacheRoot = Join-Path $releaseDir "install-cache"
-    LogPath = $LogPath
-    StatusPath = $StatusPath
-    ReportPath = $ReportPath
-    LauncherRoot = $LauncherRoot
+$captureRoot = if ($LauncherRoot) {
+    $LauncherRoot
+} else {
+    Join-Path $PortableStateRoot "capture-output"
 }
+New-Item -ItemType Directory -Force -Path $captureRoot | Out-Null
 
-# install-latest.ps1 is an in-process PowerShell helper. If it returns,
-# the task succeeded; failures propagate as terminating exceptions. Never use
-# $LASTEXITCODE as the status of a script invoked with & because it may be null
-# or left over from an unrelated native command.
-& $installer @installerArgs
-exit 0
+$captureStatus = Join-Path $captureRoot "capture-status.txt"
+Remove-Item -LiteralPath $captureStatus -Force -ErrorAction SilentlyContinue
+
+try {
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $captureScript -PortableRoot $captureRoot
+    $captureExitCode = $LASTEXITCODE
+
+    $captureLines = if (Test-Path -LiteralPath $captureStatus -PathType Leaf) {
+        @(Get-Content -LiteralPath $captureStatus -Encoding Unicode)
+    } else {
+        @()
+    }
+
+    $captureState = if ($captureLines.Count -ge 1) { [string]$captureLines[0] } else { "" }
+    $captureMessage = if ($captureLines.Count -ge 2) { [string]$captureLines[1] } else { "" }
+    $archive = if ($captureLines.Count -ge 3) { [string]$captureLines[2] } else { "" }
+    $captureLog = if ($captureLines.Count -ge 4) { [string]$captureLines[3] } else { "" }
+
+    if ($captureExitCode -ne 0 -or $captureState -ne "SUCCESS") {
+        if (-not $captureMessage) {
+            $captureMessage = "Read-only HotBar capture failed with exit code $captureExitCode."
+        }
+        throw $captureMessage
+    }
+    if (-not $archive -or -not (Test-Path -LiteralPath $archive -PathType Leaf)) {
+        throw "Capture reported success but did not produce the expected ZIP archive."
+    }
+
+    $message = "HotBar resource-filter capture completed. Upload this ZIP back to the development chat: $archive"
+    @(
+        "SUCCESS",
+        $version,
+        $message
+    ) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
+
+    @(
+        "BG3 Controller Action Menu development task",
+        "Task: $task",
+        "Release: $tag",
+        "Capture archive: $archive",
+        "Capture log: $captureLog"
+    ) | Set-Content -LiteralPath $LogPath -Encoding UTF8
+
+    [pscustomobject]@{
+        Tag = $tag
+        Version = $version
+        Task = $task
+        Archive = $archive
+        CaptureStatusPath = $captureStatus
+        CaptureLogPath = $captureLog
+        LauncherRoot = $LauncherRoot
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+
+    exit 0
+} catch {
+    $failure = $_.Exception.Message
+    @(
+        "ERROR",
+        $version,
+        $failure
+    ) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
+
+    [pscustomobject]@{
+        Tag = $tag
+        Version = $version
+        Task = $task
+        Error = $failure
+        CaptureStatusPath = $captureStatus
+        LauncherRoot = $LauncherRoot
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+
+    throw
+}
