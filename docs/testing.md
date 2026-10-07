@@ -743,3 +743,23 @@ The first two failures share one architectural cause: ActionRadials dispatch dep
 7. no extra executable list, class/type tab, re-entrant resource filter, Script Extender dependency, or install-time derivation is introduced.
 
 The next game run should verify only the corrected seams: four-direction grid navigation, A on one direct action, lower-row scrolling, LB/RB tab labels including the formerly blank entries, and absence of the broken weapon-set shortcut.
+
+
+### 2026-10-07 — 0.0.59 runtime result / 0.0.60 proof boundary
+
+0.0.59 partially succeeds:
+
+- controller navigation works logically: the native tooltip follows the currently focused action;
+- A executes the focused action;
+- visible focus is wrong: the frame remains on the first cell while logical focus moves;
+- some long generic resource names still truncate;
+- the four formerly blank resource tabs remain visually blank.
+
+The focus result proves `HotBarList.LocalFocus.DataContext` is correct and rejects further changes to the logical navigation/dispatch path. The defect is the independent `ls:MoveFocus.IsFocused` presentation state. 0.0.60 must mirror `LocalFocus.DataContext` into `HotBarList.SelectedItem` and render focus from `IsSelected`.
+
+The resource result identifies two presentation corrections:
+
+- remove individual resource-tab maximum widths/text trimming while keeping the outer horizontal viewport bounded and selected-index-following;
+- render SpellSlot/WarlockSpellSlot with the native HotBar `Image + RomanNumeralLevelImage` contract instead of the incorrect CAM `TextBlock + SpellSlotNumberStyle` approximation.
+
+Automatic proof must verify the LocalFocus->SelectedItem bridge, reject `ls:MoveFocus.IsFocused` as the cell-focus trigger, reject per-tab MaxWidth/TextTrimming, and require the native spell-level Image style. The next game run should not retest already-proven A semantics beyond a quick regression check; its main runtime questions are moving focus chrome, lower-row scrolling, and resource-tab labels/levels.
