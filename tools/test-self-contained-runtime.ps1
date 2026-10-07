@@ -58,7 +58,13 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "compact-nat
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.max -ne "MaxValue" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.available -ne "Value" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.highlighted -ne "Cost" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlay -ne "ResourcesNumeralDisplay" -or
+    $null -ne $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlay -or
+    $null -ne $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlayRule -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.normalChrome.normal -ne "box_resource_d.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.normalChrome.selected -ne "box_resource_h.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotChrome.normal -ne "box_resourceNum_d.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotChrome.selected -ne "box_resourceNum_h.png" -or
+    @($evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotTypes).Count -ne 2 -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedRenderer -ne "SectionImageStyle" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.size -ne 72 -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList") {
@@ -111,10 +117,19 @@ if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false) {
     throw "Top tabs must be one compact native-icon row with Passives and no scroll/wrap state."
 }
-if ($evidence.runtimeContract.controllerPresentation.itemQuantity.source -ne "GameObject.Count" -or
+if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "Item" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.slotContentType -ne "VMItem" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.slotContentPath -ne "VMHotBarSlot.Content" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.normalTemplate -ne "Template.Item" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.equipmentTemplate -ne "Template.ItemEquipment" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.containerTemplate -ne "Template.ItemContainer" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.property -ne "Count" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.visibilityConverter -ne "CountToVisibilityConverter" -or
     $evidence.runtimeContract.controllerPresentation.itemQuantity.converter -ne "AbbreviateNumberConverter" -or
-    $evidence.runtimeContract.controllerPresentation.itemQuantity.style -ne "ItemAmountTextStyle") {
-    throw "Native item quantity evidence is incomplete."
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.style -ne "ItemAmountTextStyle" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.camOverlayAllowed -ne $false -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.rejectedPath -ne "VMHotBarSlot.GameObject.Count") {
+    throw "Item quantity must be delegated to native VMItem templates."
 }
 if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
     $evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeToken -ne "CAM_PassivesModeToken" -or
@@ -173,15 +188,20 @@ $required = @(
     'x:Name="CAM_TopTabs"',
     '<ls:LSActionPointResources x:Name="ResourcePoints"',
     'Style="{StaticResource ActionResourcesTemplateSelector}"',
-    'x:Name="ResourcesNumeralDisplay"',
+    'x:Key="CAM_BoxResourceNumBg"',
+    'x:Key="CAM_BoxResourceNum"',
+    'x:Key="CAM_BoxResourceNumH"',
+    'x:Key="CAM_BoxResourceNumDisabled"',
     'x:Name="CAM_PassivesTab"',
     'x:Key="CAM_PassivesModeToken"',
     'x:Key="CAM_TabReturnLastToken"',
     'Tag="{x:Null}"',
     'PlayerCharacterProperties.PassivesHotBar.SlotList',
-    'GameObject.Count',
-    'AbbreviateNumberConverter',
-    'ItemAmountTextStyle',
+    'Binding="{Binding SlotType}" Value="Item"',
+    'Content="{Binding Content}"',
+    'ContentTemplate="{StaticResource Template.Item}"',
+    'Value="{StaticResource Template.ItemEquipment}"',
+    'Value="{StaticResource Template.ItemContainer}"',
     'x:Name="CAM_ActionViewport"',
     'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
@@ -371,7 +391,7 @@ if (-not $closeTrigger.Success) {
     throw "Top-level B close trigger must be the exact three-native-nested-flags -> CloseWidget contract."
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: compact native resource tabs plus Passives drive one executable HotBarList, item counts use GameObject.Count, entry focus is concrete-first, and top-level B remains separated from true nested state."
+Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs use captured HotBar chrome, item slots delegate to native VMItem templates, Passives is serialized, entry focus is concrete-first, and top-level B remains separated from true nested state."
 
 
 # Weapon-set switching is deliberately absent from CAM after repeated runtime failures.
@@ -559,14 +579,18 @@ if (-not $resourceTabStyle.Success -or
     -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
     -not $resourceTabStyle.Value.Contains('DataContext="{Binding ActionResource}"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
-    -not $resourceTabStyle.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
-    -not $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Value}"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumBg}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNum}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumH}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumDisabled}"') -or
+    $resourceTabStyle.Value.Contains('ResourcesNumeralDisplay') -or
+    $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Value}"') -or
     $resourceTabStyle.Value.Contains('Style="{StaticResource SectionImageStyle}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Name}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.TypeId}"') -or
     $resourceTabStyle.Value.Contains('AlignableWrapPanel')) {
-    throw "Resource tabs must reproduce the HotBar LSActionPointResources resource-button renderer."
+    throw "Resource tabs must use the captured HotBar resource chrome without CAM numeric overlays."
 }
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
@@ -626,11 +650,15 @@ $itemTemplate = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $itemTemplate.Success -or
-    -not $itemTemplate.Value.Contains('GameObject.Count') -or
-    -not $itemTemplate.Value.Contains('AbbreviateNumberConverter') -or
-    -not $itemTemplate.Value.Contains('CountToVisibilityConverter') -or
-    -not $itemTemplate.Value.Contains('ItemAmountTextStyle')) {
-    throw "Item-backed action cells must expose native GameObject.Count."
+    -not $itemTemplate.Value.Contains('x:Name="GenericIcon"') -or
+    -not $itemTemplate.Value.Contains('Content="{Binding Content}"') -or
+    -not $itemTemplate.Value.Contains('ContentTemplate="{StaticResource Template.Item}"') -or
+    -not $itemTemplate.Value.Contains('Binding="{Binding SlotType}" Value="Item"') -or
+    -not $itemTemplate.Value.Contains('Value="{StaticResource Template.ItemEquipment}"') -or
+    -not $itemTemplate.Value.Contains('Value="{StaticResource Template.ItemContainer}"') -or
+    $itemTemplate.Value.Contains('GameObject.Count') -or
+    $itemTemplate.Value.Contains('ItemCountHolder')) {
+    throw "Item-backed action cells must delegate presentation and quantity to native VMItem templates."
 }
 
 $nestedMarker = [regex]::Match(
@@ -733,6 +761,11 @@ if (-not $entryFocusWake.Success -or
     -not $entryFocusWake.Value.Contains('HighlightResourcesCommand') -or
     $entryFocusWake.Value.Contains('SelectedItem')) {
     throw "Programmatic entry presentation must source identity only from LocalFocus.DataContext."
+}
+if ($text.Contains('ResourcesNumeralDisplay') -or
+    $text.Contains('GameObject.Count') -or
+    $text.Contains('ItemCountHolder')) {
+    throw "0.0.72 forbids CAM-authored resource numerals and slot-level item quantity overlays."
 }
 if ($text.Contains('CAM_EntryFocusCommittedToken') -or
     $text.Contains('Value="{Binding SelectedItem.Content, ElementName=HotBarList}"') -or
