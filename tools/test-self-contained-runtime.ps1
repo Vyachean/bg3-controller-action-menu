@@ -162,7 +162,7 @@ $required = @(
     'ActionLeftEvent="UILeft"',
     'PropertyName="SelectedIndex" Value="-1"',
     'Value="{StaticResource CAM_ResetFirstFocusToken}"',
-    'PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
+    'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
     'MillisecondsPerTick="70" TotalTicks="1"',
     'CreateFocusedTooltipDataCommand',
     'HighlightResourcesCommand',
