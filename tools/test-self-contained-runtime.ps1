@@ -111,6 +111,7 @@ $required = @(
     'Property="CommandParameter" Value="CloseWidget"',
     'x:Name="ButtonHintsContainer"',
     'x:Name="ToggleWeaponSet"',
+    'x:Name="WeaponSetShortcutBinding"',
     'BoundEvent="UISelectionLeft"',
     'Command="{Binding SwitchWeaponSetCommand}"',
     'ActionLeftEvent="UILeft"',
@@ -224,16 +225,31 @@ if (-not $selectorTemplate.Success -or
 Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs are the sole top-level navigation, selection drives native FilterActionResourceCommand, the grid is SingleHotBar.SlotList, ordinary native tooltips remain the only details surface, and top-level B is separated from true nested state."
 
 
-# The isolated 0.0.51 correction must only restore the native weapon-set hold binding.
+# Repeatable weapon-set shortcut: preserve vanilla visual hold button and keep input transport separate.
 $weaponSet = [regex]::Match(
     $text,
     '<ls:LSButton\b[^>]*x:Name="ToggleWeaponSet"[\s\S]*?/>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $weaponSet.Success -or
-    -not $weaponSet.Value.Contains('BoundEvent="UISelectionLeft"') -or
+    -not $weaponSet.Value.Contains('Style="{StaticResource ControllerHoldButtonStyle}"') -or
+    -not $weaponSet.Value.Contains("ConverterParameter='UISelectionLeft'") -or
     -not $weaponSet.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"')) {
-    throw "ToggleWeaponSet must bind native UISelectionLeft to SwitchWeaponSetCommand."
+    throw "ToggleWeaponSet visual must preserve the captured vanilla hold-button contract."
+}
+if ($weaponSet.Value.Contains('BoundEvent=')) {
+    throw "ToggleWeaponSet visual must not own BoundEvent; 0.0.51 proved that direct binding is one-shot."
+}
+$weaponBinding = [regex]::Match(
+    $text,
+    '<ls:LSInputBinding\b[^>]*x:Name="WeaponSetShortcutBinding"[\s\S]*?/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $weaponBinding.Success -or
+    -not $weaponBinding.Value.Contains('BoundEvent="UISelectionLeft"') -or
+    -not $weaponBinding.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"') -or
+    -not $weaponBinding.Value.Contains('EatInput="False"')) {
+    throw "WeaponSetShortcutBinding must own repeatable UISelectionLeft transport."
 }
 if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
     throw "Ordinary grid-left navigation must remain UILeft."
