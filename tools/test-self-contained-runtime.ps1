@@ -425,7 +425,7 @@ if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
     -not $slotContainer.Value.Contains('DeferFocusAction="True"') -or
     -not $slotContainer.Value.Contains('PropertyName="Tag"') -or
-    -not $slotContainer.Value.Contains('Value="{x:Null}"') -or
+    -not $slotContainer.Value.Contains('Value="{StaticResource CAM_EntryFocusCommittedToken}"') -or
     $slotContainer.Value.Contains('CAM_CellFocusFill') -or
     $slotContainer.Value.Contains('CAM_CellFocusFrame') -or
     $slotContainer.Value.Contains('Trigger Property="ls:MoveFocus.IsFocused" Value="True"') -or
@@ -454,7 +454,7 @@ if (-not $resourceTabs.Success -or
     $resourceTabs.Value.Contains('ScrollIntoView=') -or
     $resourceTabs.Value.Contains('ScrollToElement=') -or
     $resourceTabs.Value.Contains('ScrollTo=')) {
-    throw "Resource tabs must be a non-scrolling wrapped list; horizontal scroll state is forbidden."
+    throw "Compact resource icons must have no horizontal scroll state."
 }
 
 $resourceTabsPanel = [regex]::Match(
@@ -463,38 +463,49 @@ $resourceTabsPanel = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabsPanel.Success -or
-    -not $resourceTabsPanel.Value.Contains('<ls:AlignableWrapPanel') -or
-    -not $resourceTabsPanel.Value.Contains('HorizontalContentAlignment="Center"') -or
-    $resourceTabsPanel.Value.Contains('<StackPanel')) {
-    throw "Resource tabs must use the BG3-native AlignableWrapPanel layout family."
+    -not $resourceTabsPanel.Value.Contains('<StackPanel Orientation="Horizontal"') -or
+    $resourceTabsPanel.Value.Contains('AlignableWrapPanel')) {
+    throw "Resource previews must remain a single horizontal row."
 }
 
-if (-not $text.Contains('<RowDefinition Height="Auto"/>') -or
+if (-not $text.Contains('<RowDefinition Height="84"/>') -or
     -not $text.Contains('<RowDefinition Height="850"/>') -or
     -not $text.Contains('x:Name="CAM_ActionViewport"') -or
     -not $text.Contains('Height="850"')) {
-    throw "Wrapped resource header must auto-size without reducing the 850px action viewport."
+    throw "Compact tab header must preserve the full 850px action viewport."
 }
 
-if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
-    [regex]::Matches($resourceTabs.Value, 'ForceMode="Cycle"').Count -ne 2) {
-    throw "Shoulder cycling must remain cyclic without forcibly selecting collapsed resource previews."
-}
-
-$resourceSelectionTrigger = [regex]::Match(
-    $resourceTabs.Value,
-    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?</b:EventTrigger>',
+$tabLeft = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="CAM_TabLeft"[\s\S]*?</ls:LSButton>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $resourceSelectionTrigger.Success -or
-    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"') -or
-    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"') -or
-    [regex]::Matches($resourceSelectionTrigger.Value, 'FilterActionResourceCommand').Count -ne 1 -or
-    $resourceSelectionTrigger.Value.Contains('PropertyName="SelectedItem"') -or
-    $resourceSelectionTrigger.Value.Contains('InvalidateFocus="True"') -or
-    $resourceSelectionTrigger.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource switching must clear LocalFocus and entry selection before refiltering, so concrete-item focus creates a fresh LocalFocus lifecycle."
+$tabRight = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="CAM_TabRight"[\s\S]*?</ls:LSButton>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $tabLeft.Success -or -not $tabRight.Success -or
+    -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
+    -not $tabLeft.Value.Contains('SetIsShowingPassivesDeckCommand') -or
+    -not $tabLeft.Value.Contains('Reversed="True"') -or
+    -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
+    -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
+    -not $tabRight.Value.Contains('SetIsShowingPassivesDeckCommand') -or
+    $tabLeft.Value.Contains('ForceSelect="True"') -or
+    $tabRight.Value.Contains('ForceSelect="True"')) {
+    throw "LB/RB must form one resource-plus-Passives cycle without ForceSelect."
 }
+
+if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 3 -or
+    -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
+    -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
+    -not $resourceTabs.Value.Contains('Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource TrueValue}"') -or
+    [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
+    [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 3) {
+    throw "Resource selection must distinguish right-wrap Passives entry from ordinary native resource filtering and clear stale LocalFocus."
+}
+
 $resourceRestoreTimer = [regex]::Match(
     $resourceTabs.Value,
     '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
@@ -507,11 +518,8 @@ if (-not $resourceRestoreTimer.Success -or
     $resourceRestoreTimer.Value.Contains('SelectedItem.Content') -or
     $resourceRestoreTimer.Value.Contains('ShowTooltipOnUIElementCommand') -or
     $resourceRestoreTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand') -or
-    $resourceRestoreTimer.Value.Contains('TargetName="ActionRadials"') -or
-    $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand') -or
-    $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource entry timer may only arm concrete-item focus; presentation wakes from LocalFocusChanged or widget FocusedElement."
+    $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand')) {
+    throw "Tab-settle timer may only arm concrete first-item focus; entry presentation waits for the focus-commit token."
 }
 
 $resourceTabStyle = [regex]::Match(
