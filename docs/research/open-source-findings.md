@@ -315,3 +315,23 @@ What remains is runtime-only proof of the rebuilt presentation:
 5. one simple A reaches native `UseSlotCommand(focused slot)` exactly once.
 
 These must be checked together in one milestone run. No additional speculative builds should be inserted between these assertions.
+
+
+## 11. Resource-filter visual boundary: deck filters are not resource filters
+
+The 0.0.73 runtime result exposed a terminology/presentation mistake in CAM's research.
+
+Keyboard `HotBar.xaml` contains at least two independent filter-like surfaces:
+
+1. **Deck/category filter buttons** — textual controls such as Common/Class/Items/Passives, historically presented through `FilterButton / ActiveFilterButton` and the `btn_pil_*` asset family.
+2. **Action-resource filter bar** — icon/resource controls whose data source is `CurrentPlayer.UIData.ActionResourcesCostPreview` and whose selection invokes `FilterActionResourceCommand`.
+
+The operator's visual reference is the second surface. Therefore the 0.0.73 use of `btn_pil_*` for CAM's resource tabs was structurally the wrong component even though those assets are genuinely used elsewhere by HotBar.
+
+Historical/public HotBar markup confirms the separation and shows a resource strip built around 72px resource controls and `LSActionPointResources`, but historical markup is not authoritative for Patch 8 styling. The repo already has a read-only extractor that captures `*HotBar*.xaml` from the installed Xbox App `Game.pak`. The exact current file must be captured and inspected before another presentation change.
+
+Implementation gate:
+- do not infer current resource-filter chrome from the textual deck filters;
+- do not promote old public HotBar XAML to Patch 8 truth;
+- use the freshly captured installed `Mods/MainUI/GUI/Pages/HotBar.xaml` as the visual authority;
+- keep the proven `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList` semantics unchanged.
