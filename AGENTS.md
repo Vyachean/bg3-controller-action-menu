@@ -94,12 +94,12 @@ Current mandatory architecture:
 - **resource-first UX is mandatory and supersedes the older type-tab design.** There is one top-level LB/RB tab row bound to `CurrentPlayer.UIData.ActionResourcesCostPreview`; selecting a native `VMActionResourceCostPreview` invokes `FilterActionResourceCommand`, and the main grid consumes `SingleHotBar.SlotList`. Do not ship Common/Class/Cantrips/Items/Passives primary tabs, class-specific tab rules, or a second nested resource-filter layer;
 - resource tabs are dynamic and generic: hide null/MaxValue=0 previews, preserve BG3 order, show native spell-slot level data for SpellSlot/WarlockSpellSlot, and use native resource names for generic/mod resources. The row may scroll horizontally. `FREE`, `SCROLLS`, item-charge groups, or other non-ActionResource groups may be added only from a proven BG3-owned executable `VMHotBarSlot` source/filter; never synthesize them from raw assignment objects or string heuristics;
 - release XAML must not depend on install-time discovery of HotBar command parameters or binding names. Any required current values must be captured during development and represented explicitly in project-owned runtime resources/tests;
-- LB/RB owns resource-tab selection; D-pad/left-stick focus stays in the action grid. After 0.0.48, the executable `HotBarList` itself must directly own `SingleHotBar.SlotList` + `CAM_ActionGridPanel`; do not wrap the grid in another one-item controller list. The vertical ScrollViewer must track focused cells, and selector/list must share the same coordinate root. The resource-tab viewport must horizontally follow LB/RB selection;
+- LB/RB owns resource-tab selection; D-pad/left-stick focus stays in the action grid. The main executable grid uses `LSGrid(UIUp/UIDown/UILeft/UIRight)` plus the project-owned focus selector. Do not make resource tabs a D-pad sub-page. The selector control itself has no fixed width/height; its current compensation remains proof-gated by runtime;
 - do not hard-code a short/fixed action-grid height that truncates the navigation space;
 - action cells are native `VMHotBarSlot` objects. Presentation must use the captured assignment geometry directly: a 104×104 `Content.Icon` surface in a 120×120 `LSGrid` cell, with the focused `ListBoxItem` itself kept at 104×104. Do not use keyboard `HotBarSlotStyle` (keyboard `HotKey` overlay) or radial `SlotIconStyle` (captured 120×120 inner icon) as CAM's action-cell renderer. The selector remains geometry-free and follows the actual focused item. The container may retain `Tag="{Binding .}"` for presentation compatibility, but the current `1.8.910.0` gameplay-facing radial focus lifecycle consumes `LocalFocus.DataContext`;
-- main slot focus must reproduce the captured current radial lifecycle for the base `VMHotBarSlot`. The ordinary native `LSTooltip` is the **only** details surface. For SpellSlot/WarlockSpellSlot tabs, current HotBar evidence permits one narrow execution-proxy exception: select an existing native `VMUpcast` from `VMHotBarSlot.Content.SpellUpcast` only when its `SlotLevel` equals the selected resource's `SpellSlotLevel`; current `HotBarSlotStyle` proves `UseSlotCommand(VMUpcast)` is valid. Never construct upcast data or calculate damage/cost in CAM;
+- main slot focus must reproduce the captured current radial `LocalFocusChanged` lifecycle: clear stale focus state immediately, then after the native 70 ms delay copy `LocalFocus.DataContext` to `ActionRadials.Tag` and invoke `CreateFocusedTooltipDataCommand` / `HighlightResourcesCommand` with that same slot. The ordinary native `LSTooltip` over `VMHotBarSlot.Content` is the **only** details surface; do not add a CAM Live Details panel or author description/cost text;
 - A remains the existing page-level `UIAccept -> UseSlotCommand(ActionRadials.Tag)` path;
-- `SingleHotBar.SlotList` is both the top-level resource-filter result and BG3's nested/upcast/variant/container collection. A populated resource filter must **not** by itself make B a nested-back action: top-level B closes CAM when no `IsShowingAContainerWithVariants`, `IsSelectingUpcastedSpell`, or `IsShowingItemsToThrow` state is active; real nested states retain BG3 cancellation. Runtime 0.0.48 proves that nested cancellation clears the resource-filtered list, so once all nested flags become false CAM must reapply the still-selected resource tab before restoring main-grid focus;
+- `SingleHotBar.SlotList` is both the top-level resource-filter result and BG3's nested/upcast/variant/container collection. A populated resource filter must **not** by itself make B a nested-back action: top-level B closes CAM when no `IsShowingAContainerWithVariants`, `IsSelectingUpcastedSpell`, or `IsShowingItemsToThrow` state is active; real nested states retain BG3 cancellation;
 - preserve the captured current `ButtonHintsContainer` layout/behavior contract. Do not restyle it horizontally and do not add duplicate LB/RB hint presenters;
 - X/`ShowContextMenu` and radial Assign/Swap/Clear/Add/Remove customization must remain unreachable from CAM;
 - historical SpellBook predicates and CAM-owned spell/resource classifiers remain forbidden without current installed-game proof. In particular, do not fix ACTION/BONUS over-inclusion with spell-name/class tables; only a proven current native executable-slot property/predicate may refine primary-resource membership;
@@ -170,16 +170,19 @@ Every PR must state:
 Do not claim in-game behavior is working unless it has been proven in-game.
 
 
-## Runtime evidence — 0.0.48 resource-first milestone
+## Rejected runtime experiment — 0.0.49
 
-In-game proof:
-- dynamic resource tabs render and LB/RB selection works;
-- Action and Bonus filters correctly include every action carrying those native costs; this breadth is currently acceptable;
-- spell-slot tabs filter the expected spells but return base spell slots, so base tooltip/A still opens native upcast selection;
-- top-level A and B work;
-- B from native upcast/throw returns to resource view but leaves the selected tab empty until the filter is applied again;
-- the leftover outer-list/nested-list focus shell causes invisible navigation steps, clipped lower rows, missing scroll, and selector position drift;
-- resource tabs do not scroll and the viewport is too narrow;
-- the displayed native Toggle Weapon Set hold hint does not execute in CAM.
+Version `0.0.49-resource-runtime-fix` is rejected by in-game proof.
 
-Do not request another game run until one package combines all of these corrections and CI/package proof is green.
+Observed regression:
+- resource tabs opened/switched unpredictably;
+- input/navigation became delayed;
+- the resource-first surface felt globally broken compared with 0.0.48.
+
+Therefore do **not** reintroduce the 0.0.49 combination of:
+- per-cell `Content.SpellUpcast` / `VMUpcast` overlay controls with additional `UIAccept` bindings;
+- automatic `SingleHotBar.SlotList.Count == 0 -> FilterActionResourceCommand` recovery triggers;
+- focusable resource-tab items added only to force BringIntoView behavior;
+- simultaneous focus-tree, scrolling, selector, upcast-dispatch and shortcut rewrites in one runtime milestone.
+
+The 0.0.48 in-game observations remain valid evidence of defects, but fixes must be isolated and proven one architectural seam at a time. Stability of resource-tab switching is the first invariant.
