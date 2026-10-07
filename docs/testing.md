@@ -877,3 +877,27 @@ The next game run is justified only after full package/release CI. Its focused q
 5. no manual horizontal offset action, `ForceSelect=True`, or extra resource tab layer is introduced.
 
 The next in-game check is limited to two seams: the tooltip must already be visible on the first focused action immediately after a tab change, and the selected resource tab must remain visible while cycling in both directions.
+
+
+### 2026-10-07 — 0.0.65 runtime result / 0.0.66 proof boundary
+
+Observed in 0.0.65:
+
+- focus/navigation remains better than pre-0.0.64 builds;
+- after switching a resource tab, tooltip describes the first slot while visible focus can remain on the previous coordinate;
+- selected left-edge resource tab can still remain outside the viewport;
+- pressing B to leave a nested action/upcast/container can leave the selected resource tab with an empty action grid.
+
+0.0.66 automatic proof must require:
+
+1. resource `SelectionChanged` clears `HotBarList.LocalFocus` and `SelectedIndex` before invoking `FilterActionResourceCommand`;
+2. the 70 ms entry timer only arms the concrete-item focus token and selects index 0; it must not write tooltip content, `ActionRadials.Tag`, tooltip-data or highlight state from `SelectedItem`;
+3. the existing `LocalFocusChanged` lifecycle remains the sole source for tooltip/Tag/highlight/A state;
+4. selected resource item containers publish their templated-parent UIElement to `CAM_ResourceTabs.Tag`;
+5. the resource template uses `ls:LSScrollViewer.ScrollToElement="{Binding Tag, ElementName=CAM_ResourceTabs}"` and contains no resource-strip `AutoScrollBehavior`;
+6. entering any native nested flag arms a CAM nested-return marker;
+7. B/top-level close does not restore the filter unless that marker was armed;
+8. after nested cancel and return of all native nested flags to false, CAM re-applies exactly the currently selected native resource filter and re-establishes action LocalFocus;
+9. `ClearSingleHotbarCommand`, native nested flags, `UseSlotCommand`, and resource-filter semantics remain BG3-owned.
+
+The next game run should verify only these user-visible seams: tooltip and selector never disagree after resource switching; the selected edge resource tab is actually visible in both directions; B from one real nested/upcast/container view returns to a populated version of the same resource tab.
