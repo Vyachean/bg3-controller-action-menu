@@ -50,20 +50,27 @@
     "defaultCancelCommand": "ClearSingleHotbarCommand",
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
-      "outer": "LSListBox",
-      "outerDirectionalNavigation": "Contained",
-      "outerNextEvent": "UIDown",
-      "outerPrevEvent": "UIUp",
-      "childDirectionalNavigation": "Continue",
-      "grid": "LSGrid",
+      "executableList": "HotBarList",
+      "itemsSource": "SingleHotBar.SlotList",
+      "directionalNavigation": "Contained",
+      "nextEvent": "UIDown",
+      "prevEvent": "UIUp",
+      "grid": "CAM_ActionGridPanel",
       "gridEvents": [
         "UIUp",
         "UIDown",
         "UILeft",
         "UIRight"
       ],
-      "selectorTemplate": "SelectorTemplate",
-      "selectorHasFixedGeometry": false
+      "selector": "CAM_MainSelector",
+      "selectorTemplate": "CAM_SelectorTemplate",
+      "selectorHasFixedGeometry": false,
+      "scrollOwner": "HotBarList",
+      "nestedStateUsesSameList": true,
+      "forbiddenDuplicateLists": [
+        "CAM_FilteredSlotList",
+        "SingleBar"
+      ]
     },
     "buttonHintsContainer": {
       "style": "ButtonHint.Container.CenterWrap",
@@ -139,14 +146,15 @@
         "IsShowingItemsToThrow": false
       },
       "nestedDefaultCommand": "ClearSingleHotbarCommand",
-      "topLevelCommand": "CustomEvent:CloseWidget"
+      "topLevelCommand": "CustomEvent:CloseWidget",
+      "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Does each resource preview populate the expected executable SingleHotBar.SlotList?",
-      "Does a spell-slot tab materialize level-specific VMHotBarSlot/VMUpcast variants directly?",
-      "Are Action/Bonus filters broader than the desired primary-resource policy?",
-      "Do custom/mod resources appear automatically?",
-      "Does top-level B close while true nested variant/upcast state backs out?"
+      "Does one direct HotBarList remove invisible focus transitions at top level?",
+      "When BG3 enters variant/upcast/throw state, does the same HotBarList show the nested SingleHotBar.SlotList and keep navigation/A working?",
+      "Does the direct HotBarList ScrollViewer keep lower focused rows visible?",
+      "Does CAM_MainSelector align with direct HotBarList cells?",
+      "After nested B, does BG3 restore the resource-filtered list or leave it empty, requiring an isolated filter-restore fix?"
     ]
   },
   "captureMatchCount": 22,
