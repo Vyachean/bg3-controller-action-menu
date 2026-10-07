@@ -116,6 +116,7 @@ def validate_semantics() -> list[str]:
                 'Command="{Binding ClearSingleHotbarCommand}"',
                 'x:Name="ButtonHintsContainer"',
                 'x:Name="ToggleWeaponSet"',
+                'x:Name="WeaponSetShortcutBinding"',
                 'BoundEvent="UISelectionLeft"',
                 'SwitchWeaponSetCommand',
                 'ActionLeftEvent="UILeft"',

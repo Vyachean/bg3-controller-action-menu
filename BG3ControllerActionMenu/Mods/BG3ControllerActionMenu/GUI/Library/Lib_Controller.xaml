@@ -484,7 +484,6 @@
                              Width="1000"/>
 
                 <ls:LSButton x:Name="ToggleWeaponSet"
-                             BoundEvent="UISelectionLeft"
                              Style="{StaticResource ControllerHoldButtonStyle}"
                              Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"
                              Command="{Binding SwitchWeaponSetCommand}"
@@ -532,6 +531,11 @@
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>
+
+                <ls:LSInputBinding x:Name="WeaponSetShortcutBinding"
+                                   BoundEvent="UISelectionLeft"
+                                   Command="{Binding SwitchWeaponSetCommand}"
+                                   EatInput="False"/>
 
                 <ls:LSInputBinding x:Name="PinTooltipBinding" Style="{StaticResource PinTooltipBindingStyle}" BoundEvent="UIShowInfo"/>
                 <ls:LSInputBinding x:Name="ShortcutMenuBinding" Command="{Binding CustomEvent}" BoundEvent="PanelSelect" CommandParameter="ToggleShortcutMenu"/>
