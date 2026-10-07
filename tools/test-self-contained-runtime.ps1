@@ -79,6 +79,7 @@ $required = @(
     '<Binding Path="SingleHotBar.SlotList"/>',
     'x:Name="HotBarList"',
     'KeyboardNavigation.DirectionalNavigation="Contained"',
+    'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
     'x:Name="CAM_FilteredSlotList"',
     'KeyboardNavigation.DirectionalNavigation="Continue"',
     'x:Name="CAM_MainSelector"',
@@ -253,4 +254,20 @@ if (-not $weaponBinding.Success -or
 }
 if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
     throw "Ordinary grid-left navigation must remain UILeft."
+}
+
+
+# 0.0.53 is an isolated viewport correction. Keep the existing focus hierarchy
+# and add only the captured controller scroll-follow helper to HotBarList's viewer.
+$hotBarList = [regex]::Match(
+    $text,
+    '<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?</ls:LSListBox>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $hotBarList.Success -or
+    -not $hotBarList.Value.Contains('ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"')) {
+    throw "HotBarList ScrollViewer must follow focused descendant rows with a 120px vertical margin."
+}
+if (-not $hotBarList.Value.Contains('x:Name="CAM_FilteredSlotList"')) {
+    throw "0.0.53 must not rewrite the focus hierarchy while proving scroll-follow behavior."
 }
