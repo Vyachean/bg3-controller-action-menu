@@ -178,3 +178,16 @@ The operator-facing VBS remains usable without credentials. In GitHub Actions, r
 - `Install-BG3ControllerActionMenu.vbs` adds an Authorization header only when `GH_TOKEN` or `GITHUB_TOKEN` already exists in its environment;
 - no token is persisted to launcher logs, metadata, cache, or release assets;
 - absence of a token preserves the public unauthenticated launcher path.
+
+
+## CI Releases API authentication
+
+The universal `dev-entry.ps1` normally uses the public GitHub Releases API and requires no account/token from the operator.
+
+GitHub Actions shares egress IPs and can exhaust anonymous API rate limits. When `GH_TOKEN` or `GITHUB_TOKEN` is already present, `dev-entry.ps1` therefore adds an `Authorization: Bearer ...` header to its Releases API request. This is CI/environment-provided authentication only:
+
+- no token is bundled into release assets;
+- no token is written to launcher logs, reports, cache metadata, or status files;
+- an ordinary user without either environment variable follows the unchanged public path.
+
+The release visibility proof must use this authenticated path when the workflow-provided token exists so a 403 anonymous rate-limit response cannot masquerade as publication failure.
