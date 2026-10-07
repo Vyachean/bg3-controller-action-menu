@@ -34,7 +34,11 @@ if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb
 if ($evidence.runtimeContract.coverageContract.status -ne "incomplete-until-native-parity-proven" -or
     $evidence.runtimeContract.coverageContract.dispatchType -ne "VMHotBarSlot" -or
     $evidence.runtimeContract.coverageContract.documentation -ne "docs/action-coverage.md" -or
-    $evidence.runtimeContract.coverageContract.captureDiagnostics.report -ne "hotbar-coverage-contract.json") {
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.report -ne "hotbar-coverage-contract.json" -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.schemaVersion -ne 2 -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.searchScope -ne "all captured XAML" -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.missingProbePolicy -ne "record-missing-do-not-fail" -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.recordsSourceFile -ne $true) {
     throw "Runtime evidence must carry the controller HotBar parity contract."
 }
 $requiredCoverageGaps = @(
