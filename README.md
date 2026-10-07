@@ -91,8 +91,8 @@ Every run:
 - the VBS itself checks the newest published GitHub Release;
 - downloads that release's current `dev-entry.ps1` into `installer-work`;
 - runs the release-controlled task;
-- for the current install task, `dev-entry.ps1` downloads `install-latest.ps1`, which installs only the ready self-contained CAM PAK;
-- after a successful legacy migration, the canonical installer refreshes the VBS and retires the obsolete local `bootstrap-latest.ps1`.
+- for the current capture milestone, `dev-entry.ps1` downloads `capture-self-contained-inputs.ps1` and creates the read-only evidence ZIP beside the VBS;
+- this milestone does not change the installed CAM package or BG3 profile state.
 
 The extracted development folder is intentionally reusable. Internal scripts and even the kind of development task may change, but the same VBS remains the operator entry point.
 
