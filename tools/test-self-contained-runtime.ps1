@@ -344,7 +344,6 @@ foreach ($forbidden in @(
     'CAM_ItemsFilterTab',
     'CAM_PassivesFilterTab',
     'SetCurrentShownDeckCommand',
-    'FilterCantripsCommand',
     'CurrentShownDeck.SlotList',
     'IsShowingPassivesDeck',
     'SetIsShowingPassivesDeckCommand',
