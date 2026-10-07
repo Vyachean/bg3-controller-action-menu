@@ -481,9 +481,9 @@ if (-not $mainList.Success -or
     -not $mainList.Value.Contains('Value="{StaticResource CAM_AllGroupContainerStyle}"') -or
     -not $mainList.Value.Contains('Value="{StaticResource CAM_AllGroupTemplate}"') -or
     -not $mainList.Value.Contains('Value="{StaticResource CAM_AllGroupsPanel}"') -or
-    -not $mainList.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
-    -not $mainList.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
-    -not $mainList.Value.Contains('ItemsPanel="{StaticResource CAM_ActionGridPanel}"') -or
+    -not $mainList.Value.Contains('<Setter Property="ItemContainerStyle" Value="{StaticResource CAM_ActionGridSlotContainer}"/>') -or
+    -not $mainList.Value.Contains('<Setter Property="ItemTemplate" Value="{StaticResource CAM_ActionGridSlotTemplate}"/>') -or
+    -not $mainList.Value.Contains('<Setter Property="ItemsPanel" Value="{StaticResource CAM_ActionGridPanel}"/>') -or
     -not $mainList.Value.Contains('<ls:LSScrollViewer') -or
     -not $mainList.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"')) {
     throw "The sole HotBarList must switch only among proven executable SingleHotBar, ItemHotBar, FixedSideBar, PassivesHotBar, and grouped KeyboardHotBars slots."
