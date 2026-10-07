@@ -94,11 +94,19 @@
       "visibleFocusVisualStyle": null,
       "resourceSelectionRestore": {
         "event": "CAM_ResourceTabs.SelectionChanged",
-        "delayMilliseconds": 70,
-        "clearSelectedIndex": -1,
-        "restoreSelectedIndex": 0,
-        "focusTarget": "HotBarList",
-        "duplicatesFilterCommand": false
+        "clearSelectedItem": true,
+        "clearLocalFocus": true,
+        "filterCommandCount": 1,
+        "restoreVia": "SetMoveFocusAction(DeferFocusAction=True)",
+        "writesSelectedIndex": false,
+        "extraTimer": false
+      },
+      "visibleFocusChrome": {
+        "source": "HotBarList.SelectedItem<-LocalFocus.DataContext",
+        "fill": "CAM_CellFocusFill",
+        "frame": "CAM_CellFocusFrame",
+        "frameBorderThickness": 4,
+        "frameOpacity": 1
       }
     },
     "buttonHintsContainer": {
@@ -134,13 +142,14 @@
       "resourceViewport": {
         "mode": "bounded-horizontal-scroll",
         "autoScrollBehavior": "AutoScrollBehavior",
-        "scrollIntoView": "SelectedIndex",
+        "scrollIntoView": "SelectedItem",
         "bringSelectionIntoView": true,
         "maxTabWidth": null,
         "listMaxWidth": 1160,
         "itemTextTrimming": false,
-        "cycleForceSelect": true,
-        "scrollOwner": "AutoScrollBehavior"
+        "cycleForceSelect": false,
+        "scrollOwner": "AutoScrollBehavior",
+        "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only"
       }
     },
     "tooltipPresentation": {
@@ -190,11 +199,11 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Is there only one visible action-focus chrome, with no stale first-cell FocusVisualStyle rectangle?",
-      "Immediately after resource-tab switching, is the first action visibly selected before directional navigation?",
-      "Does A still execute the same logically focused VMHotBarSlot?",
-      "When cycling from the last resource tab to the first, does the first tab return into the visible horizontal viewport?",
-      "Do native RomanNumeralLevelImage spell-slot tabs and uncapped generic labels remain correct?"
+      "Does resource switching reset HotBarList.LocalFocus so visible selection, D-pad origin, tooltip and A all start from the same first slot?",
+      "Can a one-item resource tab execute immediately with A without any prior directional input?",
+      "Are collapsed MaxValue=0 resource previews absent from shoulder navigation?",
+      "When cycling from the last visible resource tab to the first, does SelectedItem-based AutoScrollBehavior bring the first tab into view?",
+      "Do both the translucent focus fill and opaque focus frame follow LocalFocus-derived selection, including visually empty cells?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {

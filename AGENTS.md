@@ -341,3 +341,20 @@ Required correction:
 - after resource `SelectionChanged` and `FilterActionResourceCommand`, re-establish `HotBarList.SelectedIndex=0` after the list has settled, then defer focus back to `HotBarList`; do not duplicate gameplay dispatch or resource filtering;
 - resource-tab shoulder cycling uses `SelectNextListBoxItem ForceSelect=True ForceMode=Cycle` so a wrap from the last tab to the first produces a full selection transition for the existing `AutoScrollBehavior`;
 - keep the bounded tab viewport and native `AutoScrollBehavior`; do not add a second custom scrolling model.
+
+
+## Runtime correction — 0.0.61 -> 0.0.62
+
+0.0.61 runtime proof rejects the SelectedIndex/ForceSelect correction:
+- `ForceSelect=True` makes shoulder cycling enter native resource-preview items that CAM intentionally hides when `ActionResource.MaxValue == 0`, producing invisible empty tabs;
+- forcing `HotBarList.SelectedIndex=0` only changes presentation. The actual `HotBarList.LocalFocus` remains at the previous tab's coordinates, so navigation and A can still target the old slot while the first cell is highlighted;
+- one-item tabs expose the same divergence because no directional move occurs to generate a new `LocalFocusChanged`;
+- the first resource tab still fails to scroll back into view when the strip has moved right.
+
+The corrected contract is:
+- resource changes clear `ActionRadials.Tag`, `HotBarList.SelectedItem`, and, critically, `HotBarList.LocalFocus` before invoking `FilterActionResourceCommand`. Clearing `LocalFocus` is a native ActionRadials pattern and is the only reset that owns controller navigation/dispatch state;
+- immediately after filtering, use `SetMoveFocusAction(..., DeferFocusAction=True)` on the same `HotBarList`; do **not** synthesize `SelectedIndex=0` or add a second resource-switch timer. The ensuing native `LocalFocusChanged` must repopulate selection, tooltip, resource highlighting and `ActionRadials.Tag` from one slot;
+- remove `ForceSelect=True` from resource shoulder cycling so collapsed MaxValue=0 previews are not forcibly selectable;
+- keep `ForceMode=Cycle` only;
+- bind resource-strip `AutoScrollBehavior.ScrollIntoView` to `CAM_ResourceTabs.SelectedItem`, not numeric `SelectedIndex`, so the first item is represented by a real object rather than index 0;
+- visible action focus remains CAM-owned and derived from `IsSelected`, but it must include both a translucent selection fill and a fully opaque border frame so focus remains visible on cells whose icon/content is visually empty.

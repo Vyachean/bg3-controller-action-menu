@@ -268,3 +268,34 @@ The custom `Toggle weapon set` shortcut is not part of this focus path. Repeated
 A resource switch replaces/refilters `SingleHotBar.SlotList`. Because the first logical slot may be implied before another `LocalFocusChanged`, CAM re-establishes visual selection at index 0 after the resource selection settles, then defers focus back to the same `HotBarList`. This is presentation/focus restoration only; `ActionRadials.Tag` and A still come from the existing native local-focus lifecycle.
 
 For the resource strip, native-style shoulder cycling now uses `SelectNextListBoxItem ForceSelect=True ForceMode=Cycle`. The existing `AutoScrollBehavior(SelectedIndex, BringSelectionIntoView=True)` remains the sole scroll-follow mechanism; forcing selection ensures the last→first wrap emits the selection transition it needs.
+
+
+### 0.0.62 — LocalFocus reset is the resource-switch boundary
+
+0.0.61 demonstrated that `SelectedIndex` is not a controller-focus primitive. It can paint the first item while `HotBarList.LocalFocus` still points to the previous resource tab's slot. That splits visible selection, navigation, tooltip and A dispatch and is especially visible on one-item tabs.
+
+The resource-switch lifecycle therefore resets the native focus owner itself:
+
+```text
+CAM_ResourceTabs.SelectionChanged
+  -> ActionRadials.Tag = null
+  -> HotBarList.SelectedItem = null
+  -> HotBarList.LocalFocus = null
+  -> ClearResourceHighlightsCommand
+  -> FilterActionResourceCommand(selected preview)
+  -> SetMoveFocusAction(ActionRadials -> HotBarList, deferred)
+        |
+        v
+HotBarList.LocalFocusChanged
+  -> SelectedItem = LocalFocus.DataContext
+  -> tooltip/highlights
+  -> 70 ms ActionRadials.Tag = LocalFocus.DataContext
+```
+
+This follows the native ActionRadials pattern that explicitly clears an LSListBox `LocalFocus` when relinquishing/resetting focus. No CAM-selected index is allowed to stand in for local focus.
+
+The 0.0.61 `ForceSelect=True` shoulder workaround is removed because it forces selection of collapsed native previews, including `MaxValue == 0` entries, creating invisible tabs. Cycling remains `ForceMode=Cycle` only.
+
+For tab-strip scrolling, `AutoScrollBehavior.ScrollIntoView` tracks `SelectedItem` instead of `SelectedIndex`. BG3's own AutoScrollBehavior accepts element objects (for example ActionRadials `FocusedElement`); using the selected preview object removes the special index-0 failure when wrapping back to the first resource.
+
+Visible focus chrome is still independent from the invisible logical selector anchor, but it is a two-layer item-local presentation: translucent fill plus opaque border frame. Both are driven by the same `ListBoxItem.IsSelected` that mirrors `LocalFocus.DataContext`.

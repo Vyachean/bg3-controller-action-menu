@@ -785,3 +785,28 @@ Automatic proof must verify the LocalFocus->SelectedItem bridge, reject `ls:Move
 5. the existing bounded `AutoScrollBehavior` remains and no manual horizontal-offset mechanism is added.
 
 The next game run should verify only: one moving focus visual with no stale first-cell rectangle; visible first-cell selection immediately after a tab switch; and last→first tab wrap bringing the first tab back into the visible strip.
+
+
+### 2026-10-07 — 0.0.61 runtime result / 0.0.62 proof boundary
+
+0.0.61 runtime result:
+
+- removing the native physical `FocusVisualStyle` eliminated the stale first-cell rectangle, but the replacement exposed that CAM was still treating visual selection and controller focus as separate state;
+- after a tab switch, the first cell is highlighted while D-pad navigation starts from the previous tab's old slot;
+- A cannot immediately execute after switching tabs; one-item tabs are effectively unusable until another navigation event occurs;
+- a strong border frame is still required in addition to fill because some focusable cells have little/no visible icon surface;
+- `ForceSelect=True` introduced roughly four invisible/empty resource tabs by allowing shoulder cycling through collapsed `MaxValue=0` preview containers;
+- the resource viewport still does not bring the first tab back into view after wrapping from the end.
+
+0.0.62 automatic proof must require:
+
+1. resource `SelectionChanged` clears `HotBarList.LocalFocus` and `HotBarList.SelectedItem` before filtering;
+2. no resource-switch code writes `HotBarList.SelectedIndex`;
+3. `SetMoveFocusAction(..., DeferFocusAction=True)` returns focus to the same `HotBarList` with no separate resource-switch timer, allowing the native `LocalFocusChanged` lifecycle to establish the first actual slot;
+4. resource shoulder actions use `ForceMode=Cycle` but contain no `ForceSelect=True`;
+5. `AutoScrollBehavior.ScrollIntoView` binds to `CAM_ResourceTabs.SelectedItem`, not `SelectedIndex`;
+6. MaxValue=0/null previews remain visually collapsed and are not made forcibly selectable;
+7. the cell focus template contains a translucent fill and a separate opaque border, both shown only for `IsSelected=True`;
+8. A/tooltip/highlight still consume only `LocalFocus.DataContext` and `ActionRadials.Tag` through the existing native lifecycle.
+
+The next game run should verify: no invisible tabs; last→first tab wrap shows the first tab; switching a resource immediately establishes a real first-slot focus and A works without any D-pad movement; one-item tabs execute immediately; and a visible border follows navigation even on visually empty cells.
