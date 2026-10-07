@@ -16,7 +16,7 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Focusable" Value="True"/>
         <Setter Property="ls:MoveFocus.Focusable" Value="True"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource Style.FocusVisualStyle}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Width" Value="104"/>
         <Setter Property="Height" Value="104"/>
@@ -285,23 +285,32 @@
                                 <b:EventTrigger SourceName="CAM_TabLeft" EventName="Click">
                                     <ls:SelectNextListBoxItem Reversed="True"
                                                               TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceSelect="True"
                                                               ForceMode="Cycle"/>
                                 </b:EventTrigger>
                                 <b:EventTrigger SourceName="CAM_TabRight" EventName="Click">
                                     <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceSelect="True"
                                                               ForceMode="Cycle"/>
                                 </b:EventTrigger>
 
                                 <b:EventTrigger EventName="SelectionChanged">
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                </b:EventTrigger>
+
+                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:ChangePropertyAction TargetName="HotBarList"
+                                                            PropertyName="SelectedIndex"
+                                                            Value="0"/>
                                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                                            FocusElement="{Binding ElementName=HotBarList}"
                                                            DeferFocusAction="True"/>
-                                </b:EventTrigger>
+                                </b:TimerTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"

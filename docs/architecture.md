@@ -259,3 +259,12 @@ The current captured keyboard HotBar also confirms that `ActionResourcesCostPrev
 SpellSlot/WarlockSpellSlot are not generic text tabs. The current HotBar renderer presents their level with an `Image` using `RomanNumeralLevelImage` and `DataContext="{Binding ActionResource}"`; CAM reuses that exact presentation seam. MaxValue=0 resources remain hidden exactly as native HotBar does.
 
 The custom `Toggle weapon set` shortcut is not part of this focus path. Repeated runtime attempts have shown no reliable ActionRadials transport, so CAM does not bind or advertise it until a proven native seam exists.
+
+
+### 0.0.61 focus-chrome ownership and tab wrap
+
+0.0.60 runtime proof separates the two action-focus visuals. `IsSelected` now follows `LocalFocus.DataContext` correctly, while the inherited `FocusVisualStyle` remains attached to the physically focused first cell. CAM therefore disables the item `FocusVisualStyle` and keeps only the selection-driven `CAM_CellFocus` overlay.
+
+A resource switch replaces/refilters `SingleHotBar.SlotList`. Because the first logical slot may be implied before another `LocalFocusChanged`, CAM re-establishes visual selection at index 0 after the resource selection settles, then defers focus back to the same `HotBarList`. This is presentation/focus restoration only; `ActionRadials.Tag` and A still come from the existing native local-focus lifecycle.
+
+For the resource strip, native-style shoulder cycling now uses `SelectNextListBoxItem ForceSelect=True ForceMode=Cycle`. The existing `AutoScrollBehavior(SelectedIndex, BringSelectionIntoView=True)` remains the sole scroll-follow mechanism; forcing selection ensures the last→first wrap emits the selection transition it needs.

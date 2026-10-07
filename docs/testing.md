@@ -763,3 +763,25 @@ The resource result identifies two presentation corrections:
 - render SpellSlot/WarlockSpellSlot with the native HotBar `Image + RomanNumeralLevelImage` contract instead of the incorrect CAM `TextBlock + SpellSlotNumberStyle` approximation.
 
 Automatic proof must verify the LocalFocus->SelectedItem bridge, reject `ls:MoveFocus.IsFocused` as the cell-focus trigger, reject per-tab MaxWidth/TextTrimming, and require the native spell-level Image style. The next game run should not retest already-proven A semantics beyond a quick regression check; its main runtime questions are moving focus chrome, lower-row scrolling, and resource-tab labels/levels.
+
+
+### 2026-10-07 — 0.0.60 runtime result / 0.0.61 proof boundary
+
+0.0.60 runtime result:
+
+- logical navigation, tooltip and A remain correct;
+- the new selected-item highlight follows navigation;
+- a second focus rectangle remains on the first cell, proving it is the inherited physical `FocusVisualStyle`, not CAM's logical-focus chrome;
+- immediately after switching resource tabs, no CAM selection is shown until navigation, although first-slot focus is implied;
+- resource labels/level presentation are materially improved and fit;
+- when the resource strip has scrolled right, cycling from the last tab directly to the first does not scroll the first tab back into view.
+
+0.0.61 automatic proof must require:
+
+1. action-cell `FocusVisualStyle={x:Null}` and no native focus rectangle in addition to `CAM_CellFocus`;
+2. resource-selection restoration of `HotBarList.SelectedIndex=0` after filtering without invoking `FilterActionResourceCommand` a second time;
+3. deferred focus restoration to the same `HotBarList`;
+4. both shoulder-cycle actions use `ForceSelect=True` and `ForceMode=Cycle`;
+5. the existing bounded `AutoScrollBehavior` remains and no manual horizontal-offset mechanism is added.
+
+The next game run should verify only: one moving focus visual with no stale first-cell rectangle; visible first-cell selection immediately after a tab switch; and last→first tab wrap bringing the first tab back into the visible strip.

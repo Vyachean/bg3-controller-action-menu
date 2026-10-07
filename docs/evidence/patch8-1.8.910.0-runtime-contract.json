@@ -90,7 +90,16 @@
       "selectorOpacity": 0,
       "visibleFocusSource": "HotBarList.SelectedItem",
       "visibleFocusSyncEvent": "LocalFocusChanged",
-      "visibleFocusSyncValue": "HotBarList.LocalFocus.DataContext"
+      "visibleFocusSyncValue": "HotBarList.LocalFocus.DataContext",
+      "visibleFocusVisualStyle": null,
+      "resourceSelectionRestore": {
+        "event": "CAM_ResourceTabs.SelectionChanged",
+        "delayMilliseconds": 70,
+        "clearSelectedIndex": -1,
+        "restoreSelectedIndex": 0,
+        "focusTarget": "HotBarList",
+        "duplicatesFilterCommand": false
+      }
     },
     "buttonHintsContainer": {
       "style": "ButtonHint.Container.CenterWrap",
@@ -129,7 +138,9 @@
         "bringSelectionIntoView": true,
         "maxTabWidth": null,
         "listMaxWidth": 1160,
-        "itemTextTrimming": false
+        "itemTextTrimming": false,
+        "cycleForceSelect": true,
+        "scrollOwner": "AutoScrollBehavior"
       }
     },
     "tooltipPresentation": {
@@ -179,12 +190,11 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Does visible focus chrome move with the same VMHotBarSlot reported by HotBarList.LocalFocus.DataContext?",
+      "Is there only one visible action-focus chrome, with no stale first-cell FocusVisualStyle rectangle?",
+      "Immediately after resource-tab switching, is the first action visibly selected before directional navigation?",
       "Does A still execute the same logically focused VMHotBarSlot?",
-      "Do lower rows scroll using pixel scrolling and VerticalScrollOffsetMargin?",
-      "Do long generic resource names render without a CAM per-tab width cap while the outer viewport remains bounded?",
-      "Do SpellSlot/WarlockSpellSlot tabs render native RomanNumeralLevelImage levels instead of blank text tabs?",
-      "Is the broken CAM-owned weapon-set shortcut still absent?"
+      "When cycling from the last resource tab to the first, does the first tab return into the visible horizontal viewport?",
+      "Do native RomanNumeralLevelImage spell-slot tabs and uncapped generic labels remain correct?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
