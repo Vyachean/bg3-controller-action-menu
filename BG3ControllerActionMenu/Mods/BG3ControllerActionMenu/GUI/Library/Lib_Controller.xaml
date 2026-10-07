@@ -676,6 +676,22 @@
                             <b:ConditionalExpression>
                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
                                                        Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_AllModeToken}"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <!-- Recreate the selected outer VMHotBar group. Its template then hands
+                         focus to the first concrete VMHotBarSlot through the existing reset token. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Value="{StaticResource CAM_NestedRestoringToken}">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                                       Operator="Equal"
                                                        RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
