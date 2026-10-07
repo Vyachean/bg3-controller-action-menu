@@ -30,19 +30,26 @@
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                     <Grid Width="104" Height="104" Background="Transparent">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Border x:Name="CAM_CellFocus"
+                        <Border x:Name="CAM_CellFocusFill"
                                 Width="104"
                                 Height="104"
                                 Background="{StaticResource LS_PadSelectorBGColor}"
-                                BorderBrush="{StaticResource LS_specialTxtColor}"
-                                BorderThickness="3"
                                 Opacity="0.35"
+                                IsHitTestVisible="False"
+                                Visibility="Collapsed"/>
+                        <Border x:Name="CAM_CellFocusFrame"
+                                Width="104"
+                                Height="104"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource LS_specialTxtColor}"
+                                BorderThickness="4"
                                 IsHitTestVisible="False"
                                 Visibility="Collapsed"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="CAM_CellFocus" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="CAM_CellFocusFill" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="CAM_CellFocusFrame" Property="Visibility" Value="Visible"/>
                             <Setter Property="Panel.ZIndex" Value="1"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -190,9 +197,11 @@
         <Style.Triggers>
             <DataTrigger Binding="{Binding ActionResource}" Value="{x:Null}">
                 <Setter Property="Visibility" Value="Collapsed"/>
+                <Setter Property="IsEnabled" Value="False"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding ActionResource.MaxValue}" Value="0">
                 <Setter Property="Visibility" Value="Collapsed"/>
+                <Setter Property="IsEnabled" Value="False"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
                 <Setter Property="Opacity" Value="0.55"/>
@@ -269,7 +278,7 @@
                                       ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"
                                       ItemsPanel="{StaticResource CAM_ResourceTabsPanel}">
                             <b:Interaction.Behaviors>
-                                <ls:AutoScrollBehavior ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
+                                <ls:AutoScrollBehavior ScrollIntoView="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"
                                                        BringSelectionIntoView="True"/>
                             </b:Interaction.Behaviors>
                             <ls:LSListBox.Template>
@@ -285,32 +294,25 @@
                                 <b:EventTrigger SourceName="CAM_TabLeft" EventName="Click">
                                     <ls:SelectNextListBoxItem Reversed="True"
                                                               TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceSelect="True"
                                                               ForceMode="Cycle"/>
                                 </b:EventTrigger>
                                 <b:EventTrigger SourceName="CAM_TabRight" EventName="Click">
                                     <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceSelect="True"
                                                               ForceMode="Cycle"/>
                                 </b:EventTrigger>
 
                                 <b:EventTrigger EventName="SelectionChanged">
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedItem" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
-                                </b:EventTrigger>
-
-                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                    <b:ChangePropertyAction TargetName="HotBarList"
-                                                            PropertyName="SelectedIndex"
-                                                            Value="0"/>
                                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                                            FocusElement="{Binding ElementName=HotBarList}"
                                                            DeferFocusAction="True"/>
-                                </b:TimerTrigger>
+                                </b:EventTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
