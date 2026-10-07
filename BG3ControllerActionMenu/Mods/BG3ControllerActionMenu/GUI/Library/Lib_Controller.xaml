@@ -160,8 +160,8 @@
         </ls:LSGrid>
     </ItemsPanelTemplate>
 
-    <!-- Resource-first navigation retains LSListBox selection for LB/RB, but the visual
-         is the exact Patch 8 HotBar ActionResourcesList resource button rather than a textual filter pill. -->
+    <!-- Controller selection is transport only. Native resource content is the current Patch 8
+         ActionResourcesList item template; ListBoxItem.IsSelected must not alter its visuals. -->
     <Style x:Key="CAM_ResourceTabItemStyle"
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
@@ -170,141 +170,14 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Margin" Value="-4,0,-4,0"/>
-        <Setter Property="Width" Value="80"/>
-        <Setter Property="Height" Value="72"/>
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Grid x:Name="ButtonFrame"
-                          Margin="4,-10,4,10"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center">
-                        <Grid x:Name="Root" Width="72">
-                            <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
-                            <Image x:Name="Bg"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   Source="{StaticResource CAM_BoxResource}"/>
-                            <Image x:Name="BgHL"
-                                   Visibility="Collapsed"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   Source="{StaticResource CAM_BoxResourceH}"/>
-                            <Image x:Name="BgDisabled"
-                                   Visibility="Collapsed"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   Source="{StaticResource CAM_BoxResourceDisabled}"/>
-
-                            <Border Background="Transparent"
-                                    Width="72"
-                                    Height="72"
-                                    VerticalAlignment="Center"
-                                    HorizontalAlignment="Center">
-                                <ls:LSActionPointResources x:Name="ResourcePoints"
-                                                           Background="Transparent"
-                                                           HorizontalAlignment="Center"
-                                                           MaxActionPoints="{Binding MaxValue}"
-                                                           AvailableActionPoints="{Binding Value}"
-                                                           HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"
-                                                           DataContext="{Binding ActionResource}"
-                                                           MaxActionPointGroups="0"
-                                                           SmallActionPointSize="24"
-                                                           ActionPointGroupSize="56"
-                                                           Style="{StaticResource ActionResourcesTemplateSelector}"/>
-                            </Border>
-
-                            <Image x:Name="SpellSlotLevels"
-                                   Stretch="None"
-                                   VerticalAlignment="Top"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,-10,0,0"
-                                   IsHitTestVisible="False"
-                                   Style="{StaticResource RomanNumeralLevelImage}"
-                                   Visibility="Hidden"
-                                   DataContext="{Binding ActionResource}"/>
-
-                            <TextBlock x:Name="ResourcesNumeralDisplay"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Margin="0,20,0,-20"
-                                       Foreground="{Binding Foreground, ElementName=ResourcePoints}"
-                                       IsHitTestVisible="False"
-                                       FontWeight="Bold"
-                                       FontSize="{DynamicResource MediumFontSize}"
-                                       Text="{Binding ActionResource.Value}"
-                                       noesis:Text.Stroke="{StaticResource LS_PrimaryColorOutlineColor}"
-                                       noesis:Text.StrokeThickness="4">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Hidden"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Value="False">
-                                                <DataTrigger.Binding>
-                                                    <MultiBinding Converter="{StaticResource LessThanOrEqualMultiConverter}">
-                                                        <Binding Path="ActionResource.Value"/>
-                                                        <Binding ElementName="ResourcePoints" Path="MaxGroupActionPoints"/>
-                                                    </MultiBinding>
-                                                </DataTrigger.Binding>
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
-                            <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
-                            <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
-                            <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
-                            <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
-                            <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
-                            <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
-                            <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
-                            <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
-                            <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
-                            <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
-                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-
-                        <!-- Controller adaptation: selected tab uses the native HotBar mouse-hover resource chrome.
-                             Passives mode suppresses the preserved native-resource selection. -->
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
-                                <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
-                            </MultiDataTrigger.Conditions>
-                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
-                        </MultiDataTrigger>
-
-                        <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
-                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-
-                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration">
-                            <Setter TargetName="ResourcesNumeralDisplay" Property="Margin" Value="0,22,0,-22"/>
-                            <Setter TargetName="ResourcesNumeralDisplay" Property="FontSize" Value="{DynamicResource SmallFontSize}"/>
-                        </DataTrigger>
-                    </ControlTemplate.Triggers>
+                    <ContentPresenter HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -319,6 +192,153 @@
             </DataTrigger>
         </Style.Triggers>
     </Style>
+
+    <DataTemplate x:Key="CAM_ResourceTabTemplate"
+                  DataType="ls:VMActionResourceCostPreview">
+        <ls:LSButton Padding="0"
+                     Margin="4,-10,4,10"
+                     Focusable="False"
+                     ls:MoveFocus.Focusable="False">
+            <ls:AttachedProperties.AutomationId>
+                <MultiBinding StringFormat="{}{0}_{1}">
+                    <Binding Path="ActionResource.TypeId"/>
+                    <Binding Path="ActionResource.Value"/>
+                </MultiBinding>
+            </ls:AttachedProperties.AutomationId>
+
+            <Grid x:Name="Root" Width="72">
+                <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
+                <Image x:Name="Bg"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Source="{StaticResource CAM_BoxResource}"
+                       Margin="{StaticResource CAM_ResourceBackgroundMargin}"/>
+                <Image x:Name="BgHL"
+                       Visibility="Collapsed"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Source="{StaticResource CAM_BoxResourceH}"
+                       Margin="{StaticResource CAM_ResourceBackgroundMargin}"/>
+                <Image x:Name="BgDisabled"
+                       Visibility="Collapsed"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Source="{StaticResource CAM_BoxResourceDisabled}"
+                       Margin="{StaticResource CAM_ResourceBackgroundMargin}"/>
+
+                <Border Background="Transparent"
+                        Width="72"
+                        Height="72"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        ToolTipService.IsEnabled="True"
+                        ToolTipService.Placement="Top">
+                    <Border.ToolTip>
+                        <ls:LSTooltip IsHitTestVisible="False"
+                                      Style="{StaticResource ManagedTooltipStyle}"
+                                      Content="{Binding ElementName=Root, Path=DataContext}"/>
+                    </Border.ToolTip>
+                    <ls:LSActionPointResources x:Name="ResourcePoints"
+                                               Background="Transparent"
+                                               HorizontalAlignment="Center"
+                                               MaxActionPoints="{Binding MaxValue}"
+                                               AvailableActionPoints="{Binding Value}"
+                                               HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"
+                                               DataContext="{Binding ActionResource}"
+                                               MaxActionPointGroups="0"
+                                               SmallActionPointSize="24"
+                                               ActionPointGroupSize="56"
+                                               Style="{StaticResource ActionResourcesTemplateSelector}"/>
+                </Border>
+
+                <Image x:Name="SpellSlotLevels"
+                       Stretch="None"
+                       VerticalAlignment="Top"
+                       HorizontalAlignment="Center"
+                       Margin="0,-10,0,0"
+                       IsHitTestVisible="False"
+                       Style="{StaticResource RomanNumeralLevelImage}"
+                       Visibility="Hidden"
+                       DataContext="{Binding ActionResource}"/>
+
+                <TextBlock x:Name="ResourcesNumeralDisplay"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Margin="0,20,0,-20"
+                           Foreground="{Binding Foreground, ElementName=ResourcePoints}"
+                           IsHitTestVisible="False"
+                           FontWeight="Bold"
+                           FontSize="{DynamicResource MediumFontSize}"
+                           Text="{Binding ActionResource.Value}"
+                           noesis:Text.Stroke="{StaticResource LS_PrimaryColorOutlineColor}"
+                           noesis:Text.StrokeThickness="4">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                                <DataTrigger Value="False">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource LessThanOrEqualMultiConverter}">
+                                            <Binding Path="ActionResource.Value"/>
+                                            <Binding ElementName="ResourcePoints" Path="MaxGroupActionPoints"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </ls:LSButton>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Path=Tag, ElementName=Root}" Value="SpellSlot">
+                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
+                <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
+                <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
+                <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
+                <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
+                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="Root" Property="Tag" Value="SpellSlot"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
+                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="Root" Property="Tag" Value="SpellSlot"/>
+            </DataTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
+                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="ActionPoint">
+                <Setter Property="ls:TutorialProperties.ModalType" Value="Bottom"/>
+                <Setter Property="ls:TutorialProperties.TargetStep" Value="2"/>
+                <Setter Property="ls:TutorialProperties.TargetID" Value="TUT_Combat"/>
+                <Setter Property="ls:TutorialProperties.Padding" Value="6,18,6,0"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="BonusActionPoint">
+                <Setter Property="ls:TutorialProperties.ModalType" Value="Bottom"/>
+                <Setter Property="ls:TutorialProperties.TargetStep" Value="3"/>
+                <Setter Property="ls:TutorialProperties.TargetID" Value="TUT_Combat"/>
+                <Setter Property="ls:TutorialProperties.Padding" Value="6,18,6,0"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration">
+                <Setter TargetName="ResourcesNumeralDisplay" Property="Margin" Value="0,22,0,-22"/>
+                <Setter TargetName="ResourcesNumeralDisplay" Property="FontSize" Value="{DynamicResource SmallFontSize}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
 
     <ItemsPanelTemplate x:Key="CAM_ResourceTabsPanel">
         <StackPanel Orientation="Horizontal"
@@ -679,6 +699,7 @@
                                       MaxWidth="1160"
                                       KeyboardNavigation.DirectionalNavigation="Cycle"
                                       ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"
+                                      ItemTemplate="{StaticResource CAM_ResourceTabTemplate}"
                                       ItemsPanel="{StaticResource CAM_ResourceTabsPanel}">
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
