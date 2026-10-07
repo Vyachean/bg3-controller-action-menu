@@ -131,7 +131,7 @@ See [docs/development-vbs.md](docs/development-vbs.md).
 
 ## Installer boundary
 
-The stable bootstrap contract must remain tiny: newest release -> download `install-latest.ps1` -> execute it. Do not make the bootstrap understand version-specific assets.
+The stable operator bootstrap contract must remain tiny: newest published release -> download `dev-entry.ps1` -> execute the release-controlled task. The VBS must not understand version-specific assets. Normal installation remains a release-controlled `dev-entry.ps1 -> install-latest.ps1` task, while an explicit development milestone may temporarily select a read-only capture task.
 
 The VBS installer is portable: caches, downloaded release assets, logs, status and diagnostics belong under a directory beside the VBS launcher. The only writes outside that portable directory are the intentional BG3 mod PAK/profile changes and their safety backups.
 
