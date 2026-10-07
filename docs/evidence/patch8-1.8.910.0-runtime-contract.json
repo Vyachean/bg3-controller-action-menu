@@ -108,7 +108,7 @@
         "invalidateFocus": false,
         "focusesListContainer": false,
         "selectedItemMirrorsLocalFocus": false,
-        "entryStateSource": "LocalFocusChanged after LocalFocus reset + concrete-item handoff",
+        "entryStateSource": "PropertyChangedTrigger(LocalFocus.DataContext) after LocalFocus reset + concrete-item handoff",
         "selectedItemEntryStateWrites": false
       },
       "visibleFocusChrome": {
@@ -162,7 +162,9 @@
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
         "scrollTo": null,
         "scrollTargetKind": "selected ListBoxItem UIElement",
-        "selectedContainerPublishesTag": true
+        "selectedContainerPublishesTag": true,
+        "scrollBindingSource": "templated-parent.Tag",
+        "crossTemplateElementName": false
       }
     },
     "tooltipPresentation": {
@@ -171,7 +173,10 @@
       "command": "ShowTooltipOnUIElementCommand",
       "context": "Hotbar",
       "placement": "Right",
-      "detailsSurface": "native-tooltip-only"
+      "detailsSurface": "native-tooltip-only",
+      "presentationSignal": "PropertyChangedTrigger(LocalFocus.DataContext)",
+      "localFocusChangedRole": "hover-sound-only",
+      "delayedLocalFocusPresentationTimer": false
     },
     "organization": {
       "mode": "resource-first",
@@ -228,11 +233,11 @@
       }
     },
     "runtimeProofQuestions": [
-      "After a resource tab switch, do selector, tooltip, resource highlight and A all identify the same LocalFocus.DataContext without any SelectedItem-derived presentation state?",
-      "Does LSScrollViewer.ScrollToElement keep the selected left/right resource tab container visible while shoulder-cycling?",
-      "After B exits a real nested/upcast/container view, is the same selected resource tab repopulated and focused instead of remaining empty?",
-      "Does top-level B still close CAM without reapplying the resource filter?",
-      "Do hidden MaxValue=0 resource previews remain absent from shoulder navigation?"
+      "Immediately after a resource tab switch, is the tooltip visible for the same LocalFocus.DataContext shown by the native selector?",
+      "Immediately after B returns from a nested/upcast/container view, is the tooltip visible for the restored focused action?",
+      "Does LSScrollViewer.ScrollToElement bound through the resource template's TemplatedParent.Tag keep selected edge tabs visible in both directions?",
+      "Does D-pad navigation still keep selector, tooltip, resource highlight and ActionRadials.Tag synchronized from LocalFocus.DataContext?",
+      "Does the proven 0.0.66 nested-return restoration remain intact?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
