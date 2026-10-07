@@ -1128,3 +1128,23 @@ One runtime proof is then sufficient:
 - confirm no stray always-on numbers;
 - confirm an actually large scalar resource uses the native numeric fallback if present;
 - confirm LB/RB still changes one logical tab and the selected grid starts at the first action with the correct tooltip.
+
+
+### 2026-10-07 — 0.0.75 runtime: exact assets were not enough
+
+Runtime feedback: the tab contents still do not look like keyboard/mouse HotBar; resource quantity presentation appears visually broken.
+
+The next proof is structural rather than asset-based. For native resource entries:
+
+1. `CAM_ResourceTabs` remains the LB/RB selection/filter owner;
+2. its item container has no selected-state visual;
+3. its `ItemTemplate` contains native `LSButton Padding="0" Margin="4,-10,4,10"`;
+4. the inner subtree matches captured `ActionResourcesList`: `Root Width=72`, `LSActionPointResources`, exact value/max/cost bindings, point sizes 24/56, conditional numeric fallback, spell-slot chrome/level overlay and Bardic adjustment;
+5. `IsMouseOver`, not `ListBoxItem.IsSelected`, owns `box_resource_h`;
+6. zero-value owns `box_resource_missing`;
+7. resource item template contains no CAM-selected resource trigger and no ancestor lookup to `CAM_ResourceTabs.Tag`;
+8. outer item presenter uses native `Margin=-4,0,-4,0`;
+9. shared `bar_resources.png` strip remains unchanged;
+10. Passives may remain a synthetic adjacent entry.
+
+In-game acceptance is a single direct comparison of resource contents against keyboard/mouse HotBar. No separate retest of action-grid/item-count behavior is required unless visibly regressed.
