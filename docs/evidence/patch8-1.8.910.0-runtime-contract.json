@@ -107,7 +107,16 @@
         "clearLocalFocus": false,
         "invalidateFocus": false,
         "focusesListContainer": false,
-        "selectedItemMirrorsLocalFocus": false
+        "selectedItemMirrorsLocalFocus": false,
+        "entryTooltipSource": "HotBarList.SelectedItem",
+        "entryTooltipContent": "HotBarList.SelectedItem.Content",
+        "entryTooltipCommand": "ShowTooltipOnUIElementCommand(HotBarList)",
+        "entryTagSource": "HotBarList.SelectedItem",
+        "entryCommands": [
+          "CreateFocusedTooltipDataCommand",
+          "HighlightResourcesCommand"
+        ],
+        "entryOnly": true
       },
       "visibleFocusChrome": {
         "source": "HotBarList.LocalFocusSelector",
@@ -150,7 +159,7 @@
       "resourceViewport": {
         "mode": "bounded-horizontal-scroll",
         "autoScrollBehavior": "AutoScrollBehavior",
-        "scrollIntoView": "SelectedIndex",
+        "scrollIntoView": null,
         "bringSelectionIntoView": true,
         "maxTabWidth": null,
         "listMaxWidth": 1160,
@@ -158,8 +167,8 @@
         "cycleForceSelect": false,
         "scrollOwner": "AutoScrollBehavior",
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
-        "scrollTo": "Center",
-        "scrollTargetKind": "numeric-index"
+        "scrollTo": null,
+        "scrollTargetKind": "selected-container-via-BringSelectionIntoView"
       }
     },
     "tooltipPresentation": {
@@ -209,10 +218,9 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "After a resource filter settles, does SelectedIndex=0 hand focus to the concrete first ListBoxItem so LocalFocus, tooltip and A all begin there?",
-      "Can a one-item resource tab execute immediately with A without any directional input?",
-      "Does the native SelectorTemplate remain visible while navigation crosses both real slots and LSGrid EmptyCellTemplate positions?",
-      "Does SelectedIndex + ScrollTo=Center keep the selected resource tab visible in both cycling directions?",
+      "Immediately after a resource tab change, is the normal action tooltip already visible for the first focused VMHotBarSlot without D-pad input?",
+      "Does the selected resource tab remain visible while cycling both left and right using selection-driven BringSelectionIntoView?",
+      "Does D-pad navigation still keep SelectorTemplate, tooltip, highlights and ActionRadials.Tag synchronized through LocalFocusChanged?",
       "Do hidden MaxValue=0 resource previews remain absent from shoulder navigation?"
     ],
     "controllerShortcuts": {
