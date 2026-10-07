@@ -89,7 +89,7 @@ The universal VBS downloads a fresh copy on every invocation.
 
 That script is intentionally allowed to change between releases. It is the control plane for the current development operation.
 
-For development milestone `0.0.79-hotbar-coverage-capture` the task is one read-only native evidence capture:
+For development milestone `0.0.80-hotbar-coverage-capture-fix` the task is one read-only native evidence capture:
 
 ```text
 VBS

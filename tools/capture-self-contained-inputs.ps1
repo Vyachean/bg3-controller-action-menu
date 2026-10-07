@@ -2,7 +2,8 @@ param(
     [string]$PortableRoot = "",
     [string]$GameInstallRoot = "",
     [string]$DivinePath = "",
-    [switch]$NoDownload
+    [switch]$NoDownload,
+    [switch]$CoverageSelfTest
 )
 
 $ErrorActionPreference = "Stop"
@@ -166,45 +167,62 @@ function Get-XamlAttributeFromTag {
 
 function Get-HotBarCoverageReport {
     param(
-        [string]$HotBarPath,
-        [string[]]$PreloadedRadialPaths
+        [object[]]$Documents,
+        [string]$HotBarPath
     )
 
-    $hotBarText = Get-Content -Raw -LiteralPath $HotBarPath
+    $loadedDocuments = @(
+        foreach ($document in @($Documents)) {
+            if (-not $document.CapturedPath -or -not (Test-Path -LiteralPath $document.CapturedPath -PathType Leaf)) {
+                continue
+            }
+
+            [pscustomobject]@{
+                PackagedPath = [string]$document.PackagedPath
+                CapturedPath = [string]$document.CapturedPath
+                Text = Get-Content -Raw -LiteralPath $document.CapturedPath
+            }
+        }
+    )
+
     $commandNames = @(
         "SetCurrentShownDeckCommand",
         "FilterCantripsCommand",
         "FilterActionResourceCommand"
     )
-
-    $commands = @(
+    $commandProbes = @(
         foreach ($commandName in $commandNames) {
-            $pattern = '<[^>]*Command="\{Binding ' + [regex]::Escape($commandName) + '\}"[^>]*>'
-            foreach ($match in [regex]::Matches(
-                $hotBarText,
-                $pattern,
-                [System.Text.RegularExpressions.RegexOptions]::Singleline
-            )) {
-                $tag = $match.Value
-                [pscustomobject]@{
-                    Command = $commandName
-                    ElementName = @(
-                        Get-XamlAttributeFromTag -Tag $tag -AttributeName "x:Name"
-                        Get-XamlAttributeFromTag -Tag $tag -AttributeName "Name"
-                    ) | Where-Object { $_ } | Select-Object -First 1
-                    CommandParameter = Get-XamlAttributeFromTag -Tag $tag -AttributeName "CommandParameter"
-                    Content = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Content"
-                    Tag = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Tag"
+            $matches = @(
+                foreach ($document in $loadedDocuments) {
+                    $pattern = '<[^>]*Command="\{Binding ' + [regex]::Escape($commandName) + '\}"[^>]*>'
+                    foreach ($match in [regex]::Matches(
+                        $document.Text,
+                        $pattern,
+                        [System.Text.RegularExpressions.RegexOptions]::Singleline
+                    )) {
+                        $tag = $match.Value
+                        [pscustomobject]@{
+                            SourceFile = $document.PackagedPath
+                            ElementName = @(
+                                Get-XamlAttributeFromTag -Tag $tag -AttributeName "x:Name"
+                                Get-XamlAttributeFromTag -Tag $tag -AttributeName "Name"
+                            ) | Where-Object { $_ } | Select-Object -First 1
+                            CommandParameter = Get-XamlAttributeFromTag -Tag $tag -AttributeName "CommandParameter"
+                            Content = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Content"
+                            Tag = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Tag"
+                        }
+                    }
                 }
+            )
+
+            [pscustomobject]@{
+                Command = $commandName
+                Present = ($matches.Count -gt 0)
+                MatchCount = $matches.Count
+                Matches = $matches
             }
         }
     )
-
-    foreach ($commandName in $commandNames) {
-        if (@($commands | Where-Object { $_.Command -eq $commandName }).Count -eq 0) {
-            throw "Current HotBar capture does not expose required coverage command '$commandName'."
-        }
-    }
 
     $collectionBindings = @(
         "CurrentShownDeck.SlotList",
@@ -214,20 +232,19 @@ function Get-HotBarCoverageReport {
     )
     $collections = @(
         foreach ($binding in $collectionBindings) {
+            $sources = @(
+                $loadedDocuments |
+                    Where-Object { $_.Text.Contains($binding) } |
+                    ForEach-Object { $_.PackagedPath } |
+                    Sort-Object -Unique
+            )
             [pscustomobject]@{
                 Binding = $binding
-                Present = $hotBarText.Contains($binding)
+                Present = ($sources.Count -gt 0)
+                SourceFiles = $sources
             }
         }
     )
-
-    $radialText = @(
-        foreach ($path in @($PreloadedRadialPaths)) {
-            if ($path -and (Test-Path -LiteralPath $path -PathType Leaf)) {
-                Get-Content -Raw -LiteralPath $path
-            }
-        }
-    ) -join "`n"
 
     $radialSources = @(
         "PlayerCharacterProperties.SpellsAndActions",
@@ -237,20 +254,88 @@ function Get-HotBarCoverageReport {
     )
     $radialCoverage = @(
         foreach ($source in $radialSources) {
+            $sources = @(
+                $loadedDocuments |
+                    Where-Object { $_.Text.Contains($source) } |
+                    ForEach-Object { $_.PackagedPath } |
+                    Sort-Object -Unique
+            )
             [pscustomobject]@{
                 Source = $source
-                Present = $radialText.Contains($source)
+                Present = ($sources.Count -gt 0)
+                SourceFiles = $sources
             }
         }
     )
 
+    $missingCommands = @(
+        $commandProbes |
+            Where-Object { -not $_.Present } |
+            ForEach-Object { $_.Command }
+    )
+
     [ordered]@{
-        SchemaVersion = 1
-        HotBarSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $HotBarPath).Hash.ToLowerInvariant()
-        Commands = $commands
+        SchemaVersion = 2
+        HotBarSha256 = if ($HotBarPath -and (Test-Path -LiteralPath $HotBarPath -PathType Leaf)) {
+            (Get-FileHash -Algorithm SHA256 -LiteralPath $HotBarPath).Hash.ToLowerInvariant()
+        } else {
+            $null
+        }
+        ScannedXamlCount = $loadedDocuments.Count
+        CommandProbes = $commandProbes
+        MissingCommands = $missingCommands
         ExecutableCollections = $collections
         RadialAssignmentReferences = $radialCoverage
-        Note = "Derived read-only coverage contract. Raw game XAML remains only inside the local capture archive."
+        Note = "Derived read-only discovery report. Missing research seams are evidence, not capture failures."
+    }
+}
+
+if ($CoverageSelfTest) {
+    $fixtureRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("bg3-cam-coverage-selftest-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Force -Path $fixtureRoot | Out-Null
+    try {
+        $hotBarFixture = Join-Path $fixtureRoot "HotBar.xaml"
+        $otherFixture = Join-Path $fixtureRoot "Controller.xaml"
+        @'
+<Grid>
+  <Button Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="Common"/>
+  <Button Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding ActionResource}"/>
+  <ItemsControl ItemsSource="{Binding CurrentShownDeck.SlotList}"/>
+  <ItemsControl ItemsSource="{Binding SingleHotBar.SlotList}"/>
+</Grid>
+'@ | Set-Content -LiteralPath $hotBarFixture -Encoding UTF8
+        @'
+<Grid>
+  <ItemsControl ItemsSource="{Binding PlayerCharacterProperties.SpellsAndActions}"/>
+  <ItemsControl ItemsSource="{Binding Inventory.Slots}"/>
+</Grid>
+'@ | Set-Content -LiteralPath $otherFixture -Encoding UTF8
+
+        $documents = @(
+            [pscustomobject]@{ PackagedPath = "Mods/MainUI/GUI/Pages/HotBar.xaml"; CapturedPath = $hotBarFixture },
+            [pscustomobject]@{ PackagedPath = "Public/Game/GUI/Library/Controller.xaml"; CapturedPath = $otherFixture }
+        )
+        $report = Get-HotBarCoverageReport -Documents $documents -HotBarPath $hotBarFixture
+        $cantrip = @($report.CommandProbes | Where-Object { $_.Command -eq "FilterCantripsCommand" })[0]
+        $deck = @($report.CommandProbes | Where-Object { $_.Command -eq "SetCurrentShownDeckCommand" })[0]
+
+        if (-not $cantrip -or $cantrip.Present -or $cantrip.MatchCount -ne 0) {
+            throw "Coverage self-test expected missing FilterCantripsCommand to be recorded without failure."
+        }
+        if ($report.MissingCommands -notcontains "FilterCantripsCommand") {
+            throw "Coverage self-test did not record FilterCantripsCommand in MissingCommands."
+        }
+        if (-not $deck.Present -or $deck.MatchCount -ne 1 -or $deck.Matches[0].SourceFile -ne "Mods/MainUI/GUI/Pages/HotBar.xaml") {
+            throw "Coverage self-test did not preserve discovered command source metadata."
+        }
+        if ($report.SchemaVersion -ne 2 -or $report.ScannedXamlCount -ne 2) {
+            throw "Coverage self-test produced the wrong report schema."
+        }
+
+        Write-Host "Fail-soft HotBar coverage discovery self-test passed."
+        exit 0
+    } finally {
+        Remove-Item -LiteralPath $fixtureRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -317,12 +402,16 @@ try {
         throw "Exact current HotBar.xaml was not captured."
     }
     $hotBarCapturedPath = Join-Path $outputDir $hotBarManifest[0].RelativeCapturedPath
-    $preloadedCapturedPaths = @(
+    $coverageDocuments = @(
         $manifest |
-            Where-Object { $_.PackagedPath -like "*PreloadedActionRadials*.xaml" } |
-            ForEach-Object { Join-Path $outputDir $_.RelativeCapturedPath }
+            ForEach-Object {
+                [pscustomobject]@{
+                    PackagedPath = $_.PackagedPath
+                    CapturedPath = Join-Path $outputDir $_.RelativeCapturedPath
+                }
+            }
     )
-    $coverageReport = Get-HotBarCoverageReport -HotBarPath $hotBarCapturedPath -PreloadedRadialPaths $preloadedCapturedPaths
+    $coverageReport = Get-HotBarCoverageReport -Documents $coverageDocuments -HotBarPath $hotBarCapturedPath
     $coverageReportPath = Join-Path $outputDir "hotbar-coverage-contract.json"
     $coverageReport | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $coverageReportPath -Encoding UTF8
 
@@ -376,6 +465,7 @@ try {
         "Files captured: $($manifest.Count)"
         ""
         "Derived coverage report: hotbar-coverage-contract.json"
+        "Missing research commands: $(if (@($coverageReport.MissingCommands).Count) { @($coverageReport.MissingCommands) -join ', ' } else { '(none)' })"
         ""
         "=== Essential groups ==="
     )

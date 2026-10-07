@@ -49,12 +49,23 @@ foreach ($required in @(
     'FilterActionResourceCommand',
     'CommandParameter',
     'RadialAssignmentReferences',
+    'CommandProbes',
+    'MissingCommands',
+    'SourceFile',
+    'SchemaVersion = 2',
+    'Missing research seams are evidence, not capture failures.',
+    'CoverageSelfTest',
     'missing required UI groups',
     'No BG3 files, saves, profiles, or mods were modified.'
 )) {
     if (-not $captureText.Contains($required)) {
         throw "Portable developer capture is missing required seam: $required"
     }
+}
+
+& powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Capture -CoverageSelfTest
+if ($LASTEXITCODE -ne 0) {
+    throw "Fail-soft coverage discovery self-test failed with exit code $LASTEXITCODE."
 }
 
 Write-Host "Portable developer capture helper fixture passed."

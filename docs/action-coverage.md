@@ -47,7 +47,7 @@ Current captured `HotBar.xaml` proves these executable/deck seams:
 | Common deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
 | Class deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
 | Items deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
-| Cantrips | `FilterCantripsCommand` (captured parameter) | coverage evidence only |
+| Cantrips | native HotBar/radial evidence; exact current filter seam is discovery-gated | coverage evidence only |
 | Passives | `PassivesHotBar.SlotList` | shipping |
 
 ### Controller radial assignment
@@ -159,18 +159,25 @@ ScrollViewer to infer controller focus.
 
 ## Capture diagnostics
 
-The portable read-only capture must emit a small derived HotBar coverage report in
-addition to the raw XAML. The report records every current element using:
+The portable read-only capture emits a derived HotBar coverage report in addition to the
+raw XAML. Research seams are **probes, not capture prerequisites**.
+
+The report searches the whole captured XAML set for:
 
 - `SetCurrentShownDeckCommand`;
 - `FilterCantripsCommand`;
 - `FilterActionResourceCommand`;
 
-including its `CommandParameter`, and records whether the expected executable collection
-bindings are present.
+and records `Present`, `MatchCount`, source file and available attributes such as
+`CommandParameter`, `Content` and `Tag`.
 
-This keeps the proprietary XAML out of the repository while making future source changes
-machine-reviewable.
+If a probe is absent, that absence is written to `MissingCommands`; it must not abort the
+capture. Capture fails only for technical evidence failures such as inability to locate
+or extract the required game/UI inputs.
+
+This keeps the proprietary XAML out of the repository while making source movement,
+renaming and absence machine-reviewable instead of turning an outdated assumption into
+an operator-facing failure.
 
 ## Runtime milestone gate
 

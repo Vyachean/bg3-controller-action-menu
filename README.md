@@ -54,7 +54,7 @@ The only LB/RB navigation dimension remains a controller cost/source row. Native
 
 The resource provider is **not treated as proof of a complete HotBar catalog**. CAM now has an explicit parity contract against both the keyboard HotBar and the radial assignment catalog. Known uncovered/proof-gated classes include free/no-resource actions, Cantrips, inventory/consumables, Scrolls, item-charge actions, metamagic toggles, temporary actions and recasts. See [Action coverage](docs/action-coverage.md).
 
-The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only. It now derives a small `hotbar-coverage-contract.json` report containing the current native deck/filter command parameters, so future source work does not require manually inspecting raw captured XAML.
+The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only. It now derives `hotbar-coverage-contract.json` by searching the whole captured XAML set. Each investigated command records presence, match count, source file and available parameters; missing research seams are evidence rather than capture failures.
 
 Resource-first semantics that depend on BG3 runtime materialization remain proof-gated. After green package CI, one combined milestone run should verify the remaining semantic parity questions rather than testing each source hypothesis separately.
 
@@ -72,7 +72,7 @@ same VBS
       install/update | capture | diagnostics | ...
 ```
 
-For development milestone `0.0.79-hotbar-coverage-capture`, `dev-entry.ps1` temporarily collects one read-only HotBar/radial evidence archive instead of installing the PAK. The same VBS remains the operator entry point.
+For development milestone `0.0.80-hotbar-coverage-capture-fix`, `dev-entry.ps1` temporarily collects one read-only HotBar/radial evidence archive instead of installing the PAK. Coverage discovery is fail-soft: missing investigated commands are recorded in the report rather than aborting capture. The same VBS remains the operator entry point.
 
 For maintainers, a CI artifact is **not** a release. A development task becomes operator-visible only after the Release workflow publishes the corresponding `dev-entry.ps1` and assets. See [Release process](docs/release-process.md).
 
