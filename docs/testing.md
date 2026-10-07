@@ -966,7 +966,7 @@ The next runtime check is limited to: immediate tooltip after tab switch, immedi
 4. one `HotBarList` switches between `SingleHotBar.SlotList` and `PassivesHotBar.SlotList`; no second executable grid is introduced;
 5. passive mode uses only the CAM presentation token on `CAM_ResourceTabs.Tag`; no unproven BG3 passives-mode command/property exists in runtime;
 6. LB/RB cycling can cross both boundaries between the native resource sequence and Passives;
-7. action cells render item quantity from `GameObject.Count` with `AbbreviateNumberConverter` and `ItemAmountTextStyle`;
+7. item action cells delegate `VMHotBarSlot.Content` to native `Template.Item`, which owns `VMItem.Count`, `AbbreviateNumberConverter`, and `ItemAmountTextStyle`;
 8. tab entry clears LocalFocus before selecting index 0;
 9. entry-only tooltip/Tag/highlight state comes from the same first `HotBarList.SelectedItem` handed to concrete-item focus;
 10. normal `LocalFocusChanged` remains the live navigation authority;
