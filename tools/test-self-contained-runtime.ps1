@@ -578,54 +578,70 @@ if (-not $resourceRestoreTimer.Success -or
 
 $resourceTabStyle = [regex]::Match(
     $text,
-    '<Style\b[^>]*x:Key="CAM_ResourceTabItemStyle"[\s\S]*?(?=<ItemsPanelTemplate\b[^>]*x:Key="CAM_ResourceTabsPanel")',
+    '<Style\b[^>]*x:Key="CAM_ResourceTabItemStyle"[\s\S]*?</Style>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabStyle.Success -or
     -not $resourceTabStyle.Value.Contains('Property="Margin" Value="-4,0,-4,0"') -or
-    -not $resourceTabStyle.Value.Contains('Property="Width" Value="80"') -or
-    -not $resourceTabStyle.Value.Contains('Property="Height" Value="72"') -or
-    -not $resourceTabStyle.Value.Contains('Margin="4,-10,4,10"') -or
-    -not $resourceTabStyle.Value.Contains('x:Name="Root" Width="72"') -or
-    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceBg}"') -or
-    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResource}"') -or
-    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceH}"') -or
-    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceDisabled}"') -or
-    -not $resourceTabStyle.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
-    -not $resourceTabStyle.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
-    -not $resourceTabStyle.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
-    -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
-    -not $resourceTabStyle.Value.Contains('DataContext="{Binding ActionResource}"') -or
-    -not $resourceTabStyle.Value.Contains('SmallActionPointSize="24"') -or
-    -not $resourceTabStyle.Value.Contains('ActionPointGroupSize="56"') -or
-    -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
-    -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
-    -not $resourceTabStyle.Value.Contains('Margin="0,-10,0,0"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumBg}"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNum}"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumH}"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumDisabled}"') -or
-    -not $resourceTabStyle.Value.Contains('Property="Margin" Value="0,-8,0,0"') -or
-    -not $resourceTabStyle.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
-    -not $resourceTabStyle.Value.Contains('Setter Property="Visibility" Value="Hidden"') -or
-    -not $resourceTabStyle.Value.Contains('Converter="{StaticResource LessThanOrEqualMultiConverter}"') -or
-    -not $resourceTabStyle.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
-    -not $resourceTabStyle.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration"') -or
-    -not $resourceTabStyle.Value.Contains('Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
-    -not $resourceTabStyle.Value.Contains('Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"') -or
-    -not $resourceTabStyle.Value.Contains('Binding="{Binding ActionResource.Value}" Value="0"') -or
-    $resourceTabStyle.Value.Contains('CAM_FilterButtonBackground') -or
-    $resourceTabStyle.Value.Contains('btn_pil_') -or
-    $resourceTabStyle.Value.Contains('ActiveModArrow') -or
-    $resourceTabStyle.Value.Contains('Style="{StaticResource SectionImageStyle}"') -or
-    $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Name}"') -or
-    $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.TypeId}"') -or
-    $resourceTabStyle.Value.Contains('AlignableWrapPanel')) {
-    throw "Resource tabs must mirror the captured Patch 8 ActionResourcesList resource-button presentation."
+    -not $resourceTabStyle.Value.Contains('<ContentPresenter HorizontalAlignment="Center"') -or
+    $resourceTabStyle.Value.Contains('CAM_BoxResource') -or
+    $resourceTabStyle.Value.Contains('IsSelected') -or
+    $resourceTabStyle.Value.Contains('ResourcePoints')) {
+    throw "Resource ListBoxItem must be transport-only and must not own native resource visuals."
 }
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
-    throw "Null/MaxValue=0 resource previews must remain collapsed and disabled."
+    throw "Null/MaxValue=0 resource previews must remain collapsed and disabled at the outer container."
+}
+
+$resourceTabTemplate = [regex]::Match(
+    $text,
+    '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceTabTemplate.Success -or
+    -not $resourceTabTemplate.Value.Contains('<ls:LSButton Padding="0"') -or
+    -not $resourceTabTemplate.Value.Contains('Margin="4,-10,4,10"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="Root" Width="72"') -or
+    -not $resourceTabTemplate.Value.Contains('Source="{StaticResource CAM_BoxResourceBg}"') -or
+    -not $resourceTabTemplate.Value.Contains('Source="{StaticResource CAM_BoxResource}"') -or
+    -not $resourceTabTemplate.Value.Contains('Source="{StaticResource CAM_BoxResourceH}"') -or
+    -not $resourceTabTemplate.Value.Contains('Source="{StaticResource CAM_BoxResourceDisabled}"') -or
+    -not $resourceTabTemplate.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
+    -not $resourceTabTemplate.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
+    -not $resourceTabTemplate.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
+    -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
+    -not $resourceTabTemplate.Value.Contains('DataContext="{Binding ActionResource}"') -or
+    -not $resourceTabTemplate.Value.Contains('MaxActionPointGroups="0"') -or
+    -not $resourceTabTemplate.Value.Contains('SmallActionPointSize="24"') -or
+    -not $resourceTabTemplate.Value.Contains('ActionPointGroupSize="56"') -or
+    -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
+    -not $resourceTabTemplate.Value.Contains('Converter="{StaticResource LessThanOrEqualMultiConverter}"') -or
+    -not $resourceTabTemplate.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
+    -not $resourceTabTemplate.Value.Contains('Binding="{Binding Path=Tag, ElementName=Root}" Value="SpellSlot"') -or
+    -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="SpellSlot"') -or
+    -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot"') -or
+    -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">') -or
+    -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.Value}" Value="0"') -or
+    -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration"') -or
+    $resourceTabTemplate.Value.Contains('Binding="{Binding IsSelected') -or
+    $resourceTabTemplate.Value.Contains('CAM_ResourceTabs.Tag') -or
+    $resourceTabTemplate.Value.Contains('CAM_FilterButtonBackground') -or
+    $resourceTabTemplate.Value.Contains('btn_pil_') -or
+    $resourceTabTemplate.Value.Contains('Style="{StaticResource SectionImageStyle}"')) {
+    throw "Native resource contents must be owned by the literal Patch 8 ActionResourcesList item template."
+}
+
+$resourceTabsItemTemplate = [regex]::Match(
+    $text,
+    '<ls:LSListBox\b[^>]*x:Name="CAM_ResourceTabs"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceTabsItemTemplate.Success -or
+    -not $resourceTabsItemTemplate.Value.Contains('ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"') -or
+    -not $resourceTabsItemTemplate.Value.Contains('ItemTemplate="{StaticResource CAM_ResourceTabTemplate}"')) {
+    throw "CAM_ResourceTabs must separate controller container behavior from native resource item presentation."
 }
 
 $passivesLeftReturn = [regex]::Match(
