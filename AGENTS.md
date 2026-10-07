@@ -328,3 +328,16 @@ Required correction:
 - render `CAM_CellFocus` from `ListBoxItem.IsSelected`, not `ls:MoveFocus.IsFocused`;
 - remove per-tab `MaxWidth` and text trimming limits; the outer resource viewport remains bounded and auto-scrolls the selected tab;
 - spell-slot tabs must use the current native HotBar level renderer: `Image Style="{StaticResource RomanNumeralLevelImage}" DataContext="{Binding ActionResource}"`. Do not emulate the level with a TextBlock style.
+
+
+## Runtime correction — 0.0.60 -> 0.0.61
+
+0.0.60 proves that `HotBarList.SelectedItem` can follow logical navigation and provide moving selection highlight, but two presentation/lifecycle defects remain:
+- the inherited/native `FocusVisualStyle` still renders an independent focus rectangle on the physically focused first cell;
+- after a resource filter change, the new list can have an implied first logical focus before `SelectedItem` is re-established, leaving no visible CAM selection until navigation occurs.
+
+Required correction:
+- action items keep controller focusability but set `FocusVisualStyle={x:Null}`; CAM's `IsSelected` chrome is the sole visible action focus;
+- after resource `SelectionChanged` and `FilterActionResourceCommand`, re-establish `HotBarList.SelectedIndex=0` after the list has settled, then defer focus back to `HotBarList`; do not duplicate gameplay dispatch or resource filtering;
+- resource-tab shoulder cycling uses `SelectNextListBoxItem ForceSelect=True ForceMode=Cycle` so a wrap from the last tab to the first produces a full selection transition for the existing `AutoScrollBehavior`;
+- keep the bounded tab viewport and native `AutoScrollBehavior`; do not add a second custom scrolling model.
