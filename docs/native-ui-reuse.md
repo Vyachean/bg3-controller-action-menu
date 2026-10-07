@@ -207,4 +207,6 @@ From current `HotBar.xaml`:
 - the native item container hides only `ActionResource.MaxValue == 0`;
 - resource presentation is icon/level oriented, so `ActionResource.Name` is not guaranteed to be the only useful visual identifier.
 
-CAM therefore keeps native resource filtering but removes `CAM_MainSelector`, removes fixed `Columns=5`, and does not treat missing resource names as a reason to discard a resource.
+CAM therefore keeps native resource filtering and removes the old **visible** `CAM_MainSelector`/fixed `Columns=5` presentation. 0.0.58 runtime proof adds one ActionRadials-specific constraint that SpellBook itself does not have: `HotBarList.LocalFocus` must still be backed by a `LocalFocusSelector` object because tooltip/highlight and A dispatch consume `LocalFocus.DataContext`. CAM supplies an always-laid-out zero-opacity logical selector anchor while the item itself renders visible focus chrome. Missing or empty displayed resource names fall back to `ActionResource.TypeId`.
+
+The custom weapon-set shortcut is deliberately absent until a repeatable ActionRadials-native input transport is proven. It must not compete with primary grid navigation.
