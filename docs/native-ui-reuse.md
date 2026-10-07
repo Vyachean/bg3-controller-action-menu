@@ -189,3 +189,23 @@ If a future Patch changes one of these dependencies, the developer capture is re
 ## Rejected 0.0.49 composition
 
 The 0.0.49 composition that layered per-cell VMUpcast controls, extra UIAccept bindings, automatic empty-list refiltering, and a focus-tree rewrite is rejected by runtime proof because it made tab interaction delayed and unpredictable. Reuse native seams only when they do not introduce overlapping input consumers or re-entrant filter/state transitions.
+
+
+## Current Patch 8 patterns adopted after 0.0.57
+
+Fresh installed-game evidence supersedes the detached selector/fixed-grid experiment.
+
+From `Mods/MainUI/GUI/Pages/SpellBook_c.xaml`:
+- `SpellGridStyle` sets `UseWidgetNavigation=True`, `AlwaysSelectFirst=True`, `ls:MoveFocus.InternalFocusable=True`, and the four controller direction events;
+- `LSGrid.Columns` is computed with `DivideMultiConverter` from the ancestor `ScrollContentPresenter.ActualWidth` and cell size;
+- action entries are explicit `ls:MoveFocus.Focusable=True` controls;
+- focus presentation follows the focused control rather than a page-level coordinate overlay;
+- scrolling uses an ordinary ScrollViewer around the action content.
+
+From current `HotBar.xaml`:
+- `ActionResourcesCostPreview` is directly rendered as resource filter buttons;
+- clicking a preview invokes `FilterActionResourceCommand(preview)`;
+- the native item container hides only `ActionResource.MaxValue == 0`;
+- resource presentation is icon/level oriented, so `ActionResource.Name` is not guaranteed to be the only useful visual identifier.
+
+CAM therefore keeps native resource filtering but removes `CAM_MainSelector`, removes fixed `Columns=5`, and does not treat missing resource names as a reason to discard a resource.
