@@ -690,3 +690,31 @@ Controller adaptation allowed for CAM:
 Do not use `btn_pil_*` for CAM resource tabs again. Do not omit the shared `bar_resources.png` strip. Do not restore an unconditional resource-value number.
 
 Native item quantity, LocalFocus authority, tooltip behavior, Passives transition serialization, nested return, and action dispatch remain unchanged.
+
+
+## Runtime correction — 0.0.75 -> resting resource quantity
+
+0.0.75 copied the exact Patch 8 `ActionResourcesContainer` visual tree, but it also copied the mouse-HotBar **hover-preview input** into a controller menu where an action is continuously focused.
+
+Current Patch 8 proves the distinction:
+
+- keyboard/mouse HotBar invokes `HighlightResourcesCommand(slot)` on an action slot's `MouseEnter`;
+- it invokes `ClearResourceHighlightsCommand(slot)` on `MouseLeave`;
+- `ActionResourcesList` feeds `VMActionResourceCostPreview.Cost` into `LSActionPointResources.HighlightedActionPoints`.
+
+That is correct for a transient mouse hover. It is wrong for CAM's persistent controller focus: keeping `HighlightResourcesCommand` active makes the tab content continuously render action-cost preview state on top of current resource availability, so the resource quantity becomes visually noisy/ambiguous.
+
+For CAM resource tabs, the presentation contract is now **resting quantity**:
+
+- `MaxActionPoints = ActionResource.MaxValue`;
+- `AvailableActionPoints = ActionResource.Value`;
+- `HighlightedActionPoints = 0`;
+- keep the exact current `ActionResourcesTemplateSelector`, box chrome, spell-slot chrome/roman numeral and conditional native `ResourcesNumeralDisplay`;
+- focused action tooltip data still comes from `LocalFocus.DataContext`;
+- `CreateFocusedTooltipDataCommand` remains;
+- CAM must not leave `HighlightResourcesCommand` active from persistent controller focus;
+- clear resource preview state with `ClearResourceHighlightsCommand` when action focus changes or programmatic entry wakes.
+
+This is an intentional controller adaptation of the captured HotBar: the **quantity renderer stays native**, while the transient mouse-hover cost overlay is suppressed so the tab communicates resource quantity only.
+
+Do not change resource filtering, VMItem quantities, Passives serialization, nested return, or A/B dispatch in this correction.
