@@ -136,7 +136,8 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreSelectedIndex -ne 0 -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusTarget -ne "selected concrete ListBoxItem templated parent" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusAction -ne "SetMoveFocusAction(DeferFocusAction=True)" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterFocus -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusPublishesEntryCommit -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterEntryCommit -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
