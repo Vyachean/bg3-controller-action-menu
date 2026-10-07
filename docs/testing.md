@@ -1004,3 +1004,28 @@ Next runtime proof should check only:
 - resource -> resource, resource -> Passives and Passives -> resource transitions all visibly move the selector to cell 1;
 - tooltip belongs to that same visibly focused cell immediately after the transition;
 - one D-pad move continues from that first cell rather than from the old tab coordinate.
+
+
+### 2026-10-07 — 0.0.70 runtime result / 0.0.71 proof boundary
+
+0.0.70 runtime:
+- Passives does not behave like an ordinary tab, especially on return to resources;
+- resource-tab visuals still do not match the keyboard/mouse HotBar.
+
+0.0.71 automatic proof must require:
+
+1. resource tabs use `LSActionPointResources + ActionResourcesTemplateSelector`, not `SectionImageStyle`;
+2. resource point bindings match the HotBar preview contract: MaxValue / Value / Cost over ActionResource;
+3. SpellSlot and WarlockSpellSlot retain `RomanNumeralLevelImage`;
+4. the resource-value numeral overlay exists and is hidden for values representable by the native point group;
+5. Passives -> resource-right keeps passive mode set until the delayed return boundary and filters the preserved first resource before mode switch;
+6. Passives -> resource-left uses a distinct `CAM_TabReturnLastToken`, changes only the resource-list selection during the click, filters that last resource while passive mode remains active, then switches mode after the click;
+7. ordinary resource-cycle Click handlers are ineligible while passive mode is active;
+8. one LB/RB press cannot execute both a Passives-return path and an ordinary resource-cycle path;
+9. action focus/tooltip remains LocalFocus-owned and nested-return behavior remains unchanged.
+
+Next runtime proof should be limited to:
+- compare Action, Bonus Action and at least one spell-slot/resource tab directly with the keyboard HotBar;
+- enter Passives from both ends and return with the opposite shoulder;
+- verify each shoulder press advances exactly one logical tab;
+- verify the returned resource grid starts at the first action with matching tooltip.
