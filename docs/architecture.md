@@ -87,11 +87,10 @@ Current shipping providers are:
 - native Items via `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList`;
 - native metamagic via `FixedSideBar.SlotList`;
 - `PassivesHotBar.SlotList`;
+- grouped `KeyboardHotBars[*].SlotList` as a final native keyboard-HotBar coverage fallback;
 - `SingleHotBar.SlotList` for native nested/upcast/variant/throw state.
 
-Current unresolved source classes are free/no-resource actions, scrolls, item charges,
-temporary actions and recasts. ItemHotBar is now wired, but radial `Inventory.Slots`
-parity remains runtime-unverified. These are correctness blockers for a complete HotBar replacement.
+Static keyboard-HotBar source coverage is now complete by construction through the native `KeyboardHotBars` fallback. The remaining correctness blocker is semantic parity with the independent radial-assignment catalog: free/no-resource, scroll/charge, temporary, recast and mod-added radial-only cases still need one combined runtime proof.
 
 A future provider must be proven against the current installed game and materialize
 executable `VMHotBarSlot` values. This requirement does not authorize raw source tabs,
@@ -99,7 +98,7 @@ manual action tables or string/icon classification.
 
 ## Resource-first navigation
 
-LB/RB selects an item from the dynamic resource list. Selection immediately invokes `FilterActionResourceCommand`; the grid is always sourced from `SingleHotBar.SlotList`.
+LB/RB traverses one cost/source row. Resource entries invoke `FilterActionResourceCommand`; proven special providers use Cantrips, ItemHotBar, FixedSideBar, PassivesHotBar, and finally a grouped native `KeyboardHotBars` fallback. The executable identity remains `VMHotBarSlot` in every case.
 
 The resource tab list:
 
