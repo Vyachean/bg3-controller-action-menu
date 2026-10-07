@@ -149,8 +149,8 @@
         </ls:LSGrid>
     </ItemsPanelTemplate>
 
-    <!-- Resource-first top-level navigation. The items are native VMActionResourceCostPreview objects.
-         Unknown/mod-added resources use their native ActionResource.Name automatically. -->
+    <!-- Resource-first top-level navigation. Items are native VMActionResourceCostPreview objects.
+         The outer control mirrors HotBar filter chrome; resource identity remains native and icon-only. -->
     <Style x:Key="CAM_ResourceTabItemStyle"
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
