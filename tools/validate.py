@@ -150,6 +150,12 @@ def validate_semantics() -> list[str]:
                 'Binding="{Binding Path=Tag, ElementName=Root}" Value="SpellSlot"',
                 'x:Name="CAM_CantripsTab"',
                 'x:Key="CAM_CantripsModeToken"',
+                'x:Name="CAM_ItemsTab"',
+                'x:Key="CAM_ItemsModeToken"',
+                'x:Key="CAM_ItemsProviderIcon"',
+                'SetCurrentShownDeckCommand',
+                'CommandParameter="ItemHotBar"',
+                'CurrentShownDeck.SlotList',
                 'x:Name="CAM_MetamagicTab"',
                 'x:Key="CAM_MetamagicModeToken"',
                 'PlayerCharacterProperties.FixedSideBar.SlotList',
@@ -225,11 +231,11 @@ def validate_semantics() -> list[str]:
                 '"gamePackageVersion": "1.8.910.0"',
                 '"focusValuePath": "LocalFocus.DataContext"',
                 '"selectorHasFixedGeometry": false',
-                '"mode": "resource-first-plus-cantrips-plus-metamagic-plus-passives"',
+                '"mode": "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives"',
                 '"primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview"',
                 '"detailsSurface": "native-tooltip-only"',
                 '"executableList": "HotBarList"',
-                '"itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag"',
+                '"itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag"',
                 '"nestedStateUsesSameList": true',
                 '"focusPresentation": "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext"',
                 '"visibleFocusSource": "HotBarList.LocalFocus via SelectorTemplate"',
@@ -301,13 +307,18 @@ def validate_semantics() -> list[str]:
                 '"cantripsCommand": "FilterCantripsCommand"',
                 '"cantripsCommandParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3"',
                 '"cantripsModeToken": "CAM_CantripsModeToken"',
+                '"itemsTabAllowed": true',
+                '"itemsCommand": "SetCurrentShownDeckCommand"',
+                '"itemsCommandParameter": "ItemHotBar"',
+                '"itemsSource": "CurrentShownDeck.SlotList"',
+                '"itemsModeToken": "CAM_ItemsModeToken"',
                 '"metamagicTabAllowed": true',
                 '"metamagicSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList"',
                 '"metamagicModeToken": "CAM_MetamagicModeToken"',
                 '"providerRestoreDispatcher": "CAM_ProviderRestoreCommand"',
                 '"rightToken": "CAM_TabReturnFirstToken"',
                 '"leftWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken"',
-                '"leftWhenMetamagicUnavailableAndCantripsAvailable": "CAM_TabEnterSpecialToken -> CAM_CantripsModeToken -> FilterCantripsCommand"',
+                '"leftWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)"',
                 '"rightModeSwitchMilliseconds": 70',
                 '"leftFallbackModeSwitchMilliseconds": 90',
                 '"ordinaryResourceClickHandlersEligibleDuringReturn": false',
@@ -372,6 +383,9 @@ def validate_semantics() -> list[str]:
                 '"hotBarSha256": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728"',
                 '"actionResourcesContainer": "ActionResourcesContainer"',
                 '"actionResourcesList": "ActionResourcesList"',
+                '"provenKeyboardSource": "ItemHotBar -> CurrentShownDeck.SlotList"',
+                '"radialReference": "Inventory.Slots"',
+                '"status": "runtime-parity-not-yet-proven"',
             ],
         )
     )
@@ -400,8 +414,6 @@ def validate_semantics() -> list[str]:
             "CAM_CantripsFilterTab",
             "CAM_ItemsFilterTab",
             "CAM_PassivesFilterTab",
-            "SetCurrentShownDeckCommand",
-            "CurrentShownDeck.SlotList",
             "IsShowingPassivesDeck",
             "SetIsShowingPassivesDeckCommand",
             "CAM_ResourceFilterHolder",
@@ -454,6 +466,17 @@ def validate_semantics() -> list[str]:
                 errors.append(
                     f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: forbidden obsolete/native-copy seam: {forbidden}"
                 )
+
+        if (
+            runtime_text.count("SetCurrentShownDeckCommand") < 3
+            or runtime_text.count('CommandParameter="ItemHotBar"') < 3
+            or 'CommandParameter="CommonHotBar"' in runtime_text
+            or 'CommandParameter="ClassHotBar"' in runtime_text
+            or 'CommandParameter="InvalidHotBar"' in runtime_text
+        ):
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: CurrentShownDeck runtime use must be restricted to ItemHotBar"
+            )
 
     for obsolete in (
         ROOT / "tools/native-overlay.ps1",
