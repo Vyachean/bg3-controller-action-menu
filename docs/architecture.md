@@ -781,3 +781,45 @@ VMActionResourceCostPreview
 ```
 
 The `box_resource_*` and `box_resourceNum_*` assets are no longer part of the top-level tab chrome. Resource-value text remains absent. Passives uses the same filter chrome so the full LB/RB sequence reads as one native filter row.
+
+
+### 0.0.76 — resting resource quantity instead of permanent hover preview
+
+The exact Patch 8 HotBar capture separates two concepts that CAM 0.0.75 accidentally combined:
+
+```text
+resting resource amount
+  ActionResource.MaxValue / Value
+        |
+        v
+  LSActionPointResources
+
+transient action-cost preview
+  action-slot MouseEnter
+        |
+        v
+  HighlightResourcesCommand(slot)
+        |
+        v
+  VMActionResourceCostPreview.Cost / PreviewState
+        |
+        v
+  HighlightedActionPoints
+```
+
+Keyboard/mouse HotBar clears the second state on `MouseLeave`. CAM's controller grid has persistent focus, so preserving that hover behavior makes the resource tab permanently show preview state.
+
+CAM therefore reuses the exact native quantity renderer/chrome but freezes the top-row cost input at zero:
+
+```text
+MaxActionPoints         <- MaxValue
+AvailableActionPoints   <- Value
+HighlightedActionPoints <- 0
+```
+
+The action focus lifecycle still owns:
+- `ActionRadials.Tag <- LocalFocus.DataContext`;
+- `CreateFocusedTooltipDataCommand(LocalFocus.DataContext)`;
+- native tooltip display.
+
+For CAM, resource-preview state is cleared rather than continuously highlighted after controller focus settles. This keeps the resource tabs semantically stable filters that show current quantity, while detailed action cost remains available in the focused action's native tooltip.
