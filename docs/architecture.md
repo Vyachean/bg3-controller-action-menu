@@ -585,7 +585,7 @@ PlayerCharacterProperties.PassivesHotBar.SlotList
   -> same selector / tooltip / UIAccept -> UseSlotCommand
 ```
 
-`IsShowingPassivesDeck` is the mode state. Resource selection sets it false; entering Passives sets it true. `HotBarList.ItemsSource` switches declaratively from `SingleHotBar.SlotList` to `PassivesHotBar.SlotList`.
+`CAM_ResourceTabs.Tag = CAM_PassivesModeToken` is the mode state. It is presentation-only because the current capture proves `PassivesHotBar.SlotList` but does not prove a dedicated BG3 passives-deck toggle command/property. Resource selection clears the token; entering Passives sets it. `HotBarList.ItemsSource` switches declaratively from `SingleHotBar.SlotList` to `PassivesHotBar.SlotList`.
 
 #### Item quantity
 
