@@ -832,3 +832,29 @@ The next game run should verify: no invisible tabs; last→first tab wrap shows 
 6. A, tooltip and highlight still derive from the existing `LocalFocusChanged -> ActionRadials.Tag` lifecycle.
 
 The next game run should verify only the runtime-only seams: tab switch starts on the first real action immediately; one-item tabs execute immediately; directional navigation cannot enter generated empty grid positions; and the selected tab remains visible when cycling in either direction.
+
+
+### 2026-10-07 — 0.0.63 runtime result / 0.0.64 proof boundary
+
+0.0.63 produced no noticeable behavioral difference from 0.0.62:
+
+- resource-tab switch still leaves no active action focus and the next move begins from the previous tab's coordinate;
+- one-item tabs still cannot be executed immediately;
+- unoccupied grid coordinates remain navigable without visible focus or navigation feedback;
+- cycling left can still leave the selected leftmost resource tab outside the visible strip.
+
+This rejects the 0.0.63 hypotheses (`InvalidateFocus`, `AlwaysSelectFirst`, `ExtendedRows=False`, and `SelectedItem + ScrollTo=Center`) as fixes for these defects.
+
+0.0.64 returns to runtime-proven seams:
+
+1. a visible native `SelectorTemplate` is again the `HotBarList.LocalFocusSelector`, in the same `CAM_ActionViewport` coordinate root;
+2. `CAM_ActionGridPanel` restores `EmptyCellTemplate="{DynamicResource EmptyCellTemplate}"`;
+3. `AlwaysSelectFirst` and `ExtendedRows` are absent;
+4. resource `SelectionChanged` sets `SelectedIndex=-1`, filters exactly once, and does not clear `LocalFocus`, invalidate widget focus, or focus the list itself;
+5. a 70 ms resource-switch timer arms `CAM_ResetFirstFocusToken` before setting `SelectedIndex=0`;
+6. the selected concrete `ListBoxItem` consumes that token with `SetMoveFocusAction(... TemplatedParent ...)` and clears it;
+7. `LocalFocusChanged` no longer mirrors the focused slot into `SelectedItem`; selector position, tooltip/highlight and A dispatch stay owned by LocalFocus;
+8. resource AutoScroll uses `SelectedIndex`, `BringSelectionIntoView=True`, and `ScrollTo=Center`;
+9. `ForceSelect=True` remains forbidden and hidden resource previews remain disabled.
+
+The next game run is justified only after full package/release CI. Its focused questions are: immediate first-slot focus/A after a tab change (including a one-item tab), visible selector movement through occupied and native empty grid cells, and selected resource-tab visibility when cycling left/right.
