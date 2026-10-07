@@ -84,11 +84,12 @@ Current shipping providers are:
 
 - `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList`;
 - native Cantrips via `FilterCantripsCommand(h7d02199dg44ecg4a1egbcacg9cc1cec197b3) -> SingleHotBar.SlotList`;
+- native metamagic via `FixedSideBar.SlotList`;
 - `PassivesHotBar.SlotList`;
 - `SingleHotBar.SlotList` for native nested/upcast/variant/throw state.
 
 Current unresolved source classes are free/no-resource actions, inventory/consumables,
-scrolls, item charges, metamagic toggles, temporary actions and recasts. These are correctness blockers for a complete HotBar replacement.
+scrolls, item charges, temporary actions and recasts. These are correctness blockers for a complete HotBar replacement.
 
 A future provider must be proven against the current installed game and materialize
 executable `VMHotBarSlot` values. This requirement does not authorize raw source tabs,
