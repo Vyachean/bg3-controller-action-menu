@@ -9,10 +9,10 @@
     <System:Double x:Key="CAM_ActionGridCellSize">120</System:Double>
     <!-- HotBar.xaml owns its resource-box keys locally, so CAM references the same game assets
          under CAM-owned keys instead of assuming page-local resources leak into Lib_Controller. -->
-    <BitmapImage x:Key="CAM_BoxResourceBg" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resourceBG.png"/>
-    <BitmapImage x:Key="CAM_BoxResource" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resource_d.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceH" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resource_h.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceDisabled" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resource_disabled.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceBg" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_empty.png"/>
+    <BitmapImage x:Key="CAM_BoxResource" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_d.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceH" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_h.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceDisabled" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_missing.png"/>
     <Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
