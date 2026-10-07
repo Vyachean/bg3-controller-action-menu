@@ -31,7 +31,7 @@ captured Patch 8 HotBar contract
             |
             v
 native VMHotBarSlot collections
-  CurrentShownDeck.SlotList
+  CurrentShownDeck.SlotList (only native ItemHotBar in shipping CAM)
   CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList
   SingleHotBar.SlotList
             |
@@ -52,7 +52,7 @@ The fresh capture corrected two stale development-fixture assumptions:
 
 The only LB/RB navigation dimension remains a controller cost/source row. Native resource previews from `ActionResourcesCostPreview` are the primary provider: selecting one invokes `FilterActionResourceCommand`, and the grid renders native `SingleHotBar.SlotList` slots. Passives use the proven `PassivesHotBar.SlotList` exception. There is no separate Live Details panel: focused cells use the ordinary BG3 tooltip. Native A/nested-state dispatch is retained, while radial customization remains unavailable.
 
-The resource provider is **not treated as proof of a complete HotBar catalog**. CAM now has an explicit parity contract against both the keyboard HotBar and the radial assignment catalog. Known uncovered/proof-gated classes now include free/no-resource actions, inventory/consumables, Scrolls, item-charge actions, temporary actions and recasts. Cantrips use BG3's captured native filter and metamagic uses the native `FixedSideBar.SlotList` provider. See [Action coverage](docs/action-coverage.md).
+The resource provider is **not treated as proof of a complete HotBar catalog**. CAM now has an explicit parity contract against both the keyboard HotBar and the radial assignment catalog. Known uncovered/proof-gated classes now include free/no-resource actions, Scrolls, item-charge actions, temporary actions and recasts. Cantrips use BG3's captured native filter, Items use `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList`, and metamagic uses `FixedSideBar.SlotList`. Exact ItemHotBar parity with radial `Inventory.Slots` remains runtime-unverified. See [Action coverage](docs/action-coverage.md).
 
 The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only. It now derives `hotbar-coverage-contract.json` by searching the whole captured XAML set. Each investigated command records presence, match count, source file and available parameters; missing research seams are evidence rather than capture failures.
 
