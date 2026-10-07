@@ -353,7 +353,7 @@ Required correction:
 
 The corrected contract is:
 - resource changes clear `ActionRadials.Tag`, `HotBarList.SelectedItem`, and, critically, `HotBarList.LocalFocus` before invoking `FilterActionResourceCommand`. Clearing `LocalFocus` is a native ActionRadials pattern and is the only reset that owns controller navigation/dispatch state;
-- after the filter settles, use deferred `SetMoveFocusAction` on the same `HotBarList`; do **not** synthesize `SelectedIndex=0`. The ensuing native `LocalFocusChanged` must repopulate selection, tooltip, resource highlighting and `ActionRadials.Tag` from one slot;
+- immediately after filtering, use `SetMoveFocusAction(..., DeferFocusAction=True)` on the same `HotBarList`; do **not** synthesize `SelectedIndex=0` or add a second resource-switch timer. The ensuing native `LocalFocusChanged` must repopulate selection, tooltip, resource highlighting and `ActionRadials.Tag` from one slot;
 - remove `ForceSelect=True` from resource shoulder cycling so collapsed MaxValue=0 previews are not forcibly selectable;
 - keep `ForceMode=Cycle` only;
 - bind resource-strip `AutoScrollBehavior.ScrollIntoView` to `CAM_ResourceTabs.SelectedItem`, not numeric `SelectedIndex`, so the first item is represented by a real object rather than index 0;
