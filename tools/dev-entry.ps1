@@ -42,6 +42,13 @@ $headers = @{
     "User-Agent" = "BG3ControllerActionMenu-DevLauncher"
     "Accept" = "application/vnd.github+json"
 }
+$token = $env:GH_TOKEN
+if (-not $token) {
+    $token = $env:GITHUB_TOKEN
+}
+if ($token) {
+    $headers["Authorization"] = "Bearer $token"
+}
 
 function Get-Releases {
     $payload = if ($ReleaseMetadataPath) {
