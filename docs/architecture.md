@@ -754,3 +754,30 @@ VMHotBarSlot (SlotType=Item)
 ```
 
 Non-item cells retain the 104x104 `Content.Icon` assignment-style surface. No separate CAM quantity overlay remains.
+
+
+### 0.0.73 — HotBar filter chrome, not resource-bar chrome
+
+0.0.72 proves the resource-first execution model and native item rendering, but it still uses the wrong visual family for top-level tabs. The keyboard/mouse HotBar has two separate concepts:
+
+- **action-resource bar** — `box_resource_*` / `LSActionPointResources`, used to display resources;
+- **filter buttons** — `FilterButton` / `ActiveFilterButton`, using `btn_pil_*` nine-slice chrome and the active top marker.
+
+CAM tabs are filters, so their outer presentation must use the second family.
+
+```text
+VMActionResourceCostPreview
+  -> HotBar filter chrome
+       normal   btn_pil_d
+       selected btn_pil_active_d
+       disabled btn_pil_disabled
+       marker   btn_pil_inactivemod_d + ActiveModArrow
+       Slices=36
+       Padding=10
+       item Margin=-4,0
+  -> compact resource identity
+       LSActionPointResources(ActionResourcesTemplateSelector)
+       RomanNumeralLevelImage for SpellSlot/WarlockSpellSlot
+```
+
+The `box_resource_*` and `box_resourceNum_*` assets are no longer part of the top-level tab chrome. Resource-value text remains absent. Passives uses the same filter chrome so the full LB/RB sequence reads as one native filter row.

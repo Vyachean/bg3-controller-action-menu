@@ -612,3 +612,27 @@ The action-focus authority remains `HotBarList.LocalFocus.DataContext`.
 - CAM must not maintain a separate quantity overlay or bind quantity through `VMHotBarSlot.GameObject`.
 
 Focus, tooltip, Passives transition serialization, and gameplay dispatch are unchanged.
+
+
+## Runtime correction — 0.0.72 -> 0.0.73
+
+0.0.72 runtime confirms native item quantity is fixed and the stray resource numerals are gone, but the top-level tabs still do not look like keyboard/mouse HotBar filters.
+
+The cause is a presentation-boundary error: 0.0.69–0.0.72 used the HotBar **action-resource bar** chrome (`box_resource_*`) as the tab chrome. The keyboard HotBar's **filter controls** are a different native component: `FilterButton` / `ActiveFilterButton` using the `btn_pil_*` family and the active top marker.
+
+### 0.0.73 visual contract
+
+- top-level resource semantics remain unchanged: `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList`;
+- each resource tab keeps native resource identity rendered by `LSActionPointResources + ActionResourcesTemplateSelector`;
+- `SpellSlot` / `WarlockSpellSlot` keep `RomanNumeralLevelImage`;
+- the outer tab chrome must follow the current HotBar filter-button contract:
+  - normal: `btn_pil_d.png`;
+  - active/selected: `btn_pil_active_d.png`;
+  - disabled: `btn_pil_disabled.png`;
+  - selected marker: `btn_pil_inactivemod_d.png + ActiveModArrow`;
+  - nine-slice `Slices=36`, `Padding=10`, outer item `Margin=-4,0`;
+- do not put `box_resource_*` or `box_resourceNum_*` behind the top-level tabs;
+- do not restore text labels or resource-value numerals;
+- Passives uses the same filter chrome so it is one visual sequence with resource tabs.
+
+Item templates, focus/tooltip authority, Passives transition serialization, nested return, and A/B dispatch stay unchanged.
