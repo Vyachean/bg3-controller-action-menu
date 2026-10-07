@@ -42,7 +42,6 @@ if ($evidence.runtimeContract.coverageContract.status -ne "incomplete-until-nati
     throw "Runtime evidence must carry the controller HotBar parity contract."
 }
 $requiredCoverageGaps = @(
-    "cantrips",
     "free/no-resource actions",
     "inventory/consumables",
     "scrolls",
@@ -61,11 +60,16 @@ if ($evidence.runtimeContract.assignmentNavigation.gridScrolling.focusFollow.sou
     throw "Action-grid evidence must use the captured controller focus-follow scroll seam."
 }
 
-if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passives" -or
+if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrips-plus-passives" -or
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
     $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | PassivesHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
+    $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
+    $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
+    $evidence.runtimeContract.organization.cantripsCommandParameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $evidence.runtimeContract.organization.cantripsModeToken -ne "CAM_CantripsModeToken" -or
     $evidence.runtimeContract.organization.passivesTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
     $evidence.runtimeContract.organization.passivesModeStorage -ne "CAM_ResourceTabs.Tag" -or
@@ -73,13 +77,13 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passive
     $evidence.runtimeContract.organization.passivesModeOwnership -ne "CAM presentation-only" -or
     $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
     $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
-    throw "Resource-first plus Passives organization evidence is incomplete or regressed."
+    throw "Resource-first plus native Cantrips plus Passives organization evidence is incomplete or regressed."
 }
 if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-only" -or
     $evidence.runtimeContract.tooltipPresentation.detailsSurface -ne "native-tooltip-only") {
     throw "CAM must use the ordinary native tooltip only; no Live Details panel is allowed."
 }
-if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-passives" -or
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-cantrips-plus-passives" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
@@ -107,6 +111,11 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotba
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.resourceIdentity -ne "LSActionPointResources(ActionResourcesTemplateSelector)" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedRenderer -ne "SectionImageStyle" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedTextFilterChrome -ne "btn_pil_*" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.source -ne "FilterCantripsCommand -> SingleHotBar.SlotList" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.visibility -ne "PlayerCharacterProperties.HasCantrips" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.parameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.modeToken -ne "CAM_CantripsModeToken" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.icon -ne "IconMiniCantrip" -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList" -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameFilterChrome -ne $false -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.resourceBoxChromeAllowed -ne $true) {
@@ -179,26 +188,34 @@ if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "
     $evidence.runtimeContract.controllerPresentation.itemQuantity.rejectedPath -ne "VMHotBarSlot.GameObject.Count") {
     throw "Item quantity must be delegated to native VMItem templates."
 }
-if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeToken -ne "CAM_PassivesModeToken" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.ownership -ne "CAM presentation-only" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.executableList -ne "HotBarList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.duplicateExecutableLists -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
-    throw "Passives must switch the sole HotBarList through CAM presentation state over the proven native PassivesHotBar source."
+$sourceSwitch = $evidence.runtimeContract.assignmentNavigation.sourceSwitch
+if ($sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
+    @($sourceSwitch.modeTokens).Count -ne 2 -or
+    @($sourceSwitch.modeTokens) -notcontains "CAM_CantripsModeToken" -or
+    @($sourceSwitch.modeTokens) -notcontains "CAM_PassivesModeToken" -or
+    $sourceSwitch.ownership -ne "CAM presentation-only" -or
+    $sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
+    $sourceSwitch.cantripsSource -ne "FilterCantripsCommand -> SingleHotBar.SlotList" -or
+    $sourceSwitch.cantripsParameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
+    $sourceSwitch.providerRestoreDispatcher -ne "CAM_ProviderRestoreCommand" -or
+    $sourceSwitch.executableList -ne "HotBarList" -or
+    $sourceSwitch.duplicateExecutableLists -ne $false -or
+    $sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
+    throw "The sole HotBarList must switch only among proven native providers and restore nested state through CAM_ProviderRestoreCommand."
 }
 
 $passiveReturn = $evidence.runtimeContract.assignmentNavigation.passivesReturn
 if ($passiveReturn.modeAuthority -ne "CAM_ResourceTabs.Tag = CAM_PassivesModeToken for the entire originating shoulder-button Click" -or
     $passiveReturn.rightToken -ne "CAM_TabReturnFirstToken" -or
-    $passiveReturn.leftToken -ne "CAM_TabReturnLastToken" -or
     $passiveReturn.rightModeSwitchMilliseconds -ne 70 -or
-    $passiveReturn.leftModeSwitchMilliseconds -ne 90 -or
+    $passiveReturn.leftWhenCantripsAvailable -ne "CAM_TabEnterSpecialToken -> CAM_CantripsModeToken -> FilterCantripsCommand" -or
+    $passiveReturn.leftWhenCantripsUnavailable -ne "CAM_TabReturnLastToken -> SelectNextListBoxItem(Reversed=True, ForceMode=Cycle)" -or
+    $passiveReturn.specialModeSwitchMilliseconds -ne 70 -or
+    $passiveReturn.leftFallbackModeSwitchMilliseconds -ne 90 -or
     $passiveReturn.ordinaryResourceClickHandlersEligibleDuringReturn -ne $false -or
     $passiveReturn.singleShoulderPressSingleLogicalTransition -ne $true) {
-    throw "Passives return must remain a serialized transition outside the ordinary resource-cycle click path."
+    throw "Passives/Cantrips/resource return must remain one serialized provider transition per shoulder press."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
