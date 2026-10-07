@@ -50,15 +50,15 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "dynamic-res
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage") {
     throw "Dynamic resource-tab presentation evidence is incomplete."
 }
-if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "item-local:IsSelected<-LocalFocus.DataContext; logical-owner:LocalFocusSelector" -or
-    $evidence.runtimeContract.assignmentNavigation.selector -ne "CAM_LogicalFocusAnchor" -or
-    $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne $null -or
-    $evidence.runtimeContract.assignmentNavigation.selectorVisibleChrome -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.selectorOpacity -ne 0 -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusSource -ne "HotBarList.SelectedItem" -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncEvent -ne "LocalFocusChanged" -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncValue -ne "HotBarList.LocalFocus.DataContext") {
-    throw "ActionRadials visible focus must mirror the proven LocalFocus.DataContext through HotBarList.SelectedItem."
+if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext" -or
+    $evidence.runtimeContract.assignmentNavigation.selector -ne "CAM_MainSelector" -or
+    $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne "SelectorTemplate" -or
+    $evidence.runtimeContract.assignmentNavigation.selectorVisibleChrome -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.selectorOpacity -ne 1 -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusSource -ne "HotBarList.LocalFocus via SelectorTemplate" -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncEvent -ne $null -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncValue -ne $null) {
+    throw "ActionRadials visible focus must use the runtime-proven native LocalFocusSelector/SelectorTemplate path."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand") {
@@ -72,41 +72,47 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.directGridDisableScrolling -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.scrollViewerCanContentScroll -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridUseWidgetNavigation -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridExtendedRows -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.emptyCellTemplate -ne $null -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridExtendedRows -ne $null -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.emptyCellTemplate -ne "DynamicResource EmptyCellTemplate" -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
 if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedItem" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedIndex" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne "Center" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTargetKind -ne "numeric-index" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.hiddenPreviewSelection -ne "collapsed+disabled; ordinary cycle only") {
     throw "Resource-tab viewport contract is incomplete."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedItem -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.filterCommandCount -ne 1 -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreVia -ne "InvalidateFocus=True -> SetMoveFocusAction(DeferFocusAction=True)" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.writesSelectedIndex -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.extraTimer -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.fill -ne "CAM_CellFocusFill" -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.frame -ne "CAM_CellFocusFrame" -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.frameBorderThickness -ne 4 -or
-    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.frameOpacity -ne 1) {
-    throw "0.0.62 LocalFocus-reset/focus-chrome evidence is incomplete."
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.settleMilliseconds -ne 70 -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.armToken -ne "CAM_ResetFirstFocusToken" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreSelectedIndex -ne 0 -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusTarget -ne "selected concrete ListBoxItem templated parent" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusAction -ne "SetMoveFocusAction(DeferFocusAction=True)" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterFocus -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemMirrorsLocalFocus -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.selector -ne "CAM_MainSelector" -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.template -ne "SelectorTemplate" -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.sharedCoordinateRoot -ne "CAM_ActionViewport" -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.emptyCellPresentation -ne "DynamicResource EmptyCellTemplate") {
+    throw "0.0.64 concrete-first-item/native-selector evidence is incomplete."
 }
 
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
-    'ScrollIntoView="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"',
+    'ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"',
     'BringSelectionIntoView="True"',
     'ScrollTo="Center"',
     'x:Name="CAM_ActionViewport"',
@@ -133,16 +139,15 @@ $required = @(
     'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
     'ls:MoveFocus.Focusable" Value="True"',
     'Setter Property="FocusVisualStyle" Value="{x:Null}"',
-    'Trigger Property="IsSelected" Value="True"',
+    'x:Key="CAM_ResetFirstFocusToken"',
+    'b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"',
+    'FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"',
+    'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
+    'x:Name="CAM_LogicalFocusAnchor"',
     'x:Name="CAM_CellFocusFill"',
     'x:Name="CAM_CellFocusFrame"',
-    'BorderThickness="4"',
-    'PropertyName="LocalFocus" Value="{x:Null}"',
-    'PropertyName="SelectedItem"',
-    'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
-    'LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"',
-    'x:Name="CAM_LogicalFocusAnchor"',
-    'Opacity="0"',
+    'Template="{StaticResource SelectorTemplate}"',
+    'EmptyCellTemplate="{DynamicResource EmptyCellTemplate}"',
     'Visibility="Visible"',
     'Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"',
     'RelativeSource="{RelativeSource AncestorType={x:Type ScrollContentPresenter}}"',
@@ -150,9 +155,8 @@ $required = @(
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
     'ActionLeftEvent="UILeft"',
-    'AlwaysSelectFirst="True"',
-    'ExtendedRows="False"',
-    'InvalidateFocus="True"',
+    'PropertyName="SelectedIndex" Value="-1"',
+    'Value="{StaticResource CAM_ResetFirstFocusToken}"',
     'PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
     'MillisecondsPerTick="70" TotalTicks="1"',
     'CreateFocusedTooltipDataCommand',
@@ -343,12 +347,12 @@ if (-not $actionGridPanel.Success -or
     $actionGridPanel.Value.Contains('Width="632"') -or
     $actionGridPanel.Value.Contains('UseWidgetNavigation="True"') -or
     $actionGridPanel.Value.Contains('ls:MoveFocus.InternalFocusable="True"') -or
-    $actionGridPanel.Value.Contains('EmptyCellTemplate') -or
-    -not $actionGridPanel.Value.Contains('AlwaysSelectFirst="True"') -or
-    -not $actionGridPanel.Value.Contains('ExtendedRows="False"') -or
+    $actionGridPanel.Value.Contains('AlwaysSelectFirst=') -or
+    $actionGridPanel.Value.Contains('ExtendedRows=') -or
+    -not $actionGridPanel.Value.Contains('EmptyCellTemplate="{DynamicResource EmptyCellTemplate}"') -or
     -not $actionGridPanel.Value.Contains('Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"') -or
     -not $actionGridPanel.Value.Contains('AncestorType={x:Type ScrollContentPresenter}')) {
-    throw "CAM_ActionGridPanel must reset fresh entry to the first real item and forbid generated empty navigation while retaining ActionRadials focus ownership."
+    throw "CAM_ActionGridPanel must keep adaptive columns while restoring the 0.0.29-proven native EmptyCellTemplate focus surface."
 }
 
 $slotContainer = [regex]::Match(
@@ -359,14 +363,17 @@ $slotContainer = [regex]::Match(
 if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('Property="ls:MoveFocus.Focusable" Value="True"') -or
     -not $slotContainer.Value.Contains('Setter Property="FocusVisualStyle" Value="{x:Null}"') -or
-    -not $slotContainer.Value.Contains('Trigger Property="IsSelected" Value="True"') -or
+    -not $slotContainer.Value.Contains('b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
+    -not $slotContainer.Value.Contains('RightOperand="{StaticResource CAM_ResetFirstFocusToken}"') -or
+    -not $slotContainer.Value.Contains('FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
+    -not $slotContainer.Value.Contains('DeferFocusAction="True"') -or
+    -not $slotContainer.Value.Contains('PropertyName="Tag"') -or
+    -not $slotContainer.Value.Contains('Value="{x:Null}"') -or
+    $slotContainer.Value.Contains('CAM_CellFocusFill') -or
+    $slotContainer.Value.Contains('CAM_CellFocusFrame') -or
     $slotContainer.Value.Contains('Trigger Property="ls:MoveFocus.IsFocused" Value="True"') -or
-    $slotContainer.Value.Contains('Style.FocusVisualStyle') -or
-    -not $slotContainer.Value.Contains('x:Name="CAM_CellFocusFill"') -or
-    -not $slotContainer.Value.Contains('x:Name="CAM_CellFocusFrame"') -or
-    -not $slotContainer.Value.Contains('BorderThickness="4"') -or
-    $slotContainer.Value.Contains('x:Name="CAM_CellFocus"')) {
-    throw "CAM must render LocalFocus-derived selection with a translucent fill plus a separate opaque border frame."
+    $slotContainer.Value.Contains('Style.FocusVisualStyle')) {
+    throw "SelectedIndex may hand off only once to the concrete selected ListBoxItem; visible focus must belong to the native selector."
 }
 
 if (-not $hotBarList.Value.Contains('CanContentScroll="False"') -or
@@ -382,10 +389,10 @@ $resourceTabs = [regex]::Match(
 )
 if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
-    -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"') -or
+    -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
     -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"') -or
     -not $resourceTabs.Value.Contains('ScrollTo="Center"')) {
-    throw "Resource tabs must stay in a bounded SelectedItem-following viewport and center the selected edge tab."
+    throw "Resource tabs must use the BG3-proven SelectedIndex AutoScroll target and center the selected edge tab."
 }
 
 if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
@@ -399,18 +406,27 @@ $resourceSelectionTrigger = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceSelectionTrigger.Success -or
-    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="SelectedItem" Value="{x:Null}"') -or
-    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"') -or
-    $resourceSelectionTrigger.Value.Contains('PropertyName="SelectedIndex"') -or
+    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"') -or
     [regex]::Matches($resourceSelectionTrigger.Value, 'FilterActionResourceCommand').Count -ne 1 -or
-    [regex]::Matches($resourceSelectionTrigger.Value, 'InvalidateFocus="True"').Count -ne 1 -or
-    -not $resourceSelectionTrigger.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"') -or
-    -not $resourceSelectionTrigger.Value.Contains('DeferFocusAction="True"') -or
-    $resourceSelectionTrigger.Value.IndexOf('InvalidateFocus="True"') -gt $resourceSelectionTrigger.Value.IndexOf('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource switching must clear native LocalFocus, filter once, invalidate cached focus geometry, then defer focus back to HotBarList."
+    $resourceSelectionTrigger.Value.Contains('PropertyName="LocalFocus"') -or
+    $resourceSelectionTrigger.Value.Contains('PropertyName="SelectedItem"') -or
+    $resourceSelectionTrigger.Value.Contains('InvalidateFocus="True"') -or
+    $resourceSelectionTrigger.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
+    throw "Resource switching must clear the entry selection, filter exactly once, and leave live LocalFocus untouched until the concrete-item handoff."
 }
-if ([regex]::IsMatch($resourceTabs.Value, '<b:TimerTrigger EventName="SelectionChanged"', [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-    throw "Resource switching must not add a second SelectionChanged timer; SetMoveFocusAction already owns deferred focus."
+$resourceRestoreTimer = [regex]::Match(
+    $resourceTabs.Value,
+    '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceRestoreTimer.Success -or
+    -not $resourceRestoreTimer.Value.Contains('PropertyName="Tag"') -or
+    -not $resourceRestoreTimer.Value.Contains('Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
+    -not $resourceRestoreTimer.Value.Contains('PropertyName="SelectedIndex"') -or
+    -not $resourceRestoreTimer.Value.Contains('Value="0"') -or
+    $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand') -or
+    $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
+    throw "After the native settle window, resource switching must arm the one-shot first-focus token before selecting index 0."
 }
 
 $resourceTabStyle = [regex]::Match(
@@ -440,26 +456,29 @@ if (-not $text.Contains('x:Name="ResourceFallback"') -or
     throw "Null or empty native resource names must have a TypeId text fallback."
 }
 
-if ($text.Contains('CAM_MainSelector') -or $text.Contains('CAM_SelectorTemplate')) {
-    throw "Visible detached selector state must not return."
+if ($text.Contains('CAM_LogicalFocusAnchor') -or
+    $text.Contains('CAM_CellFocusFill') -or
+    $text.Contains('CAM_CellFocusFrame') -or
+    $text.Contains('x:Key="CAM_SelectorTemplate"')) {
+    throw "The rejected invisible-anchor/item-selection focus presentation must not return."
 }
 
-$logicalAnchor = [regex]::Match(
+$mainSelector = [regex]::Match(
     $text,
-    '<Control\b[^>]*x:Name="CAM_LogicalFocusAnchor"[\s\S]*?/>',
+    '<Control\b[^>]*x:Name="CAM_MainSelector"[\s\S]*?/>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $logicalAnchor.Success -or
-    -not $logicalAnchor.Value.Contains('Opacity="0"') -or
-    -not $logicalAnchor.Value.Contains('Visibility="Visible"') -or
-    -not $logicalAnchor.Value.Contains('Focusable="False"') -or
-    -not $hotBarList.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"')) {
-    throw "HotBarList must restore LocalFocus ownership through an always-laid-out invisible selector anchor."
+if (-not $mainSelector.Success -or
+    -not $mainSelector.Value.Contains('Template="{StaticResource SelectorTemplate}"') -or
+    -not $mainSelector.Value.Contains('Visibility="{Binding Visibility, ElementName=HotBarList}"') -or
+    -not $mainSelector.Value.Contains('Focusable="False"') -or
+    -not $hotBarList.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"')) {
+    throw "HotBarList must use the 0.0.29-proven visible native SelectorTemplate in the same action viewport."
 }
 
 if (-not $hotBarList.Value.Contains('EventName="LocalFocusChanged"') -or
-    -not $hotBarList.Value.Contains('TargetName="HotBarList"') -or
-    -not $hotBarList.Value.Contains('PropertyName="SelectedItem"') -or
-    -not $hotBarList.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"')) {
-    throw "Visible focus must mirror HotBarList.LocalFocus.DataContext into HotBarList.SelectedItem."
+    $hotBarList.Value.Contains('PropertyName="SelectedItem"') -or
+    -not $hotBarList.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
+    -not $hotBarList.Value.Contains('PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"')) {
+    throw "LocalFocus must remain the sole live navigation/tooltip/A owner; SelectedItem is reserved for entry selection only."
 }
