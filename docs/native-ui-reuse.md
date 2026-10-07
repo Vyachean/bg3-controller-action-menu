@@ -170,6 +170,8 @@ Selecting a resource sends that preview object to `FilterActionResourceCommand`.
 
 Action/Bonus primary-resource refinement is deliberately not implemented through class/spell-name heuristics. If native filters are too broad, a future correction must be based on a proven current property/predicate over executable native slots.
 
+The current evidence also does not expose a per-preview "has executable slots" property. A tab that filters to an empty `SingleHotBar.SlotList` must not be hidden by a re-entrant `SelectionChanged -> filter -> empty -> select/filter again` loop; that family of recovery was rejected in 0.0.49. Empty-tab removal remains blocked on a proven native seam or a higher-information runtime capture.
+
 ## Button hints and customization
 
 The project-owned template retains the captured right-stacked `ButtonHintsContainer` composition and native input glyph/content resources.
