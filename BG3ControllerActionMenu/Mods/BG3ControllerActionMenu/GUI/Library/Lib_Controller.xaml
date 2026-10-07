@@ -30,6 +30,8 @@
                  UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_missing.png"/>
     <BitmapImage x:Key="CAM_ItemsProviderIcon"
                  UriSource="pack://application:,,,/Core;component/Assets/Shared/ico_container_more_d.png"/>
+    <BitmapImage x:Key="CAM_AllProviderIcon"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/Shared/ico_tab_all.png"/>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
@@ -41,6 +43,7 @@
     <System:String x:Key="CAM_TabEnterSpecialToken">CAM_TabEnterSpecial</System:String>
     <System:String x:Key="CAM_CantripsModeToken">CAM_CantripsMode</System:String>
     <System:String x:Key="CAM_ItemsModeToken">CAM_ItemsMode</System:String>
+    <System:String x:Key="CAM_AllModeToken">CAM_AllMode</System:String>
     <System:String x:Key="CAM_MetamagicModeToken">CAM_MetamagicMode</System:String>
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
     <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
@@ -382,6 +385,10 @@
                                 <Setter Property="CommandParameter" Value="{StaticResource CAM_CantripFilterParameter}"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                                <Setter Property="Command" Value="{x:Null}"/>
+                                <Setter Property="CommandParameter" Value="{x:Null}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_AllModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
