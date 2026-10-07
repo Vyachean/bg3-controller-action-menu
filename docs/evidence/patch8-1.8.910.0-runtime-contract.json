@@ -173,7 +173,7 @@
       "camSelectorOutset": null,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
       "selectorDerivation": null,
-      "tabPattern": "hotbar-filter-chrome-resource-icons-plus-passives",
+      "tabPattern": "hotbar-action-resource-bar-plus-passives",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
@@ -181,22 +181,26 @@
       "genericTabLabel": null,
       "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
-        "mode": "single-row-hotbar-filter-chrome",
+        "mode": "single-row-current-hotbar-resource-bar",
         "layoutPanel": "StackPanel",
         "orientation": "Horizontal",
         "oneLogicalSequence": true,
         "includesPassives": true,
-        "resourceCellWidth": null,
-        "resourceVisualSize": 58,
         "cycleForceSelect": false,
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
         "horizontalScrollState": false,
         "wrappedRows": false,
         "scrollOwner": null,
         "actionViewportHeight": 850,
-        "resourceMinWidth": 72,
-        "resourceCellHeight": 64,
-        "itemMargin": "-4,0"
+        "resourceCellWidth": 72,
+        "resourceCellHeight": 72,
+        "nativeItemContainerMargin": "-4,0,-4,0",
+        "nativeButtonMargin": "4,-10,4,10",
+        "barBackground": "bar_resources.png",
+        "barHeight": 64,
+        "barMinWidth": 208,
+        "barSlices": "104,0",
+        "barWidthExtra": 208
       },
       "resourceRenderer": {
         "size": 72,
@@ -206,26 +210,34 @@
         "available": "Value",
         "highlighted": "Cost",
         "dataContext": "ActionResource",
-        "boxAssets": null,
+        "normalBox": {
+          "background": "box_resource_empty.png",
+          "normal": "box_resource_d.png",
+          "selected": "box_resource_h.png",
+          "missing": "box_resource_missing.png"
+        },
+        "spellSlotBox": {
+          "background": "box_resourceNum_empty.png",
+          "normal": "box_resourceNum_d.png",
+          "selected": "box_resourceNum_h.png",
+          "missing": "box_resourceNum_missing.png",
+          "margin": "0,-8,0,0"
+        },
         "spellSlotOverlay": "RomanNumeralLevelImage",
+        "spellSlotOverlayMargin": "0,-10,0,0",
+        "smallActionPointSize": 24,
+        "actionPointGroupSize": 56,
+        "zeroValuePresentation": "missing-resource-box",
         "countOverlay": null,
-        "countOverlayRule": null,
+        "capturedCountOverlay": "ResourcesNumeralDisplay",
+        "countOverlayDecision": "intentionally omitted after runtime rejection",
         "rejectedRenderer": "SectionImageStyle",
+        "rejectedTopChrome": "FilterButton/ActiveFilterButton btn_pil_*",
         "spellSlotTypes": [
           "SpellSlot",
           "WarlockSpellSlot"
         ],
-        "filterChrome": {
-          "normal": "btn_pil_d.png",
-          "active": "btn_pil_active_d.png",
-          "disabled": "btn_pil_disabled.png",
-          "marker": "btn_pil_inactivemod_d.png",
-          "markerArrow": "ActiveModArrow",
-          "slices": 36,
-          "padding": 10,
-          "itemMargin": "-4,0"
-        },
-        "resourceBarChromeAllowed": false,
+        "resourceBarChrome": "bar_resources.png",
         "resourceIdentity": "LSActionPointResources(ActionResourcesTemplateSelector)"
       },
       "passivesTab": {
@@ -235,9 +247,12 @@
         "icon": "PassiveFeature_Generic.png",
         "sameExecutableList": "HotBarList",
         "resourceSelectionHighlightSuppressedWhileActive": true,
-        "chrome": "HotBar FilterButton/ActiveFilterButton",
-        "resourceBoxChromeAllowed": false,
-        "sameFilterChrome": true
+        "chrome": "HotBar action-resource box family",
+        "barBackground": "bar_resources.png",
+        "normalBox": "box_resource_d.png",
+        "selectedBox": "box_resource_h.png",
+        "backgroundBox": "box_resource_empty.png",
+        "sameResourceBarChrome": true
       },
       "itemQuantity": {
         "slotType": "Item",
@@ -252,6 +267,14 @@
         "style": "ItemAmountTextStyle",
         "camOverlayAllowed": false,
         "rejectedPath": "VMHotBarSlot.GameObject.Count"
+      },
+      "exactHotBarVisualEvidence": {
+        "packagedPath": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+        "sha256": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728",
+        "container": "ActionResourcesContainer",
+        "list": "ActionResourcesList",
+        "listSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
+        "filterCommand": "FilterActionResourceCommand"
       }
     },
     "tooltipPresentation": {
