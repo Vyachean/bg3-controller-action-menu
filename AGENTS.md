@@ -585,3 +585,30 @@ Passives remains the single explicit non-resource top-level mode, but entering/l
 - no second resource selection/filter transition may occur from one LB/RB press.
 
 The action-focus authority remains `HotBarList.LocalFocus.DataContext`.
+
+
+## Runtime correction — 0.0.71 -> 0.0.72
+
+0.0.71 runtime disproves two remaining presentation assumptions:
+
+- the CAM-added `ResourcesNumeralDisplay` is not acceptable for top-level tabs; it produces stray-looking resource numbers in the tab row;
+- item quantity cannot be read from `VMHotBarSlot.GameObject.Count` in CAM's direct slot template. Current Patch 8 `HotBarSlotStyle` renders item slots by passing `VMHotBarSlot.Content` (a `VMItem`) into the native `Template.Item`, where quantity is bound directly to `VMItem.Count`.
+
+0.0.72 therefore uses the native presentation seams instead of re-implementing them.
+
+### Resource tabs
+- remove the CAM-authored `ResourcesNumeralDisplay` entirely;
+- keep `LSActionPointResources + ActionResourcesTemplateSelector` for the resource glyph itself;
+- restore the captured Patch 8 `box_resourceNum_*` chrome for `SpellSlot` / `WarlockSpellSlot`;
+- retain `RomanNumeralLevelImage` for slot level;
+- normal resources keep the captured `box_resource_*` chrome;
+- selected CAM tabs may map the native HotBar hover/highlight asset to persistent selected state, but must not invent labels or numeric overlays.
+
+### Item cells
+- a `VMHotBarSlot` remains the focus/dispatch unit;
+- for `SlotType=Item`, presentation switches from the generic `Content.Icon` rectangle to a `ContentPresenter` over `VMHotBarSlot.Content`;
+- ordinary items use native `Template.Item`, which owns `VMItem.Count -> CountToVisibilityConverter -> AbbreviateNumberConverter -> ItemAmountTextStyle`;
+- equipment and item containers use native `Template.ItemEquipment` / `Template.ItemContainer` respectively;
+- CAM must not maintain a separate quantity overlay or bind quantity through `VMHotBarSlot.GameObject`.
+
+Focus, tooltip, Passives transition serialization, and gameplay dispatch are unchanged.
