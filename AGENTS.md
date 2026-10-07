@@ -287,3 +287,29 @@ Required corrections:
 - the resource viewport may be wider than the action grid, but must not alter action focus geometry.
 
 Do not change FilterActionResourceCommand, UseSlotCommand, ClearSingleHotbarCommand, nested-state flags, upcast semantics, or weapon-set input as part of this correction.
+
+
+## Selectorless adaptive controller grid
+
+Runtime proof from 0.0.55-0.0.57 rejects the remaining detached selector/viewport composition:
+- the logical focus is already on the first item after resource changes while detached selector chrome remains at old coordinates;
+- direct `LSGrid` navigation reaches clipped rows but the current ListBox content-scrolling path does not move the viewport;
+- fixed `Columns=5` / `Width=632` is not adaptive;
+- text-only resource tabs expose blank labels for native resources whose controller presentation is icon/level driven.
+
+Current installed Patch 8 capture provides a simpler controller presentation pattern:
+- `SpellBook_c.xaml` computes `LSGrid.Columns` from the actual scroll-content width using `DivideMultiConverter`;
+- that grid uses `UseWidgetNavigation=True`, `AlwaysSelectFirst=True`, `ls:MoveFocus.InternalFocusable=True`, and focusable descendants;
+- focused cells use `ls:MoveFocus.IsFocused` / native focus visual behavior instead of an independently positioned selector control;
+- SpellBook wraps the grid in ordinary pixel scrolling rather than forcing `CanContentScroll=True`;
+- current `HotBar.xaml` confirms `ActionResourcesCostPreview` is itself a native clickable `FilterActionResourceCommand` source and hides only `MaxValue=0` items. Therefore CAM must not invent a second semantic resource classifier merely to hide entries.
+
+Required CAM presentation:
+- remove `CAM_MainSelector` and `CAM_SelectorTemplate` completely;
+- each `CAM_ActionGridSlotContainer` is explicitly `ls:MoveFocus.Focusable=True` and owns its focus chrome via `ls:MoveFocus.IsFocused`;
+- `CAM_ActionGridPanel.Columns` is calculated from actual `ScrollContentPresenter.ActualWidth / 120`, never hard-coded;
+- use pixel scrolling (`CanContentScroll=False`) with the existing vertical offset helper;
+- resource tabs stay in a bounded horizontal viewport with SelectedIndex auto-scroll; do not widen the entire template to fit every tab;
+- generic resource label fallback is `ActionResource.TypeId` only when `ActionResource.Name` is null. Spell-slot tabs keep native level presentation.
+
+No additional runtime dependency is allowed for these fixes. ImpUI and other mods are research evidence only, not CAM dependencies.
