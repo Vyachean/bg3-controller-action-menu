@@ -949,3 +949,33 @@ Automatic proof must require:
 9. LB/RB shoulder cycling remains one-dimensional and the native resource filter contract is unchanged.
 
 The next runtime check is limited to: immediate tooltip after tab switch, immediate tooltip after nested B return, and all selected resource tabs remaining visible without horizontal scrolling.
+
+
+### 2026-10-07 — 0.0.68 runtime result / 0.0.69 proof boundary
+
+0.0.68 runtime:
+- resource tabs are visible but wrap into multiple rows, which is undesirable;
+- tooltip still does not appear after resource tab switching;
+- previously proven nested B return remains functional.
+
+0.0.69 automatic proof must require:
+
+1. resource tabs use `LSActionPointResources`, `ActionResourcesTemplateSelector`, the native 72px resource-box geometry and `RomanNumeralLevelImage`;
+2. text resource-name/fallback labels and `AlignableWrapPanel` are absent from the resource tab row;
+3. `PassivesHotBar.SlotList` enters shipping runtime only as the explicit Passives top-level mode;
+4. one `HotBarList` switches between `SingleHotBar.SlotList` and `PassivesHotBar.SlotList`; no second executable grid is introduced;
+5. passive mode uses native `IsShowingPassivesDeck` / `SetIsShowingPassivesDeckCommand`;
+6. LB/RB cycling can cross both boundaries between the native resource sequence and Passives;
+7. action cells render item quantity from `GameObject.Count` with `AbbreviateNumberConverter` and `ItemAmountTextStyle`;
+8. tab entry clears LocalFocus before selecting index 0;
+9. entry-only tooltip/Tag/highlight state comes from the same first `HotBarList.SelectedItem` handed to concrete-item focus;
+10. normal `LocalFocusChanged` remains the live navigation authority;
+11. the 0.0.68 `FocusedElement` presentation trigger is absent;
+12. 0.0.66 nested-return restoration remains unchanged for resource mode.
+
+Next runtime proof should be limited to:
+- one-row native resource icons;
+- Passives reachable in both LB/RB directions and populated;
+- first action immediately focused with matching tooltip after resource and Passives transitions;
+- item/scroll/potion quantities visible when count > 1;
+- nested B return still works.
