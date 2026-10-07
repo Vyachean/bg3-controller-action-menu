@@ -374,7 +374,8 @@
                                 <ControlTemplate TargetType="{x:Type ListBox}">
                                     <ScrollViewer HorizontalScrollBarVisibility="Hidden"
                                                   VerticalScrollBarVisibility="Visible"
-                                                  Template="{StaticResource ScrollViewerTemplate}">
+                                                  Template="{StaticResource ScrollViewerTemplate}"
+                                                  ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120">
                                         <ScrollViewer.Resources>
                                             <GridLength x:Key="Top">0</GridLength>
                                             <GridLength x:Key="Bottom">0</GridLength>

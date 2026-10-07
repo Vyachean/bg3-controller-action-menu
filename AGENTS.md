@@ -203,3 +203,24 @@ Do not combine another runtime fix into the same release.
 
 
 Runtime proof for 0.0.51: hold D-pad Left switched weapon set once, but the same hold shortcut did not fire a second time. Treat direct BoundEvent on the visual ControllerHoldButtonStyle control as rejected for this command.
+
+
+## Isolated correction after 0.0.52 — action-grid scrolling
+
+The next core-functionality correction is deliberately limited to viewport scrolling.
+
+Fresh Patch 8 controller UI evidence uses `ls:ScrollViewerHelper.VerticalScrollOffsetMargin` on existing vertical ScrollViewer surfaces to keep controller-focused descendants inside the viewport. CAM therefore adds only:
+
+`ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"`
+
+to the existing `HotBarList` ScrollViewer.
+
+This correction must not change:
+- the outer/nested focus hierarchy;
+- resource tabs or LB/RB;
+- `SingleHotBar` filtering;
+- selector geometry;
+- tooltip/A/B/upcast behavior;
+- action-grid dimensions.
+
+Do not combine focus-tree cleanup with this scrolling proof.
