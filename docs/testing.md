@@ -923,3 +923,29 @@ Observed in 0.0.66:
 7. the resource template contains no `ElementName=CAM_ResourceTabs` scroll binding, no `AutoScrollBehavior`, and no manual offset logic.
 
 The next game check should be limited to: tooltip immediately present after a resource switch, tooltip immediately present after nested B return, and selected edge resource tabs visibly scrolling in both directions.
+
+
+### 2026-10-07 — 0.0.67 runtime result / 0.0.68 proof boundary
+
+Observed in 0.0.67:
+
+- resource strip still does not scroll;
+- switching resource tabs still leaves the newly focused action without a tooltip until subsequent navigation;
+- nested B return remains functionally correct, but the restored focused action likewise lacks its tooltip until navigation;
+- no observable improvement over 0.0.66 in these two seams.
+
+0.0.68 therefore removes both rejected mechanisms rather than varying them again.
+
+Automatic proof must require:
+
+1. 0.0.66 nested-return marker/filter restoration remains unchanged;
+2. `HotBarList.LocalFocusChanged` again owns normal D-pad tooltip/Tag/highlight synchronization from `LocalFocus.DataContext`;
+3. a widget-level `PropertyChangedTrigger` on `FocusedElement` performs the same synchronization for programmatic entry while still sourcing the action from `HotBarList.LocalFocus.DataContext`;
+4. no action presentation or dispatch path uses `HotBarList.SelectedItem` or `FocusedElement.DataContext`;
+5. the ineffective `PropertyChangedTrigger(LocalFocus.DataContext)` is absent;
+6. `CAM_ResourceTabsPanel` is an `ls:AlignableWrapPanel`;
+7. the resource list template has no ScrollViewer/LSScrollViewer and no AutoScrollBehavior;
+8. the resource header row is auto-sized while `CAM_ActionViewport` remains 850px high;
+9. LB/RB shoulder cycling remains one-dimensional and the native resource filter contract is unchanged.
+
+The next runtime check is limited to: immediate tooltip after tab switch, immediate tooltip after nested B return, and all selected resource tabs remaining visible without horizontal scrolling.

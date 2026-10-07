@@ -454,3 +454,35 @@ For resource-strip scrolling:
 - inside the resource `ControlTemplate`, bind `LSScrollViewer.ScrollToElement` to `Tag` through `RelativeSource TemplatedParent`;
 - do not use `ElementName=CAM_ResourceTabs` from inside that template because the template has its own namescope;
 - do not return to `AutoScrollBehavior`, integer/VM scroll targets, or manual offsets.
+
+
+## Runtime correction — 0.0.67 -> 0.0.68
+
+0.0.67 produced no observable runtime change. Treat both attempted seams as rejected for CAM:
+- `PropertyChangedTrigger(LocalFocus.DataContext)` is not a reliable wake-up signal for programmatic ActionRadials re-entry;
+- resource-strip `LSScrollViewer.ScrollToElement` does not move this non-focused shoulder-selection strip, regardless of cross-template binding form.
+
+Keep the proven 0.0.66 nested-return restoration unchanged.
+
+### Programmatic action-entry synchronization
+
+`HotBarList.LocalFocus.DataContext` remains the only action identity used for tooltip, resource highlighting and A dispatch. The correction changes only the **wake-up signal**:
+
+- ordinary D-pad movement returns to the runtime-proven `LocalFocusChanged` lifecycle;
+- programmatic focus entry/re-entry observes the widget's `FocusedElement`, matching BG3 controller UI patterns that refresh tooltip presentation when widget focus changes;
+- the `FocusedElement` trigger must still read action state from `HotBarList.LocalFocus.DataContext`, never from `SelectedItem` or `FocusedElement.DataContext`;
+- no extra delay is introduced for this synchronization.
+
+### Resource-tab layout
+
+Stop treating resource tabs as a scrollable carousel. Multiple runtime releases have rejected every available declarative selection-follow scroll seam.
+
+BG3 already presents action-resource collections with `ls:AlignableWrapPanel`. CAM must use the same layout family:
+- `CAM_ResourceTabsPanel` becomes an `ls:AlignableWrapPanel`;
+- the resource `LSListBox` template contains an `ItemsPresenter` without a horizontal ScrollViewer;
+- the resource header row is auto-sized while the action viewport keeps its existing 850px height;
+- LB/RB remains a one-dimensional `SelectNextListBoxItem ForceMode=Cycle` selection model;
+- collapsed/disabled null or MaxValue=0 previews remain skipped;
+- no `AutoScrollBehavior`, `LSScrollViewer.ScrollToElement`, manual horizontal offset, or second-level tabs.
+
+This remains one level of resource tabs; wrapping changes only presentation and removes scroll state entirely.

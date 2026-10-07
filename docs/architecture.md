@@ -508,3 +508,45 @@ Inside a `ControlTemplate`, the reliable source is the templated list itself:
 ```
 
 This keeps the Patch 8-native UIElement scroll contract while removing the cross-namescope lookup.
+
+
+### 0.0.68 — widget-focus wake-up, LocalFocus authority, wrapped resource row
+
+0.0.67 proves that changing the binding form of resource scrolling and watching a nested LocalFocus binding are not effective runtime seams in this ActionRadials composition.
+
+#### Action entry
+
+CAM now separates the **state authority** from the **event that wakes presentation**:
+
+```text
+programmatic SetMoveFocusAction
+        |
+        v
+ActionRadials.FocusedElement changes
+        |
+        v
+read HotBarList.LocalFocus.DataContext
+        |
+        +--> CAM_ActionTooltip.Content
+        +--> ShowTooltipOnUIElementCommand(HotBarList)
+        +--> ActionRadials.Tag
+        +--> CreateFocusedTooltipDataCommand
+        +--> HighlightResourcesCommand
+
+ordinary D-pad
+        |
+        v
+HotBarList.LocalFocusChanged
+        |
+        +--> same LocalFocus.DataContext lifecycle
+```
+
+`FocusedElement` is only the wake-up signal for programmatic entry. It is not an alternate action identity.
+
+#### Resource row
+
+Horizontal scroll is removed. BG3's own action-resource UI uses `ls:AlignableWrapPanel`; CAM adopts that presentation family for `VMActionResourceCostPreview`.
+
+The resource list remains one logical sequence controlled by LB/RB. When natural tab widths exceed the available width, the same sequence wraps to another visual row. Because every realized tab is laid out inside the bounded resource area, there is no scroll offset to synchronize and no selected edge tab can remain outside a scrolled viewport.
+
+The action viewport remains 850px high. The resource header becomes auto-sized, so wrapping does not steal action-grid height.

@@ -62,10 +62,12 @@ if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "native
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
-    $evidence.runtimeContract.tooltipPresentation.presentationSignal -ne "PropertyChangedTrigger(LocalFocus.DataContext)" -or
-    $evidence.runtimeContract.tooltipPresentation.localFocusChangedRole -ne "hover-sound-only" -or
-    $evidence.runtimeContract.tooltipPresentation.delayedLocalFocusPresentationTimer -ne $false) {
-    throw "Focused native tooltip contract must follow LocalFocus.DataContext property changes."
+    $evidence.runtimeContract.tooltipPresentation.stateAuthority -ne "HotBarList.LocalFocus.DataContext" -or
+    $evidence.runtimeContract.tooltipPresentation.focusedElementRole -ne "wake-up-only" -or
+    $evidence.runtimeContract.tooltipPresentation.localFocusChangedRole -ne "normal-navigation-presentation" -or
+    $evidence.runtimeContract.tooltipPresentation.delayedLocalFocusPresentationTimer -ne $true -or
+    @($evidence.runtimeContract.tooltipPresentation.presentationSignals).Count -ne 2) {
+    throw "Tooltip state must remain LocalFocus-owned, with LocalFocusChanged plus widget FocusedElement as wake-up signals."
 }
 
 if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "ScrollContentPresenter.ActualWidth" -or
@@ -81,18 +83,20 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "CAM_ResourceTabs.Tag" -or
+if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "wrapped-visible-row" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.layoutPanel -ne "ls:AlignableWrapPanel" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.oneLogicalSequence -ne $true -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.horizontalScrollState -ne $false -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne $null -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne $null -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne $null -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $null -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTargetKind -ne "selected ListBoxItem UIElement" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.selectedContainerPublishesTag -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollBindingSource -ne "templated-parent.Tag" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.crossTemplateElementName -ne $false -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.headerRow -ne "Auto" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.actionViewportHeight -ne 850 -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "LSScrollViewer.ScrollToElement" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.hiddenPreviewSelection -ne "collapsed+disabled; ordinary cycle only") {
-    throw "Resource-tab viewport must follow the selected concrete container through LSScrollViewer.ScrollToElement."
+    throw "Resource tabs must remain one wrapped visible sequence with no horizontal scroll state."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
@@ -107,7 +111,9 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemMirrorsLocalFocus -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "PropertyChangedTrigger(LocalFocus.DataContext) after LocalFocus reset + concrete-item handoff" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "FocusedElement wake-up + LocalFocus.DataContext authority after concrete-item handoff" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticWakeSignal -ne "ActionRadials.FocusedElement" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticStateSource -ne "HotBarList.LocalFocus.DataContext" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemEntryStateWrites -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.selector -ne "CAM_MainSelector" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.template -ne "SelectorTemplate" -or
@@ -120,7 +126,10 @@ $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
-    'ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"',
+    '<ls:AlignableWrapPanel HorizontalAlignment="Stretch"',
+    '<RowDefinition Height="Auto"/>',
+    '<RowDefinition Height="850"/>',
+    '<b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">',
     'x:Name="CAM_ActionViewport"',
     'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
@@ -393,14 +402,34 @@ $resourceTabs = [regex]::Match(
 )
 if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
-    -not $resourceTabs.Value.Contains('<ls:LSScrollViewer') -or
-    -not $resourceTabs.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"') -or
-    $resourceTabs.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding Tag, ElementName=CAM_ResourceTabs}"') -or
+    -not $resourceTabs.Value.Contains('HorizontalContentAlignment="Center"') -or
+    $resourceTabs.Value.Contains('<ls:LSScrollViewer') -or
+    $resourceTabs.Value.Contains('<ScrollViewer') -or
     $resourceTabs.Value.Contains('AutoScrollBehavior') -or
     $resourceTabs.Value.Contains('BringSelectionIntoView=') -or
     $resourceTabs.Value.Contains('ScrollIntoView=') -or
+    $resourceTabs.Value.Contains('ScrollToElement=') -or
     $resourceTabs.Value.Contains('ScrollTo=')) {
-    throw "Resource tabs must scroll to the selected concrete ListBoxItem through LSScrollViewer.ScrollToElement."
+    throw "Resource tabs must be a non-scrolling wrapped list; horizontal scroll state is forbidden."
+}
+
+$resourceTabsPanel = [regex]::Match(
+    $text,
+    '<ItemsPanelTemplate\b[^>]*x:Key="CAM_ResourceTabsPanel"[\s\S]*?</ItemsPanelTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceTabsPanel.Success -or
+    -not $resourceTabsPanel.Value.Contains('<ls:AlignableWrapPanel') -or
+    -not $resourceTabsPanel.Value.Contains('HorizontalContentAlignment="Center"') -or
+    $resourceTabsPanel.Value.Contains('<StackPanel')) {
+    throw "Resource tabs must use the BG3-native AlignableWrapPanel layout family."
+}
+
+if (-not $text.Contains('<RowDefinition Height="Auto"/>') -or
+    -not $text.Contains('<RowDefinition Height="850"/>') -or
+    -not $text.Contains('x:Name="CAM_ActionViewport"') -or
+    -not $text.Contains('Height="850"')) {
+    throw "Wrapped resource header must auto-size without reducing the 850px action viewport."
 }
 
 if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
@@ -438,7 +467,7 @@ if (-not $resourceRestoreTimer.Success -or
     $resourceRestoreTimer.Value.Contains('TargetName="ActionRadials"') -or
     $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand') -or
     $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource entry timer may only arm concrete-item focus; presentation and A state must come from LocalFocus.DataContext property changes."
+    throw "Resource entry timer may only arm concrete-item focus; presentation wakes from LocalFocusChanged or widget FocusedElement."
 }
 
 $resourceTabStyle = [regex]::Match(
@@ -447,9 +476,8 @@ $resourceTabStyle = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabStyle.Success -or
-    -not $resourceTabStyle.Value.Contains('b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
-    -not $resourceTabStyle.Value.Contains('PropertyName="Tag"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
+    $resourceTabStyle.Value.Contains('PropertyName="Tag"') -or
+    $resourceTabStyle.Value.Contains('Value="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
     $resourceTabStyle.Value.Contains('Property="MaxWidth"') -or
     $resourceTabStyle.Value.Contains('MaxWidth="') -or
     $resourceTabStyle.Value.Contains('TextTrimming=') -or
@@ -525,20 +553,8 @@ if (-not $mainSelector.Success -or
     throw "HotBarList must use the 0.0.29-proven visible native SelectorTemplate in the same action viewport."
 }
 
-$focusDataTrigger = [regex]::Match(
-    $hotBarList.Value,
-    '<b:PropertyChangedTrigger Binding="\{Binding LocalFocus\.DataContext, ElementName=HotBarList\}">[\s\S]*?</b:PropertyChangedTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $focusDataTrigger.Success -or
-    -not $focusDataTrigger.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
-    -not $focusDataTrigger.Value.Contains('ShowTooltipOnUIElementCommand') -or
-    -not $focusDataTrigger.Value.Contains('PropertyName="Tag"') -or
-    -not $focusDataTrigger.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
-    -not $focusDataTrigger.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    -not $focusDataTrigger.Value.Contains('HighlightResourcesCommand') -or
-    $focusDataTrigger.Value.Contains('SelectedItem')) {
-    throw "LocalFocus.DataContext property changes must own tooltip/Tag/highlight presentation without SelectedItem state."
+if ($hotBarList.Value.Contains('<b:PropertyChangedTrigger Binding="{Binding LocalFocus.DataContext, ElementName=HotBarList}">')) {
+    throw "The 0.0.67 nested LocalFocus.DataContext property trigger is runtime-rejected and must not return."
 }
 
 $localFocusEvent = [regex]::Match(
@@ -547,14 +563,43 @@ $localFocusEvent = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $localFocusEvent.Success -or
+    -not $localFocusEvent.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
+    -not $localFocusEvent.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    -not $localFocusEvent.Value.Contains('CommandParameter="{x:Null}"') -or
     -not $localFocusEvent.Value.Contains('LSPlaySound') -or
-    $localFocusEvent.Value.Contains('ShowTooltipOnUIElementCommand') -or
-    $localFocusEvent.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    $localFocusEvent.Value.Contains('HighlightResourcesCommand') -or
-    $localFocusEvent.Value.Contains('TargetName="ActionRadials"')) {
-    throw "LocalFocusChanged must remain hover-sound-only; presentation belongs to LocalFocus.DataContext property changes."
+    $localFocusEvent.Value.Contains('SelectedItem') -or
+    $localFocusEvent.Value.Contains('FocusedElement.DataContext')) {
+    throw "Normal D-pad presentation must return to the proven LocalFocusChanged -> LocalFocus.DataContext lifecycle."
 }
 
-if ($hotBarList.Value.Contains('<b:TimerTrigger EventName="LocalFocusChanged"')) {
-    throw "Delayed LocalFocusChanged presentation timer must remain removed."
+$localFocusTimer = [regex]::Match(
+    $hotBarList.Value,
+    '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $localFocusTimer.Success -or
+    -not $localFocusTimer.Value.Contains('PropertyName="Tag"') -or
+    -not $localFocusTimer.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
+    -not $localFocusTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    -not $localFocusTimer.Value.Contains('HighlightResourcesCommand') -or
+    $localFocusTimer.Value.Contains('SelectedItem') -or
+    $localFocusTimer.Value.Contains('FocusedElement.DataContext')) {
+    throw "Delayed ActionRadials.Tag/resource state must remain sourced only from LocalFocus.DataContext."
+}
+
+$focusedEntryTrigger = [regex]::Match(
+    $text,
+    '<b:PropertyChangedTrigger Binding="\{Binding FocusedElement, RelativeSource=\{RelativeSource AncestorType=\{x:Type ls:UIWidget\}\}\}">[\s\S]*?</b:PropertyChangedTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $focusedEntryTrigger.Success -or
+    -not $focusedEntryTrigger.Value.Contains('LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
+    -not $focusedEntryTrigger.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
+    -not $focusedEntryTrigger.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    -not $focusedEntryTrigger.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
+    -not $focusedEntryTrigger.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    -not $focusedEntryTrigger.Value.Contains('HighlightResourcesCommand') -or
+    $focusedEntryTrigger.Value.Contains('FocusedElement.DataContext') -or
+    $focusedEntryTrigger.Value.Contains('SelectedItem')) {
+    throw "Widget FocusedElement may wake programmatic-entry presentation, but all action state must still come from HotBarList.LocalFocus.DataContext."
 }
