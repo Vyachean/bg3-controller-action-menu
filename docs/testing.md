@@ -693,4 +693,29 @@ Current automated proof must establish:
 4. copied `Public/Game` XAML, Script Extender and native executable payloads are absent;
 5. repository/build CI is green.
 
-Only after those checks pass is another in-game test justified. The next run must combine the remaining runtime-only questions: long-grid up/down navigation, Common/Class/Items/Passives/Cantrips switching, resource filtering/preview, one direct A dispatch, one natural container/variant/upcast path if available, native hint layout, and top-level/nested B.
+Only after those checks pass was another in-game test justified. That milestone was subsequently superseded by the resource-first single-list runtime described below.
+
+### 2026-10-07 — 0.0.58 selectorless adaptive-grid milestone
+
+0.0.55–0.0.57 runtime evidence proved that the remaining focus/scroll defects were presentation ownership problems, not a reason to add more executable lists. The 0.0.58 candidate therefore adopts current Patch 8 SpellBook controller patterns:
+
+- one `HotBarList` bound to `SingleHotBar.SlotList`;
+- no `CAM_MainSelector`, `CAM_SelectorTemplate`, or `LocalFocusSelector`;
+- item-local focus chrome driven by `ls:MoveFocus.IsFocused`;
+- adaptive `LSGrid.Columns = floor(ScrollContentPresenter.ActualWidth / 120)`;
+- pixel scrolling with the existing vertical focus margin;
+- one bounded LB/RB resource strip with SelectedIndex auto-scroll;
+- `ActionResource.TypeId` fallback only when the native resource name is null.
+
+Static/package proof must reject any return of the detached selector, fixed five-column grid, content scrolling, duplicate executable list, type/class tabs, or install-time derivation.
+
+The next in-game run is intentionally one combined milestone. It should answer:
+
+1. after LB/RB resource changes, is focus chrome immediately on the logically focused first action rather than the old tab position;
+2. can navigation reach lower rows and scroll them into view, then return upward;
+3. does the action grid adapt to the available width without clipping or detached focus;
+4. does the resource strip keep the selected tab visible without widening the menu, and do generic resources have a usable label/TypeId fallback;
+5. do A, tooltip/resource highlighting, top-level B, and one natural nested/upcast/container path still work;
+6. which resource previews, if any, produce an empty `SingleHotBar.SlotList`.
+
+Do not auto-hide an empty resource preview during this milestone. Current native evidence exposes only the preview and filter command, not a proven per-preview executable-count predicate, and 0.0.49 already rejected re-entrant automatic refiltering.
