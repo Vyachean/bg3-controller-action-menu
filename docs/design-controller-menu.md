@@ -58,7 +58,7 @@ Fireball
 
 The same logical ability may therefore appear in several resource tabs. That duplication is intentional.
 
-CAM does not synthesize gameplay values. The grid cell remains a native `VMHotBarSlot`, but fresh Patch 8 HotBar evidence proves a narrow native upcast seam: `VMHotBarSlot.Content.SpellUpcast` is a collection of `VMUpcast` objects, and `HotBarSlotStyle` sends a `VMUpcast` directly to `UseSlotCommand`. For SpellSlot/WarlockSpellSlot tabs CAM may therefore select the native `VMUpcast` whose `SlotLevel` equals the selected resource's `SpellSlotLevel`, use that native object for tooltip/highlight/A, and fall back to the base `VMHotBarSlot` if no matching native variant exists. Damage/cost/upcast semantics remain BG3-owned.
+CAM does not synthesize executable variants. A cell must remain a native `VMHotBarSlot` and A remains `UseSlotCommand(slot)`. If BG3 materializes an upcast/resource-specific `VMHotBarSlot` in `SingleHotBar.SlotList`, CAM can expose it directly. If BG3 instead opens its native upcast/container state after A, that nested state remains the safe fallback until another current-game seam proves a flatter native variant source.
 
 ## ACTION and BONUS semantics
 
@@ -107,11 +107,17 @@ Patch 8 capture already proves:
 - native tooltip costs/details;
 - SpellSlot/WarlockSpellSlot level data.
 
-Runtime 0.0.48 proved that resource filtering itself works, but also exposed four corrections:
+The next runtime milestone must answer, in one combined game run:
 
-1. SpellSlot filters return the base spell slot; selecting it still opens native upcast choice and the tooltip shows the base variant.
-2. clearing a real nested upcast/throw state also clears the top-level resource-filtered `SingleHotBar`, so CAM must reapply the already-selected resource filter on nested exit.
-3. the old outer-list + one nested action-list focus shell creates invisible focus transitions, selector-coordinate drift, and no useful scroll tracking; the executable grid must be the direct focus/scroll list.
-4. the resource tab viewport is too narrow and does not follow LB/RB selection; tabs need a wider viewport and selected-item horizontal scrolling.
+1. does every selected resource tab populate the expected executable `SingleHotBar.SlotList`;
+2. does a Spell Slot IV tab materialize IV-specific spell variants directly, or does A still enter native upcast state;
+3. how broad are Action/Bonus native filters with respect to spells that also consume another resource;
+4. do mod/custom resources appear automatically;
+5. does top-level B close CAM while nested BG3 variant/upcast state still backs out normally.
 
-The next milestone verifies the native `VMUpcast` proxy, restored resource filter after nested B, direct-grid focus/scroll, selector alignment, tab scrolling, and preserved weapon-set shortcut together.
+Those questions determine how much of the final execution-variant flattening BG3 already provides without CAM gameplay logic.
+
+
+## Runtime regression note
+
+0.0.49 is not a valid implementation milestone. It attempted to flatten native upcasts and repair navigation in the same runtime revision; in-game this made resource-tab interaction delayed and unpredictable. The target resource-first UX is unchanged, but implementation returns to the 0.0.48 behavior before further isolated fixes.

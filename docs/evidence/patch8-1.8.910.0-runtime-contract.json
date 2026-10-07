@@ -50,22 +50,20 @@
     "defaultCancelCommand": "ClearSingleHotbarCommand",
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
-      "mainList": "HotBarList",
-      "mainListDirectSource": "SingleHotBar.SlotList",
-      "directExecutableList": true,
-      "nestedExecutableList": false,
-      "directionalNavigation": "Contained",
-      "grid": "CAM_ActionGridPanel",
+      "outer": "LSListBox",
+      "outerDirectionalNavigation": "Contained",
+      "outerNextEvent": "UIDown",
+      "outerPrevEvent": "UIUp",
+      "childDirectionalNavigation": "Continue",
+      "grid": "LSGrid",
       "gridEvents": [
         "UIUp",
         "UIDown",
         "UILeft",
         "UIRight"
       ],
-      "scrollViewer": "ScrollViewerTemplate",
-      "verticalScrollOffsetMargin": 120,
-      "selector": "CAM_MainSelector",
-      "selectorSharesListCoordinateRoot": true
+      "selectorTemplate": "SelectorTemplate",
+      "selectorHasFixedGeometry": false
     },
     "buttonHintsContainer": {
       "style": "ButtonHint.Container.CenterWrap",
@@ -122,16 +120,7 @@
       "duplicateExecutionVariantsAllowed": true,
       "freeGroupStatus": "pending-proven-native-executable-source",
       "consumableSourceGroupStatus": "pending-proven-native-executable-source",
-      "detailsSurface": "native-tooltip-only",
-      "tabViewport": {
-        "rootWidth": 1700,
-        "headerWidth": 1600,
-        "listMaxWidth": 1450,
-        "spellSlotWidth": 72,
-        "genericMinWidth": 100,
-        "genericMaxWidth": 160,
-        "selectionMustScrollIntoView": true
-      }
+      "detailsSurface": "native-tooltip-only"
     },
     "nativeEvidence": {
       "deckCommands": {
@@ -150,70 +139,15 @@
         "IsShowingItemsToThrow": false
       },
       "nestedDefaultCommand": "ClearSingleHotbarCommand",
-      "topLevelCommand": "CustomEvent:CloseWidget",
-      "restoreTopLevelFilterAfterNestedExit": {
-        "trigger": "SingleHotBar.SlotList.Count == 0",
-        "requires": {
-          "IsShowingAContainerWithVariants": false,
-          "IsSelectingUpcastedSpell": false,
-          "IsShowingItemsToThrow": false,
-          "selectedResource": "not null"
-        },
-        "command": "FilterActionResourceCommand(CAM_ResourceTabs.SelectedItem)"
-      }
+      "topLevelCommand": "CustomEvent:CloseWidget"
     },
     "runtimeProofQuestions": [
-      "Does matching VMUpcast SlotLevel replace base spell tooltip and A dispatch on spell-slot tabs?",
-      "Does nested B automatically restore the selected top-level resource filter?",
-      "Does direct HotBarList focus remove invisible transitions and scroll all grid rows?",
-      "Does selector align once list and selector share one coordinate root?",
-      "Does LB/RB keep the selected resource tab visible across a long row?",
-      "Does hold UISelectionLeft execute SwitchWeaponSetCommand while UILeft still moves grid focus?"
-    ],
-    "nativeUpcastProjection": {
-      "source": "VMHotBarSlot.Content.SpellUpcast",
-      "itemType": "VMUpcast",
-      "nativeLevelPath": "VMUpcast.SlotLevel",
-      "selectedResourceLevelPath": "CAM_ResourceTabs.SelectedItem.ActionResource.SpellSlotLevel",
-      "selectedResourceTypes": [
-        "SpellSlot",
-        "WarlockSpellSlot"
-      ],
-      "dispatchCommand": "UseSlotCommand",
-      "dispatchParameter": "VMUpcast",
-      "evidence": "Current HotBar UpcastSection + HotBarSlotStyle",
-      "fallback": "base VMHotBarSlot"
-    },
-    "controllerShortcuts": {
-      "toggleWeaponSet": {
-        "boundEvent": "UISelectionLeft",
-        "command": "SwitchWeaponSetCommand",
-        "ordinaryGridLeftEvent": "UILeft"
-      },
-      "toggleDualWield": {
-        "boundEvent": "UISelectionRight",
-        "command": "ToggleDualWieldingCommand"
-      }
-    },
-    "lastRuntimeProof": {
-      "version": "0.0.48-resource-first-action-bar",
-      "results": {
-        "resourceTabs": "working",
-        "actionFilter": "broad native cost membership, acceptable",
-        "bonusFilter": "broad native cost membership, acceptable",
-        "spellSlotFiltering": "working but base variants",
-        "upcastTooltip": "base variant only",
-        "upcastAccept": "opened native level selection",
-        "topLevelAccept": "working",
-        "topLevelCancel": "working",
-        "nestedCancel": "returned to tabs but cleared filtered grid",
-        "gridNavigation": "invisible focus transitions",
-        "gridScrolling": "missing; lower rows clipped",
-        "selector": "position mismatch",
-        "tabScrolling": "missing; only first three visible",
-        "toggleWeaponSet": "hint visible but command did not execute"
-      }
-    }
+      "Does each resource preview populate the expected executable SingleHotBar.SlotList?",
+      "Does a spell-slot tab materialize level-specific VMHotBarSlot/VMUpcast variants directly?",
+      "Are Action/Bonus filters broader than the desired primary-resource policy?",
+      "Do custom/mod resources appear automatically?",
+      "Does top-level B close while true nested variant/upcast state backs out?"
+    ]
   },
   "captureMatchCount": 22,
   "captureScanErrorCount": 0
