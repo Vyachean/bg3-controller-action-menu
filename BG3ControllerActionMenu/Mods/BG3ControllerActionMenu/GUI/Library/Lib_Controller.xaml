@@ -717,6 +717,21 @@
                                      VerticalAlignment="Center"
                                      Margin="0,0,12,0">
                             <b:Interaction.Triggers>
+                                <!-- All -> Passives. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                </b:EventTrigger>
+
                                 <!-- Passives -> Metamagic when the native FixedSideBar exists. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
@@ -814,7 +829,7 @@
                                     <ls:SelectNextListBoxItem Reversed="True" TargetObject="{Binding ElementName=CAM_ResourceTabs}" ForceMode="Cycle"/>
                                 </b:EventTrigger>
 
-                                <!-- First native resource -> Passives. -->
+                                <!-- First native resource -> All fallback. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
@@ -826,8 +841,8 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterPassivesToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Ordinary previous native resource. -->
@@ -845,15 +860,7 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
-                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
-                                </b:TimerTrigger>
-
-                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
-                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterPassivesToken}"/>
-                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
@@ -864,6 +871,7 @@
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
@@ -881,10 +889,10 @@
                                      VerticalAlignment="Center"
                                      Margin="12,0,0,0">
                             <b:Interaction.Triggers>
-                                <!-- Passives -> first native resource. -->
+                                <!-- All -> first native resource. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{x:Null}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -895,6 +903,21 @@
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabReturnFirstToken}"/>
                                     <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                </b:EventTrigger>
+
+                                <!-- Passives -> All fallback. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Metamagic -> Passives. -->
@@ -974,6 +997,7 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
@@ -984,6 +1008,7 @@
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
