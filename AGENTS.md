@@ -486,3 +486,43 @@ BG3 already presents action-resource collections with `ls:AlignableWrapPanel`. C
 - no `AutoScrollBehavior`, `LSScrollViewer.ScrollToElement`, manual horizontal offset, or second-level tabs.
 
 This remains one level of resource tabs; wrapping changes only presentation and removes scroll state entirely.
+
+
+## Runtime correction — 0.0.68 -> 0.0.69
+
+0.0.68 proves two points:
+- the resource-strip scroll problem is better removed than repaired, but multi-row tabs are not an acceptable controller presentation;
+- observing `ActionRadials.FocusedElement` still does not make the native action tooltip appear after programmatic tab entry.
+
+0.0.69 changes product presentation and reuses stronger native data seams.
+
+### Compact native resource tabs
+- resource tabs must visually follow current keyboard `HotBar.xaml`: 72px resource boxes using `LSActionPointResources` with `ActionResourcesTemplateSelector`;
+- spell-slot / warlock-slot tabs retain `RomanNumeralLevelImage`;
+- text labels, horizontal scroll state, and wrapped rows are removed;
+- the row is a single horizontal sequence and should fit ordinary resource sets because each preview is compact.
+
+### Passives tab
+- add one top-level Passives tab backed by the current executable `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList`;
+- do not introduce a second action grid: the existing `HotBarList` switches its `ItemsSource` between `SingleHotBar.SlotList` and `PassivesHotBar.SlotList`;
+- use the native `IsShowingPassivesDeck` / `SetIsShowingPassivesDeckCommand` state rather than a CAM-authored gameplay flag;
+- LB/RB remains one logical cycle: resource previews plus Passives;
+- top-level B still closes because passive mode is not native nested/upcast/container state.
+
+### Item counts
+- current Patch 8 `VMHotBarSlot` item entries expose `GameObject`;
+- current Patch 8 `VMGameObject` uses `Count` for stack quantity;
+- item cells display `GameObject.Count` with native `AbbreviateNumberConverter` / `ItemAmountTextStyle`, hidden for count <= 1;
+- do not infer quantity from spell names, item names, or resource costs.
+
+### Resource/passive entry focus
+The 0.0.65 split-brain was caused by one-shot `SelectedItem` presentation while stale `LocalFocus` still survived. 0.0.66 later added the missing `LocalFocus = null` boundary.
+
+0.0.69 intentionally combines those proven halves:
+- before any top-level tab transition, clear `HotBarList.LocalFocus`, `SelectedIndex`, tooltip, Tag, and resource highlights;
+- after the target list settles, set `SelectedIndex=0` and use the existing concrete-item `SetMoveFocusAction` handoff;
+- at that entry-only boundary, populate tooltip/Tag/highlight from the same first `SelectedItem`;
+- normal D-pad navigation remains exclusively `LocalFocusChanged -> LocalFocus.DataContext`;
+- remove the ineffective 0.0.68 widget-`FocusedElement` presentation trigger.
+
+The one-shot `SelectedItem` path is allowed only because stale `LocalFocus` is cleared first and the exact same selected container is handed to `SetMoveFocusAction`.
