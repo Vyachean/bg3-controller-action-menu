@@ -159,6 +159,15 @@ def validate_semantics() -> list[str]:
                 'x:Name="CAM_MetamagicTab"',
                 'x:Key="CAM_MetamagicModeToken"',
                 'PlayerCharacterProperties.FixedSideBar.SlotList',
+                'x:Name="CAM_AllTab"',
+                'x:Key="CAM_AllModeToken"',
+                'x:Key="CAM_AllProviderIcon"',
+                'ico_tab_all.png',
+                'PlayerCharacterProperties.KeyboardHotBars',
+                'x:Key="CAM_AllGroupsPanel"',
+                'x:Key="CAM_AllGroupContainerStyle"',
+                'x:Key="CAM_AllGroupTemplate"',
+                'x:Name="CAM_AllGroupSlots"',
                 'x:Key="CAM_CantripFilterParameter"',
                 'x:Name="CAM_ProviderRestoreCommand"',
                 'FilterCantripsCommand',
@@ -231,11 +240,11 @@ def validate_semantics() -> list[str]:
                 '"gamePackageVersion": "1.8.910.0"',
                 '"focusValuePath": "LocalFocus.DataContext"',
                 '"selectorHasFixedGeometry": false',
-                '"mode": "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives"',
+                '"mode": "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives-plus-all-fallback"',
                 '"primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview"',
                 '"detailsSurface": "native-tooltip-only"',
                 '"executableList": "HotBarList"',
-                '"itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag"',
+                '"itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList (All fallback) via CAM_ResourceTabs.Tag"',
                 '"nestedStateUsesSameList": true',
                 '"focusPresentation": "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext"',
                 '"visibleFocusSource": "HotBarList.LocalFocus via SelectorTemplate"',
@@ -315,10 +324,15 @@ def validate_semantics() -> list[str]:
                 '"metamagicTabAllowed": true',
                 '"metamagicSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList"',
                 '"metamagicModeToken": "CAM_MetamagicModeToken"',
+                '"allTabAllowed": true',
+                '"allSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList"',
+                '"allModeToken": "CAM_AllModeToken"',
                 '"providerRestoreDispatcher": "CAM_ProviderRestoreCommand"',
-                '"rightToken": "CAM_TabReturnFirstToken"',
-                '"leftWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken"',
-                '"leftWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)"',
+                '"rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_AllModeToken"',
+                '"rightFromAll": "CAM_TabReturnFirstToken -> FilterActionResourceCommand(selected resource)"',
+                '"leftFromAll": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken"',
+                '"leftFromPassivesWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken"',
+                '"leftFromPassivesWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)"',
                 '"rightModeSwitchMilliseconds": 70',
                 '"leftFallbackModeSwitchMilliseconds": 90',
                 '"ordinaryResourceClickHandlersEligibleDuringReturn": false',
@@ -386,6 +400,9 @@ def validate_semantics() -> list[str]:
                 '"provenKeyboardSource": "ItemHotBar -> CurrentShownDeck.SlotList"',
                 '"radialReference": "Inventory.Slots"',
                 '"status": "runtime-parity-not-yet-proven"',
+                '"status": "complete-by-native-provider-construction"',
+                '"fallback": "KeyboardHotBars[*].SlotList"',
+                '"parityUnresolvedClasses": [',
             ],
         )
     )
@@ -466,6 +483,16 @@ def validate_semantics() -> list[str]:
                 errors.append(
                     f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: forbidden obsolete/native-copy seam: {forbidden}"
                 )
+
+        if (
+            "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars" not in runtime_text
+            or 'x:Key="CAM_AllGroupTemplate"' not in runtime_text
+            or 'ItemsSource="{Binding SlotList}"' not in runtime_text
+            or 'x:Key="CAM_AllModeToken"' not in runtime_text
+        ):
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: KeyboardHotBars fallback must remain grouped VMHotBar -> VMHotBarSlot, never raw action dispatch"
+            )
 
         if (
             runtime_text.count("SetCurrentShownDeckCommand") < 3
