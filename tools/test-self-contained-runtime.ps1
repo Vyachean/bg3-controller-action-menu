@@ -358,7 +358,7 @@ if ($text.Contains('CAM_MainSelector') -or $text.Contains('CAM_SelectorTemplate'
 
 $logicalAnchor = [regex]::Match(
     $text,
-    '<Control\\b[^>]*x:Name="CAM_LogicalFocusAnchor"[\\s\\S]*?/>',
+    '<Control\b[^>]*x:Name="CAM_LogicalFocusAnchor"[\s\S]*?/>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $logicalAnchor.Success -or
