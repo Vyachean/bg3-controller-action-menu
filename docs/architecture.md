@@ -227,31 +227,33 @@ The captured assignment grid uses `DisableScrolling=True` because its child grid
 The captured ModBrowser controller UI supplies the native tab-row pattern used here: `AutoScrollBehavior` tracks `SelectedIndex` and brings the selected item into view without moving D-pad focus into the tab row.
 
 
-## Selectorless adaptive presentation
+## Adaptive presentation with ActionRadials local-focus ownership
 
-The detached `LocalFocusSelector` is retired. It proved redundant and unreliable once CAM moved to a single executable list: focus state was correct while selector chrome could remain at coordinates from the previous resource result.
+0.0.58 proved that the SpellBook grid pattern cannot replace the ActionRadials focus contract wholesale. Removing `LocalFocusSelector` made grid navigation stop and left page-level A without a valid `ActionRadials.Tag`, because the existing dispatch lifecycle is explicitly driven by `HotBarList.LocalFocus.DataContext`.
 
-The action presentation now follows the current Patch 8 SpellBook pattern:
+The corrected composition separates **logical focus ownership** from **focus presentation**:
 
 ```text
 HotBarList : SingleHotBar.SlotList
+  |
+  +-- LocalFocusSelector -> CAM_LogicalFocusAnchor
+  |     visible in layout, Opacity = 0
+  |     owns no visible selector chrome
   |
   +-- ScrollViewer (pixel scrolling)
   |     VerticalScrollOffsetMargin = 120
   |
   +-- CAM_ActionGridPanel
         Columns = floor(ScrollContentPresenter.ActualWidth / 120)
-        UseWidgetNavigation = true
-        AlwaysSelectFirst = true
-        MoveFocus.InternalFocusable = true
         |
         +-- CAM_ActionGridSlotContainer
-              MoveFocus.Focusable = true
               focus chrome is local to the item
 ```
 
-This makes the focus visual and executable item the same object/coordinate space and removes all selector synchronization logic.
+The invisible selector anchor preserves the captured ActionRadials/assignment `LSListBox.LocalFocus` machinery. The visible frame remains item-local, so no detached selector can lag behind a resource change. `LocalFocusChanged` again feeds tooltip/highlight state and, after the native delay, writes the focused `VMHotBarSlot` into `ActionRadials.Tag` for A.
 
-The current captured keyboard HotBar also confirms that `ActionResourcesCostPreview` is the game's own resource-filter button source. CAM keeps that source and `FilterActionResourceCommand`, but no longer assumes every resource has a displayable localized name: text tabs fall back to `ActionResource.TypeId` when `ActionResource.Name` is null. MaxValue=0 resources remain hidden exactly as native HotBar does.
+The current captured keyboard HotBar also confirms that `ActionResourcesCostPreview` is the game's own resource-filter button source. CAM keeps that source and `FilterActionResourceCommand`. Resource names are allowed more width, and generic tabs fall back to `ActionResource.TypeId` for null or empty displayed names. MaxValue=0 resources remain hidden exactly as native HotBar does.
 
 Resource navigation remains a bounded horizontal viewport with selected-index auto-scroll; the whole action menu must not expand horizontally just to expose every tab at once.
+
+The custom `Toggle weapon set` shortcut is not part of this focus path. Repeated runtime attempts have shown no reliable ActionRadials transport, so CAM does not bind or advertise it until a proven native seam exists.

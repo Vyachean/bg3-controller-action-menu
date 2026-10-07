@@ -91,11 +91,6 @@
                    ActionRightEvent="UIRight"
                    ActionLeftEvent="UILeft"
                    AutoIndex="True"
-                   ExtendedRows="False"
-                   UseWidgetNavigation="True"
-                   AlwaysSelectFirst="True"
-                   ls:MoveFocus.InternalFocusable="True"
-                   FocusElementVisualStyle="{StaticResource Style.FocusVisualStyle}"
                    ContainerData="{Binding}"
                    HorizontalAlignment="Stretch"
                    VerticalAlignment="Top"
@@ -119,20 +114,20 @@
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="3,0"/>
-        <Setter Property="MinWidth" Value="80"/>
-        <Setter Property="MaxWidth" Value="144"/>
-        <Setter Property="Height" Value="54"/>
+        <Setter Property="Margin" Value="4,0"/>
+        <Setter Property="MinWidth" Value="108"/>
+        <Setter Property="MaxWidth" Value="260"/>
+        <Setter Property="Height" Value="58"/>
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Foreground" Value="{StaticResource LS_baseTxtColor}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                     <Border x:Name="TabRoot"
-                            MinWidth="80"
-                            MaxWidth="144"
-                            Height="54"
-                            Padding="10,5"
+                            MinWidth="108"
+                            MaxWidth="260"
+                            Height="58"
+                            Padding="16,6"
                             Background="#50000000"
                             BorderBrush="#504D4332"
                             BorderThickness="0,0,0,2">
@@ -146,7 +141,7 @@
                                        FontWeight="DemiBold"
                                        TextAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
-                                       MaxWidth="116"
+                                       MaxWidth="226"
                                        VerticalAlignment="Center"/>
                             <TextBlock x:Name="ResourceFallback"
                                        Text="{Binding ActionResource.TypeId}"
@@ -155,7 +150,7 @@
                                        FontWeight="DemiBold"
                                        TextAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
-                                       MaxWidth="116"
+                                       MaxWidth="226"
                                        VerticalAlignment="Center"
                                        Visibility="Collapsed"/>
                             <TextBlock x:Name="SpellLevel"
@@ -177,6 +172,10 @@
                             <Setter Property="Foreground" Value="{StaticResource LS_specialTxtColor}"/>
                         </Trigger>
                         <DataTrigger Binding="{Binding ActionResource.Name}" Value="{x:Null}">
+                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ActionResource.Name}" Value="">
                             <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="ResourceFallback" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
@@ -245,7 +244,7 @@
                                Grid.Row="0"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
-                               MaxWidth="1180">
+                               MaxWidth="1320">
                         <ls:LSButton x:Name="CAM_TabLeft"
                                      BoundEvent="UITabPrev"
                                      DockPanel.Dock="Left"
@@ -273,7 +272,7 @@
                                       SelectedIndex="0"
                                       HorizontalAlignment="Stretch"
                                       VerticalAlignment="Center"
-                                      MaxWidth="1020"
+                                      MaxWidth="1160"
                                       KeyboardNavigation.DirectionalNavigation="Cycle"
                                       ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"
                                       ItemsPanel="{StaticResource CAM_ResourceTabsPanel}">
@@ -347,6 +346,7 @@
                                       KeyboardNavigation.DirectionalNavigation="Contained"
                                       ActionNextEvent="UIDown"
                                       ActionPrevEvent="UIUp"
+                                      LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"
                                       ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
                                       ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
                                       ItemsPanel="{StaticResource CAM_ActionGridPanel}">
@@ -395,6 +395,16 @@
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
 
+                        <!-- ActionRadials navigation/dispatch still relies on LSListBox.LocalFocus.
+                             Keep a laid-out selector target for that logical focus contract, but render
+                             all visible focus chrome on the item itself so no detached frame can lag. -->
+                        <Control x:Name="CAM_LogicalFocusAnchor"
+                                 IsHitTestVisible="False"
+                                 Focusable="False"
+                                 Opacity="0"
+                                 Visibility="Visible"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Top"/>
                     </Grid>
                 </Grid>
             </Grid>
@@ -441,18 +451,6 @@
                              Margin="10,0,20,0"
                              Width="1000"/>
 
-                <ls:LSButton x:Name="ToggleWeaponSet"
-                             Style="{StaticResource ControllerHoldButtonStyle}"
-                             Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"
-                             Command="{Binding SwitchWeaponSetCommand}"
-                             Tag="{Binding Source='h7f2d9806g87bdg42a3g934ag9d051a036638', Converter={StaticResource TranslatedStringConverter}}"
-                             HorizontalContentAlignment="Left"
-                             VerticalAlignment="Center"
-                             EatInput="False"
-                             HorizontalAlignment="Left"
-                             Margin="10,0,20,0"
-                             Width="1000"/>
-
                 <ls:LSButton x:Name="ToggleDualWield"
                              BoundEvent="UISelectionRight"
                              Style="{StaticResource ControllerHoldButtonStyle}"
@@ -490,12 +488,6 @@
                     </b:Interaction.Triggers>
                 </ls:LSButton>
 
-                <ls:LSInputBinding x:Name="WeaponSetShortcutBinding"
-                                   BoundEvent="UISelectionLeft"
-                                   HoldTime="{StaticResource HoldTimeShortcuts}"
-                                   Command="{Binding SwitchWeaponSetCommand}"
-                                   EatInput="False"/>
-
                 <ls:LSInputBinding x:Name="PinTooltipBinding" Style="{StaticResource PinTooltipBindingStyle}" BoundEvent="UIShowInfo"/>
                 <ls:LSInputBinding x:Name="ShortcutMenuBinding" Command="{Binding CustomEvent}" BoundEvent="PanelSelect" CommandParameter="ToggleShortcutMenu"/>
             </ls:AlignableWrapPanel>
@@ -504,9 +496,6 @@
         <ControlTemplate.Triggers>
             <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.IsDualWieldingAllowed}" Value="False">
                 <Setter TargetName="ToggleDualWield" Property="Visibility" Value="Collapsed"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="False">
-                <Setter TargetName="ToggleWeaponSet" Property="Visibility" Value="Collapsed"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Path=Tag.SlotType, ElementName=ActionRadials, FallbackValue='Empty'}" Value="Empty">
                 <Setter TargetName="PinTooltipBinding" Property="IsEnabled" Value="False"/>

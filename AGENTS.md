@@ -305,12 +305,14 @@ Current installed Patch 8 capture provides a simpler controller presentation pat
 - current `HotBar.xaml` confirms `ActionResourcesCostPreview` is itself a native clickable `FilterActionResourceCommand` source and hides only `MaxValue=0` items. Therefore CAM must not invent a second semantic resource classifier merely to hide entries.
 - no current native per-preview executable-count/has-actions property is proven. Do not hide an apparently empty tab by reacting to `SingleHotBar.SlotList.Count == 0`, auto-cycling selection, or re-invoking filters from filter results; 0.0.49 already proved that re-entrant filter recovery makes tab interaction unstable.
 
-Required CAM presentation:
-- remove `CAM_MainSelector` and `CAM_SelectorTemplate` completely;
-- each `CAM_ActionGridSlotContainer` is explicitly `ls:MoveFocus.Focusable=True` and owns its focus chrome via `ls:MoveFocus.IsFocused`;
+Required CAM presentation after 0.0.58 runtime proof:
+- 0.0.58 proves that transplanting the SpellBook selectorless focus tree wholesale into ActionRadials is invalid: grid navigation stops and page-level A cannot execute because `HotBarList.LocalFocus` no longer advances;
+- keep the adaptive SpellBook geometry and item-local focus chrome, but restore the captured ActionRadials/assignment `LSListBox.LocalFocusSelector` seam as an **invisible logical focus anchor**. It must remain laid out (`Visibility=Visible`) but render with `Opacity=0`; it exists only so `HotBarList.LocalFocus.DataContext` continues to drive navigation, tooltip/highlight and `ActionRadials.Tag`;
+- do not restore a visible detached selector or its old compensated selector template;
 - `CAM_ActionGridPanel.Columns` is calculated from actual `ScrollContentPresenter.ActualWidth / 120`, never hard-coded;
 - use pixel scrolling (`CanContentScroll=False`) with the existing vertical offset helper;
-- resource tabs stay in a bounded horizontal viewport with SelectedIndex auto-scroll; do not widen the entire template to fit every tab;
-- generic resource label fallback is `ActionResource.TypeId` only when `ActionResource.Name` is null. Spell-slot tabs keep native level presentation.
+- resource tabs stay in a bounded horizontal viewport with SelectedIndex auto-scroll; individual tab width may grow enough to show native resource names rather than truncating common names;
+- generic resource fallback must also handle an empty displayed resource name, not only a null object. Spell-slot tabs keep native level presentation;
+- the experimental `Toggle weapon set` shortcut is removed from CAM until a repeatable ActionRadials-specific native transport is proven. A broken shortcut must not consume controller input needed by the primary grid.
 
 No additional runtime dependency is allowed for these fixes. ImpUI and other mods are research evidence only, not CAM dependencies.

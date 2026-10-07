@@ -719,3 +719,27 @@ The next in-game run is intentionally one combined milestone. It should answer:
 6. which resource previews, if any, produce an empty `SingleHotBar.SlotList`.
 
 Do not auto-hide an empty resource preview during this milestone. Current native evidence exposes only the preview and filter command, not a proven per-preview executable-count predicate, and 0.0.49 already rejected re-entrant automatic refiltering.
+
+### 2026-10-07 — 0.0.58 runtime result
+
+The game run rejects the pure selectorless SpellBook focus-tree transplant:
+
+- D-pad/left-stick navigation in the action grid does not work;
+- A does not execute the selected action;
+- resource labels are truncated by the 144px per-tab cap;
+- one resource renders as truncated `Luck...`, followed by four visually unnamed resource tabs;
+- the custom `Toggle weapon set` transport remains incorrect.
+
+The first two failures share one architectural cause: ActionRadials dispatch depends on `HotBarList.LocalFocus.DataContext`. 0.0.58 removed the captured `LocalFocusSelector` seam while retaining LocalFocusChanged-based tooltip/highlight/Tag dispatch. The next candidate must therefore restore LocalFocus ownership without restoring the detached visible selector.
+
+0.0.59 proof obligations:
+
+1. `HotBarList` again has a `LocalFocusSelector`, pointing to an always-laid-out zero-opacity logical anchor;
+2. the old visible `CAM_MainSelector` / compensated selector template remains absent;
+3. adaptive columns and pixel scrolling remain;
+4. the local-focus lifecycle still writes the focused native slot to `ActionRadials.Tag`, so A uses the same object navigation selected;
+5. resource tabs allow materially wider labels and provide a TypeId fallback for null **and empty** displayed names;
+6. no CAM-owned weapon-set input binding or hint remains;
+7. no extra executable list, class/type tab, re-entrant resource filter, Script Extender dependency, or install-time derivation is introduced.
+
+The next game run should verify only the corrected seams: four-direction grid navigation, A on one direct action, lower-row scrolling, LB/RB tab labels including the formerly blank entries, and absence of the broken weapon-set shortcut.
