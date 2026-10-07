@@ -1099,3 +1099,27 @@ The capture milestone must prove:
 6. the generated status/report identifies the ZIP that must be returned for analysis.
 
 After the ZIP is inspected, the next runtime candidate should change only the top resource-filter presentation and should be tested once against the keyboard/mouse HotBar. Item quantity does not need targeted retesting unless it visibly regresses.
+
+
+### 2026-10-07 — exact HotBar capture consumed / 0.0.75 proof boundary
+
+The returned capture is from Xbox App package `1.8.910.0` and contains:
+
+- `Mods/MainUI/GUI/Pages/HotBar.xaml`;
+- SHA-256 `9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`;
+- `Public/Game/GUI/Library/DataTemplates.xaml` SHA-256 `e536956cdfa04fc2a737bdc41e70696e5b712dfada966a90e7d7e69374911850`.
+
+Exact HotBar resource-filter evidence requires 0.0.75 to prove statically:
+
+1. the top row uses `bar_resources.png` as the shared resource-bar background;
+2. resource items use `box_resource_empty/d/h/missing`, not `btn_pil_*`;
+3. SpellSlot / WarlockSpellSlot switch to `box_resourceNum_empty/d/h/missing`;
+4. resource visuals are 72 px and use `LSActionPointResources` with `SmallActionPointSize=24` and `ActionPointGroupSize=56`;
+5. `RomanNumeralLevelImage` is retained with the captured spell-slot offset;
+6. zero-value resources display missing-resource chrome;
+7. the selected CAM resource reuses native `box_resource_h` (or `box_resourceNum_h`) as persistent selection feedback;
+8. Passives uses the same resource-bar/box family rather than textual filter-button chrome;
+9. `ResourcesNumeralDisplay` stays absent because the operator already rejected numeric overlays in CAM tabs;
+10. item quantity templates, LocalFocus/tooltip authority, Passives serialization, nested return and A/B dispatch are unchanged.
+
+The next in-game check should be one presentation check: compare the top CAM row directly with the keyboard/mouse action-resource strip. Do not ask for a separate retest of item quantities unless they visibly regress.
