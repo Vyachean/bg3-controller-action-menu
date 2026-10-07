@@ -140,6 +140,8 @@ The VBS installer is portable: caches, downloaded release assets, logs, status a
 
 Do not add LSLib, game-PAK reads, XAML derivation, SHA/digest policy gates, semantic assertions, expected UI literals, or package round-trip verification to the normal install path. Those belong in CI/development capture before publication.
 
+Development capture must distinguish **technical evidence failure** from **research absence**. Failure to locate/extract required game inputs may fail the task; absence or movement of an investigated command/binding such as `FilterCantripsCommand` must be recorded in the derived report and must not abort an otherwise valid capture. Search research seams across the whole captured XAML set before marking them missing.
+
 ## Release readiness contract
 
 A CI artifact is not a release. The reusable installer consumes **published GitHub Releases**, not pull-request or workflow artifacts.
