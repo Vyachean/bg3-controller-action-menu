@@ -113,7 +113,10 @@ def validate_semantics() -> list[str]:
                 'x:Name="CAM_TopTabs"',
                 '<ls:LSActionPointResources x:Name="ResourcePoints"',
                 'Style="{StaticResource ActionResourcesTemplateSelector}"',
-                'x:Name="ResourcesNumeralDisplay"',
+                'x:Key="CAM_BoxResourceNumBg"',
+                'x:Key="CAM_BoxResourceNum"',
+                'x:Key="CAM_BoxResourceNumH"',
+                'x:Key="CAM_BoxResourceNumDisabled"',
                 'x:Name="CAM_PassivesTab"',
                 'x:Key="CAM_PassivesModeToken"',
                 'x:Key="CAM_TabReturnLastToken"',
@@ -121,9 +124,11 @@ def validate_semantics() -> list[str]:
                 'PlayerCharacterProperties.PassivesHotBar.SlotList',
                 '<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>',
                 'Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"',
-                'GameObject.Count',
-                'AbbreviateNumberConverter',
-                'ItemAmountTextStyle',
+                'Binding="{Binding SlotType}" Value="Item"',
+                'Content="{Binding Content}"',
+                'ContentTemplate="{StaticResource Template.Item}"',
+                'Value="{StaticResource Template.ItemEquipment}"',
+                'Value="{StaticResource Template.ItemContainer}"',
                 'b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"',
                 'RightOperand="{StaticResource CAM_ResetFirstFocusToken}"',
                 'FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"',
@@ -208,7 +213,11 @@ def validate_semantics() -> list[str]:
                 '"wrappedRows": false',
                 '"control": "LSActionPointResources"',
                 '"style": "ActionResourcesTemplateSelector"',
-                '"countOverlay": "ResourcesNumeralDisplay"',
+                '"countOverlay": null',
+                '"normal": "box_resource_d.png"',
+                '"selected": "box_resource_h.png"',
+                '"normal": "box_resourceNum_d.png"',
+                '"selected": "box_resourceNum_h.png"',
                 '"rejectedRenderer": "SectionImageStyle"',
                 '"passivesTabAllowed": true',
                 '"passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList"',
@@ -221,8 +230,17 @@ def validate_semantics() -> list[str]:
                 '"leftModeSwitchMilliseconds": 90',
                 '"ordinaryResourceClickHandlersEligibleDuringReturn": false',
                 '"singleShoulderPressSingleLogicalTransition": true',
-                '"source": "GameObject.Count"',
+                '"slotType": "Item"',
+                '"slotContentType": "VMItem"',
+                '"slotContentPath": "VMHotBarSlot.Content"',
+                '"normalTemplate": "Template.Item"',
+                '"equipmentTemplate": "Template.ItemEquipment"',
+                '"containerTemplate": "Template.ItemContainer"',
+                '"property": "Count"',
+                '"visibilityConverter": "CountToVisibilityConverter"',
                 '"converter": "AbbreviateNumberConverter"',
+                '"camOverlayAllowed": false',
+                '"rejectedPath": "VMHotBarSlot.GameObject.Count"',
                 '"entryCommitToken": null',
                 '"layoutPanel": "StackPanel"',
                 '"oneLogicalSequence": true',
@@ -273,6 +291,15 @@ def validate_semantics() -> list[str]:
 
     if SELF_CONTAINED_RUNTIME.exists():
         runtime_text = SELF_CONTAINED_RUNTIME.read_text(encoding="utf-8")
+        for forbidden_presentation in (
+            "ResourcesNumeralDisplay",
+            "GameObject.Count",
+            "ItemCountHolder",
+        ):
+            if forbidden_presentation in runtime_text:
+                errors.append(
+                    f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: rejected presentation seam returned: {forbidden_presentation}"
+                )
         for forbidden in (
             "LocalFocus.Tag",
             "CAM_FilterTabs",
