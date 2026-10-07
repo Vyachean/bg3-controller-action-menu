@@ -478,7 +478,11 @@
           "FilterCantripsCommand",
           "FilterActionResourceCommand"
         ],
-        "recordsCommandParameter": true
+        "recordsCommandParameter": true,
+        "schemaVersion": 2,
+        "searchScope": "all captured XAML",
+        "missingProbePolicy": "record-missing-do-not-fail",
+        "recordsSourceFile": true
       }
     }
   },
