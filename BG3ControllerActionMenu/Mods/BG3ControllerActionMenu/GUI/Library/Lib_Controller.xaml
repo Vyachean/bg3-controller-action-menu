@@ -345,7 +345,7 @@
                         </ls:LSListBox>
                     </DockPanel>
 
-                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="820" Height="878" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="820" Height="870" HorizontalAlignment="Center" VerticalAlignment="Top">
                         <b:Interaction.Triggers>
                             <b:EventTrigger EventName="Loaded">
                                 <ls:SetMoveFocusAction TargetName="ActionRadials"
