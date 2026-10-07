@@ -67,16 +67,16 @@ There is no CAM Live Details panel. The ordinary native action tooltip remains t
 
 ## HotBar filter semantics
 
+The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM:
+
+- `Set## HotBar filter semantics
+
 The current keyboard `HotBar.xaml` capture proves the model/commands used by the resource-first runtime:
 
 - `CurrentPlayer.UIData.ActionResourcesCostPreview`;
 - `FilterActionResourceCommand`;
 - `SingleHotBar.SlotList`;
-- `CurrentActiveSlot.Content.SpellUpcast`;
-- `VMUpcast.SlotLevel`;
 - `ClearSingleHotbarCommand` for actual BG3 nested state.
-
-The same current `HotBarSlotStyle` binds `UseSlotCommand` and `CommandParameter="{Binding}"`. In the native upcast strip the DataContext is a `VMUpcast`, proving that a native `VMUpcast` itself is a valid `UseSlotCommand` parameter.
 
 Resource tabs are native filters, not independent source catalogs. CAM does not classify actions by class, names, icons, spell names or custom ability tables.
 
@@ -88,28 +88,28 @@ They remain useful evidence for how BG3 groups SpellBook presentation, but they 
 
 ## Controller focus and dispatch
 
-The main grid directly owns native `VMHotBarSlot` cells from `SingleHotBar.SlotList`; there is no extra one-item outer focus list.
+The current native radial lifecycle uses the focused item's **DataContext**.
 
 ```text
-HotBarList.LocalFocus.DataContext = VMHotBarSlot
+CAM_FilteredSlotList.LocalFocus.DataContext
         |
         +--> ActionRadials.Tag
         +--> CreateFocusedTooltipDataCommand(slot)
         +--> HighlightResourcesCommand(slot)
         |
         v
-base UIAccept -> UseSlotCommand(ActionRadials.Tag)
+UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-For a selected SpellSlot/WarlockSpellSlot tab, the cell may additionally expose a matching native `VMUpcast` from `VMHotBarSlot.Content.SpellUpcast`. Equality is native-data-only:
+The capture proves the native sequence:
 
-```text
-VMUpcast.SlotLevel == CAM_ResourceTabs.SelectedItem.ActionResource.SpellSlotLevel
-```
+1. on `LocalFocusChanged`, clear the previous tag/tooltip/resource highlight and play the hover sound;
+2. after the native 70 ms delay, write `LocalFocus.DataContext` into `ActionRadials.Tag`;
+3. create focused tooltip data and highlight resources for that same native slot.
 
-When a matching native `VMUpcast` exists, it owns tooltip/resource highlight and an explicit `UIAccept -> UseSlotCommand(VMUpcast)`; the base page-level binding is disabled for that focused upcastable cell to avoid double dispatch. If no match exists, the base VMHotBarSlot path remains unchanged.
+The older development fixture's `LocalFocus.Tag` handoff is rejected.
 
-The older development fixture's generic raw assignment objects and CAM-computed spell variants remain rejected.
+The item container may still expose `Tag="{Binding .}"` as ordinary presentation metadata, but the current gameplay-facing focus lifecycle does not depend on it.
 
 ## Focused action descriptions
 
@@ -125,7 +125,7 @@ HotBarList.LocalFocus.DataContext = VMHotBarSlot
         +--> existing 70 ms ActionRadials.Tag / focused-tooltip-data lifecycle
 ```
 
-The tooltip content is native data, never CAM-authored description text. For a normal cell it is `VMHotBarSlot.Content`. For a spell-slot cell with a matching native `VMUpcast`, the tooltip content is that `VMUpcast` itself, which current Tooltips.xaml renders through the native SpellsTooltip template.
+The tooltip content is the native action/item/passive object, not CAM-authored description text. The same pattern is present on `SingleBar` for variants/upcasts.
 
 ## Navigation reuse
 
@@ -187,3 +187,8 @@ Radial editing is outside CAM. `ShowContextMenu` is hidden/inert and assign/swap
 CAM references already-loaded native styles/templates such as slot visuals, selector chrome, input hints and action-resource rendering. It does not copy the full Larian controller dictionary or any `Public/Game/GUI` resource into the mod.
 
 If a future Patch changes one of these dependencies, the developer capture is refreshed and the project-owned contract is reviewed before release. Installation never derives a replacement from the user's local game.
+
+
+## Rejected 0.0.49 composition
+
+The 0.0.49 composition that layered per-cell VMUpcast controls, extra UIAccept bindings, automatic empty-list refiltering, and a focus-tree rewrite is rejected by runtime proof because it made tab interaction delayed and unpredictable. Reuse native seams only when they do not introduce overlapping input consumers or re-entrant filter/state transitions.
