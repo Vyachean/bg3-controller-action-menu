@@ -78,15 +78,16 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true -or
+if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne $null -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "CAM_ResourceTabs.Tag" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $null -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTargetKind -ne "selected-container-via-BringSelectionIntoView" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTargetKind -ne "selected ListBoxItem UIElement" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.selectedContainerPublishesTag -ne $true -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "AutoScrollBehavior" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "LSScrollViewer.ScrollToElement" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.hiddenPreviewSelection -ne "collapsed+disabled; ordinary cycle only") {
-    throw "Resource-tab viewport contract is incomplete."
+    throw "Resource-tab viewport must follow the selected concrete container through LSScrollViewer.ScrollToElement."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
@@ -97,15 +98,12 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusTarget -ne "selected concrete ListBoxItem templated parent" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusAction -ne "SetMoveFocusAction(DeferFocusAction=True)" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterFocus -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemMirrorsLocalFocus -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTooltipSource -ne "HotBarList.SelectedItem" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTooltipContent -ne "HotBarList.SelectedItem.Content" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTooltipCommand -ne "ShowTooltipOnUIElementCommand(HotBarList)" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTagSource -ne "HotBarList.SelectedItem" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryOnly -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "LocalFocusChanged after LocalFocus reset + concrete-item handoff" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemEntryStateWrites -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.selector -ne "CAM_MainSelector" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.template -ne "SelectorTemplate" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.sharedCoordinateRoot -ne "CAM_ActionViewport" -or
@@ -117,7 +115,7 @@ $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
-    'BringSelectionIntoView="True"',
+    'ls:LSScrollViewer.ScrollToElement="{Binding Tag, ElementName=CAM_ResourceTabs}"',
     'x:Name="CAM_ActionViewport"',
     'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
@@ -143,6 +141,9 @@ $required = @(
     'ls:MoveFocus.Focusable" Value="True"',
     'Setter Property="FocusVisualStyle" Value="{x:Null}"',
     'x:Key="CAM_ResetFirstFocusToken"',
+    'x:Key="CAM_NestedEnteredToken"',
+    'x:Key="CAM_NestedRestoringToken"',
+    'x:Name="CAM_NestedReturnMarker"',
     'b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"',
     'FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"',
     'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
@@ -387,10 +388,13 @@ $resourceTabs = [regex]::Match(
 )
 if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
-    -not $resourceTabs.Value.Contains('<ls:AutoScrollBehavior BringSelectionIntoView="True"/>') -or
+    -not $resourceTabs.Value.Contains('<ls:LSScrollViewer') -or
+    -not $resourceTabs.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding Tag, ElementName=CAM_ResourceTabs}"') -or
+    $resourceTabs.Value.Contains('AutoScrollBehavior') -or
+    $resourceTabs.Value.Contains('BringSelectionIntoView=') -or
     $resourceTabs.Value.Contains('ScrollIntoView=') -or
     $resourceTabs.Value.Contains('ScrollTo=')) {
-    throw "Resource tabs must use selection-driven AutoScrollBehavior without explicit index/VM targets."
+    throw "Resource tabs must scroll to the selected concrete ListBoxItem through LSScrollViewer.ScrollToElement."
 }
 
 if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
@@ -404,13 +408,13 @@ $resourceSelectionTrigger = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceSelectionTrigger.Success -or
+    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"') -or
     -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"') -or
     [regex]::Matches($resourceSelectionTrigger.Value, 'FilterActionResourceCommand').Count -ne 1 -or
-    $resourceSelectionTrigger.Value.Contains('PropertyName="LocalFocus"') -or
     $resourceSelectionTrigger.Value.Contains('PropertyName="SelectedItem"') -or
     $resourceSelectionTrigger.Value.Contains('InvalidateFocus="True"') -or
     $resourceSelectionTrigger.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource switching must clear the entry selection, filter exactly once, and leave live LocalFocus untouched until the concrete-item handoff."
+    throw "Resource switching must clear LocalFocus and entry selection before refiltering, so concrete-item focus creates a fresh LocalFocus lifecycle."
 }
 $resourceRestoreTimer = [regex]::Match(
     $resourceTabs.Value,
@@ -421,14 +425,14 @@ if (-not $resourceRestoreTimer.Success -or
     -not $resourceRestoreTimer.Value.Contains('Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
     -not $resourceRestoreTimer.Value.Contains('PropertyName="SelectedIndex"') -or
     -not $resourceRestoreTimer.Value.Contains('Value="0"') -or
-    -not $resourceRestoreTimer.Value.Contains('Value="{Binding SelectedItem.Content, ElementName=HotBarList}"') -or
-    -not $resourceRestoreTimer.Value.Contains('ShowTooltipOnUIElementCommand') -or
-    -not $resourceRestoreTimer.Value.Contains('Value="{Binding SelectedItem, ElementName=HotBarList}"') -or
-    -not $resourceRestoreTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    -not $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand') -or
+    $resourceRestoreTimer.Value.Contains('SelectedItem.Content') -or
+    $resourceRestoreTimer.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    $resourceRestoreTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand') -or
+    $resourceRestoreTimer.Value.Contains('TargetName="ActionRadials"') -or
     $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand') -or
     $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource entry must select index 0 and complete tooltip/Tag/highlight state from that one-shot SelectedItem."
+    throw "Resource entry timer may only arm concrete-item focus; presentation and A state must come from fresh LocalFocusChanged."
 }
 
 $resourceTabStyle = [regex]::Match(
@@ -437,6 +441,9 @@ $resourceTabStyle = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabStyle.Success -or
+    -not $resourceTabStyle.Value.Contains('b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
+    -not $resourceTabStyle.Value.Contains('PropertyName="Tag"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
     $resourceTabStyle.Value.Contains('Property="MaxWidth"') -or
     $resourceTabStyle.Value.Contains('MaxWidth="') -or
     $resourceTabStyle.Value.Contains('TextTrimming=') -or
@@ -449,6 +456,40 @@ if (-not $resourceTabStyle.Success -or
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
     throw "Null/MaxValue=0 resource previews must be collapsed and disabled so shoulder cycling cannot enter invisible tabs."
+}
+
+$nestedMarker = [regex]::Match(
+    $text,
+    '<Control\b[^>]*x:Name="CAM_NestedReturnMarker"[\s\S]*?/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $nestedMarker.Success -or
+    -not $nestedMarker.Value.Contains('Visibility="Collapsed"') -or
+    -not $nestedMarker.Value.Contains('Tag="{x:Null}"')) {
+    throw "Nested-return marker must exist as non-interactive CAM lifecycle state."
+}
+foreach ($flag in @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow')) {
+    $enterPattern = '<b:DataTrigger Binding="\{Binding ' + $flag + '\}" Value="True">[\s\S]*?CAM_NestedEnteredToken[\s\S]*?FocusElement="\{Binding ElementName=HotBarList\}"[\s\S]*?</b:DataTrigger>'
+    if (-not [regex]::IsMatch($text, $enterPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+        throw "Entering native nested state must arm CAM nested-return restoration: $flag"
+    }
+    $exitPattern = '<b:PropertyChangedTrigger Binding="\{Binding ' + $flag + '\}">[\s\S]*?CAM_NestedEnteredToken[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CAM_NestedRestoringToken[\s\S]*?FilterActionResourceCommand[\s\S]*?CommandParameter="\{Binding SelectedItem, ElementName=CAM_ResourceTabs\}"[\s\S]*?</b:PropertyChangedTrigger>'
+    if (-not [regex]::IsMatch($text, $exitPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+        throw "Exiting native nested state must restore the selected resource only after all nested flags clear: $flag"
+    }
+}
+$nestedRepopulation = [regex]::Match(
+    $text,
+    '<b:PropertyChangedTrigger Binding="\{Binding SingleHotBar\.SlotList\.Count\}">[\s\S]*?</b:PropertyChangedTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $nestedRepopulation.Success -or
+    -not $nestedRepopulation.Value.Contains('CAM_NestedRestoringToken') -or
+    -not $nestedRepopulation.Value.Contains('Operator="GreaterThan"') -or
+    -not $nestedRepopulation.Value.Contains('Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
+    -not $nestedRepopulation.Value.Contains('PropertyName="SelectedIndex"') -or
+    -not $nestedRepopulation.Value.Contains('Value="0"')) {
+    throw "Repopulated nested return must reuse the concrete-first-item focus handoff."
 }
 
 if (-not $text.Contains('x:Name="ResourceFallback"') -or

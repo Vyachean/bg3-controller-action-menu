@@ -104,19 +104,12 @@
         "focusTarget": "selected concrete ListBoxItem templated parent",
         "focusAction": "SetMoveFocusAction(DeferFocusAction=True)",
         "clearsTokenAfterFocus": true,
-        "clearLocalFocus": false,
+        "clearLocalFocus": true,
         "invalidateFocus": false,
         "focusesListContainer": false,
         "selectedItemMirrorsLocalFocus": false,
-        "entryTooltipSource": "HotBarList.SelectedItem",
-        "entryTooltipContent": "HotBarList.SelectedItem.Content",
-        "entryTooltipCommand": "ShowTooltipOnUIElementCommand(HotBarList)",
-        "entryTagSource": "HotBarList.SelectedItem",
-        "entryCommands": [
-          "CreateFocusedTooltipDataCommand",
-          "HighlightResourcesCommand"
-        ],
-        "entryOnly": true
+        "entryStateSource": "LocalFocusChanged after LocalFocus reset + concrete-item handoff",
+        "selectedItemEntryStateWrites": false
       },
       "visibleFocusChrome": {
         "source": "HotBarList.LocalFocusSelector",
@@ -158,17 +151,18 @@
       "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
         "mode": "bounded-horizontal-scroll",
-        "autoScrollBehavior": "AutoScrollBehavior",
-        "scrollIntoView": null,
-        "bringSelectionIntoView": true,
+        "autoScrollBehavior": null,
+        "scrollIntoView": "CAM_ResourceTabs.Tag",
+        "bringSelectionIntoView": null,
         "maxTabWidth": null,
         "listMaxWidth": 1160,
         "itemTextTrimming": false,
         "cycleForceSelect": false,
-        "scrollOwner": "AutoScrollBehavior",
+        "scrollOwner": "LSScrollViewer.ScrollToElement",
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
         "scrollTo": null,
-        "scrollTargetKind": "selected-container-via-BringSelectionIntoView"
+        "scrollTargetKind": "selected ListBoxItem UIElement",
+        "selectedContainerPublishesTag": true
       }
     },
     "tooltipPresentation": {
@@ -215,12 +209,29 @@
       },
       "nestedDefaultCommand": "ClearSingleHotbarCommand",
       "topLevelCommand": "CustomEvent:CloseWidget",
-      "sameExecutableListForNestedState": true
+      "sameExecutableListForNestedState": true,
+      "nestedReturnRestoration": {
+        "marker": "CAM_NestedReturnMarker",
+        "enterToken": "CAM_NestedEnteredToken",
+        "restoringToken": "CAM_NestedRestoringToken",
+        "armedBy": [
+          "IsShowingAContainerWithVariants",
+          "IsSelectingUpcastedSpell",
+          "IsShowingItemsToThrow"
+        ],
+        "restoreWhen": "marker=entered and all native nested flags=false",
+        "restoreCommand": "FilterActionResourceCommand",
+        "restoreParameter": "CAM_ResourceTabs.SelectedItem",
+        "repopulationSignal": "SingleHotBar.SlotList.Count > 0",
+        "focusRestore": "CAM_ResetFirstFocusToken + SelectedIndex=0",
+        "topLevelCloseRestoresFilter": false
+      }
     },
     "runtimeProofQuestions": [
-      "Immediately after a resource tab change, is the normal action tooltip already visible for the first focused VMHotBarSlot without D-pad input?",
-      "Does the selected resource tab remain visible while cycling both left and right using selection-driven BringSelectionIntoView?",
-      "Does D-pad navigation still keep SelectorTemplate, tooltip, highlights and ActionRadials.Tag synchronized through LocalFocusChanged?",
+      "After a resource tab switch, do selector, tooltip, resource highlight and A all identify the same LocalFocus.DataContext without any SelectedItem-derived presentation state?",
+      "Does LSScrollViewer.ScrollToElement keep the selected left/right resource tab container visible while shoulder-cycling?",
+      "After B exits a real nested/upcast/container view, is the same selected resource tab repopulated and focused instead of remaining empty?",
+      "Does top-level B still close CAM without reapplying the resource filter?",
       "Do hidden MaxValue=0 resource previews remain absent from shoulder navigation?"
     ],
     "controllerShortcuts": {
