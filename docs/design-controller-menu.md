@@ -71,10 +71,10 @@ The current native `FilterActionResourceCommand` is the first implementation sea
 The controller HotBar must satisfy the native parity contract in `docs/action-coverage.md`.
 Resource filters are preferred, but they are not assumed to enumerate every gameplay action.
 
-`FREE`, `SCROLLS`, item charges, consumables, temporary actions, recasts and similar source groups are part of the remaining correctness target. Cantrips and metamagic now have proven native providers, but they are not
+`FREE`, `SCROLLS`, item charges, temporary actions, recasts and similar source groups are part of the remaining correctness target. Cantrips, Items and metamagic now have proven native providers, but they are not
 allowed to be fabricated from raw assignment catalogs or string heuristics.
 
-They may be added when a current BG3-owned source/filter yields executable `VMHotBarSlot` variants for that group. Raw `SpellsAndActions`, `Inventory.Slots`, or passive assignment objects remain research/presentation evidence only and are not direct dispatch candidates.
+They may be added when a current BG3-owned source/filter yields executable `VMHotBarSlot` variants for that group. The Items provider is specifically `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList`; this does not by itself prove equality with radial `Inventory.Slots`. Raw `SpellsAndActions`, `Inventory.Slots`, or passive assignment objects remain research/presentation evidence only and are not direct dispatch candidates.
 
 ## Tooltip
 
