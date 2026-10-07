@@ -62,8 +62,8 @@
         "UILeft",
         "UIRight"
       ],
-      "selector": "CAM_MainSelector",
-      "selectorTemplate": "CAM_SelectorTemplate",
+      "selector": null,
+      "selectorTemplate": null,
       "selectorHasFixedGeometry": false,
       "scrollOwner": "HotBarList",
       "nestedStateUsesSameList": true,
@@ -71,19 +71,20 @@
         "CAM_FilteredSlotList",
         "SingleBar"
       ],
-      "coordinateViewport": {
-        "name": "CAM_ActionViewport",
-        "width": 800,
-        "height": 850,
-        "owns": [
-          "HotBarList",
-          "CAM_MainSelector"
-        ]
-      },
       "gridScrolling": {
         "directGridDisableScrolling": false,
-        "scrollViewerCanContentScroll": true,
-        "verticalScrollOffsetMargin": 120
+        "scrollViewerCanContentScroll": false,
+        "verticalScrollOffsetMargin": 120,
+        "gridUseWidgetNavigation": true,
+        "gridAlwaysSelectFirst": true,
+        "gridInternalFocusable": true
+      },
+      "focusPresentation": "item-local:ls:MoveFocus.IsFocused",
+      "adaptiveColumns": {
+        "source": "ScrollContentPresenter.ActualWidth",
+        "divisor": 120,
+        "converter": "DivideMultiConverter",
+        "rounding": "Floor"
       }
     },
     "buttonHintsContainer": {
@@ -105,27 +106,22 @@
       "keyboardStyleRejected": "HotBarSlotStyle",
       "keyboardOverlayRejected": "HotKey",
       "nativeSelectorOutset": 12,
-      "camSelectorTemplate": "CAM_SelectorTemplate",
-      "camSelectorOutset": 4,
+      "camSelectorTemplate": null,
+      "camSelectorOutset": null,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
-      "selectorDerivation": "12-(120-104)/2",
+      "selectorDerivation": null,
       "tabPattern": "dynamic-resource-row",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "tabItemType": "VMActionResourceCostPreview",
-      "genericTabLabel": "ActionResource.Name",
+      "genericTabLabel": "ActionResource.Name ?? ActionResource.TypeId",
       "spellSlotTabLabel": "SpellSlotNumberStyle",
       "resourceViewport": {
-        "headerWidth": 1500,
-        "listMaxWidth": 1340,
+        "mode": "bounded-horizontal-scroll",
         "autoScrollBehavior": "AutoScrollBehavior",
         "scrollIntoView": "SelectedIndex",
         "bringSelectionIntoView": true
-      },
-      "selectorReset": {
-        "onResourceSelectionChanged": "Collapsed",
-        "restoreOnDelayedLocalFocus": "Visible"
       }
     },
     "tooltipPresentation": {
@@ -175,11 +171,12 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "After LB/RB tab change, does the selector appear on the first focused action without showing the old tab position?",
-      "Do lower focused rows scroll into view?",
-      "Does CAM_MainSelector align with the focused action cell now that both share CAM_ActionViewport coordinates?",
-      "Does the resource row scroll horizontally to keep the selected tab visible?",
-      "Do resource filtering, A/B, nested state, and weapon-set input remain unchanged?"
+      "Does item-local focus chrome always match the logically focused action after resource changes?",
+      "Does the adaptive LSGrid change column count from actual viewport width without clipping navigation?",
+      "Do lower rows scroll using pixel scrolling and VerticalScrollOffsetMargin?",
+      "Does the bounded resource strip keep selected tabs visible without widening the whole menu?",
+      "Do unnamed resources show a TypeId fallback while spell slots retain native level presentation?",
+      "Do FilterActionResourceCommand, A/B, nested state and weapon-set behavior remain unchanged?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
