@@ -94,7 +94,7 @@ exists but equality with the reference catalog cannot be established statically;
 | inventory/consumables | ItemHotBar + radial `Inventory.Slots` | only items incidentally returned by resource filter | missing-source |
 | scrolls | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
 | item-charge actions | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
-| metamagic toggles | radial metamagic predicate | no proven equivalent executable-slot source | missing-source |
+| metamagic toggles | radial metamagic predicate + native `FixedSideBar` | `FixedSideBar.SlotList` | proven-source / runtime-unverified |
 | temporary actions | Common/Class/radial | equality not proven | missing-source |
 | recasts | Common/Class/radial | native nested behavior only when reached | missing-source |
 | mod-added actions/resources | native dynamic models | covered only when BG3 exposes a resource preview / proven slot source | runtime-proof |
