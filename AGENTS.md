@@ -552,3 +552,36 @@ The one-shot `SelectedItem` path is allowed only because stale `LocalFocus` is c
 - normal D-pad navigation remains `LocalFocusChanged -> LocalFocus.DataContext`.
 
 This makes the visible selector, tooltip, resource highlights, and A dispatch converge on the same authoritative `LocalFocus` instead of treating selection as proof that focus moved.
+
+
+## Runtime correction — 0.0.70 -> 0.0.71
+
+0.0.70 runtime proves two remaining defects:
+
+- the `SectionImageStyle` substitution is not the keyboard HotBar resource-button presentation;
+- Passives is a synthetic CAM top-level mode, and returning from it currently mutates `CAM_ResourceTabs.Tag` during the same shoulder-button `Click` that also owns ordinary resource cycling. Later handlers in that same click can therefore observe the new mode and run again.
+
+### Resource button presentation
+The accepted keyboard HotBar resource-button seam is the compact 72px template already captured earlier in this project:
+- `LSActionPointResources`;
+- `ActionResourcesTemplateSelector`;
+- `MaxActionPoints = MaxValue`;
+- `AvailableActionPoints = Value`;
+- `HighlightedActionPoints = preview Cost`;
+- `DataContext = ActionResource`;
+- native resource box chrome;
+- `RomanNumeralLevelImage` for spell slots;
+- the resource-value numeral overlay used when the native point renderer collapses a larger resource count.
+
+Do not replace this with `SectionImageStyle`: that style is valid for other resource-icon surfaces (for example tooltip/upcast cost presentation), but it is not the HotBar resource-button renderer.
+
+### Passives transition state
+Passives remains the single explicit non-resource top-level mode, but entering/leaving it must be non-reentrant:
+- while leaving Passives, keep `CAM_ResourceTabs.Tag = CAM_PassivesModeToken` for the entire originating shoulder-button click;
+- prepare/filter the target native resource while Passives still owns `HotBarList`;
+- only after that click has completed may a timer clear passive mode and hand focus to the first action;
+- left return uses a dedicated `CAM_TabReturnLastToken`; right return keeps `CAM_TabReturnFirstToken`;
+- ordinary resource-click handlers remain disabled for the whole Passives-return click;
+- no second resource selection/filter transition may occur from one LB/RB press.
+
+The action-focus authority remains `HotBarList.LocalFocus.DataContext`.
