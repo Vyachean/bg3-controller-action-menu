@@ -62,8 +62,8 @@
         "UILeft",
         "UIRight"
       ],
-      "selector": "CAM_LogicalFocusAnchor",
-      "selectorTemplate": null,
+      "selector": "CAM_MainSelector",
+      "selectorTemplate": "SelectorTemplate",
       "selectorHasFixedGeometry": false,
       "scrollOwner": "HotBarList",
       "nestedStateUsesSameList": true,
@@ -76,40 +76,45 @@
         "scrollViewerCanContentScroll": false,
         "verticalScrollOffsetMargin": 120,
         "gridUseWidgetNavigation": false,
-        "gridAlwaysSelectFirst": true,
+        "gridAlwaysSelectFirst": false,
         "gridInternalFocusable": false,
-        "gridExtendedRows": false,
-        "emptyCellTemplate": null
+        "gridExtendedRows": null,
+        "emptyCellTemplate": "DynamicResource EmptyCellTemplate"
       },
-      "focusPresentation": "item-local:IsSelected<-LocalFocus.DataContext; logical-owner:LocalFocusSelector",
+      "focusPresentation": "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext",
       "adaptiveColumns": {
         "source": "ScrollContentPresenter.ActualWidth",
         "divisor": 120,
         "converter": "DivideMultiConverter",
         "rounding": "Floor"
       },
-      "selectorVisibleChrome": false,
-      "selectorOpacity": 0,
-      "visibleFocusSource": "HotBarList.SelectedItem",
-      "visibleFocusSyncEvent": "LocalFocusChanged",
-      "visibleFocusSyncValue": "HotBarList.LocalFocus.DataContext",
+      "selectorVisibleChrome": true,
+      "selectorOpacity": 1,
+      "visibleFocusSource": "HotBarList.LocalFocus via SelectorTemplate",
+      "visibleFocusSyncEvent": null,
+      "visibleFocusSyncValue": null,
       "visibleFocusVisualStyle": null,
       "resourceSelectionRestore": {
         "event": "CAM_ResourceTabs.SelectionChanged",
-        "clearSelectedItem": true,
-        "clearLocalFocus": true,
+        "clearSelectedIndex": -1,
         "filterCommandCount": 1,
-        "restoreVia": "InvalidateFocus=True -> SetMoveFocusAction(DeferFocusAction=True)",
-        "writesSelectedIndex": false,
-        "extraTimer": false,
-        "invalidateFocus": true
+        "settleMilliseconds": 70,
+        "armToken": "CAM_ResetFirstFocusToken",
+        "restoreSelectedIndex": 0,
+        "focusTarget": "selected concrete ListBoxItem templated parent",
+        "focusAction": "SetMoveFocusAction(DeferFocusAction=True)",
+        "clearsTokenAfterFocus": true,
+        "clearLocalFocus": false,
+        "invalidateFocus": false,
+        "focusesListContainer": false,
+        "selectedItemMirrorsLocalFocus": false
       },
       "visibleFocusChrome": {
-        "source": "HotBarList.SelectedItem<-LocalFocus.DataContext",
-        "fill": "CAM_CellFocusFill",
-        "frame": "CAM_CellFocusFrame",
-        "frameBorderThickness": 4,
-        "frameOpacity": 1
+        "source": "HotBarList.LocalFocusSelector",
+        "selector": "CAM_MainSelector",
+        "template": "SelectorTemplate",
+        "sharedCoordinateRoot": "CAM_ActionViewport",
+        "emptyCellPresentation": "DynamicResource EmptyCellTemplate"
       }
     },
     "buttonHintsContainer": {
@@ -145,7 +150,7 @@
       "resourceViewport": {
         "mode": "bounded-horizontal-scroll",
         "autoScrollBehavior": "AutoScrollBehavior",
-        "scrollIntoView": "SelectedItem",
+        "scrollIntoView": "SelectedIndex",
         "bringSelectionIntoView": true,
         "maxTabWidth": null,
         "listMaxWidth": 1160,
@@ -153,7 +158,8 @@
         "cycleForceSelect": false,
         "scrollOwner": "AutoScrollBehavior",
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
-        "scrollTo": "Center"
+        "scrollTo": "Center",
+        "scrollTargetKind": "numeric-index"
       }
     },
     "tooltipPresentation": {
@@ -203,11 +209,11 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "After a resource filter changes the executable list, does focus invalidation plus AlwaysSelectFirst enter the first real VMHotBarSlot rather than the previous tab coordinate?",
-      "Can a one-item resource tab execute immediately with A without directional input?",
-      "Does ExtendedRows=False prevent navigation into generated empty grid coordinates?",
-      "When cycling resource tabs in either direction, does SelectedItem + ScrollTo=Center keep the selected tab fully visible?",
-      "Do tooltip, highlight, frame/fill and A continue to identify the same LocalFocus.DataContext slot?"
+      "After a resource filter settles, does SelectedIndex=0 hand focus to the concrete first ListBoxItem so LocalFocus, tooltip and A all begin there?",
+      "Can a one-item resource tab execute immediately with A without any directional input?",
+      "Does the native SelectorTemplate remain visible while navigation crosses both real slots and LSGrid EmptyCellTemplate positions?",
+      "Does SelectedIndex + ScrollTo=Center keep the selected resource tab visible in both cycling directions?",
+      "Do hidden MaxValue=0 resource previews remain absent from shoulder navigation?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
