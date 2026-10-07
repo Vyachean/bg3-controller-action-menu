@@ -505,7 +505,7 @@ This remains one level of resource tabs; wrapping changes only presentation and 
 ### Passives tab
 - add one top-level Passives tab backed by the current executable `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList`;
 - do not introduce a second action grid: the existing `HotBarList` switches its `ItemsSource` between `SingleHotBar.SlotList` and `PassivesHotBar.SlotList`;
-- use the native `IsShowingPassivesDeck` / `SetIsShowingPassivesDeckCommand` state rather than a CAM-authored gameplay flag;
+- Passives mode is CAM presentation state only: `CAM_ResourceTabs.Tag = CAM_PassivesModeToken`; do not invent a BG3 gameplay command/property for switching it;
 - LB/RB remains one logical cycle: resource previews plus Passives;
 - top-level B still closes because passive mode is not native nested/upcast/container state.
 
