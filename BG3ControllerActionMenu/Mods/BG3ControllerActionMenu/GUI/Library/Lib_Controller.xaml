@@ -243,9 +243,8 @@
 
                     <DockPanel x:Name="CAM_ResourceHeader"
                                Grid.Row="0"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
                                HorizontalAlignment="Stretch"
+                               VerticalAlignment="Center"
                                MaxWidth="1180">
                         <ls:LSButton x:Name="CAM_TabLeft"
                                      BoundEvent="UITabPrev"
@@ -285,8 +284,7 @@
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
                                     <ScrollViewer HorizontalScrollBarVisibility="Hidden"
-                                                  VerticalScrollBarVisibility="Disabled"
-                                                  CanContentScroll="True">
+                                                  VerticalScrollBarVisibility="Disabled">
                                         <ItemsPresenter/>
                                     </ScrollViewer>
                                 </ControlTemplate>
