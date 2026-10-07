@@ -53,20 +53,20 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "compact-nat
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.control -ne "LSActionPointResources" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.style -ne "ActionResourcesTemplateSelector" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.control -ne "Image" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.style -ne "SectionImageStyle" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.size -ne 72 -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList") {
-    throw "Native resource-icon / Passives tab presentation evidence is incomplete."
+    throw "Native HotBar resource-icon / Passives tab presentation evidence is incomplete."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
-    $evidence.runtimeContract.tooltipPresentation.stateAuthority -ne "HotBarList.LocalFocus.DataContext during live navigation" -or
-    $evidence.runtimeContract.tooltipPresentation.entryStateSource -ne "HotBarList.SelectedItem after LocalFocus reset and concrete focus handoff" -or
+    $evidence.runtimeContract.tooltipPresentation.stateAuthority -ne "HotBarList.LocalFocus.DataContext" -or
+    $evidence.runtimeContract.tooltipPresentation.entryStateSource -ne "HotBarList.LocalFocus.DataContext after concrete focus handoff" -or
     $evidence.runtimeContract.tooltipPresentation.localFocusChangedRole -ne "normal-navigation-presentation" -or
     $evidence.runtimeContract.tooltipPresentation.delayedLocalFocusPresentationTimer -ne $true -or
     @($evidence.runtimeContract.tooltipPresentation.presentationSignals).Count -ne 2) {
-    throw "Tooltip contract must separate entry-only committed SelectedItem state from live LocalFocus navigation."
+    throw "Tooltip contract must keep both programmatic entry and live navigation on LocalFocus.DataContext."
 }
 
 if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext" -or
@@ -129,17 +129,18 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreSelectedIndex -ne 0 -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusTarget -ne "selected concrete ListBoxItem templated parent" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusAction -ne "SetMoveFocusAction(DeferFocusAction=True)" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusPublishesEntryCommit -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterEntryCommit -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusPublishesEntryCommit -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterEntryCommit -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemMirrorsLocalFocus -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "SelectedItem after concrete-item SetMoveFocusAction commit" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryCommitToken -ne "CAM_EntryFocusCommittedToken" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticWakeSignal -ne "HotBarList.Tag entry-focus commit" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticStateSource -ne "HotBarList.SelectedItem after LocalFocus reset" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemEntryStateWrites -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "LocalFocus.DataContext after concrete-item SetMoveFocusAction handoff" -or
+    $null -ne $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryCommitToken -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticWakeSignal -ne "HotBarList.SelectionChanged delayed LocalFocus wake" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticStateSource -ne "HotBarList.LocalFocus.DataContext after deferred focus" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemEntryStateWrites -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.resetTokenClearedBySelectedContainer -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.selector -ne "CAM_MainSelector" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.template -ne "SelectorTemplate" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.sharedCoordinateRoot -ne "CAM_ActionViewport" -or
@@ -154,14 +155,12 @@ $required = @(
     '<RowDefinition Height="84"/>',
     '<RowDefinition Height="850"/>',
     'x:Name="CAM_TopTabs"',
-    '<ls:LSActionPointResources x:Name="ResourcePoints"',
-    'Style="{StaticResource ActionResourcesTemplateSelector}"',
+    '<Image x:Name="ResourceIcon"',
+    'Style="{StaticResource SectionImageStyle}"',
     'x:Name="CAM_PassivesTab"',
     'x:Key="CAM_PassivesModeToken"',
     'Tag="{x:Null}"',
     'PlayerCharacterProperties.PassivesHotBar.SlotList',
-    'x:Key="CAM_EntryFocusCommittedToken"',
-    'Value="{StaticResource CAM_EntryFocusCommittedToken}"',
     'GameObject.Count',
     'AbbreviateNumberConverter',
     'ItemAmountTextStyle',
@@ -425,7 +424,8 @@ if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
     -not $slotContainer.Value.Contains('DeferFocusAction="True"') -or
     -not $slotContainer.Value.Contains('PropertyName="Tag"') -or
-    -not $slotContainer.Value.Contains('Value="{StaticResource CAM_EntryFocusCommittedToken}"') -or
+    -not $slotContainer.Value.Contains('Value="{x:Null}"') -or
+    $slotContainer.Value.Contains('CAM_EntryFocusCommittedToken') -or
     $slotContainer.Value.Contains('CAM_CellFocusFill') -or
     $slotContainer.Value.Contains('CAM_CellFocusFrame') -or
     $slotContainer.Value.Contains('Trigger Property="ls:MoveFocus.IsFocused" Value="True"') -or
@@ -519,7 +519,7 @@ if (-not $resourceRestoreTimer.Success -or
     $resourceRestoreTimer.Value.Contains('ShowTooltipOnUIElementCommand') -or
     $resourceRestoreTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
     $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand')) {
-    throw "Tab-settle timer may only arm concrete first-item focus; entry presentation waits for the focus-commit token."
+    throw "Tab-settle timer may only arm concrete first-item focus; presentation waits for authoritative LocalFocus."
 }
 
 $resourceTabStyle = [regex]::Match(
@@ -529,17 +529,16 @@ $resourceTabStyle = [regex]::Match(
 )
 if (-not $resourceTabStyle.Success -or
     -not $resourceTabStyle.Value.Contains('Property="Width" Value="76"') -or
-    -not $resourceTabStyle.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
-    -not $resourceTabStyle.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
-    -not $resourceTabStyle.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
-    -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding Cost}"') -or
+    -not $resourceTabStyle.Value.Contains('<Image x:Name="ResourceIcon"') -or
     -not $resourceTabStyle.Value.Contains('DataContext="{Binding ActionResource}"') -or
-    -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
+    -not $resourceTabStyle.Value.Contains('Style="{StaticResource SectionImageStyle}"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
+    $resourceTabStyle.Value.Contains('<ls:LSActionPointResources') -or
+    $resourceTabStyle.Value.Contains('ActionResourcesTemplateSelector') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Name}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.TypeId}"') -or
     $resourceTabStyle.Value.Contains('AlignableWrapPanel')) {
-    throw "Resource tabs must use compact native resource rendering without text labels or wrapping."
+    throw "Resource tabs must use the native ActionResource icon style, not the point/charge renderer."
 }
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
@@ -659,19 +658,23 @@ if (-not $localFocusTimer.Success -or
     throw "Delayed ActionRadials.Tag/resource state must remain sourced only from LocalFocus.DataContext."
 }
 
-$entryCommitTrigger = [regex]::Match(
-    $text,
-    '<b:PropertyChangedTrigger Binding="\{Binding Tag, ElementName=HotBarList\}">[\s\S]*?CAM_EntryFocusCommittedToken[\s\S]*?</b:PropertyChangedTrigger>',
+$entryFocusWake = [regex]::Match(
+    $hotBarList.Value,
+    '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $entryCommitTrigger.Success -or
-    -not $entryCommitTrigger.Value.Contains('SelectedItem.Content') -or
-    -not $entryCommitTrigger.Value.Contains('ShowTooltipOnUIElementCommand') -or
-    -not $entryCommitTrigger.Value.Contains('PropertyName="Tag"') -or
-    -not $entryCommitTrigger.Value.Contains('Value="{Binding SelectedItem, ElementName=HotBarList}"') -or
-    -not $entryCommitTrigger.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    -not $entryCommitTrigger.Value.Contains('HighlightResourcesCommand')) {
-    throw "Concrete first-item focus must commit entry-only tooltip/Tag/highlight state from that same SelectedItem."
+if (-not $entryFocusWake.Success -or
+    -not $entryFocusWake.Value.Contains('LocalFocus.DataContext') -or
+    -not $entryFocusWake.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    -not $entryFocusWake.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    -not $entryFocusWake.Value.Contains('HighlightResourcesCommand') -or
+    $entryFocusWake.Value.Contains('SelectedItem')) {
+    throw "Programmatic entry presentation must source identity only from LocalFocus.DataContext."
+}
+if ($text.Contains('CAM_EntryFocusCommittedToken') -or
+    $text.Contains('Value="{Binding SelectedItem.Content, ElementName=HotBarList}"') -or
+    $text.Contains('CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"')) {
+    throw "0.0.70 forbids SelectedItem-derived entry presentation."
 }
 if ($text.Contains('<b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">')) {
     throw "The runtime-rejected 0.0.68 FocusedElement tooltip wake-up must not return."
@@ -685,6 +688,7 @@ $slotContainer = [regex]::Match(
 if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('RightOperand="{StaticResource CAM_ResetFirstFocusToken}"') -or
     -not $slotContainer.Value.Contains('FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
-    -not $slotContainer.Value.Contains('Value="{StaticResource CAM_EntryFocusCommittedToken}"')) {
-    throw "Selected index 0 must hand concrete focus to its ListBoxItem before publishing the entry-focus commit token."
+    -not $slotContainer.Value.Contains('Value="{x:Null}"') -or
+    $slotContainer.Value.Contains('CAM_EntryFocusCommittedToken')) {
+    throw "Selected index 0 must hand concrete focus to its ListBoxItem and clear the reset token."
 }
