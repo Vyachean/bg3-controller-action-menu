@@ -46,7 +46,7 @@ Current captured `HotBar.xaml` proves these executable/deck seams:
 | resource filters | `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList` | shipping |
 | Common deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
 | Class deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
-| Items deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
+| Items deck | `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList` | shipping / runtime-unverified |
 | Cantrips | `FilterCantripsCommand` with captured parameter `h7d02199dg44ecg4a1egbcacg9cc1cec197b3` | shipping through `SingleHotBar.SlotList` |
 | Passives | `PassivesHotBar.SlotList` | shipping |
 
@@ -91,7 +91,7 @@ exists but equality with the reference catalog cannot be established statically;
 | throw nested state | native radial | `SingleHotBar.SlotList` + native flag | proven |
 | cantrips | HotBar + radial | `FilterCantripsCommand` -> `SingleHotBar.SlotList` | proven-source / runtime-unverified |
 | free/no-resource actions | Common/Class/radial | no proven complete shipping source | missing-source |
-| inventory/consumables | ItemHotBar + radial `Inventory.Slots` | only items incidentally returned by resource filter | missing-source |
+| inventory/consumables | ItemHotBar + radial `Inventory.Slots` | `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList` | proven keyboard source / radial parity runtime-unverified |
 | scrolls | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
 | item-charge actions | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
 | metamagic toggles | radial metamagic predicate + native `FixedSideBar` | `FixedSideBar.SlotList` | proven-source / runtime-unverified |
@@ -193,7 +193,7 @@ Before the next requested run, CI must prove:
 4. no raw radial-assignment object is passed to `UseSlotCommand`;
 5. current resource/passive/nested execution remains intact.
 
-The next game milestone should then answer the remaining semantic equality questions in
-one run: whether the union of CAM providers contains representative free, cantrip,
-item/scroll/charge, metamagic, temporary and recast actions in addition to the already
-proven resource-bound/nested cases.
+The next game milestone should answer the remaining semantic equality questions in one
+run: whether the union of CAM providers contains representative free, item/scroll/charge,
+temporary and recast actions, and whether ItemHotBar covers the relevant radial
+`Inventory.Slots` cases, in addition to the already proven resource-bound/nested cases.

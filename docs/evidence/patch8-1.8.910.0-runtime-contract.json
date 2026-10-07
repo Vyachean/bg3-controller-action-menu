@@ -33,6 +33,7 @@
     "mainSlotType": "VMHotBarSlot",
     "mainSlotSources": [
       "SingleHotBar.SlotList (resource filters, Cantrips, native nested state)",
+      "CurrentShownDeck.SlotList when SetCurrentShownDeckCommand(ItemHotBar) materializes the native Items deck",
       "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList",
       "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList"
     ],
@@ -53,7 +54,7 @@
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
       "executableList": "HotBarList",
-      "itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag",
+      "itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag",
       "directionalNavigation": "Contained",
       "nextEvent": "UIDown",
       "prevEvent": "UIUp",
@@ -141,6 +142,7 @@
         "unprovenGameplayModeCommandsAllowed": false,
         "modeTokens": [
           "CAM_CantripsModeToken",
+          "CAM_ItemsModeToken",
           "CAM_MetamagicModeToken",
           "CAM_PassivesModeToken"
         ],
@@ -149,7 +151,10 @@
         "providerRestoreDispatcher": "CAM_ProviderRestoreCommand",
         "metamagicSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList",
         "directProviderNestedOverride": "nested flags -> SingleHotBar.SlotList",
-        "directProviderRestore": "CAM_NestedRestoringToken -> focus first direct-provider slot"
+        "directProviderRestore": "CAM_NestedRestoringToken -> focus first direct-provider slot",
+        "itemsSource": "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList",
+        "itemsNestedBehavior": "nested flags -> SingleHotBar.SlotList; CurrentShownDeck remains ItemHotBar",
+        "itemsRestore": "CAM_NestedRestoringToken -> CurrentShownDeck.SlotList + first-item focus"
       },
       "passivesReturn": {
         "modeAuthority": "CAM_ResourceTabs.Tag = CAM_PassivesModeToken for the entire originating shoulder-button Click",
@@ -157,8 +162,7 @@
         "rightTarget": "preserved selected resource index 0",
         "rightPrepare": "FilterActionResourceCommand(selected resource) while HotBarList still shows Passives",
         "leftWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken",
-        "leftWhenMetamagicUnavailableAndCantripsAvailable": "CAM_TabEnterSpecialToken -> CAM_CantripsModeToken -> FilterCantripsCommand",
-        "leftWhenNoOptionalProvider": "CAM_TabReturnLastToken -> SelectNextListBoxItem(Reversed=True, ForceMode=Cycle)",
+        "leftWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)",
         "focusAfterModeSwitch": "CAM_ResetFirstFocusToken + SelectedIndex=0",
         "ordinaryResourceClickHandlersEligibleDuringReturn": false,
         "singleShoulderPressSingleLogicalTransition": true,
@@ -204,7 +208,7 @@
       "camSelectorOutset": null,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
       "selectorDerivation": null,
-      "tabPattern": "exact-hotbar-action-resources-plus-cantrips-plus-metamagic-plus-passives",
+      "tabPattern": "exact-hotbar-action-resources-plus-cantrips-plus-items-plus-metamagic-plus-passives",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
@@ -336,6 +340,13 @@
         "icon": "FixedSideBar.SlotList[0].Content.Icon",
         "chrome": "CAM resource-box-style special provider",
         "nativeEvidence": "FixedSideBar ContentTemplate=HotBarTemplate; Tutorial TargetID=TUT_Metamagic"
+      },
+      "itemsTab": {
+        "source": "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList",
+        "modeToken": "CAM_ItemsModeToken",
+        "icon": "Core/Assets/Shared/ico_container_more_d.png",
+        "chrome": "CAM resource-box-style special provider",
+        "nativeEvidence": "ItemsFilter is always present in captured Patch 8 keyboard HotBar and invokes SetCurrentShownDeckCommand with CommandParameter=ItemHotBar"
       }
     },
     "tooltipPresentation": {
@@ -356,16 +367,16 @@
       "resourcePreviewPolicy": "CreateFocusedTooltipDataCommand remains LocalFocus.DataContext-driven; transient resource hover preview is cleared for stable tab quantity"
     },
     "organization": {
-      "mode": "resource-first-plus-cantrips-plus-metamagic-plus-passives",
+      "mode": "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives",
       "topLevelDimensions": 1,
       "primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "primaryTabItemType": "VMActionResourceCostPreview",
       "primarySelectionCommand": "FilterActionResourceCommand",
       "primarySelectionParameter": "CAM_ResourceTabs.SelectedItem",
-      "primaryGridSource": "SingleHotBar.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList",
+      "primaryGridSource": "SingleHotBar.SlotList | CurrentShownDeck.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList",
       "typeTabsAllowed": false,
       "secondaryResourceLayerAllowed": false,
-      "tabOrdering": "BG3-native resources, Cantrips when HasCantrips, Metamagic when FixedSideBar.SlotList.Count > 0, then Passives",
+      "tabOrdering": "BG3-native resources, Cantrips when HasCantrips, Items via ItemHotBar, Metamagic when FixedSideBar.SlotList.Count > 0, then Passives",
       "genericResourceLabel": null,
       "spellLevelPresentation": "RomanNumeralLevelImage",
       "duplicateExecutionVariantsAllowed": true,
@@ -385,13 +396,23 @@
       "metamagicTabAllowed": true,
       "metamagicVisibility": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count",
       "metamagicSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList",
-      "metamagicModeToken": "CAM_MetamagicModeToken"
+      "metamagicModeToken": "CAM_MetamagicModeToken",
+      "itemsTabAllowed": true,
+      "itemsCommand": "SetCurrentShownDeckCommand",
+      "itemsCommandParameter": "ItemHotBar",
+      "itemsSource": "CurrentShownDeck.SlotList",
+      "itemsModeToken": "CAM_ItemsModeToken"
     },
     "nativeEvidence": {
       "deckCommands": {
         "CommonHotBar": "SetCurrentShownDeckCommand",
         "ClassHotBar": "SetCurrentShownDeckCommand",
-        "ItemHotBar": "SetCurrentShownDeckCommand",
+        "ItemHotBar": {
+          "command": "SetCurrentShownDeckCommand",
+          "parameter": "ItemHotBar",
+          "output": "CurrentShownDeck.SlotList",
+          "shippingStatus": "wired-runtime-unverified"
+        },
         "InvalidHotBar": "SetCurrentShownDeckCommand"
       },
       "cantripFilterCommand": "FilterCantripsCommand",
@@ -518,13 +539,13 @@
       "shippingProviders": [
         "ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList",
         "FilterCantripsCommand(h7d02199dg44ecg4a1egbcacg9cc1cec197b3) -> SingleHotBar.SlotList",
+        "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList",
         "FixedSideBar.SlotList (native Metamagic VMHotBar provider)",
         "PassivesHotBar.SlotList",
         "SingleHotBar.SlotList for native nested/variant/upcast/throw state"
       ],
       "knownMissingSourceClasses": [
         "free/no-resource actions",
-        "inventory/consumables",
         "scrolls",
         "item-charge actions",
         "temporary actions",
@@ -577,8 +598,21 @@
       },
       "runtimeUnverifiedShippingClasses": [
         "cantrips",
-        "metamagic toggles"
-      ]
+        "metamagic toggles",
+        "inventory/consumables",
+        "scrolls",
+        "item-charge actions"
+      ],
+      "itemDeckParity": {
+        "provenKeyboardSource": "ItemHotBar -> CurrentShownDeck.SlotList",
+        "radialReference": "Inventory.Slots",
+        "status": "runtime-parity-not-yet-proven",
+        "doNotAssume": [
+          "all scrolls are present",
+          "all item-charge actions are present",
+          "ItemHotBar is a strict superset of radial Inventory.Slots"
+        ]
+      }
     }
   },
   "captureMatchCount": 22,
