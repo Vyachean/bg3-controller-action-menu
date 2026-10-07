@@ -53,8 +53,13 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "compact-nat
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.control -ne "Image" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.style -ne "SectionImageStyle" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.control -ne "LSActionPointResources" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.style -ne "ActionResourcesTemplateSelector" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.max -ne "MaxValue" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.available -ne "Value" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.highlighted -ne "Cost" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlay -ne "ResourcesNumeralDisplay" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedRenderer -ne "SectionImageStyle" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.size -ne 72 -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList") {
     throw "Native HotBar resource-icon / Passives tab presentation evidence is incomplete."
@@ -121,6 +126,17 @@ if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeStorage -ne 
     $evidence.runtimeContract.assignmentNavigation.sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
     throw "Passives must switch the sole HotBarList through CAM presentation state over the proven native PassivesHotBar source."
 }
+
+$passiveReturn = $evidence.runtimeContract.assignmentNavigation.passivesReturn
+if ($passiveReturn.modeAuthority -ne "CAM_ResourceTabs.Tag = CAM_PassivesModeToken for the entire originating shoulder-button Click" -or
+    $passiveReturn.rightToken -ne "CAM_TabReturnFirstToken" -or
+    $passiveReturn.leftToken -ne "CAM_TabReturnLastToken" -or
+    $passiveReturn.rightModeSwitchMilliseconds -ne 70 -or
+    $passiveReturn.leftModeSwitchMilliseconds -ne 90 -or
+    $passiveReturn.ordinaryResourceClickHandlersEligibleDuringReturn -ne $false -or
+    $passiveReturn.singleShoulderPressSingleLogicalTransition -ne $true) {
+    throw "Passives return must remain a serialized transition outside the ordinary resource-cycle click path."
+}
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.filterCommandCount -ne 1 -or
@@ -155,10 +171,12 @@ $required = @(
     '<RowDefinition Height="84"/>',
     '<RowDefinition Height="850"/>',
     'x:Name="CAM_TopTabs"',
-    '<Image x:Name="ResourceIcon"',
-    'Style="{StaticResource SectionImageStyle}"',
+    '<ls:LSActionPointResources x:Name="ResourcePoints"',
+    'Style="{StaticResource ActionResourcesTemplateSelector}"',
+    'x:Name="ResourcesNumeralDisplay"',
     'x:Name="CAM_PassivesTab"',
     'x:Key="CAM_PassivesModeToken"',
+    'x:Key="CAM_TabReturnLastToken"',
     'Tag="{x:Null}"',
     'PlayerCharacterProperties.PassivesHotBar.SlotList',
     'GameObject.Count',
@@ -487,19 +505,23 @@ $tabRight = [regex]::Match(
 )
 if (-not $tabLeft.Success -or -not $tabRight.Success -or
     -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
+    -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
     -not $tabLeft.Value.Contains('CAM_PassivesModeToken') -or
+    -not $tabLeft.Value.Contains('MillisecondsPerTick="90"') -or
     -not $tabLeft.Value.Contains('Reversed="True"') -or
     -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
-    -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
     -not $tabRight.Value.Contains('CAM_PassivesModeToken') -or
+    -not $tabRight.Value.Contains('MillisecondsPerTick="70"') -or
+    -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
     $tabLeft.Value.Contains('ForceSelect="True"') -or
     $tabRight.Value.Contains('ForceSelect="True"')) {
     throw "LB/RB must form one resource-plus-Passives cycle without ForceSelect."
 }
 
-if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 3 -or
+if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 4 -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
+    -not $resourceTabs.Value.Contains('CAM_TabReturnLastToken') -or
     -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"') -or
     [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
     [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 3) {
@@ -512,6 +534,8 @@ $resourceRestoreTimer = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceRestoreTimer.Success -or
+    -not $resourceRestoreTimer.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $resourceRestoreTimer.Value.Contains('Operator="NotEqual"') -or
     -not $resourceRestoreTimer.Value.Contains('Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
     -not $resourceRestoreTimer.Value.Contains('PropertyName="SelectedIndex"') -or
     -not $resourceRestoreTimer.Value.Contains('Value="0"') -or
@@ -529,20 +553,59 @@ $resourceTabStyle = [regex]::Match(
 )
 if (-not $resourceTabStyle.Success -or
     -not $resourceTabStyle.Value.Contains('Property="Width" Value="76"') -or
-    -not $resourceTabStyle.Value.Contains('<Image x:Name="ResourceIcon"') -or
+    -not $resourceTabStyle.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
+    -not $resourceTabStyle.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
+    -not $resourceTabStyle.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
+    -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
     -not $resourceTabStyle.Value.Contains('DataContext="{Binding ActionResource}"') -or
-    -not $resourceTabStyle.Value.Contains('Style="{StaticResource SectionImageStyle}"') -or
+    -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
+    -not $resourceTabStyle.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
+    -not $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Value}"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
-    $resourceTabStyle.Value.Contains('<ls:LSActionPointResources') -or
-    $resourceTabStyle.Value.Contains('ActionResourcesTemplateSelector') -or
+    $resourceTabStyle.Value.Contains('Style="{StaticResource SectionImageStyle}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Name}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.TypeId}"') -or
     $resourceTabStyle.Value.Contains('AlignableWrapPanel')) {
-    throw "Resource tabs must use the native ActionResource icon style, not the point/charge renderer."
+    throw "Resource tabs must reproduce the HotBar LSActionPointResources resource-button renderer."
 }
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
     throw "Null/MaxValue=0 resource previews must remain collapsed and disabled."
+}
+
+$passivesLeftReturn = [regex]::Match(
+    $tabLeft.Value,
+    '<b:EventTrigger EventName="Click">[\s\S]*?CAM_PassivesModeToken[\s\S]*?CAM_TabReturnLastToken[\s\S]*?SelectNextListBoxItem[\s\S]*?</b:EventTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$passivesLeftTimer = [regex]::Match(
+    $tabLeft.Value,
+    '<b:TimerTrigger EventName="Click" MillisecondsPerTick="90" TotalTicks="1">[\s\S]*?CAM_TabReturnLastToken[\s\S]*?TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="\{x:Null\}"[\s\S]*?CAM_ResetFirstFocusToken[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$passivesRightReturn = [regex]::Match(
+    $tabRight.Value,
+    '<b:EventTrigger EventName="Click">[\s\S]*?CAM_PassivesModeToken[\s\S]*?CAM_TabReturnFirstToken[\s\S]*?FilterActionResourceCommand[\s\S]*?</b:EventTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$passivesRightTimer = [regex]::Match(
+    $tabRight.Value,
+    '<b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?CAM_TabReturnFirstToken[\s\S]*?TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="\{x:Null\}"[\s\S]*?CAM_ResetFirstFocusToken[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$returnLastPrepare = [regex]::Match(
+    $resourceTabs.Value,
+    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?CAM_TabReturnLastToken[\s\S]*?FilterActionResourceCommand[\s\S]*?</b:EventTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $passivesLeftReturn.Success -or -not $passivesLeftTimer.Success -or
+    -not $passivesRightReturn.Success -or -not $passivesRightTimer.Success -or
+    -not $returnLastPrepare.Success) {
+    throw "Passives return must prepare a resource while passive mode is still active, then switch sources only at the delayed boundary."
+}
+if ($passivesLeftReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"') -or
+    $passivesRightReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"')) {
+    throw "A Passives-return Click must not clear passive mode before the originating shoulder event completes."
 }
 
 $passivesTab = [regex]::Match(
