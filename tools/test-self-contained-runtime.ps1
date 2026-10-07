@@ -493,11 +493,11 @@ $mainList = [regex]::Match(
 )
 if (-not $mainList.Success -or
     -not $mainList.Value.Contains('<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentShownDeck.SlotList}"') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"') -or
     -not $mainList.Value.Contains('Value="{StaticResource CAM_AllGroupContainerStyle}"') -or
