@@ -78,8 +78,18 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
 }
 if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedIndex" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true) {
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $true -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "AutoScrollBehavior") {
     throw "Resource-tab viewport contract is incomplete."
+}
+if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.delayMilliseconds -ne 70 -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreSelectedIndex -ne 0 -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusTarget -ne "HotBarList" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.duplicatesFilterCommand -ne $false) {
+    throw "0.0.61 focus-chrome/resource-selection restore evidence is incomplete."
 }
 
 $required = @(
@@ -100,6 +110,7 @@ $required = @(
     'BoundEvent="UITabPrev"',
     'BoundEvent="UITabNext"',
     'SelectNextListBoxItem',
+    'ForceSelect="True"',
     'EventName="SelectionChanged"',
     'Command="{Binding FilterActionResourceCommand}"',
     'CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"',
@@ -111,6 +122,7 @@ $required = @(
     'ItemsPanel="{StaticResource CAM_ActionGridPanel}"',
     'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
     'ls:MoveFocus.Focusable" Value="True"',
+    'Setter Property="FocusVisualStyle" Value="{x:Null}"',
     'Trigger Property="IsSelected" Value="True"',
     'PropertyName="SelectedItem"',
     'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
@@ -327,10 +339,12 @@ $slotContainer = [regex]::Match(
 )
 if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('Property="ls:MoveFocus.Focusable" Value="True"') -or
+    -not $slotContainer.Value.Contains('Setter Property="FocusVisualStyle" Value="{x:Null}"') -or
     -not $slotContainer.Value.Contains('Trigger Property="IsSelected" Value="True"') -or
     $slotContainer.Value.Contains('Trigger Property="ls:MoveFocus.IsFocused" Value="True"') -or
+    $slotContainer.Value.Contains('Style.FocusVisualStyle') -or
     -not $slotContainer.Value.Contains('x:Name="CAM_CellFocus"')) {
-    throw "Each action cell must render visible focus from ListBox selection, not the stale MoveFocus.IsFocused state."
+    throw "CAM selection chrome must be the sole visible action focus; native FocusVisualStyle must be disabled."
 }
 
 if (-not $hotBarList.Value.Contains('CanContentScroll="False"') -or
@@ -349,6 +363,32 @@ if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
     -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"')) {
     throw "Resource tabs must stay in a bounded SelectedIndex-following viewport."
+}
+
+if ([regex]::Matches($resourceTabs.Value, 'ForceSelect="True"').Count -ne 2 -or
+    [regex]::Matches($resourceTabs.Value, 'ForceMode="Cycle"').Count -ne 2) {
+    throw "Both shoulder directions must force a full cyclic resource selection so AutoScrollBehavior sees wrap-around changes."
+}
+
+$resourceSelectionTrigger = [regex]::Match(
+    $resourceTabs.Value,
+    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?</b:EventTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$resourceRestoreTimer = [regex]::Match(
+    $resourceTabs.Value,
+    '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceSelectionTrigger.Success -or
+    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"') -or
+    [regex]::Matches($resourceSelectionTrigger.Value, 'FilterActionResourceCommand').Count -ne 1 -or
+    -not $resourceRestoreTimer.Success -or
+    -not $resourceRestoreTimer.Value.Contains('PropertyName="SelectedIndex"') -or
+    -not $resourceRestoreTimer.Value.Contains('Value="0"') -or
+    -not $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"') -or
+    $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand')) {
+    throw "Resource switching must clear stale visual selection, filter once, then restore first-item selection/focus after 70 ms."
 }
 
 $resourceTabStyle = [regex]::Match(
