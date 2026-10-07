@@ -374,3 +374,27 @@ The correction must stay inside native focus/navigation primitives:
 - set `ExtendedRows=False` on the action `LSGrid`. CAM has no semantic empty actions, so controller navigation must not continue into generated empty coordinates;
 - do not add `EmptyCellTemplate` to CAM merely to visualize non-actions;
 - keep resource-strip `AutoScrollBehavior` bound to `SelectedItem` and add native `ScrollTo="Center"` so a selected edge tab is fully visible rather than merely intersecting the viewport.
+
+
+## Runtime correction — 0.0.63 -> 0.0.64
+
+0.0.63 produced no observable change from 0.0.62. Treat its three focus/grid assumptions as rejected for this composition:
+- `SetMoveFocusAction InvalidateFocus=True` on the widget does not reset `HotBarList` to the first slot after a resource filter;
+- `LSGrid.AlwaysSelectFirst=True` does not establish the required `LSListBox.LocalFocus`;
+- `ExtendedRows=False` does not remove navigation through the unoccupied coordinates of a partially filled adaptive row.
+
+The stronger runtime evidence is older and already proven in-game:
+- 0.0.29 used the native `SelectorTemplate` as the `LocalFocusSelector`, with the selector and list in the same coordinate root;
+- 0.0.29 retained `EmptyCellTemplate="{DynamicResource EmptyCellTemplate}"` on the controller grid;
+- 0.0.61 proved that, after the filter settles, `SelectedIndex=0` reliably identifies/realizes the new first action cell, but selection alone does not move controller focus.
+
+0.0.64 therefore separates *entry selection* from *live focus*:
+- resource change clears the action tag, sets `HotBarList.SelectedIndex=-1`, and invokes `FilterActionResourceCommand` exactly once;
+- after the existing 70 ms settle window, CAM arms a one-shot reset token and sets `SelectedIndex=0`;
+- the selected `ListBoxItem` template consumes that token and calls `SetMoveFocusAction` on its own concrete templated parent, then clears the token;
+- normal D-pad navigation does not mirror `LocalFocus` into `SelectedItem`; `LocalFocus` remains the sole live controller-navigation/dispatch state;
+- visible focus is again the native `SelectorTemplate` bound through `LocalFocusSelector`, not item-local `IsSelected` chrome;
+- restore the 0.0.29-proven native `EmptyCellTemplate` so focus geometry has a native presentation on unoccupied LSGrid coordinates;
+- resource-strip AutoScroll returns to the BG3-proven `SelectedIndex` input and combines it with native `ScrollTo="Center"`; `SelectedItem` is a VM and is not a valid element/index scroll target.
+
+Do not restore `ForceSelect=True`, install-time native derivation, or duplicate executable lists.

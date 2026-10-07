@@ -329,3 +329,51 @@ Only `AlwaysSelectFirst` is borrowed from the captured SpellBook `LSGrid` patter
 The action grid also sets `ExtendedRows=False`. CAM has no executable meaning for generated empty coordinates; focus must stay on actual list items rather than requiring synthetic empty-cell chrome.
 
 The resource strip remains bounded and uses the native `AutoScrollBehavior`, but now requests `ScrollTo="Center"` while following `SelectedItem`. This keeps the selected left/right edge tab fully inside the viewport without introducing manual scroll offsets.
+
+
+### 0.0.64 — selected container is an entry pointer; LocalFocus is the live owner
+
+The 0.0.63 runtime result rejects widget-level invalidation and LSGrid entry flags as a way to establish the first ActionRadials slot. The useful positive evidence is the combination of 0.0.29 and 0.0.61.
+
+0.0.29 proved this focus presentation in-game:
+
+```text
+shared focus root
+  +-- LSListBox
+  |     LocalFocusSelector -> Selector
+  |     ItemsPanel -> LSGrid(... EmptyCellTemplate ...)
+  +-- Selector
+        Template = native SelectorTemplate
+```
+
+0.0.61 separately proved that delayed `SelectedIndex=0` correctly identifies the first cell after `FilterActionResourceCommand`; its defect was stopping at selection rather than handing focus to that concrete container.
+
+The resource-switch path is now:
+
+```text
+CAM_ResourceTabs.SelectionChanged
+  -> ActionRadials.Tag = null
+  -> HotBarList.SelectedIndex = -1
+  -> ClearResourceHighlightsCommand
+  -> FilterActionResourceCommand(selected resource)
+  -> 70 ms
+  -> HotBarList.Tag = CAM_ResetFirstFocus
+  -> HotBarList.SelectedIndex = 0
+       |
+       v
+first ListBoxItem IsSelected=True + reset token
+  -> SetMoveFocusAction(ActionRadials -> that ListBoxItem)
+  -> clear reset token
+       |
+       v
+HotBarList.LocalFocusChanged
+  -> native selector moves
+  -> tooltip/resource highlight lifecycle
+  -> 70 ms ActionRadials.Tag = LocalFocus.DataContext
+```
+
+`SelectedIndex` is therefore not a second live focus model. It is only a one-shot lookup of the first realized item after a data-filter transition. During normal navigation CAM does not write `SelectedItem` from `LocalFocus`.
+
+The selector shares `CAM_ActionViewport` with `HotBarList`, matching the 0.0.29 focus-origin correction. This is required because the selector is also the only focus surface capable of representing LSGrid empty-cell positions, where no `ListBoxItem` exists.
+
+The resource strip uses `AutoScrollBehavior.ScrollIntoView=SelectedIndex` plus `ScrollTo=Center`. BG3 publicly uses `SelectedIndex` as the numeric AutoScroll target and `FocusedElement` as the element target; a VM `SelectedItem` is neither.
