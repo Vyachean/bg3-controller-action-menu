@@ -98,6 +98,8 @@
                    ActionRightEvent="UIRight"
                    ActionLeftEvent="UILeft"
                    AutoIndex="True"
+                   AlwaysSelectFirst="True"
+                   ExtendedRows="False"
                    ContainerData="{Binding}"
                    HorizontalAlignment="Stretch"
                    VerticalAlignment="Top"
@@ -279,7 +281,8 @@
                                       ItemsPanel="{StaticResource CAM_ResourceTabsPanel}">
                             <b:Interaction.Behaviors>
                                 <ls:AutoScrollBehavior ScrollIntoView="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"
-                                                       BringSelectionIntoView="True"/>
+                                                       BringSelectionIntoView="True"
+                                                       ScrollTo="Center"/>
                             </b:Interaction.Behaviors>
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
@@ -309,6 +312,8 @@
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           InvalidateFocus="True"/>
                                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                                            FocusElement="{Binding ElementName=HotBarList}"
                                                            DeferFocusAction="True"/>
