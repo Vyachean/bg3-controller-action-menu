@@ -194,7 +194,7 @@ function Get-HotBarCoverageReport {
         foreach ($commandName in $commandNames) {
             $matches = @(
                 foreach ($document in $loadedDocuments) {
-                    $pattern = '<[^>]*Command="\{Binding ' + [regex]::Escape($commandName) + '\}"[^>]*>'
+                    $pattern = '<[^>]*Command="\{Binding [^"]*' + [regex]::Escape($commandName) + '[^"]*\}"[^>]*>'
                     foreach ($match in [regex]::Matches(
                         $document.Text,
                         $pattern,
