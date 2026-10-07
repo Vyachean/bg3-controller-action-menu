@@ -1076,3 +1076,26 @@ The remaining issue is presentation-only. Automatic proof for 0.0.73 must requir
 9. item templates, focus/tooltip authority, Passives transition serialization, nested return and A/B dispatch are unchanged.
 
 Next runtime proof is limited to the visual comparison of the top filter row. Item quantity does not need to be retested unless it visibly regresses.
+
+
+### 2026-10-07 — 0.0.73 runtime result / exact HotBar capture gate
+
+0.0.73 runtime:
+- item stack quantities remain fixed;
+- stray resource numerals remain removed;
+- the top row still does not resemble the keyboard/mouse HotBar resource filters.
+
+The previous test contract targeted the wrong native component. `FilterButton / ActiveFilterButton` is the textual deck-tab presentation, not the `ActionResourcesCostPreview` icon filter row the operator is using as the reference.
+
+No further visual candidate is allowed until a fresh read-only capture provides the exact installed Patch 8 `HotBar.xaml`.
+
+The capture milestone must prove:
+
+1. the archive contains `Mods/MainUI/GUI/Pages/HotBar.xaml`;
+2. the captured HotBar hash is recorded in the manifest;
+3. the same archive contains the relevant shared `DataTemplates.xaml` and related UI resources already targeted by the capture tool;
+4. capture is read-only and does not launch BG3 or mutate installation/profile/mod state;
+5. the universal VBS can invoke the capture task through the release-controlled `dev-entry.ps1`;
+6. the generated status/report identifies the ZIP that must be returned for analysis.
+
+After the ZIP is inspected, the next runtime candidate should change only the top resource-filter presentation and should be tested once against the keyboard/mouse HotBar. Item quantity does not need targeted retesting unless it visibly regresses.
