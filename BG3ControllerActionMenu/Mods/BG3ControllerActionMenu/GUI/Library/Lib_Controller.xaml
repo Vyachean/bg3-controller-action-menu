@@ -926,7 +926,7 @@
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:EventTrigger>
 
-                                <!-- Without Cantrips, wrap to Metamagic when the native FixedSideBar is visible. -->
+                                <!-- Without Cantrips, wrap to BG3's native ItemHotBar deck. -->
                                 <b:EventTrigger EventName="SelectionChanged">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
@@ -934,7 +934,6 @@
                                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabCycleRightToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}" Operator="Equal" RightOperand="{StaticResource FalseValue}"/>
-                                                <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_MetamagicTab}" Operator="Equal" RightOperand="Visible"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -945,30 +944,8 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
-                                </b:EventTrigger>
-
-                                <!-- Without Cantrips or Metamagic, wrap directly to Passives. -->
-                                <b:EventTrigger EventName="SelectionChanged">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabCycleRightToken}"/>
-                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
-                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}" Operator="Equal" RightOperand="{StaticResource FalseValue}"/>
-                                                <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_MetamagicTab}" Operator="Equal" RightOperand="Collapsed"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
-                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{x:Null}"/>
-                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
-                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
+                                    <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:EventTrigger>
 
