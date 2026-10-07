@@ -108,13 +108,14 @@
         "invalidateFocus": false,
         "focusesListContainer": false,
         "selectedItemMirrorsLocalFocus": false,
-        "entryStateSource": "SelectedItem after concrete-item SetMoveFocusAction commit",
-        "selectedItemEntryStateWrites": true,
-        "programmaticWakeSignal": "HotBarList.Tag entry-focus commit",
-        "programmaticStateSource": "HotBarList.SelectedItem after LocalFocus reset",
-        "entryCommitToken": "CAM_EntryFocusCommittedToken",
-        "focusPublishesEntryCommit": true,
-        "clearsTokenAfterEntryCommit": true
+        "entryStateSource": "LocalFocus.DataContext after concrete-item SetMoveFocusAction handoff",
+        "selectedItemEntryStateWrites": false,
+        "programmaticWakeSignal": "HotBarList.SelectionChanged delayed LocalFocus wake",
+        "programmaticStateSource": "HotBarList.LocalFocus.DataContext after deferred focus",
+        "entryCommitToken": null,
+        "focusPublishesEntryCommit": false,
+        "clearsTokenAfterEntryCommit": false,
+        "resetTokenClearedBySelectedContainer": true
       },
       "visibleFocusChrome": {
         "source": "HotBarList.LocalFocusSelector",
@@ -181,12 +182,12 @@
       },
       "resourceRenderer": {
         "size": 72,
-        "control": "LSActionPointResources",
-        "style": "ActionResourcesTemplateSelector",
-        "max": "MaxValue",
-        "available": "Value",
-        "highlighted": "Cost",
+        "control": "Image",
+        "style": "SectionImageStyle",
         "dataContext": "ActionResource",
+        "iconIdentity": "ActionResource.TypeId",
+        "iconPath": "ActionResourceIconsPath",
+        "missingIconPath": "ActionResourceMissingIconsPath",
         "boxAssets": "CAM-owned references to HotBar box_resource assets",
         "spellSlotOverlay": "RomanNumeralLevelImage"
       },
@@ -217,10 +218,10 @@
       "delayedLocalFocusPresentationTimer": true,
       "presentationSignals": [
         "HotBarList.LocalFocusChanged",
-        "HotBarList.Tag=CAM_EntryFocusCommittedToken for entry-only SelectedItem synchronization"
+        "HotBarList.SelectionChanged delayed LocalFocus wake"
       ],
-      "stateAuthority": "HotBarList.LocalFocus.DataContext during live navigation",
-      "entryStateSource": "HotBarList.SelectedItem after LocalFocus reset and concrete focus handoff"
+      "stateAuthority": "HotBarList.LocalFocus.DataContext",
+      "entryStateSource": "HotBarList.LocalFocus.DataContext after concrete focus handoff"
     },
     "organization": {
       "mode": "resource-first-plus-passives",
