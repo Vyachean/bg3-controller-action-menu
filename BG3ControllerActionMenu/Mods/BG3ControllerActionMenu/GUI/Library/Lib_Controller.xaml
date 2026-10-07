@@ -938,12 +938,13 @@
 
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
-                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                                                  VerticalScrollBarVisibility="Auto"
-                                                  CanContentScroll="False"
-                                                  ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120">
+                                    <ls:LSScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                                     VerticalScrollBarVisibility="Auto"
+                                                     CanContentScroll="False"
+                                                     ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"
+                                                     ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}">
                                         <ItemsPresenter/>
-                                    </ScrollViewer>
+                                    </ls:LSScrollViewer>
                                 </ControlTemplate>
                             </ls:LSListBox.Template>
 
