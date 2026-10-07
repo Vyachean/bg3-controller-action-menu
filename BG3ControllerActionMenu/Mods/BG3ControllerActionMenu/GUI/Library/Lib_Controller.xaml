@@ -693,10 +693,13 @@
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=HotBarList}"
-                                                           DeferFocusAction="True"/>
                                 </b:EventTrigger>
+
+                                <b:TimerTrigger EventName="Loaded" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                </b:TimerTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
 
