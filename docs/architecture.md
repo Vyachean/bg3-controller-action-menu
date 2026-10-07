@@ -467,3 +467,44 @@ CAM shoulder tabs do not own controller focus, so they cannot reuse `ActionRadia
 - `IsShowingItemsToThrow`;
 
 CAM re-applies `FilterActionResourceCommand(CAM_ResourceTabs.SelectedItem)`, then re-enters the same LocalFocus reset/concrete-first-item path. The marker is not gameplay state; it is only a guard preventing top-level B/CloseWidget from invoking resource restoration.
+
+
+### 0.0.67 — focus-data presentation trigger and template-safe tab scrolling
+
+0.0.66 establishes the correct action focus identity and nested-return reconstruction, but reveals that `LocalFocusChanged` alone is not sufficient as a presentation signal.
+
+A resource refilter or nested return can leave/reuse the same focus container while changing its `DataContext`. In that case:
+- the selector can already be correct;
+- `LocalFocus.DataContext` can already be the correct `VMHotBarSlot`;
+- but `LocalFocusChanged` need not fire, so tooltip presentation is not refreshed.
+
+The presentation lifecycle therefore becomes:
+
+```text
+HotBarList.LocalFocus.DataContext changes
+  -> CAM_ActionTooltip.Content = LocalFocus.DataContext.Content
+  -> ShowTooltipOnUIElementCommand(HotBarList) / hide on null
+  -> ActionRadials.Tag = LocalFocus.DataContext
+  -> CreateFocusedTooltipDataCommand(LocalFocus.DataContext)
+  -> HighlightResourcesCommand(LocalFocus.DataContext)
+```
+
+The existing `LocalFocusChanged` event is retained only for the controller hover sound. This preserves `LocalFocus.DataContext` as the single source of truth while covering both ordinary D-pad motion and VM replacement under a reused focus container.
+
+#### Resource-tab scroll namescope
+
+The selected resource item already publishes its concrete `ListBoxItem` UIElement to `CAM_ResourceTabs.Tag`. The remaining problem in 0.0.66 is the binding site:
+
+```xml
+<!-- invalid/unreliable across ControlTemplate namescope -->
+ls:LSScrollViewer.ScrollToElement="{Binding Tag, ElementName=CAM_ResourceTabs}"
+```
+
+Inside a `ControlTemplate`, the reliable source is the templated list itself:
+
+```xml
+<ls:LSScrollViewer
+  ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+```
+
+This keeps the Patch 8-native UIElement scroll contract while removing the cross-namescope lookup.

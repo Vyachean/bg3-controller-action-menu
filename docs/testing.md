@@ -901,3 +901,25 @@ Observed in 0.0.65:
 9. `ClearSingleHotbarCommand`, native nested flags, `UseSlotCommand`, and resource-filter semantics remain BG3-owned.
 
 The next game run should verify only these user-visible seams: tooltip and selector never disagree after resource switching; the selected edge resource tab is actually visible in both directions; B from one real nested/upcast/container view returns to a populated version of the same resource tab.
+
+
+### 2026-10-07 — 0.0.66 runtime result / 0.0.67 proof boundary
+
+Observed in 0.0.66:
+
+- nested/upcast/container B return works and repopulates the original resource tab;
+- after a resource switch, the focused action still may not show a tooltip until D-pad movement;
+- after nested return, the focused action likewise may not show a tooltip until movement;
+- the selected resource tab still does not scroll into view.
+
+0.0.67 automatic proof must require:
+
+1. the 0.0.66 nested-return marker/filter restoration remains byte-semantically intact;
+2. action presentation is driven by `PropertyChangedTrigger Binding="{Binding LocalFocus.DataContext, ElementName=HotBarList}"`;
+3. that trigger owns tooltip content/show-hide, `ActionRadials.Tag`, tooltip data, and resource highlighting from `LocalFocus.DataContext`;
+4. `LocalFocusChanged` no longer owns those presentation writes and remains only for navigation sound;
+5. there is no delayed `TimerTrigger EventName="LocalFocusChanged"` presentation path;
+6. resource `LSScrollViewer.ScrollToElement` binds through `RelativeSource TemplatedParent`;
+7. the resource template contains no `ElementName=CAM_ResourceTabs` scroll binding, no `AutoScrollBehavior`, and no manual offset logic.
+
+The next game check should be limited to: tooltip immediately present after a resource switch, tooltip immediately present after nested B return, and selected edge resource tabs visibly scrolling in both directions.
