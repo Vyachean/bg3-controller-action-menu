@@ -112,7 +112,7 @@ $required = @(
     'ls:MoveFocus.InternalFocusable="True"',
     'FocusElementVisualStyle="{StaticResource Style.FocusVisualStyle}"',
     'Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"',
-    'RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}}',
+    'RelativeSource="{RelativeSource AncestorType={x:Type ScrollContentPresenter}}"',
     'ActionUpEvent="UIUp"',
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
