@@ -297,11 +297,12 @@
       "cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
       "note": "Captured Patch 8 evidence only; not part of the resource-first shipping navigation.",
       "itemQuantity": {
-        "sourceType": "VMGameObject",
+        "sourceType": "VMItem",
         "property": "Count",
-        "hotbarSlotPath": "VMHotBarSlot.GameObject.Count",
+        "hotbarSlotPath": "VMHotBarSlot.Content.Count",
         "converter": "AbbreviateNumberConverter",
-        "style": "ItemAmountTextStyle"
+        "style": "ItemAmountTextStyle",
+        "template": "Template.Item"
       },
       "passives": {
         "executableSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
