@@ -1195,3 +1195,21 @@ That combined run should cover, in one session where available: free/no-resource
 Cantrip, normal Action and Bonus Action, leveled/upcast spell, class resource, passive,
 metamagic, consumable, Scroll, item charge, temporary action, recast, nested variant,
 throw, concentration, dual-wield state and weapon-set shortcut status.
+
+
+### 2026-10-07 — 0.0.85 native target-position resource scrolling
+
+The next static milestone isolates resource-tab overflow after native provider coverage is complete. It does not change resource filtering, action focus, A/B, or nested execution.
+
+Automatic proof must require:
+
+1. provider mode is stored only in `CAM_ProviderModeMarker.Tag`;
+2. the selected resource `ListBoxItem` publishes its concrete UIElement to `CAM_ResourceTabs.Tag` without changing native resource chrome;
+3. the resource list owns `CAM_ResourceTabsScroller` with horizontal pixel scrolling and one horizontal `StackPanel` row;
+4. `ScrollToElement` binds to the templated list's `Tag`;
+5. `TargetPositionChanged` commits `TargetPosition` to `HorizontalScrollOffset`, matching the current captured controller radial seam;
+6. `AutoScrollBehavior`, SelectedIndex/SelectedItem scroll targets, wrapping, and `ForceSelect=True` remain absent;
+7. special provider tabs are outside the resource scroll owner and stay visible;
+8. action-grid focus/tooltip/A/nested contracts are byte-semantically unchanged except for provider-mode marker references.
+
+No standalone game run is requested for this correction. It belongs in the next combined milestone test with provider parity and focus/tooltip verification.

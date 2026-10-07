@@ -94,7 +94,7 @@ Therefore:
 - no class tabs;
 - no manual lists of known abilities;
 - no fixed number of resources;
-- horizontal resource-tab scrolling;
+- horizontal resource-tab scrolling through the selected concrete resource UIElement and the captured `TargetPositionChanged -> HorizontalScrollOffset` commit seam; special provider tabs remain fixed outside the resource viewport;
 - resource order is stable/predictable;
 - action grid scrolls by focus;
 - duplicate execution variants across resource tabs are allowed.

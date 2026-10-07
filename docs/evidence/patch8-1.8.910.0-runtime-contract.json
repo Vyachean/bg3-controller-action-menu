@@ -55,7 +55,7 @@
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
       "executableList": "HotBarList",
-      "itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList (All fallback) via CAM_ResourceTabs.Tag",
+      "itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList (All fallback) via CAM_ProviderModeMarker.Tag",
       "directionalNavigation": "Contained",
       "nextEvent": "UIDown",
       "prevEvent": "UIUp",
@@ -133,7 +133,7 @@
         "emptyCellPresentation": "DynamicResource EmptyCellTemplate"
       },
       "sourceSwitch": {
-        "modeStorage": "CAM_ResourceTabs.Tag",
+        "modeStorage": "CAM_ProviderModeMarker.Tag",
         "modeToken": "CAM_PassivesModeToken",
         "ownership": "CAM presentation-only",
         "resourceSource": "SingleHotBar.SlotList",
@@ -162,7 +162,7 @@
         "allRestore": "CAM_NestedRestoringToken -> first non-empty KeyboardHotBars group -> first VMHotBarSlot"
       },
       "passivesReturn": {
-        "modeAuthority": "CAM_ResourceTabs.Tag serializes one shoulder-button transition",
+        "modeAuthority": "CAM_ProviderModeMarker.Tag serializes one shoulder-button transition",
         "rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_AllModeToken",
         "rightFromAll": "CAM_TabReturnFirstToken -> FilterActionResourceCommand(selected resource)",
         "leftFromAll": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken",
@@ -249,11 +249,23 @@
         "itemContainerMargin": "-4,0,-4,0",
         "cycleForceSelect": false,
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
-        "horizontalScrollState": false,
+        "horizontalScrollState": true,
         "wrappedRows": false,
-        "scrollOwner": null,
+        "scrollOwner": "CAM_ResourceTabsScroller",
         "actionViewportHeight": 850,
-        "selectionPresentation": "none inside native resource item"
+        "selectionPresentation": "none inside native resource item",
+        "resourceViewportMaxWidth": 720,
+        "scrollTargetStorage": "CAM_ResourceTabs.Tag",
+        "scrollTargetType": "selected concrete resource ListBoxItem UIElement",
+        "scrollTargetPublication": "CAM_ResourceTabItemStyle selected container -> CAM_ResourceTabs.Tag",
+        "scrollTransport": "LSScrollViewer.ScrollToElement",
+        "scrollBinding": "{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}",
+        "targetPositionCommit": "TargetPositionChanged -> HorizontalScrollOffset = TargetPosition",
+        "autoScrollBehaviorAllowed": false,
+        "selectedIndexScrollTargetAllowed": false,
+        "selectedItemScrollTargetAllowed": false,
+        "specialProviderTabsOutsideScrollOwner": true,
+        "note": "0.0.85 revives element-based resource scrolling only with the missing Patch 8 native TargetPositionChanged commit seam captured from PreloadedActionRadials_c.xaml; older CAM attempts stopped at ScrollToElement and are not equivalent."
       },
       "resourceRenderer": {
         "size": 72,
@@ -320,7 +332,7 @@
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
-        "modeStorage": "CAM_ResourceTabs.Tag",
+        "modeStorage": "CAM_ProviderModeMarker.Tag",
         "modeToken": "CAM_PassivesModeToken",
         "icon": "PassiveFeature_Generic.png",
         "sameExecutableList": "HotBarList",
@@ -411,7 +423,7 @@
       "detailsSurface": "native-tooltip-only",
       "passivesTabAllowed": true,
       "passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
-      "passivesModeStorage": "CAM_ResourceTabs.Tag",
+      "passivesModeStorage": "CAM_ProviderModeMarker.Tag",
       "passivesModeToken": "CAM_PassivesModeToken",
       "passivesModeOwnership": "CAM presentation-only",
       "cantripsTabAllowed": true,
@@ -431,7 +443,10 @@
       "allTabAllowed": true,
       "allSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList",
       "allModeToken": "CAM_AllModeToken",
-      "allRole": "last-resort native keyboard-HotBar coverage fallback; no string/icon/source heuristics"
+      "allRole": "last-resort native keyboard-HotBar coverage fallback; no string/icon/source heuristics",
+      "providerModeStorage": "CAM_ProviderModeMarker.Tag",
+      "resourceScrollTargetStorage": "CAM_ResourceTabs.Tag",
+      "resourceScrollTargetRole": "concrete selected resource ListBoxItem UIElement only"
     },
     "nativeEvidence": {
       "deckCommands": {
@@ -494,6 +509,15 @@
         "childType": "VMHotBarSlot",
         "nativeTemplate": "HotBarTemplate",
         "shippingStatus": "wired-runtime-unverified"
+      },
+      "resourceTabHorizontalScroll": {
+        "source": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+        "owner": "LSScrollViewer",
+        "target": "ScrollToElement <- concrete UIElement",
+        "computedPosition": "TargetPosition",
+        "commitEvent": "TargetPositionChanged",
+        "commitAction": "HorizontalScrollOffset = TargetPosition",
+        "adaptation": "CAM uses selected concrete resource ListBoxItem as ScrollToElement target; provider tabs remain fixed outside the resource viewport."
       }
     },
     "cancelBehavior": {

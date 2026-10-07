@@ -57,6 +57,8 @@ The resource provider is **not treated as proof of a complete HotBar catalog**. 
 
 The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only. It now derives `hotbar-coverage-contract.json` by searching the whole captured XAML set. Each investigated command records presence, match count, source file and available parameters; missing research seams are evidence rather than capture failures.
 
+Dynamic resource overflow is handled by a bounded resource-only `LSScrollViewer`: the selected concrete resource container is the scroll target, and the captured Patch 8 `TargetPositionChanged -> HorizontalScrollOffset = TargetPosition` commit keeps it visible. Special provider tabs remain fixed outside that viewport.
+
 Resource-first semantics that depend on BG3 runtime materialization remain proof-gated. After green package CI, one combined milestone run should verify the remaining semantic parity questions rather than testing each source hypothesis separately.
 
 ## Universal development shortcut

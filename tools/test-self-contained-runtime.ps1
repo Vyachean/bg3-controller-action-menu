@@ -96,9 +96,11 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrip
     $evidence.runtimeContract.organization.allModeToken -ne "CAM_AllModeToken" -or
     $evidence.runtimeContract.organization.passivesTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
-    $evidence.runtimeContract.organization.passivesModeStorage -ne "CAM_ResourceTabs.Tag" -or
+    $evidence.runtimeContract.organization.passivesModeStorage -ne "CAM_ProviderModeMarker.Tag" -or
     $evidence.runtimeContract.organization.passivesModeToken -ne "CAM_PassivesModeToken" -or
     $evidence.runtimeContract.organization.passivesModeOwnership -ne "CAM presentation-only" -or
+    $evidence.runtimeContract.organization.providerModeStorage -ne "CAM_ProviderModeMarker.Tag" -or
+    $evidence.runtimeContract.organization.resourceScrollTargetStorage -ne "CAM_ResourceTabs.Tag" -or
     $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
     $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
     throw "Resource-first native Cantrips/Items/Metamagic/Passives/All organization evidence is incomplete or regressed."
@@ -187,25 +189,39 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "single-row-exact-hotbar-action-resources" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.layoutPanel -ne "StackPanel" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.orientation -ne "Horizontal" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.oneLogicalSequence -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.includesPassives -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackground -ne "bar_resources.png" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundHeight -ne 64 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundSlices -ne "104,0" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundMinWidth -ne 208 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundWidthRule -ne "visible tab row ActualWidth + 208" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceVisualSize -ne 72 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceButtonMargin -ne "4,-10,4,10" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.itemContainerMargin -ne "-4,0,-4,0" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.horizontalScrollState -ne $false -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.wrappedRows -ne $false -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.actionViewportHeight -ne 850 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false) {
-    throw "Top tabs must be one exact HotBar Action Resources strip with Passives and no scroll/wrap state."
+$resourceViewport = $evidence.runtimeContract.controllerPresentation.resourceViewport
+if ($resourceViewport.mode -ne "single-row-exact-hotbar-action-resources" -or
+    $resourceViewport.layoutPanel -ne "StackPanel" -or
+    $resourceViewport.orientation -ne "Horizontal" -or
+    $resourceViewport.oneLogicalSequence -ne $true -or
+    $resourceViewport.includesPassives -ne $true -or
+    $resourceViewport.sharedBackground -ne "bar_resources.png" -or
+    $resourceViewport.sharedBackgroundHeight -ne 64 -or
+    $resourceViewport.sharedBackgroundSlices -ne "104,0" -or
+    $resourceViewport.sharedBackgroundMinWidth -ne 208 -or
+    $resourceViewport.sharedBackgroundWidthRule -ne "visible tab row ActualWidth + 208" -or
+    $resourceViewport.resourceVisualSize -ne 72 -or
+    $resourceViewport.resourceButtonMargin -ne "4,-10,4,10" -or
+    $resourceViewport.itemContainerMargin -ne "-4,0,-4,0" -or
+    $resourceViewport.horizontalScrollState -ne $true -or
+    $resourceViewport.wrappedRows -ne $false -or
+    $resourceViewport.scrollOwner -ne "CAM_ResourceTabsScroller" -or
+    $resourceViewport.resourceViewportMaxWidth -ne 720 -or
+    $resourceViewport.scrollTargetStorage -ne "CAM_ResourceTabs.Tag" -or
+    $resourceViewport.scrollTargetType -ne "selected concrete resource ListBoxItem UIElement" -or
+    $resourceViewport.scrollTransport -ne "LSScrollViewer.ScrollToElement" -or
+    $resourceViewport.targetPositionCommit -ne "TargetPositionChanged -> HorizontalScrollOffset = TargetPosition" -or
+    $resourceViewport.autoScrollBehaviorAllowed -ne $false -or
+    $resourceViewport.selectedIndexScrollTargetAllowed -ne $false -or
+    $resourceViewport.selectedItemScrollTargetAllowed -ne $false -or
+    $resourceViewport.specialProviderTabsOutsideScrollOwner -ne $true -or
+    $resourceViewport.actionViewportHeight -ne 850 -or
+    $resourceViewport.cycleForceSelect -ne $false) {
+    throw "Top tabs must keep one row while dynamic resources use the captured target-position horizontal scroll seam."
+}
+if ($evidence.runtimeContract.nativeEvidence.resourceTabHorizontalScroll.commitEvent -ne "TargetPositionChanged" -or
+    $evidence.runtimeContract.nativeEvidence.resourceTabHorizontalScroll.commitAction -ne "HorizontalScrollOffset = TargetPosition") {
+    throw "Resource-tab scroll evidence must include the native TargetPosition commit missing from older rejected CAM attempts."
 }
 if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "Item" -or
     $evidence.runtimeContract.controllerPresentation.itemQuantity.slotContentType -ne "VMItem" -or
@@ -222,7 +238,7 @@ if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "
     throw "Item quantity must be delegated to native VMItem templates."
 }
 $sourceSwitch = $evidence.runtimeContract.assignmentNavigation.sourceSwitch
-if ($sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
+if ($sourceSwitch.modeStorage -ne "CAM_ProviderModeMarker.Tag" -or
     @($sourceSwitch.modeTokens).Count -ne 5 -or
     @($sourceSwitch.modeTokens) -notcontains "CAM_CantripsModeToken" -or
     @($sourceSwitch.modeTokens) -notcontains "CAM_ItemsModeToken" -or
@@ -250,7 +266,7 @@ if ($sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
 }
 
 $passiveReturn = $evidence.runtimeContract.assignmentNavigation.passivesReturn
-if ($passiveReturn.modeAuthority -ne "CAM_ResourceTabs.Tag serializes one shoulder-button transition" -or
+if ($passiveReturn.modeAuthority -ne "CAM_ProviderModeMarker.Tag serializes one shoulder-button transition" -or
     $passiveReturn.rightFromPassives -ne "CAM_TabEnterSpecialToken -> CAM_AllModeToken" -or
     $passiveReturn.rightFromAll -ne "CAM_TabReturnFirstToken -> FilterActionResourceCommand(selected resource)" -or
     $passiveReturn.leftFromAll -ne "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken" -or
@@ -351,6 +367,12 @@ $required = @(
 
     'x:Key="CAM_CantripFilterParameter"',
     'x:Name="CAM_ProviderRestoreCommand"',
+    'x:Name="CAM_ProviderModeMarker"',
+    'x:Name="CAM_ResourceTabsScroller"',
+    'ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"',
+    'EventName="TargetPositionChanged"',
+    'PropertyName="HorizontalScrollOffset"',
+    'Value="{Binding TargetPosition, ElementName=CAM_ResourceTabsScroller}"',
     'h7d02199dg44ecg4a1egbcacg9cc1cec197b3',
     'x:Name="CAM_PassivesTab"',
     'x:Key="CAM_PassivesModeToken"',
@@ -471,11 +493,11 @@ $mainList = [regex]::Match(
 )
 if (-not $mainList.Success -or
     -not $mainList.Value.Contains('<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentShownDeck.SlotList}"') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"') -or
     -not $mainList.Value.Contains('Value="{StaticResource CAM_AllGroupContainerStyle}"') -or
@@ -621,16 +643,21 @@ $resourceTabs = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabs.Success -or
-    -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
+    -not $resourceTabs.Value.Contains('MaxWidth="720"') -or
     -not $resourceTabs.Value.Contains('HorizontalContentAlignment="Center"') -or
-    $resourceTabs.Value.Contains('<ls:LSScrollViewer') -or
-    $resourceTabs.Value.Contains('<ScrollViewer') -or
+    -not $resourceTabs.Value.Contains('<ls:LSScrollViewer x:Name="CAM_ResourceTabsScroller"') -or
+    -not $resourceTabs.Value.Contains('HorizontalScrollBarVisibility="Hidden"') -or
+    -not $resourceTabs.Value.Contains('VerticalScrollBarVisibility="Disabled"') -or
+    -not $resourceTabs.Value.Contains('CanContentScroll="False"') -or
+    -not $resourceTabs.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"') -or
+    -not $resourceTabs.Value.Contains('EventName="TargetPositionChanged"') -or
+    -not $resourceTabs.Value.Contains('PropertyName="HorizontalScrollOffset"') -or
+    -not $resourceTabs.Value.Contains('Value="{Binding TargetPosition, ElementName=CAM_ResourceTabsScroller}"') -or
     $resourceTabs.Value.Contains('AutoScrollBehavior') -or
     $resourceTabs.Value.Contains('BringSelectionIntoView=') -or
     $resourceTabs.Value.Contains('ScrollIntoView=') -or
-    $resourceTabs.Value.Contains('ScrollToElement=') -or
     $resourceTabs.Value.Contains('ScrollTo=')) {
-    throw "Compact resource icons must have no horizontal scroll state."
+    throw "Dynamic resource tabs must use the captured LSScrollViewer target-position commit seam and no selection/index autoscroll path."
 }
 
 $resourceTabsPanel = [regex]::Match(
@@ -692,8 +719,8 @@ if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionC
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabReturnLastToken') -or
-    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
-    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"') -or
     -not $resourceTabs.Value.Contains('SetCurrentShownDeckCommand') -or
     -not $resourceTabs.Value.Contains('CommandParameter="ItemHotBar"') -or
     -not $resourceTabs.Value.Contains('FilterCantripsCommand') -or
@@ -729,10 +756,13 @@ $resourceTabStyle = [regex]::Match(
 if (-not $resourceTabStyle.Success -or
     -not $resourceTabStyle.Value.Contains('Property="Margin" Value="-4,0,-4,0"') -or
     -not $resourceTabStyle.Value.Contains('<ContentPresenter HorizontalAlignment="Center"') -or
+    -not $resourceTabStyle.Value.Contains('Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
+    -not $resourceTabStyle.Value.Contains('TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}"') -or
+    -not $resourceTabStyle.Value.Contains('PropertyName="Tag"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
     $resourceTabStyle.Value.Contains('CAM_BoxResource') -or
-    $resourceTabStyle.Value.Contains('IsSelected') -or
     $resourceTabStyle.Value.Contains('ResourcePoints')) {
-    throw "Resource ListBoxItem must be transport-only and must not own native resource visuals."
+    throw "Resource ListBoxItem may use IsSelected only as transport to publish its concrete UIElement scroll target; native resource visuals stay item-template-owned."
 }
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
@@ -787,6 +817,14 @@ if (-not $resourceTabsItemTemplate.Success -or
     -not $resourceTabsItemTemplate.Value.Contains('ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"') -or
     -not $resourceTabsItemTemplate.Value.Contains('ItemTemplate="{StaticResource CAM_ResourceTabTemplate}"')) {
     throw "CAM_ResourceTabs must separate controller container behavior from native resource item presentation."
+}
+
+if ($text.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}"') -or
+    [regex]::IsMatch($text, 'TargetName="CAM_ResourceTabs"\s+PropertyName="Tag"')) {
+    throw "CAM_ResourceTabs.Tag is scroll-target state only; provider modes must live on CAM_ProviderModeMarker.Tag."
+}
+if (-not $text.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}"')) {
+    throw "Provider mode consumers must bind to CAM_ProviderModeMarker.Tag."
 }
 
 $cantripTab = [regex]::Match(
