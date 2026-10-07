@@ -250,3 +250,19 @@ The resource-first runtime must use exactly one controller action list:
 - B remains native `ClearSingleHotbarCommand` for nested state and `CustomEvent("CloseWidget")` at top level.
 
 This refactor is specifically intended to remove duplicate focus owners, invisible wrapper transitions, selector coordinate divergence, and scroll ownership ambiguity. Do not add a second executable action list back into the template.
+
+
+## Runtime proof — hold transport correction
+
+The weapon-set shortcut evidence now supersedes the 0.0.51–0.0.54 transport attempts:
+
+- direct `BoundEvent="UISelectionLeft"` on the visual hold button: one-shot / failed to re-arm;
+- raw `LSInputBinding BoundEvent="UISelectionLeft"` without a hold threshold: ordinary short press executes immediately;
+- `LSInputBinding BoundEvent="ToggleWeaponSet"`: also executes on ordinary short press in ActionRadials.
+
+The native BG3 input pattern proves that `LSInputBinding` itself supports `HoldTime`: the base Overlay binds one physical event to tap/hold actions with `TapTime="{StaticResource HoldTimeShortcuts}"` and `HoldTime="{StaticResource HoldTimeShortcuts}"`.
+
+Therefore CAM weapon switching must use exactly:
+`WeaponSetShortcutBinding: BoundEvent="UISelectionLeft", HoldTime="{StaticResource HoldTimeShortcuts}", Command=SwitchWeaponSetCommand, EatInput=False`.
+
+The visible `ToggleWeaponSet` remains the captured vanilla `ControllerHoldButtonStyle` hint with no BoundEvent. Grid-left remains `UILeft`. Do not use `ToggleWeaponSet` semantic binding in ActionRadials unless a future current-game capture proves different behavior.
