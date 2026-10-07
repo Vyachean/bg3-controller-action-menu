@@ -170,6 +170,113 @@
         </ls:LSGrid>
     </ItemsPanelTemplate>
 
+    <!-- Native radial assignment proves one outer LSListBox can own LocalFocus across
+         nested LSListBox groups. CAM uses the same shape for the KeyboardHotBars fallback,
+         but every executable child remains a VMHotBarSlot from VMHotBar.SlotList. -->
+    <ItemsPanelTemplate x:Key="CAM_AllGroupsPanel">
+        <ls:LSVirtualizingStackPanel/>
+    </ItemsPanelTemplate>
+
+    <Style x:Key="CAM_AllGroupContainerStyle"
+           TargetType="{x:Type ListBoxItem}"
+           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="ls:MoveFocus.Focusable" Value="False"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Top"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <ContentPresenter HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Top"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding SlotList.Count}" Value="0">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Setter Property="IsEnabled" Value="False"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="CAM_AllGroupTemplate"
+                  DataType="ls:VMHotBar">
+        <ls:LSListBox x:Name="CAM_AllGroupSlots"
+                      ItemsSource="{Binding SlotList}"
+                      Focusable="False"
+                      ActionNextEvent="UIDown"
+                      ActionPrevEvent="UIUp"
+                      KeyboardNavigation.DirectionalNavigation="Continue"
+                      HorizontalAlignment="Stretch"
+                      Template="{StaticResource ScrolllessListBox}"
+                      ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
+                      ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
+                      ItemsPanel="{StaticResource CAM_ActionGridPanel}">
+            <b:Interaction.Triggers>
+                <!-- The outer group selection is the native radial-style handoff boundary.
+                     Arm the existing concrete-slot focus token on the selected inner list,
+                     then select its first VMHotBarSlot. -->
+                <b:PropertyChangedTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"
+                                                       Operator="Equal"
+                                                       RightOperand="True"/>
+                                <b:ComparisonCondition LeftOperand="{Binding SlotList.Count}"
+                                                       Operator="GreaterThan"
+                                                       RightOperand="0"/>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                                       Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_AllModeToken}"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="CAM_AllGroupSlots"
+                                            PropertyName="Tag"
+                                            Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="CAM_AllGroupSlots"
+                                            PropertyName="SelectedIndex"
+                                            Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_AllGroupSlots"
+                                            PropertyName="SelectedIndex"
+                                            Value="0"/>
+                </b:PropertyChangedTrigger>
+                <b:EventTrigger EventName="Loaded">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"
+                                                       Operator="Equal"
+                                                       RightOperand="True"/>
+                                <b:ComparisonCondition LeftOperand="{Binding SlotList.Count}"
+                                                       Operator="GreaterThan"
+                                                       RightOperand="0"/>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                                       Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_AllModeToken}"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="CAM_AllGroupSlots"
+                                            PropertyName="Tag"
+                                            Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="CAM_AllGroupSlots"
+                                            PropertyName="SelectedIndex"
+                                            Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_AllGroupSlots"
+                                            PropertyName="SelectedIndex"
+                                            Value="0"/>
+                </b:EventTrigger>
+            </b:Interaction.Triggers>
+        </ls:LSListBox>
+    </DataTemplate>
+
     <!-- Controller selection is transport only. Native resource content is the current Patch 8
          ActionResourcesList item template; ListBoxItem.IsSelected must not alter its visuals. -->
     <Style x:Key="CAM_ResourceTabItemStyle"
