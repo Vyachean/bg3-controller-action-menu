@@ -283,7 +283,6 @@ CAM_ResourceTabs.SelectionChanged
   -> HotBarList.LocalFocus = null
   -> ClearResourceHighlightsCommand
   -> FilterActionResourceCommand(selected preview)
-  -> 70 ms settle
   -> SetMoveFocusAction(ActionRadials -> HotBarList, deferred)
         |
         v
