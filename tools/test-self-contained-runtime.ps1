@@ -72,13 +72,16 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.directGridDisableScrolling -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.scrollViewerCanContentScroll -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridUseWidgetNavigation -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridExtendedRows -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.emptyCellTemplate -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
 if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedItem" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne "Center" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.hiddenPreviewSelection -ne "collapsed+disabled; ordinary cycle only") {
@@ -88,7 +91,8 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedItem -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.filterCommandCount -ne 1 -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreVia -ne "SetMoveFocusAction(DeferFocusAction=True)" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreVia -ne "InvalidateFocus=True -> SetMoveFocusAction(DeferFocusAction=True)" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.writesSelectedIndex -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.extraTimer -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.fill -ne "CAM_CellFocusFill" -or
@@ -104,6 +108,7 @@ $required = @(
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
     'ScrollIntoView="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"',
     'BringSelectionIntoView="True"',
+    'ScrollTo="Center"',
     'x:Name="CAM_ActionViewport"',
     'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
@@ -145,6 +150,9 @@ $required = @(
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
     'ActionLeftEvent="UILeft"',
+    'AlwaysSelectFirst="True"',
+    'ExtendedRows="False"',
+    'InvalidateFocus="True"',
     'PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
     'MillisecondsPerTick="70" TotalTicks="1"',
     'CreateFocusedTooltipDataCommand',
@@ -334,11 +342,13 @@ if (-not $actionGridPanel.Success -or
     $actionGridPanel.Value.Contains('Columns="5"') -or
     $actionGridPanel.Value.Contains('Width="632"') -or
     $actionGridPanel.Value.Contains('UseWidgetNavigation="True"') -or
-    $actionGridPanel.Value.Contains('AlwaysSelectFirst="True"') -or
     $actionGridPanel.Value.Contains('ls:MoveFocus.InternalFocusable="True"') -or
+    $actionGridPanel.Value.Contains('EmptyCellTemplate') -or
+    -not $actionGridPanel.Value.Contains('AlwaysSelectFirst="True"') -or
+    -not $actionGridPanel.Value.Contains('ExtendedRows="False"') -or
     -not $actionGridPanel.Value.Contains('Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"') -or
     -not $actionGridPanel.Value.Contains('AncestorType={x:Type ScrollContentPresenter}')) {
-    throw "CAM_ActionGridPanel must keep adaptive columns without the rejected SpellBook widget-focus transport."
+    throw "CAM_ActionGridPanel must reset fresh entry to the first real item and forbid generated empty navigation while retaining ActionRadials focus ownership."
 }
 
 $slotContainer = [regex]::Match(
@@ -373,8 +383,9 @@ $resourceTabs = [regex]::Match(
 if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
     -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"') -or
-    -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"')) {
-    throw "Resource tabs must stay in a bounded SelectedItem-following viewport."
+    -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"') -or
+    -not $resourceTabs.Value.Contains('ScrollTo="Center"')) {
+    throw "Resource tabs must stay in a bounded SelectedItem-following viewport and center the selected edge tab."
 }
 
 if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
@@ -392,9 +403,11 @@ if (-not $resourceSelectionTrigger.Success -or
     -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"') -or
     $resourceSelectionTrigger.Value.Contains('PropertyName="SelectedIndex"') -or
     [regex]::Matches($resourceSelectionTrigger.Value, 'FilterActionResourceCommand').Count -ne 1 -or
+    [regex]::Matches($resourceSelectionTrigger.Value, 'InvalidateFocus="True"').Count -ne 1 -or
     -not $resourceSelectionTrigger.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"') -or
-    -not $resourceSelectionTrigger.Value.Contains('DeferFocusAction="True"')) {
-    throw "Resource switching must clear native LocalFocus, filter exactly once, then defer focus back to HotBarList without SelectedIndex synthesis."
+    -not $resourceSelectionTrigger.Value.Contains('DeferFocusAction="True"') -or
+    $resourceSelectionTrigger.Value.IndexOf('InvalidateFocus="True"') -gt $resourceSelectionTrigger.Value.IndexOf('FocusElement="{Binding ElementName=HotBarList}"')) {
+    throw "Resource switching must clear native LocalFocus, filter once, invalidate cached focus geometry, then defer focus back to HotBarList."
 }
 if ([regex]::IsMatch($resourceTabs.Value, '<b:TimerTrigger EventName="SelectionChanged"', [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
     throw "Resource switching must not add a second SelectionChanged timer; SetMoveFocusAction already owns deferred focus."
