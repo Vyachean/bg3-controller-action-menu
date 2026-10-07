@@ -589,14 +589,18 @@ PlayerCharacterProperties.PassivesHotBar.SlotList
 
 #### Item quantity
 
-Patch 8 inventory presentation proves `VMGameObject.Count` is the stack quantity. A `VMHotBarSlot` with `SlotType=Item` exposes that object as `GameObject`. CAM overlays the native count style at the lower-right of the 104x104 icon surface:
+Patch 8 `HotBarSlotStyle` proves that a `VMHotBarSlot` with `SlotType=Item` presents `slot.Content` as a `VMItem` through native `Template.Item`. The template itself owns quantity and item chrome:
 
 ```text
-GameObject.Count
+VMHotBarSlot.Content : VMItem
+  -> Template.Item
+  -> VMItem.Count
+  -> CountToVisibilityConverter
   -> AbbreviateNumberConverter
   -> ItemAmountTextStyle
-  -> hidden when Count <= 1
 ```
+
+CAM does not duplicate that overlay at the slot level.
 
 #### Entry focus / tooltip
 
