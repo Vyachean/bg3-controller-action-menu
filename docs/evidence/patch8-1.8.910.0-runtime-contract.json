@@ -243,7 +243,13 @@
         "filterChrome": null,
         "resourceBarChromeAllowed": true,
         "resourceIdentity": "LSActionPointResources(ActionResourcesTemplateSelector)",
-        "rejectedTextFilterChrome": "btn_pil_*"
+        "rejectedTextFilterChrome": "btn_pil_*",
+        "camControllerFocusPolicy": {
+          "rendererBinding": "HighlightedActionPoints=Cost retained from captured HotBar",
+          "highlightTransport": "disabled for persistent HotBarList controller focus",
+          "restingState": "ClearResourceHighlightsCommand after immediate/delayed/programmatic focus presentation",
+          "reason": "HotBar activates cost preview only on MouseEnter and clears it on MouseLeave; persistent controller focus must not emulate endless hover"
+        }
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -285,7 +291,8 @@
         "HotBarList.SelectionChanged delayed LocalFocus wake"
       ],
       "stateAuthority": "HotBarList.LocalFocus.DataContext",
-      "entryStateSource": "HotBarList.LocalFocus.DataContext after concrete focus handoff"
+      "entryStateSource": "HotBarList.LocalFocus.DataContext after concrete focus handoff",
+      "resourcePreviewPolicy": "CreateFocusedTooltipDataCommand remains LocalFocus.DataContext-driven; transient resource hover preview is cleared for stable tab quantity"
     },
     "organization": {
       "mode": "resource-first-plus-passives",

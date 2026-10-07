@@ -1128,3 +1128,19 @@ One runtime proof is then sufficient:
 - confirm no stray always-on numbers;
 - confirm an actually large scalar resource uses the native numeric fallback if present;
 - confirm LB/RB still changes one logical tab and the selected grid starts at the first action with the correct tooltip.
+
+
+### 2026-10-07 — 0.0.75 resource-content result / 0.0.76 proof
+
+0.0.75 still renders resource-tab contents as visually broken/ambiguous compared with the resting keyboard/mouse HotBar.
+
+The exact capture shows why: HotBar's `Cost` highlight is transient and bracketed by mouse enter/leave. CAM's controller focus is persistent, so retaining `HighlightResourcesCommand` makes that transient preview permanent.
+
+0.0.76 automatic proof is split deliberately:
+- the existing self-contained runtime test continues to require the exact captured renderer and native `Cost` binding;
+- `test-resource-tab-resting-preview.ps1` requires all three CAM action-focus `HighlightResourcesCommand` seams to be disabled;
+- the same immediate/delayed/programmatic focus boundaries must invoke `ClearResourceHighlightsCommand`;
+- tooltip/Tag identity must remain `LocalFocus.DataContext`;
+- conditional native `ResourcesNumeralDisplay` stays intact.
+
+The next in-game check is limited to whether the tab contents now communicate current resource quantity like resting HotBar.

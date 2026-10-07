@@ -690,3 +690,17 @@ Controller adaptation allowed for CAM:
 Do not use `btn_pil_*` for CAM resource tabs again. Do not omit the shared `bar_resources.png` strip. Do not restore an unconditional resource-value number.
 
 Native item quantity, LocalFocus authority, tooltip behavior, Passives transition serialization, nested return, and action dispatch remain unchanged.
+
+
+## Runtime correction — 0.0.75 -> 0.0.76 resting resource preview
+
+0.0.75 proves that copying the exact Patch 8 `ActionResourcesContainer` visual tree is not sufficient when CAM keeps the native hover-preview transport active under persistent controller focus.
+
+Patch 8 HotBar behavior:
+- action slot `MouseEnter -> HighlightResourcesCommand(slot)`;
+- action slot `MouseLeave -> ClearResourceHighlightsCommand(slot)`;
+- the resource renderer itself retains `HighlightedActionPoints=VMActionResourceCostPreview.Cost`.
+
+CAM must keep that renderer/binding exactly, but persistent grid focus must not emulate an endless mouse hover. In CAM action-focus triggers, preserve the proven `HighlightResourcesCommand` seam only as a disabled action and immediately clear preview state with `ClearResourceHighlightsCommand`. Tooltip data, `ActionRadials.Tag`, and A dispatch remain sourced from `HotBarList.LocalFocus.DataContext`.
+
+Do not replace the native renderer, alter resource quantities, or change filtering/Passives/nested/A/B semantics for this correction.

@@ -12,6 +12,7 @@ on:
       - "tools/validate.py"
       - "tools/assert-self-contained-release.ps1"
       - "tools/test-self-contained-runtime.ps1"
+      - "tools/test-resource-tab-resting-preview.ps1"
       - "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
       - "tools/install-xbox-dev.ps1"
       - "tools/dev-entry.ps1"
@@ -103,6 +104,11 @@ jobs:
         if: steps.existing.outputs.exists != 'true'
         shell: pwsh
         run: ./tools/test-self-contained-runtime.ps1
+
+      - name: Test resting resource-tab preview
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: ./tools/test-resource-tab-resting-preview.ps1
 
       - name: Require self-contained runtime
         if: steps.existing.outputs.exists != 'true'
