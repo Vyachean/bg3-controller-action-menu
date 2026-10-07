@@ -247,7 +247,7 @@ $weaponBinding = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $weaponBinding.Success -or
-    -not $weaponBinding.Value.Contains('BoundEvent="UISelectionLeft"') -or
+    -not $weaponBinding.Value.Contains('BoundEvent="ToggleWeaponSet"') -or
     -not $weaponBinding.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"') -or
     -not $weaponBinding.Value.Contains('EatInput="False"')) {
     throw "WeaponSetShortcutBinding must own native ToggleWeaponSet transport."
