@@ -335,3 +335,45 @@ Implementation gate:
 - do not promote old public HotBar XAML to Patch 8 truth;
 - use the freshly captured installed `Mods/MainUI/GUI/Pages/HotBar.xaml` as the visual authority;
 - keep the proven `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList` semantics unchanged.
+
+
+## 12. Returned 1.8.910.0 HotBar capture gives the exact resource-filter template
+
+The 2026-10-07 operator capture closes the remaining visual ambiguity. The exact installed file is:
+
+`Mods/MainUI/GUI/Pages/HotBar.xaml`
+
+SHA-256:
+
+`9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`
+
+Its `ActionResourcesContainer` is structurally separate from the textual `FilterButton / ActiveFilterButton` templates near the top of the same file.
+
+The captured resource bar is:
+
+```text
+ActionResourcesContainer
+  HotbarBodyResourcesBg
+    bar_resources.png
+    Height 64
+    MinWidth 208
+    Slices 104,0
+  ActionResources (horizontal)
+    ActionResourcesList
+      ItemsSource = CurrentPlayer.UIData.ActionResourcesCostPreview
+      VMActionResourceCostPreview
+        LSButton Padding 0 Margin 4,-10,4,10
+        Root Width 72
+          box_resource_* chrome
+          LSActionPointResources
+            SmallActionPointSize 24
+            ActionPointGroupSize 56
+            ActionResourcesTemplateSelector
+          RomanNumeralLevelImage for SpellSlot/WarlockSpellSlot
+```
+
+The list's `ContentPresenter` uses `Margin=-4,0,-4,0`. Spell slots replace the normal box family with `box_resourceNum_*` and shift those backgrounds by `0,-8,0,0`. Zero resource value switches to the missing-resource asset. Mouse hover switches to the highlight asset. Clicking invokes `FilterActionResourceCommand` with the current resource preview.
+
+The same native template also contains a conditional `ResourcesNumeralDisplay` for resource counts above `ResourcePoints.MaxGroupActionPoints`. CAM intentionally does not reuse that text overlay because the 0.0.71 runtime already established that numeric overlays in the controller tab row are undesirable. All other relevant visual seams should follow the captured template.
+
+This current installed XAML is now the visual authority for CAM resource tabs. No external mod reconstruction is needed for this seam.
