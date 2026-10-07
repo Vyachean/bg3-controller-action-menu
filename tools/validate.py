@@ -184,7 +184,7 @@ def validate_semantics() -> list[str]:
                 '"primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview"',
                 '"detailsSurface": "native-tooltip-only"',
                 '"executableList": "HotBarList"',
-                '"itemsSource": "SingleHotBar.SlotList | PassivesHotBar.SlotList via IsShowingPassivesDeck"',
+                '"itemsSource": "SingleHotBar.SlotList | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag"',
                 '"nestedStateUsesSameList": true',
                 '"focusPresentation": "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext"',
                 '"visibleFocusSource": "HotBarList.LocalFocus via SelectorTemplate"',
