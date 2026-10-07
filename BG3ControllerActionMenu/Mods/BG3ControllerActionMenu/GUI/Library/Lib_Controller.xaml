@@ -10,6 +10,11 @@
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
+    <System:String x:Key="CAM_EntryFocusCommittedToken">CAM_EntryFocusCommitted</System:String>
+    <System:String x:Key="CAM_TabCycleRightToken">CAM_TabCycleRight</System:String>
+    <System:String x:Key="CAM_TabCycleLeftToken">CAM_TabCycleLeft</System:String>
+    <System:String x:Key="CAM_TabEnterPassivesToken">CAM_TabEnterPassives</System:String>
+    <System:String x:Key="CAM_TabReturnFirstToken">CAM_TabReturnFirst</System:String>
 
     <Style x:Key="CAM_ActionGridSlotContainer"
            TargetType="{x:Type ListBoxItem}"
@@ -49,7 +54,7 @@
                                                        DeferFocusAction="True"/>
                                 <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}"
                                                         PropertyName="Tag"
-                                                        Value="{x:Null}"/>
+                                                        Value="{StaticResource CAM_EntryFocusCommittedToken}"/>
                             </b:DataTrigger>
                         </b:Interaction.Triggers>
                     </Grid>
@@ -81,6 +86,16 @@
                    VerticalAlignment="Top"
                    Margin="0,8,8,0"
                    Visibility="Collapsed"/>
+            <Viewbox x:Name="ItemCountHolder"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Bottom"
+                     Margin="0,0,4,4"
+                     StretchDirection="DownOnly"
+                     Visibility="{Binding GameObject.Count, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=1}">
+                <TextBlock Text="{Binding GameObject.Count, Converter={StaticResource AbbreviateNumberConverter}}"
+                           Style="{StaticResource ItemAmountTextStyle}"
+                           Margin="6,0"/>
+            </Viewbox>
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding CanUse}" Value="False">
@@ -119,77 +134,80 @@
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="4,0"/>
-        <Setter Property="MinWidth" Value="108"/>
-        <Setter Property="Height" Value="58"/>
+        <Setter Property="Margin" Value="2,0"/>
+        <Setter Property="Width" Value="76"/>
+        <Setter Property="Height" Value="72"/>
         <Setter Property="Focusable" Value="False"/>
-        <Setter Property="Foreground" Value="{StaticResource LS_baseTxtColor}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Border x:Name="TabRoot"
-                            MinWidth="108"
-                            Height="58"
-                            Padding="16,6"
-                            Background="#50000000"
-                            BorderBrush="#504D4332"
-                            BorderThickness="0,0,0,2">
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <TextBlock x:Name="ResourceName"
-                                       Text="{Binding ActionResource.Name}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="{StaticResource SmallFontSize}"
-                                       FontWeight="DemiBold"
-                                       TextAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock x:Name="ResourceFallback"
-                                       Text="{Binding ActionResource.TypeId}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="{StaticResource SmallFontSize}"
-                                       FontWeight="DemiBold"
-                                       TextAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Visibility="Collapsed"/>
-                            <Image x:Name="SpellLevel"
-                                   DataContext="{Binding ActionResource}"
-                                   Style="{StaticResource RomanNumeralLevelImage}"
-                                   Stretch="None"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Visibility="Collapsed"/>
-                        </StackPanel>
-                    </Border>
+                    <Grid x:Name="Root" Width="72" Height="72">
+                        <Image x:Name="BgBg" Source="{StaticResource BoxResourceBg}"/>
+                        <Image x:Name="Bg"
+                               Source="{StaticResource BoxResource}"
+                               Margin="{StaticResource ResourceBackgroundMargin}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                        <Image x:Name="BgHL"
+                               Source="{StaticResource BoxResourceH}"
+                               Margin="{StaticResource ResourceBackgroundMargin}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Visibility="Collapsed"/>
+                        <Image x:Name="BgDisabled"
+                               Source="{StaticResource BoxResourceDisabled}"
+                               Margin="{StaticResource ResourceBackgroundMargin}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Visibility="Collapsed"/>
+                        <Border Background="Transparent"
+                                Width="72"
+                                Height="72"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                            <ls:LSActionPointResources x:Name="ResourcePoints"
+                                                       Background="Transparent"
+                                                       HorizontalAlignment="Center"
+                                                       MaxActionPoints="{Binding MaxValue}"
+                                                       AvailableActionPoints="{Binding Value}"
+                                                       HighlightedActionPoints="{Binding Cost}"
+                                                       DataContext="{Binding ActionResource}"
+                                                       MaxActionPointGroups="0"
+                                                       SmallActionPointSize="24"
+                                                       ActionPointGroupSize="56"
+                                                       Style="{StaticResource ActionResourcesTemplateSelector}"/>
+                        </Border>
+                        <Image x:Name="SpellSlotLevels"
+                               Stretch="None"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Center"
+                               Margin="0,-10,0,0"
+                               IsHitTestVisible="False"
+                               Style="{StaticResource RomanNumeralLevelImage}"
+                               Visibility="Collapsed"
+                               DataContext="{Binding ActionResource}"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabRoot" Property="Background" Value="#7043321E"/>
-                            <Setter TargetName="TabRoot" Property="BorderBrush" Value="{StaticResource LS_specialTxtColor}"/>
-                            <Setter TargetName="TabRoot" Property="BorderThickness" Value="0,0,0,4"/>
-                            <Setter Property="Foreground" Value="{StaticResource LS_specialTxtColor}"/>
-                        </Trigger>
-                        <DataTrigger Binding="{Binding ActionResource.Name}" Value="{x:Null}">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding ActionResource.Name}" Value="">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Visible"/>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
+                                <Condition Binding="{Binding DataContext.IsShowingPassivesDeck, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" Value="False"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
+                        <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
+                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="SpellLevel" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="SpellLevel" Property="Margin" Value="0"/>
+                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="SpellLevel" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="SpellLevel" Property="Margin" Value="0"/>
+                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -211,14 +229,19 @@
     </Style>
 
     <ItemsPanelTemplate x:Key="CAM_ResourceTabsPanel">
-        <ls:AlignableWrapPanel HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Center"
-                               VerticalAlignment="Center"/>
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
     </ItemsPanelTemplate>
 
     <ControlTemplate x:Key="ActionRadialWidgetTemplate_P8">
         <Grid>
             <Control x:Name="CAM_NestedReturnMarker"
+                     Visibility="Collapsed"
+                     IsEnabled="False"
+                     Focusable="False"
+                     Tag="{x:Null}"/>
+            <Control x:Name="CAM_TabCycleMarker"
                      Visibility="Collapsed"
                      IsEnabled="False"
                      Focusable="False"
@@ -353,14 +376,18 @@
                                             Value="{x:Null}"/>
                 </b:PropertyChangedTrigger>
 
-                <!-- SetMoveFocusAction changes the widget FocusedElement even when LSListBox does not
-                     emit LocalFocusChanged. Use that as a wake-up signal only; the action identity
-                     remains HotBarList.LocalFocus.DataContext. -->
-                <b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">
+
+                <!-- A reset token selects and hands physical focus to the concrete first ListBoxItem.
+                     That item publishes CAM_EntryFocusCommitted only after invoking SetMoveFocusAction.
+                     Complete entry-only tooltip/A state from that exact SelectedItem. -->
+                <b:PropertyChangedTrigger Binding="{Binding Tag, ElementName=HotBarList}">
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=HotBarList}"
+                                                       Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_EntryFocusCommittedToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=HotBarList}"
                                                        Operator="NotEqual"
                                                        RightOperand="{x:Null}"/>
                             </b:ConditionalExpression>
@@ -368,17 +395,17 @@
                     </b:Interaction.Behaviors>
                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                             PropertyName="Content"
-                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
-                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                            Value="{Binding SelectedItem.Content, ElementName=HotBarList}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                            CommandParameter="{Binding ., ElementName=HotBarList}"/>
                     <b:ChangePropertyAction TargetName="ActionRadials"
                                             PropertyName="Tag"
-                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                            Value="{Binding SelectedItem, ElementName=HotBarList}"/>
                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
                     <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{x:Null}"/>
                 </b:PropertyChangedTrigger>
             </b:Interaction.Triggers>
 
@@ -387,19 +414,19 @@
                       Width="{Binding ActualWidth, ElementName=ActionRadials}"
                       MaxWidth="1400"
                       MinWidth="800"
-                      MinHeight="922"
+                      Height="934"
                       Background="Transparent">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="84"/>
                         <RowDefinition Height="850"/>
                     </Grid.RowDefinitions>
 
                     <DockPanel x:Name="CAM_ResourceHeader"
                                Grid.Row="0"
                                HorizontalAlignment="Stretch"
-                               VerticalAlignment="Top"
+                               VerticalAlignment="Center"
                                MaxWidth="1320"
-                               Margin="0,0,0,12">
+                               Height="84">
                         <ls:LSButton x:Name="CAM_TabLeft"
                                      BoundEvent="UITabPrev"
                                      DockPanel.Dock="Left"
