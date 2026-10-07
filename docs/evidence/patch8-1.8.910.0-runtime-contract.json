@@ -62,7 +62,7 @@
         "UILeft",
         "UIRight"
       ],
-      "selector": null,
+      "selector": "CAM_LogicalFocusAnchor",
       "selectorTemplate": null,
       "selectorHasFixedGeometry": false,
       "scrollOwner": "HotBarList",
@@ -75,17 +75,19 @@
         "directGridDisableScrolling": false,
         "scrollViewerCanContentScroll": false,
         "verticalScrollOffsetMargin": 120,
-        "gridUseWidgetNavigation": true,
-        "gridAlwaysSelectFirst": true,
-        "gridInternalFocusable": true
+        "gridUseWidgetNavigation": false,
+        "gridAlwaysSelectFirst": false,
+        "gridInternalFocusable": false
       },
-      "focusPresentation": "item-local:ls:MoveFocus.IsFocused",
+      "focusPresentation": "item-local:ls:MoveFocus.IsFocused; logical-owner:LocalFocusSelector",
       "adaptiveColumns": {
         "source": "ScrollContentPresenter.ActualWidth",
         "divisor": 120,
         "converter": "DivideMultiConverter",
         "rounding": "Floor"
-      }
+      },
+      "selectorVisibleChrome": false,
+      "selectorOpacity": 0
     },
     "buttonHintsContainer": {
       "style": "ButtonHint.Container.CenterWrap",
@@ -115,13 +117,15 @@
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "tabItemType": "VMActionResourceCostPreview",
-      "genericTabLabel": "ActionResource.Name ?? ActionResource.TypeId",
+      "genericTabLabel": "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)",
       "spellSlotTabLabel": "SpellSlotNumberStyle",
       "resourceViewport": {
         "mode": "bounded-horizontal-scroll",
         "autoScrollBehavior": "AutoScrollBehavior",
         "scrollIntoView": "SelectedIndex",
-        "bringSelectionIntoView": true
+        "bringSelectionIntoView": true,
+        "maxTabWidth": 260,
+        "listMaxWidth": 1160
       }
     },
     "tooltipPresentation": {
@@ -171,28 +175,24 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Does item-local focus chrome always match the logically focused action after resource changes?",
-      "Does the adaptive LSGrid change column count from actual viewport width without clipping navigation?",
+      "Does four-direction grid navigation work again with LocalFocusSelector restored only as an invisible logical anchor?",
+      "Does A execute the same VMHotBarSlot exposed through HotBarList.LocalFocus.DataContext?",
       "Do lower rows scroll using pixel scrolling and VerticalScrollOffsetMargin?",
-      "Does the bounded resource strip keep selected tabs visible without widening the whole menu?",
-      "Do unnamed resources show a TypeId fallback while spell slots retain native level presentation?",
-      "Do FilterActionResourceCommand, A/B, nested state and weapon-set behavior remain unchanged?"
+      "Do wider resource tabs keep native names readable and selected tabs visible?",
+      "Do null/empty resource labels expose TypeId while spell slots retain level presentation?",
+      "Is the broken CAM-owned weapon-set shortcut absent?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
-        "visualInputHint": "UISelectionLeft",
-        "visualStyle": "ControllerHoldButtonStyle",
-        "visualOwnsBoundEvent": false,
-        "transportType": "LSInputBinding",
-        "transportEvent": "UISelectionLeft",
-        "transportHoldTimeResource": "HoldTimeShortcuts",
-        "transportCommand": "SwitchWeaponSetCommand",
-        "eatInput": false,
+        "status": "removed-pending-proven-actionradials-transport",
+        "camBinding": false,
+        "camHint": false,
         "shortGridLeftEvent": "UILeft",
         "rejectedTransports": [
           "visual BoundEvent=UISelectionLeft",
           "LSInputBinding UISelectionLeft without HoldTime",
-          "LSInputBinding ToggleWeaponSet"
+          "LSInputBinding ToggleWeaponSet",
+          "LSInputBinding UISelectionLeft with HoldTimeShortcuts"
         ]
       }
     }
