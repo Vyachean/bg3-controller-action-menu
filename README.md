@@ -72,7 +72,7 @@ same VBS
       install/update | capture | diagnostics | ...
 ```
 
-Today `dev-entry.ps1` performs normal install/update of the ready self-contained PAK. A later release can make the same VBS collect a read-only capture or diagnostics without requiring a new launcher.
+For development milestone `0.0.79-hotbar-coverage-capture`, `dev-entry.ps1` temporarily collects one read-only HotBar/radial evidence archive instead of installing the PAK. The same VBS remains the operator entry point.
 
 For maintainers, a CI artifact is **not** a release. A development task becomes operator-visible only after the Release workflow publishes the corresponding `dev-entry.ps1` and assets. See [Release process](docs/release-process.md).
 
