@@ -1128,3 +1128,31 @@ One runtime proof is then sufficient:
 - confirm no stray always-on numbers;
 - confirm an actually large scalar resource uses the native numeric fallback if present;
 - confirm LB/RB still changes one logical tab and the selected grid starts at the first action with the correct tooltip.
+
+
+### 2026-10-07 — 0.0.75 runtime result / resting-quantity correction
+
+Observed in 0.0.75:
+- outer resource-strip geometry/chrome is now based on the exact current Patch 8 HotBar capture;
+- resource-tab **content** is still visually broken/ambiguous compared with the keyboard/mouse HotBar;
+- the desired HotBar reading is the current amount of each resource.
+
+Root cause from the same captured `HotBar.xaml`:
+- HotBar only calls `HighlightResourcesCommand` on action-slot `MouseEnter`;
+- it calls `ClearResourceHighlightsCommand` on `MouseLeave`;
+- resource buttons bind `HighlightedActionPoints` to preview `Cost`.
+
+CAM has persistent controller focus, so treating focus as permanent mouse hover leaves cost-preview state active continuously. That mixes availability and focused-action cost inside the tab renderer.
+
+The next automatic proof must require:
+
+1. `CAM_ResourceTabItemStyle` keeps native `MaxValue/Value` quantity inputs;
+2. `HighlightedActionPoints="0"` in the top resource-tab renderer;
+3. `ResourcesNumeralDisplay` remains the native conditional fallback only for values above `ResourcePoints.MaxGroupActionPoints`;
+4. the HotBarList focus lifecycle keeps tooltip/Tag identity sourced from `LocalFocus.DataContext`;
+5. `CreateFocusedTooltipDataCommand` remains;
+6. persistent CAM focus does not invoke `HighlightResourcesCommand`;
+7. `ClearResourceHighlightsCommand` resets transient preview state on ordinary focus change and programmatic focus wake;
+8. item quantity, Passives serialization, nested return and A/B dispatch remain unchanged.
+
+The next in-game check should compare only whether each top tab now clearly communicates the same **resource amount** as the resting keyboard/mouse HotBar. Do not bundle unrelated interaction changes into this test.
