@@ -76,8 +76,10 @@
         "scrollViewerCanContentScroll": false,
         "verticalScrollOffsetMargin": 120,
         "gridUseWidgetNavigation": false,
-        "gridAlwaysSelectFirst": false,
-        "gridInternalFocusable": false
+        "gridAlwaysSelectFirst": true,
+        "gridInternalFocusable": false,
+        "gridExtendedRows": false,
+        "emptyCellTemplate": null
       },
       "focusPresentation": "item-local:IsSelected<-LocalFocus.DataContext; logical-owner:LocalFocusSelector",
       "adaptiveColumns": {
@@ -97,9 +99,10 @@
         "clearSelectedItem": true,
         "clearLocalFocus": true,
         "filterCommandCount": 1,
-        "restoreVia": "SetMoveFocusAction(DeferFocusAction=True)",
+        "restoreVia": "InvalidateFocus=True -> SetMoveFocusAction(DeferFocusAction=True)",
         "writesSelectedIndex": false,
-        "extraTimer": false
+        "extraTimer": false,
+        "invalidateFocus": true
       },
       "visibleFocusChrome": {
         "source": "HotBarList.SelectedItem<-LocalFocus.DataContext",
@@ -149,7 +152,8 @@
         "itemTextTrimming": false,
         "cycleForceSelect": false,
         "scrollOwner": "AutoScrollBehavior",
-        "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only"
+        "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
+        "scrollTo": "Center"
       }
     },
     "tooltipPresentation": {
@@ -199,11 +203,11 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Does resource switching reset HotBarList.LocalFocus so visible selection, D-pad origin, tooltip and A all start from the same first slot?",
-      "Can a one-item resource tab execute immediately with A without any prior directional input?",
-      "Are collapsed MaxValue=0 resource previews absent from shoulder navigation?",
-      "When cycling from the last visible resource tab to the first, does SelectedItem-based AutoScrollBehavior bring the first tab into view?",
-      "Do both the translucent focus fill and opaque focus frame follow LocalFocus-derived selection, including visually empty cells?"
+      "After a resource filter changes the executable list, does focus invalidation plus AlwaysSelectFirst enter the first real VMHotBarSlot rather than the previous tab coordinate?",
+      "Can a one-item resource tab execute immediately with A without directional input?",
+      "Does ExtendedRows=False prevent navigation into generated empty grid coordinates?",
+      "When cycling resource tabs in either direction, does SelectedItem + ScrollTo=Center keep the selected tab fully visible?",
+      "Do tooltip, highlight, frame/fill and A continue to identify the same LocalFocus.DataContext slot?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {

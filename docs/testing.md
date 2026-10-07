@@ -810,3 +810,25 @@ The next game run should verify only: one moving focus visual with no stale firs
 8. A/tooltip/highlight still consume only `LocalFocus.DataContext` and `ActionRadials.Tag` through the existing native lifecycle.
 
 The next game run should verify: no invisible tabs; last→first tab wrap shows the first tab; switching a resource immediately establishes a real first-slot focus and A works without any D-pad movement; one-item tabs execute immediately; and a visible border follows navigation even on visually empty cells.
+
+
+### 2026-10-07 — 0.0.62 runtime result / 0.0.63 proof boundary
+
+0.0.62 runtime result:
+
+- invisible resource tabs are removed;
+- the opaque frame and fill move together on real action cells;
+- after a resource switch there is still no active first-slot focus, and the next directional move starts from the previous resource tab's old grid coordinate;
+- generated empty grid coordinates are still navigable, but have neither action chrome nor useful interaction;
+- while cycling resources left, the selected leftmost tab can remain outside the visible strip.
+
+0.0.63 automatic proof must require:
+
+1. resource SelectionChanged still clears `SelectedItem` and `LocalFocus`, filters exactly once, then invokes `SetMoveFocusAction InvalidateFocus=True` before the deferred return to `HotBarList`;
+2. `CAM_ActionGridPanel` sets `AlwaysSelectFirst=True` while `UseWidgetNavigation=True` and `ls:MoveFocus.InternalFocusable=True` remain absent;
+3. `CAM_ActionGridPanel` sets `ExtendedRows=False`, and CAM does not introduce an `EmptyCellTemplate` or synthetic empty action source;
+4. the resource-strip `AutoScrollBehavior` follows `SelectedItem`, keeps `BringSelectionIntoView=True`, and adds `ScrollTo="Center"`;
+5. no `SelectedIndex` resource-switch synthesis or `ForceSelect=True` regression returns;
+6. A, tooltip and highlight still derive from the existing `LocalFocusChanged -> ActionRadials.Tag` lifecycle.
+
+The next game run should verify only the runtime-only seams: tab switch starts on the first real action immediately; one-item tabs execute immediately; directional navigation cannot enter generated empty grid positions; and the selected tab remains visible when cycling in either direction.

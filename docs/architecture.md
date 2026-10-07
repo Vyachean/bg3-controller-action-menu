@@ -299,3 +299,33 @@ The 0.0.61 `ForceSelect=True` shoulder workaround is removed because it forces s
 For tab-strip scrolling, `AutoScrollBehavior.ScrollIntoView` tracks `SelectedItem` instead of `SelectedIndex`. BG3's own AutoScrollBehavior accepts element objects (for example ActionRadials `FocusedElement`); using the selected preview object removes the special index-0 failure when wrapping back to the first resource.
 
 Visible focus chrome is still independent from the invisible logical selector anchor, but it is a two-layer item-local presentation: translucent fill plus opaque border frame. Both are driven by the same `ListBoxItem.IsSelected` that mirrors `LocalFocus.DataContext`.
+
+
+### 0.0.63 — invalidate the focus graph, not only LocalFocus
+
+0.0.62 proved that `LocalFocus=null` clears the list-owned focused slot but does not clear the widget's cached directional focus geometry. Re-entering the refiltered list can therefore resume the previous tab's grid coordinate.
+
+BG3's own ActionRadials invalidates focus when radial contents are created or removed. CAM now uses the same boundary after resource filtering:
+
+```text
+resource SelectionChanged
+  -> clear Tag / SelectedItem / LocalFocus
+  -> FilterActionResourceCommand(selected preview)
+  -> SetMoveFocusAction(ActionRadials, InvalidateFocus=True)
+  -> SetMoveFocusAction(ActionRadials -> HotBarList, DeferFocusAction=True)
+       |
+       v
+CAM_ActionGridPanel AlwaysSelectFirst=True
+       |
+       v
+first real VMHotBarSlot
+       |
+       v
+LocalFocusChanged -> selection / tooltip / highlights / A target
+```
+
+Only `AlwaysSelectFirst` is borrowed from the captured SpellBook `LSGrid` pattern. `UseWidgetNavigation` and `ls:MoveFocus.InternalFocusable` remain forbidden because 0.0.58 proved that transplanting that whole focus tree breaks ActionRadials dispatch.
+
+The action grid also sets `ExtendedRows=False`. CAM has no executable meaning for generated empty coordinates; focus must stay on actual list items rather than requiring synthetic empty-cell chrome.
+
+The resource strip remains bounded and uses the native `AutoScrollBehavior`, but now requests `ScrollTo="Center"` while following `SelectedItem`. This keeps the selected left/right edge tab fully inside the viewport without introducing manual scroll offsets.

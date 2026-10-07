@@ -358,3 +358,19 @@ The corrected contract is:
 - keep `ForceMode=Cycle` only;
 - bind resource-strip `AutoScrollBehavior.ScrollIntoView` to `CAM_ResourceTabs.SelectedItem`, not numeric `SelectedIndex`, so the first item is represented by a real object rather than index 0;
 - visible action focus remains CAM-owned and derived from `IsSelected`, but it must include both a translucent selection fill and a fully opaque border frame so focus remains visible on cells whose icon/content is visually empty.
+
+
+## Runtime correction — 0.0.62 -> 0.0.63
+
+0.0.62 runtime proof narrows the remaining defects:
+- hidden resource previews are gone and real-slot focus chrome now moves correctly;
+- clearing `HotBarList.LocalFocus` is not sufficient to reset the controller focus graph: after a resource change, re-entering `HotBarList` still resumes the previous tab's geometric position;
+- CAM's adaptive `LSGrid` still exposes navigation coordinates beyond real executable cells;
+- the selected resource tab can remain outside the left edge of the bounded viewport while cycling left.
+
+The correction must stay inside native focus/navigation primitives:
+- after `FilterActionResourceCommand`, call `SetMoveFocusAction TargetName="ActionRadials" InvalidateFocus="True"` before returning focus to `HotBarList`. Native ActionRadials uses `InvalidateFocus=True` when focusable radial contents are created/removed;
+- keep the existing ActionRadials `LocalFocusSelector` contract, but set only `AlwaysSelectFirst=True` on `CAM_ActionGridPanel` so a freshly invalidated grid entry starts from the first real cell. Do not restore the rejected SpellBook combination of `UseWidgetNavigation=True` or `ls:MoveFocus.InternalFocusable=True`;
+- set `ExtendedRows=False` on the action `LSGrid`. CAM has no semantic empty actions, so controller navigation must not continue into generated empty coordinates;
+- do not add `EmptyCellTemplate` to CAM merely to visualize non-actions;
+- keep resource-strip `AutoScrollBehavior` bound to `SelectedItem` and add native `ScrollTo="Center"` so a selected edge tab is fully visible rather than merely intersecting the viewport.
