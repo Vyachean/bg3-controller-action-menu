@@ -705,7 +705,7 @@ Passives --LB--> last resource
     move resource-list selection 0 -> last
   resource SelectionChanged:
     filter selected last resource while HotBarList still shows Passives
-  +70 ms:
+  +90 ms:
     leave Passives mode
     switch to prepared SingleHotBar.SlotList
     select/focus first concrete action
