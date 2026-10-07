@@ -76,12 +76,13 @@ $required = @(
     'EventName="SelectionChanged"',
     'Command="{Binding FilterActionResourceCommand}"',
     'CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"',
-    '<Binding Path="SingleHotBar.SlotList"/>',
     'x:Name="HotBarList"',
+    'ItemsSource="{Binding SingleHotBar.SlotList}"',
     'KeyboardNavigation.DirectionalNavigation="Contained"',
+    'ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"',
+    'ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"',
+    'ItemsPanel="{StaticResource CAM_ActionGridPanel}"',
     'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
-    'x:Name="CAM_FilteredSlotList"',
-    'KeyboardNavigation.DirectionalNavigation="Continue"',
     'x:Name="CAM_MainSelector"',
     'x:Key="CAM_SelectorTemplate"',
     'Template="{StaticResource CAM_SelectorTemplate}"',
@@ -89,12 +90,11 @@ $required = @(
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
     'ActionLeftEvent="UILeft"',
-    'PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=CAM_FilteredSlotList}"',
+    'PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
     'MillisecondsPerTick="70" TotalTicks="1"',
     'CreateFocusedTooltipDataCommand',
     'HighlightResourcesCommand',
     'x:Name="CAM_ActionTooltip"',
-    'x:Name="CAM_SingleActionTooltip"',
     'ShowTooltipOnUIElementCommand',
     'LocalFocus.DataContext.Content',
     'ls:TooltipExtender.Context="Hotbar"',
@@ -146,6 +146,12 @@ foreach ($forbidden in @(
     'CAM_FilterTabItemStyle',
     'CAM_LiveDetails',
     'LiveDetails',
+    'x:Name="CAM_FilteredSlotList"',
+    'x:Name="CAM_FilteredSlotHolder"',
+    'x:Name="SingleBar"',
+    'x:Name="singleBarHolder"',
+    'x:Name="CAM_SingleSelector"',
+    'x:Name="CAM_SingleActionTooltip"',
     'PlayerCharacterProperties.ControllerHotBars',
     'PlayerCharacterProperties.SpellsAndActions',
     'CurrentPlayer.SelectedCharacter.Inventory.Slots',
@@ -175,17 +181,26 @@ if ($text.Contains('CAM_ResourceFilter')) {
     throw "A secondary resource-filter layer must not return."
 }
 
-# The main executable list is always the native resource-filtered SingleHotBar.
+# One executable controller list owns top-level and nested SingleHotBar state.
 $mainList = [regex]::Match(
     $text,
-    '<ls:LSListBox\b[^>]*x:Name="CAM_FilteredSlotList"[\s\S]*?</ls:LSListBox>',
+    '<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?</ls:LSListBox>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $mainList.Success -or -not $mainList.Value.Contains('<Binding Path="SingleHotBar.SlotList"/>')) {
-    throw "CAM_FilteredSlotList must bind directly to SingleHotBar.SlotList."
+if (-not $mainList.Success -or
+    -not $mainList.Value.Contains('ItemsSource="{Binding SingleHotBar.SlotList}"') -or
+    -not $mainList.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
+    -not $mainList.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
+    -not $mainList.Value.Contains('ItemsPanel="{StaticResource CAM_ActionGridPanel}"')) {
+    throw "HotBarList must directly own the executable SingleHotBar.SlotList grid."
 }
 if ($mainList.Value.Contains('CurrentShownDeck') -or $mainList.Value.Contains('PassivesHotBar')) {
     throw "Main resource-first grid must not fall back to old type/deck sources."
+}
+foreach ($obsoleteList in @('CAM_FilteredSlotList','CAM_FilteredSlotHolder','SingleBar','singleBarHolder','CAM_SingleSelector','CAM_SingleActionTooltip')) {
+    if ($text.Contains($obsoleteList)) {
+        throw "Duplicate executable/focus surface must not return: $obsoleteList"
+    }
 }
 
 # No custom details surface: focused native content goes to LSTooltip.
@@ -257,8 +272,7 @@ if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
 }
 
 
-# 0.0.53 is an isolated viewport correction. Keep the existing focus hierarchy
-# and add only the captured controller scroll-follow helper to HotBarList's viewer.
+# The direct executable list is also the sole scroll owner.
 $hotBarList = [regex]::Match(
     $text,
     '<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?</ls:LSListBox>',
@@ -266,8 +280,17 @@ $hotBarList = [regex]::Match(
 )
 if (-not $hotBarList.Success -or
     -not $hotBarList.Value.Contains('ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"')) {
-    throw "HotBarList ScrollViewer must follow focused descendant rows with a 120px vertical margin."
+    throw "Direct HotBarList must own controller scroll-follow behavior."
 }
-if (-not $hotBarList.Value.Contains('x:Name="CAM_FilteredSlotList"')) {
-    throw "0.0.53 must not rewrite the focus hierarchy while proving scroll-follow behavior."
+if ($hotBarList.Value.Contains('x:Name="CAM_FilteredSlotList"') -or $hotBarList.Value.Contains('KeyboardNavigation.DirectionalNavigation="Continue"')) {
+    throw "HotBarList must not wrap a second executable controller list."
+}
+
+
+# Nested-state focus triggers, when present, must target the same executable list.
+foreach ($flag in @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow')) {
+    $pattern = '<b:DataTrigger Binding="\{Binding ' + $flag + '\}" Value="True">[\s\S]*?FocusElement="\{Binding ElementName=HotBarList\}"[\s\S]*?</b:DataTrigger>'
+    if (-not [regex]::IsMatch($text, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+        throw "Nested-state focus must remain on HotBarList: $flag"
+    }
 }
