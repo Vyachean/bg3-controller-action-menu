@@ -28,6 +28,8 @@
                  UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_h.png"/>
     <BitmapImage x:Key="CAM_BoxResourceNumDisabled"
                  UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_missing.png"/>
+    <BitmapImage x:Key="CAM_ItemsProviderIcon"
+                 UriSource="pack://application:,,,/Core;component/Assets/Shared/ico_container_more_d.png"/>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
@@ -38,6 +40,7 @@
     <System:String x:Key="CAM_TabReturnLastToken">CAM_TabReturnLast</System:String>
     <System:String x:Key="CAM_TabEnterSpecialToken">CAM_TabEnterSpecial</System:String>
     <System:String x:Key="CAM_CantripsModeToken">CAM_CantripsMode</System:String>
+    <System:String x:Key="CAM_ItemsModeToken">CAM_ItemsMode</System:String>
     <System:String x:Key="CAM_MetamagicModeToken">CAM_MetamagicMode</System:String>
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
     <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
@@ -378,6 +381,10 @@
                                 <Setter Property="Command" Value="{Binding FilterCantripsCommand}"/>
                                 <Setter Property="CommandParameter" Value="{StaticResource CAM_CantripFilterParameter}"/>
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                                <Setter Property="Command" Value="{x:Null}"/>
+                                <Setter Property="CommandParameter" Value="{x:Null}"/>
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
@@ -528,6 +535,20 @@
                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Value="{StaticResource CAM_NestedRestoringToken}">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                                       Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_ItemsModeToken}"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
@@ -1233,6 +1254,10 @@
                                 <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
                                     <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                                            <Setter Property="ItemsSource"
+                                                    Value="{Binding CurrentShownDeck.SlotList}"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"/>
