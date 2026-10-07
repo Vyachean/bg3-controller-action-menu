@@ -43,7 +43,6 @@ if ($evidence.runtimeContract.coverageContract.status -ne "incomplete-until-nati
 }
 $requiredCoverageGaps = @(
     "free/no-resource actions",
-    "inventory/consumables",
     "scrolls",
     "item-charge actions",
     "temporary actions",
@@ -54,21 +53,31 @@ foreach ($gap in $requiredCoverageGaps) {
         throw "Coverage evidence must keep unresolved native action class explicit: $gap"
     }
 }
+if ($evidence.runtimeContract.coverageContract.itemDeckParity.provenKeyboardSource -ne "ItemHotBar -> CurrentShownDeck.SlotList" -or
+    $evidence.runtimeContract.coverageContract.itemDeckParity.radialReference -ne "Inventory.Slots" -or
+    $evidence.runtimeContract.coverageContract.itemDeckParity.status -ne "runtime-parity-not-yet-proven") {
+    throw "ItemHotBar may ship as a native executable provider, but radial Inventory.Slots parity must remain explicitly unproven."
+}
 if ($evidence.runtimeContract.assignmentNavigation.gridScrolling.focusFollow.source -ne "ActionRadials.FocusedElement" -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.focusFollow.transport -ne "LSScrollViewer.ScrollToElement") {
     throw "Action-grid evidence must use the captured controller focus-follow scroll seam."
 }
 
-if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrips-plus-metamagic-plus-passives" -or
+if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives" -or
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
-    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList" -or
     $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
     $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
     $evidence.runtimeContract.organization.cantripsCommandParameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
     $evidence.runtimeContract.organization.cantripsModeToken -ne "CAM_CantripsModeToken" -or
+    $evidence.runtimeContract.organization.itemsTabAllowed -ne $true -or
+    $evidence.runtimeContract.organization.itemsCommand -ne "SetCurrentShownDeckCommand" -or
+    $evidence.runtimeContract.organization.itemsCommandParameter -ne "ItemHotBar" -or
+    $evidence.runtimeContract.organization.itemsSource -ne "CurrentShownDeck.SlotList" -or
+    $evidence.runtimeContract.organization.itemsModeToken -ne "CAM_ItemsModeToken" -or
     $evidence.runtimeContract.organization.metamagicTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.metamagicVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count" -or
     $evidence.runtimeContract.organization.metamagicSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
@@ -80,13 +89,13 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrip
     $evidence.runtimeContract.organization.passivesModeOwnership -ne "CAM presentation-only" -or
     $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
     $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
-    throw "Resource-first native Cantrips/Metamagic/Passives organization evidence is incomplete or regressed."
+    throw "Resource-first native Cantrips/Items/Metamagic/Passives organization evidence is incomplete or regressed."
 }
 if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-only" -or
     $evidence.runtimeContract.tooltipPresentation.detailsSurface -ne "native-tooltip-only") {
     throw "CAM must use the ordinary native tooltip only; no Live Details panel is allowed."
 }
-if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-cantrips-plus-metamagic-plus-passives" -or
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-cantrips-plus-items-plus-metamagic-plus-passives" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
@@ -119,6 +128,9 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotba
     $evidence.runtimeContract.controllerPresentation.cantripsTab.parameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
     $evidence.runtimeContract.controllerPresentation.cantripsTab.modeToken -ne "CAM_CantripsModeToken" -or
     $evidence.runtimeContract.controllerPresentation.cantripsTab.icon -ne "IconMiniCantrip" -or
+    $evidence.runtimeContract.controllerPresentation.itemsTab.source -ne "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList" -or
+    $evidence.runtimeContract.controllerPresentation.itemsTab.modeToken -ne "CAM_ItemsModeToken" -or
+    $evidence.runtimeContract.controllerPresentation.itemsTab.icon -ne "Core/Assets/Shared/ico_container_more_d.png" -or
     $evidence.runtimeContract.controllerPresentation.metamagicTab.source -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
     $evidence.runtimeContract.controllerPresentation.metamagicTab.modeToken -ne "CAM_MetamagicModeToken" -or
     $evidence.runtimeContract.controllerPresentation.metamagicTab.icon -ne "FixedSideBar.SlotList[0].Content.Icon" -or
@@ -196,14 +208,18 @@ if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "
 }
 $sourceSwitch = $evidence.runtimeContract.assignmentNavigation.sourceSwitch
 if ($sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
-    @($sourceSwitch.modeTokens).Count -ne 3 -or
+    @($sourceSwitch.modeTokens).Count -ne 4 -or
     @($sourceSwitch.modeTokens) -notcontains "CAM_CantripsModeToken" -or
+    @($sourceSwitch.modeTokens) -notcontains "CAM_ItemsModeToken" -or
     @($sourceSwitch.modeTokens) -notcontains "CAM_MetamagicModeToken" -or
     @($sourceSwitch.modeTokens) -notcontains "CAM_PassivesModeToken" -or
     $sourceSwitch.ownership -ne "CAM presentation-only" -or
     $sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
     $sourceSwitch.cantripsSource -ne "FilterCantripsCommand -> SingleHotBar.SlotList" -or
     $sourceSwitch.cantripsParameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $sourceSwitch.itemsSource -ne "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList" -or
+    $sourceSwitch.itemsNestedBehavior -ne "nested flags -> SingleHotBar.SlotList; CurrentShownDeck remains ItemHotBar" -or
+    $sourceSwitch.itemsRestore -ne "CAM_NestedRestoringToken -> CurrentShownDeck.SlotList + first-item focus" -or
     $sourceSwitch.metamagicSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
     $sourceSwitch.directProviderNestedOverride -ne "nested flags -> SingleHotBar.SlotList" -or
     $sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
@@ -219,13 +235,12 @@ if ($passiveReturn.modeAuthority -ne "CAM_ResourceTabs.Tag = CAM_PassivesModeTok
     $passiveReturn.rightToken -ne "CAM_TabReturnFirstToken" -or
     $passiveReturn.rightModeSwitchMilliseconds -ne 70 -or
     $passiveReturn.leftWhenMetamagicAvailable -ne "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken" -or
-    $passiveReturn.leftWhenMetamagicUnavailableAndCantripsAvailable -ne "CAM_TabEnterSpecialToken -> CAM_CantripsModeToken -> FilterCantripsCommand" -or
-    $passiveReturn.leftWhenNoOptionalProvider -ne "CAM_TabReturnLastToken -> SelectNextListBoxItem(Reversed=True, ForceMode=Cycle)" -or
+    $passiveReturn.leftWhenMetamagicUnavailable -ne "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)" -or
     $passiveReturn.specialModeSwitchMilliseconds -ne 70 -or
     $passiveReturn.leftFallbackModeSwitchMilliseconds -ne 90 -or
     $passiveReturn.ordinaryResourceClickHandlersEligibleDuringReturn -ne $false -or
     $passiveReturn.singleShoulderPressSingleLogicalTransition -ne $true) {
-    throw "Passives/Metamagic/Cantrips/resource return must remain one serialized provider transition per shoulder press."
+    throw "Passives/Metamagic/Items/Cantrips/resource return must remain one serialized provider transition per shoulder press."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
@@ -294,6 +309,12 @@ $required = @(
     'ElementName="ResourcePoints" Path="MaxGroupActionPoints"',
     'x:Name="CAM_CantripsTab"',
     'x:Key="CAM_CantripsModeToken"',
+    'x:Name="CAM_ItemsTab"',
+    'x:Key="CAM_ItemsModeToken"',
+    'x:Key="CAM_ItemsProviderIcon"',
+    'SetCurrentShownDeckCommand',
+    'CommandParameter="ItemHotBar"',
+    'CurrentShownDeck.SlotList',
     'x:Name="CAM_MetamagicTab"',
     'x:Key="CAM_MetamagicModeToken"',
     'PlayerCharacterProperties.FixedSideBar.SlotList',
@@ -357,8 +378,6 @@ foreach ($forbidden in @(
     'CAM_CantripsFilterTab',
     'CAM_ItemsFilterTab',
     'CAM_PassivesFilterTab',
-    'SetCurrentShownDeckCommand',
-    'CurrentShownDeck.SlotList',
     'IsShowingPassivesDeck',
     'SetIsShowingPassivesDeckCommand',
     'CAM_ResourceFilterHolder',
@@ -422,6 +441,8 @@ $mainList = [regex]::Match(
 )
 if (-not $mainList.Success -or
     -not $mainList.Value.Contains('<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}"') -or
+    -not $mainList.Value.Contains('Value="{Binding CurrentShownDeck.SlotList}"') -or
     -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
     -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}"') -or
@@ -431,10 +452,14 @@ if (-not $mainList.Success -or
     -not $mainList.Value.Contains('ItemsPanel="{StaticResource CAM_ActionGridPanel}"') -or
     -not $mainList.Value.Contains('<ls:LSScrollViewer') -or
     -not $mainList.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"')) {
-    throw "The sole HotBarList must switch only between resource/nested SingleHotBar slots and executable PassivesHotBar slots."
+    throw "The sole HotBarList must switch only among proven executable SingleHotBar, ItemHotBar, FixedSideBar, and PassivesHotBar slots."
 }
-if ($mainList.Value.Contains('CurrentShownDeck')) {
-    throw "The action grid must not fall back to the old deck architecture."
+if ([regex]::Matches($text, 'SetCurrentShownDeckCommand').Count -lt 3 -or
+    [regex]::Matches($text, 'CommandParameter="ItemHotBar"').Count -lt 3 -or
+    $text.Contains('CommandParameter="CommonHotBar"') -or
+    $text.Contains('CommandParameter="ClassHotBar"') -or
+    $text.Contains('CommandParameter="InvalidHotBar"')) {
+    throw "CurrentShownDeck is allowed only through the proven ItemHotBar provider; Common/Class/Invalid deck runtime paths must stay absent."
 }
 if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="HotBarList"').Count -ne 1) {
     throw "CAM must have exactly one executable HotBarList."
@@ -607,35 +632,40 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
     -not $tabLeft.Value.Contains('CAM_TabEnterSpecialToken') -or
     -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
     -not $tabLeft.Value.Contains('CAM_CantripsModeToken') -or
+    -not $tabLeft.Value.Contains('CAM_ItemsModeToken') -or
     -not $tabLeft.Value.Contains('CAM_MetamagicModeToken') -or
     -not $tabLeft.Value.Contains('CAM_PassivesModeToken') -or
     -not $tabLeft.Value.Contains('FilterCantripsCommand') -or
     -not $tabLeft.Value.Contains('MillisecondsPerTick="90"') -or
     -not $tabLeft.Value.Contains('Reversed="True"') -or
     -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
+    -not $tabLeft.Value.Contains('CommandParameter="ItemHotBar"') -or
+    -not $tabRight.Value.Contains('CommandParameter="ItemHotBar"') -or
     -not $tabRight.Value.Contains('CAM_TabEnterSpecialToken') -or
     -not $tabRight.Value.Contains('CAM_CantripsModeToken') -or
+    -not $tabRight.Value.Contains('CAM_ItemsModeToken') -or
     -not $tabRight.Value.Contains('CAM_MetamagicModeToken') -or
     -not $tabRight.Value.Contains('CAM_PassivesModeToken') -or
     -not $tabRight.Value.Contains('MillisecondsPerTick="70"') -or
     -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
     $tabLeft.Value.Contains('ForceSelect="True"') -or
     $tabRight.Value.Contains('ForceSelect="True"')) {
-    throw "LB/RB must form one resource-plus-Cantrips-plus-Metamagic-plus-Passives cycle without ForceSelect."
+    throw "LB/RB must form one resource-plus-Cantrips-plus-Items-plus-Metamagic-plus-Passives cycle without ForceSelect."
 }
 
-if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 6 -or
+if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 5 -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabReturnLastToken') -or
     -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
-    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"') -or
-    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"') -or
+    -not $resourceTabs.Value.Contains('SetCurrentShownDeckCommand') -or
+    -not $resourceTabs.Value.Contains('CommandParameter="ItemHotBar"') -or
     -not $resourceTabs.Value.Contains('FilterCantripsCommand') -or
     -not $resourceTabs.Value.Contains('CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips') -or
     [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
     [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 4) {
-    throw "Resource selection must route wrap through available native Cantrips/Metamagic providers before Passives."
+    throw "Resource selection must route right-wrap through Cantrips when available and otherwise native ItemHotBar."
 }
 
 $resourceRestoreTimer = [regex]::Match(
@@ -726,7 +756,7 @@ if (-not $resourceTabsItemTemplate.Success -or
 
 $cantripTab = [regex]::Match(
     $text,
-    '<Grid\b[^>]*x:Name="CAM_CantripsTab"[\s\S]*?(?=<Grid\b[^>]*x:Name="CAM_MetamagicTab")',
+    '<Grid\b[^>]*x:Name="CAM_CantripsTab"[\s\S]*?(?=<Grid\b[^>]*x:Name="CAM_ItemsTab")',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $cantripTab.Success -or
@@ -736,6 +766,19 @@ if (-not $cantripTab.Success -or
     -not $cantripTab.Value.Contains('CAM_BoxResourceBg') -or
     -not $cantripTab.Value.Contains('CAM_BoxResourceH')) {
     throw "Cantrips must be a native resource-box-style provider tab gated by HasCantrips."
+}
+
+$itemsTab = [regex]::Match(
+    $text,
+    '<Grid\b[^>]*x:Name="CAM_ItemsTab"[\s\S]*?(?=<Grid\b[^>]*x:Name="CAM_MetamagicTab")',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $itemsTab.Success -or
+    -not $itemsTab.Value.Contains('CAM_ItemsModeToken') -or
+    -not $itemsTab.Value.Contains('CAM_ItemsProviderIcon') -or
+    -not $itemsTab.Value.Contains('CAM_BoxResourceBg') -or
+    -not $itemsTab.Value.Contains('CAM_BoxResourceH')) {
+    throw "Items must be a resource-box-style provider backed by BG3's native ItemHotBar deck."
 }
 
 $metamagicTab = [regex]::Match(
@@ -755,11 +798,13 @@ if (-not $metamagicTab.Success -or
 if ([regex]::Matches($tabLeft.Value, 'CAM_CantripsModeToken').Count -lt 2 -or
     -not $tabLeft.Value.Contains('CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips') -or
     -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $tabLeft.Value.Contains('CAM_ItemsModeToken') -or
     -not $tabLeft.Value.Contains('CAM_MetamagicModeToken') -or
     -not $tabRight.Value.Contains('CAM_CantripsModeToken') -or
+    -not $tabRight.Value.Contains('CAM_ItemsModeToken') -or
     -not $tabRight.Value.Contains('CAM_MetamagicModeToken') -or
     -not $tabRight.Value.Contains('CAM_TabReturnFirstToken')) {
-    throw "Shoulder navigation must serialize resource <-> Cantrips <-> Metamagic <-> Passives transitions and preserve resource wrap."
+    throw "Shoulder navigation must serialize resource <-> Cantrips <-> Items <-> Metamagic <-> Passives transitions and preserve resource wrap."
 }
 
 $providerRestore = [regex]::Match(
@@ -772,6 +817,7 @@ if (-not $providerRestore.Success -or
     -not $providerRestore.Value.Contains('CAM_CantripsModeToken') -or
     -not $providerRestore.Value.Contains('FilterCantripsCommand') -or
     -not $providerRestore.Value.Contains('CAM_CantripFilterParameter') -or
+    -not $providerRestore.Value.Contains('CAM_ItemsModeToken') -or
     -not $providerRestore.Value.Contains('CAM_MetamagicModeToken') -or
     -not $providerRestore.Value.Contains('CAM_PassivesModeToken')) {
     throw "Nested return must restore the active native provider through one provider dispatcher."
@@ -828,10 +874,11 @@ foreach ($flag in $directProviderNestedOverrides) {
         throw "Direct providers must yield the executable list to SingleHotBar during native nested state: $flag"
     }
 }
-if ([regex]::Matches($text, '<b:DataTrigger Binding="\{Binding Tag, ElementName=CAM_NestedReturnMarker\}" Value="\{StaticResource CAM_NestedRestoringToken\}">').Count -lt 2 -or
+if ([regex]::Matches($text, '<b:DataTrigger Binding="\{Binding Tag, ElementName=CAM_NestedReturnMarker\}" Value="\{StaticResource CAM_NestedRestoringToken\}">').Count -lt 3 -or
+    -not $text.Contains('RightOperand="{StaticResource CAM_ItemsModeToken}"') -or
     -not $text.Contains('RightOperand="{StaticResource CAM_MetamagicModeToken}"') -or
     -not $text.Contains('RightOperand="{StaticResource CAM_PassivesModeToken}"')) {
-    throw "Direct VMHotBar providers must restore first-item focus when nested state returns."
+    throw "Direct/deck providers must restore first-item focus when native nested state returns."
 }
 
 $nestedMarker = [regex]::Match(
