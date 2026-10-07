@@ -106,6 +106,7 @@ def validate_semantics() -> list[str]:
                 'SpellSlotNumberStyle',
                 'KeyboardNavigation.DirectionalNavigation="Contained"',
                 'KeyboardNavigation.DirectionalNavigation="Continue"',
+                'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
                 'LocalFocus.DataContext',
                 'MillisecondsPerTick="70"',
                 'CreateFocusedTooltipDataCommand',
