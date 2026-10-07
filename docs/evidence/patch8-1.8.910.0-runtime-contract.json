@@ -108,8 +108,10 @@
         "invalidateFocus": false,
         "focusesListContainer": false,
         "selectedItemMirrorsLocalFocus": false,
-        "entryStateSource": "PropertyChangedTrigger(LocalFocus.DataContext) after LocalFocus reset + concrete-item handoff",
-        "selectedItemEntryStateWrites": false
+        "entryStateSource": "FocusedElement wake-up + LocalFocus.DataContext authority after concrete-item handoff",
+        "selectedItemEntryStateWrites": false,
+        "programmaticWakeSignal": "ActionRadials.FocusedElement",
+        "programmaticStateSource": "HotBarList.LocalFocus.DataContext"
       },
       "visibleFocusChrome": {
         "source": "HotBarList.LocalFocusSelector",
@@ -150,21 +152,21 @@
       "genericTabLabel": "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)",
       "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
-        "mode": "bounded-horizontal-scroll",
-        "autoScrollBehavior": null,
-        "scrollIntoView": "CAM_ResourceTabs.Tag",
-        "bringSelectionIntoView": null,
-        "maxTabWidth": null,
+        "mode": "wrapped-visible-row",
+        "layoutPanel": "ls:AlignableWrapPanel",
+        "oneLogicalSequence": true,
         "listMaxWidth": 1160,
         "itemTextTrimming": false,
         "cycleForceSelect": false,
-        "scrollOwner": "LSScrollViewer.ScrollToElement",
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
+        "scrollOwner": null,
+        "autoScrollBehavior": null,
+        "scrollIntoView": null,
+        "bringSelectionIntoView": null,
         "scrollTo": null,
-        "scrollTargetKind": "selected ListBoxItem UIElement",
-        "selectedContainerPublishesTag": true,
-        "scrollBindingSource": "templated-parent.Tag",
-        "crossTemplateElementName": false
+        "horizontalScrollState": false,
+        "headerRow": "Auto",
+        "actionViewportHeight": 850
       }
     },
     "tooltipPresentation": {
@@ -174,9 +176,14 @@
       "context": "Hotbar",
       "placement": "Right",
       "detailsSurface": "native-tooltip-only",
-      "presentationSignal": "PropertyChangedTrigger(LocalFocus.DataContext)",
-      "localFocusChangedRole": "hover-sound-only",
-      "delayedLocalFocusPresentationTimer": false
+      "localFocusChangedRole": "normal-navigation-presentation",
+      "delayedLocalFocusPresentationTimer": true,
+      "presentationSignals": [
+        "HotBarList.LocalFocusChanged",
+        "ActionRadials.FocusedElement property change (programmatic wake-up)"
+      ],
+      "stateAuthority": "HotBarList.LocalFocus.DataContext",
+      "focusedElementRole": "wake-up-only"
     },
     "organization": {
       "mode": "resource-first",
@@ -233,10 +240,11 @@
       }
     },
     "runtimeProofQuestions": [
-      "Immediately after a resource tab switch, is the tooltip visible for the same LocalFocus.DataContext shown by the native selector?",
-      "Immediately after B returns from a nested/upcast/container view, is the tooltip visible for the restored focused action?",
-      "Does LSScrollViewer.ScrollToElement bound through the resource template's TemplatedParent.Tag keep selected edge tabs visible in both directions?",
-      "Does D-pad navigation still keep selector, tooltip, resource highlight and ActionRadials.Tag synchronized from LocalFocus.DataContext?",
+      "Immediately after a resource tab switch, is the native tooltip visible for the current HotBarList.LocalFocus.DataContext without a D-pad move?",
+      "Immediately after B returns from a nested/upcast/container view, is the native tooltip visible for the restored HotBarList.LocalFocus.DataContext?",
+      "Are all resource tabs physically visible through the single-level AlignableWrapPanel with no horizontal scroll state?",
+      "Does LB/RB continue to cycle one logical resource sequence and invoke FilterActionResourceCommand exactly once per selection?",
+      "Does ordinary D-pad navigation keep selector, tooltip, resource highlight and ActionRadials.Tag synchronized from LocalFocus.DataContext?",
       "Does the proven 0.0.66 nested-return restoration remain intact?"
     ],
     "controllerShortcuts": {
