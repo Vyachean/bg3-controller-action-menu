@@ -737,8 +737,7 @@
                             </ls:LSListBox.Template>
 
                             <b:Interaction.Triggers>
-                                <!-- Right wrap: the ListBox cycles to index 0, but product navigation inserts Passives
-                                     between the last resource and the first resource. Do not refilter index 0 here. -->
+                                <!-- Right wrap: prefer the native Cantrips provider when this character has cantrips. -->
                                 <b:EventTrigger EventName="SelectionChanged">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
@@ -749,6 +748,39 @@
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
                                                                        Operator="Equal"
                                                                        RightOperand="0"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource TrueValue}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
+                                    <b:InvokeCommandAction Command="{Binding FilterCantripsCommand}"
+                                                           CommandParameter="{StaticResource CAM_CantripFilterParameter}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
+
+                                <!-- Characters without cantrips keep the existing resource -> Passives wrap. -->
+                                <b:EventTrigger EventName="SelectionChanged">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabCycleRightToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="0"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource FalseValue}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
