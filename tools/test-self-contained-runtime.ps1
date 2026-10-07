@@ -46,26 +46,30 @@ if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-on
 }
 if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "dynamic-resource-row" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
-    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name" -or
+    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name ?? ActionResource.TypeId" -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "SpellSlotNumberStyle") {
     throw "Dynamic resource-tab presentation evidence is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.nativeSelectorOutset -ne 12 -or
-    $evidence.runtimeContract.controllerPresentation.camSelectorOutset -ne 4 -or
-    $evidence.runtimeContract.controllerPresentation.selectorDerivation -ne "12-(120-104)/2") {
-    throw "Current selector compensation evidence changed unexpectedly."
+if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "item-local:ls:MoveFocus.IsFocused" -or
+    $evidence.runtimeContract.assignmentNavigation.selector -ne $null -or
+    $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne $null) {
+    throw "Detached selector must be retired in favor of item-local MoveFocus presentation."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand") {
     throw "Focused native tooltip contract diverged."
 }
 
-if ($evidence.runtimeContract.assignmentNavigation.coordinateViewport.name -ne "CAM_ActionViewport" -or
-    $evidence.runtimeContract.assignmentNavigation.coordinateViewport.width -ne 800 -or
-    $evidence.runtimeContract.assignmentNavigation.coordinateViewport.height -ne 850 -or
+if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "ScrollContentPresenter.ActualWidth" -or
+    $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.divisor -ne 120 -or
+    $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.converter -ne "DivideMultiConverter" -or
+    $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.rounding -ne "Floor" -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.directGridDisableScrolling -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.scrollViewerCanContentScroll -ne $true) {
-    throw "Single-list action viewport contract is incomplete."
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.scrollViewerCanContentScroll -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridUseWidgetNavigation -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $true) {
+    throw "Selectorless adaptive grid contract is incomplete."
 }
 if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedIndex" -or
@@ -80,9 +84,10 @@ $required = @(
     'ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"',
     'BringSelectionIntoView="True"',
     'x:Name="CAM_ActionViewport"',
-    'CanContentScroll="True"',
+    'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
     'Text="{Binding ActionResource.Name}"',
+    'Text="{Binding ActionResource.TypeId}"',
     'Style="{StaticResource SpellSlotNumberStyle}"',
     'Binding="{Binding ActionResource.TypeId}" Value="SpellSlot"',
     'Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot"',
@@ -100,9 +105,14 @@ $required = @(
     'ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"',
     'ItemsPanel="{StaticResource CAM_ActionGridPanel}"',
     'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
-    'x:Name="CAM_MainSelector"',
-    'x:Key="CAM_SelectorTemplate"',
-    'Template="{StaticResource CAM_SelectorTemplate}"',
+    'ls:MoveFocus.Focusable" Value="True"',
+    'Property="ls:MoveFocus.IsFocused" Value="True"',
+    'UseWidgetNavigation="True"',
+    'AlwaysSelectFirst="True"',
+    'ls:MoveFocus.InternalFocusable="True"',
+    'FocusElementVisualStyle="{StaticResource Style.FocusVisualStyle}"',
+    'Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"',
+    'RelativeSource="{RelativeSource AncestorType={x:Type ScrollContentPresenter}}"',
     'ActionUpEvent="UIUp"',
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
@@ -183,6 +193,12 @@ foreach ($forbidden in @(
     'HotBarSlotStyle',
     'HotKey',
     'SlotIconStyle',
+    'x:Name="CAM_MainSelector"',
+    'x:Key="CAM_SelectorTemplate"',
+    'LocalFocusSelector=',
+    'Columns="5"',
+    'Width="632"',
+    'CanContentScroll="True"',
     'DisableScrolling="True"',
     'Public/Game/GUI/',
     'ScriptExtender'
@@ -241,18 +257,6 @@ if (-not $closeTrigger.Success) {
 }
 if ($closeTrigger.Value.Contains('SingleHotBar.SlotList.Count')) {
     throw "Top-level B must not use SingleHotBar count because resource browsing populates SingleHotBar."
-}
-
-# Preserve current focus geometry guard until the next runtime proof.
-$selectorTemplate = [regex]::Match(
-    $text,
-    '<ControlTemplate\b[^>]*x:Key="CAM_SelectorTemplate"[\s\S]*?</ControlTemplate>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $selectorTemplate.Success -or
-    -not $selectorTemplate.Value.Contains('Margin="-4"') -or
-    -not $selectorTemplate.Value.Contains('Margin="4"')) {
-    throw "Current CAM selector compensation must remain -4/+4 pending runtime proof."
 }
 
 Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs are the sole top-level navigation, selection drives native FilterActionResourceCommand, the grid is SingleHotBar.SlotList, ordinary native tooltips remain the only details surface, and top-level B is separated from true nested state."
@@ -323,28 +327,40 @@ if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
 }
 
 
-# Post-single-list viewport ownership: one coordinate root, native tab auto-scroll,
-# and no assignment-only DisableScrolling on the direct grid.
-$actionViewport = [regex]::Match(
-    $text,
-    '<Grid\b[^>]*x:Name="CAM_ActionViewport"[^>]*Width="800"[^>]*Height="850"[\s\S]*?<Control\b[^>]*x:Name="CAM_MainSelector"[\s\S]*?/>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $actionViewport.Success -or -not $actionViewport.Value.Contains('x:Name="HotBarList"')) {
-    throw "HotBarList and CAM_MainSelector must share the same 800x850 CAM_ActionViewport."
-}
-
+# Selectorless adaptive presentation: focus chrome belongs to the item,
+# grid columns derive from actual viewport width, and scrolling stays pixel-based.
 $actionGridPanel = [regex]::Match(
     $text,
     '<ItemsPanelTemplate\b[^>]*x:Key="CAM_ActionGridPanel"[\s\S]*?</ItemsPanelTemplate>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $actionGridPanel.Success -or $actionGridPanel.Value.Contains('DisableScrolling="True"')) {
-    throw "Direct CAM_ActionGridPanel must not disable scrolling."
+if (-not $actionGridPanel.Success -or
+    $actionGridPanel.Value.Contains('Columns="5"') -or
+    $actionGridPanel.Value.Contains('Width="632"') -or
+    -not $actionGridPanel.Value.Contains('UseWidgetNavigation="True"') -or
+    -not $actionGridPanel.Value.Contains('AlwaysSelectFirst="True"') -or
+    -not $actionGridPanel.Value.Contains('ls:MoveFocus.InternalFocusable="True"') -or
+    -not $actionGridPanel.Value.Contains('Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"') -or
+    -not $actionGridPanel.Value.Contains('AncestorType={x:Type ScrollContentPresenter}')) {
+    throw "CAM_ActionGridPanel must use the current SpellBook adaptive controller-grid pattern."
 }
 
-if (-not $hotBarList.Value.Contains('CanContentScroll="True"')) {
-    throw "Direct HotBarList ScrollViewer must enable content scrolling."
+$slotContainer = [regex]::Match(
+    $text,
+    '<Style\b[^>]*x:Key="CAM_ActionGridSlotContainer"[\s\S]*?</Style>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $slotContainer.Success -or
+    -not $slotContainer.Value.Contains('Property="ls:MoveFocus.Focusable" Value="True"') -or
+    -not $slotContainer.Value.Contains('Property="ls:MoveFocus.IsFocused" Value="True"') -or
+    -not $slotContainer.Value.Contains('x:Name="CAM_CellFocus"')) {
+    throw "Each action cell must own its controller focus chrome."
+}
+
+if (-not $hotBarList.Value.Contains('CanContentScroll="False"') -or
+    -not $hotBarList.Value.Contains('VerticalScrollBarVisibility="Auto"') -or
+    -not $hotBarList.Value.Contains('ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"')) {
+    throw "HotBarList must use pixel scrolling with the native vertical focus margin."
 }
 
 $resourceTabs = [regex]::Match(
@@ -353,28 +369,18 @@ $resourceTabs = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabs.Success -or
-    -not $resourceTabs.Value.Contains('MaxWidth="1340"') -or
+    -not $resourceTabs.Value.Contains('MaxWidth="1020"') -or
     -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
     -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"')) {
-    throw "Resource tabs must use the wider viewport and native SelectedIndex auto-scroll."
+    throw "Resource tabs must stay in a bounded SelectedIndex-following viewport."
 }
 
-$tabSelection = [regex]::Match(
-    $resourceTabs.Value,
-    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $tabSelection.Success -or
-    -not $tabSelection.Value.Contains('TargetName="CAM_MainSelector" PropertyName="Visibility" Value="Collapsed"')) {
-    throw "Resource change must hide stale selector chrome before filtering/refocus."
+if (-not $text.Contains('x:Name="ResourceFallback"') -or
+    -not $text.Contains('Text="{Binding ActionResource.TypeId}"') -or
+    -not $text.Contains('Binding="{Binding ActionResource.Name}" Value="{x:Null}"')) {
+    throw "Unnamed native resources must have a TypeId text fallback."
 }
 
-$focusTimer = [regex]::Match(
-    $hotBarList.Value,
-    '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $focusTimer.Success -or
-    -not $focusTimer.Value.Contains('TargetName="CAM_MainSelector" PropertyName="Visibility" Value="Visible"')) {
-    throw "Delayed HotBarList focus handoff must reveal selector at the new focused cell."
+if ($text.Contains('CAM_MainSelector') -or $text.Contains('CAM_SelectorTemplate') -or $text.Contains('LocalFocusSelector=')) {
+    throw "Detached selector state must not return."
 }

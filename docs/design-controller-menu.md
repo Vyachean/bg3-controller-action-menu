@@ -128,3 +128,12 @@ Those questions determine how much of the final execution-variant flattening BG3
 The action surface has one focus owner. Resource tabs are changed by LB/RB; every executable top-level or nested option is rendered through the same `HotBarList` bound to `SingleHotBar.SlotList`.
 
 There is no separate nested action window and no wrapper list around the grid. Entering a BG3 variant/upcast/throw state changes the contents of the same grid. B uses the native nested cancel path; top-level B closes the menu. This is the preferred baseline before any direct-upcast flattening or tab-layout refinements.
+
+
+## Adaptive grid and focus rendering
+
+The action grid must not have a fixed column count. Column count is derived from the current viewport width, matching the current controller SpellBook grid.
+
+Focused action indication is rendered by the focused cell itself. There is no detached selector overlay. This is important both visually and semantically: when a resource tab replaces `SingleHotBar.SlotList`, the old focus visual disappears with the old cell rather than requiring separate reset logic.
+
+Resource tabs remain one horizontal LB/RB strip. The strip scrolls to its selected item instead of making the entire menu wider. Generic resources without a localized name show their native TypeId as a diagnostic-safe fallback; spell slots remain level-based.
