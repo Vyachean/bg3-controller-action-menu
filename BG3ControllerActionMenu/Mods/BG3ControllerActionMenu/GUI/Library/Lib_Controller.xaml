@@ -257,54 +257,54 @@
                             </TextBlock>
                         </Grid>
 
-                        <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
-                                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
-                                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
-                                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
-                                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
-                                <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
-                                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
-                                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
-                                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
-                                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
-                                <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
-                                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-
-                            <!-- Controller adaptation: selected tab uses the native HotBar mouse-hover resource chrome.
-                                 Passives mode suppresses the preserved native-resource selection. -->
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
-                                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
-                                <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
-                            </MultiDataTrigger>
-
-                            <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
-                                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
-                                <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
-                                <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-
-                            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration">
-                                <Setter TargetName="ResourcesNumeralDisplay" Property="Margin" Value="0,22,0,-22"/>
-                                <Setter TargetName="ResourcesNumeralDisplay" Property="FontSize" Value="{DynamicResource SmallFontSize}"/>
-                            </DataTrigger>
-                        </ControlTemplate.Triggers>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
+                            <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                            <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                            <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                            <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
+                            <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
+                            <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                            <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                            <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                            <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
+                            <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
+                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+
+                        <!-- Controller adaptation: selected tab uses the native HotBar mouse-hover resource chrome.
+                             Passives mode suppresses the preserved native-resource selection. -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
+                                <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
+                        </MultiDataTrigger>
+
+                        <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
+                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+
+                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration">
+                            <Setter TargetName="ResourcesNumeralDisplay" Property="Margin" Value="0,22,0,-22"/>
+                            <Setter TargetName="ResourcesNumeralDisplay" Property="FontSize" Value="{DynamicResource SmallFontSize}"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
