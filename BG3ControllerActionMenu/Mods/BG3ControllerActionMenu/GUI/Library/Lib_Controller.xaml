@@ -323,9 +323,9 @@
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
-                                    <b:ChangePropertyAction TargetName="HotBarList"
-                                                            PropertyName="Tag"
-                                                            Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=HotBarList}"
+                                                           DeferFocusAction="True"/>
                                 </b:EventTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
