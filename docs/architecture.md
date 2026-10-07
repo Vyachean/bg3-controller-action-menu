@@ -224,3 +224,33 @@ CAM_ActionGridPanel
 The captured assignment grid uses `DisableScrolling=True` because its child grids live under a separate outer scrolling list. That flag does not belong on CAM's direct single-list items panel.
 
 The captured ModBrowser controller UI supplies the native tab-row pattern used here: `AutoScrollBehavior` tracks `SelectedIndex` and brings the selected item into view without moving D-pad focus into the tab row.
+
+
+## Selectorless adaptive presentation
+
+The detached `LocalFocusSelector` is retired. It proved redundant and unreliable once CAM moved to a single executable list: focus state was correct while selector chrome could remain at coordinates from the previous resource result.
+
+The action presentation now follows the current Patch 8 SpellBook pattern:
+
+```text
+HotBarList : SingleHotBar.SlotList
+  |
+  +-- ScrollViewer (pixel scrolling)
+  |     VerticalScrollOffsetMargin = 120
+  |
+  +-- CAM_ActionGridPanel
+        Columns = floor(ScrollContentPresenter.ActualWidth / 120)
+        UseWidgetNavigation = true
+        AlwaysSelectFirst = true
+        MoveFocus.InternalFocusable = true
+        |
+        +-- CAM_ActionGridSlotContainer
+              MoveFocus.Focusable = true
+              focus chrome is local to the item
+```
+
+This makes the focus visual and executable item the same object/coordinate space and removes all selector synchronization logic.
+
+The current captured keyboard HotBar also confirms that `ActionResourcesCostPreview` is the game's own resource-filter button source. CAM keeps that source and `FilterActionResourceCommand`, but no longer assumes every resource has a displayable localized name: text tabs fall back to `ActionResource.TypeId` when `ActionResource.Name` is null. MaxValue=0 resources remain hidden exactly as native HotBar does.
+
+Resource navigation remains a bounded horizontal viewport with selected-index auto-scroll; the whole action menu must not expand horizontally just to expose every tab at once.
