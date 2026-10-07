@@ -70,7 +70,21 @@
       "forbiddenDuplicateLists": [
         "CAM_FilteredSlotList",
         "SingleBar"
-      ]
+      ],
+      "coordinateViewport": {
+        "name": "CAM_ActionViewport",
+        "width": 800,
+        "height": 850,
+        "owns": [
+          "HotBarList",
+          "CAM_MainSelector"
+        ]
+      },
+      "gridScrolling": {
+        "directGridDisableScrolling": false,
+        "scrollViewerCanContentScroll": true,
+        "verticalScrollOffsetMargin": 120
+      }
     },
     "buttonHintsContainer": {
       "style": "ButtonHint.Container.CenterWrap",
@@ -101,7 +115,18 @@
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "tabItemType": "VMActionResourceCostPreview",
       "genericTabLabel": "ActionResource.Name",
-      "spellSlotTabLabel": "SpellSlotNumberStyle"
+      "spellSlotTabLabel": "SpellSlotNumberStyle",
+      "resourceViewport": {
+        "headerWidth": 1500,
+        "listMaxWidth": 1340,
+        "autoScrollBehavior": "AutoScrollBehavior",
+        "scrollIntoView": "SelectedIndex",
+        "bringSelectionIntoView": true
+      },
+      "selectorReset": {
+        "onResourceSelectionChanged": "Collapsed",
+        "restoreOnDelayedLocalFocus": "Visible"
+      }
     },
     "tooltipPresentation": {
       "pattern": "assignment-list-ui-tooltip",
@@ -150,11 +175,11 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Does one direct HotBarList remove invisible focus transitions at top level?",
-      "When BG3 enters variant/upcast/throw state, does the same HotBarList show the nested SingleHotBar.SlotList and keep navigation/A working?",
-      "Does the direct HotBarList ScrollViewer keep lower focused rows visible?",
-      "Does CAM_MainSelector align with direct HotBarList cells?",
-      "After nested B, does BG3 restore the resource-filtered list or leave it empty, requiring an isolated filter-restore fix?"
+      "After LB/RB tab change, does the selector appear on the first focused action without showing the old tab position?",
+      "Do lower focused rows scroll into view?",
+      "Does CAM_MainSelector align with the focused action cell now that both share CAM_ActionViewport coordinates?",
+      "Does the resource row scroll horizontally to keep the selected tab visible?",
+      "Do resource filtering, A/B, nested state, and weapon-set input remain unchanged?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {

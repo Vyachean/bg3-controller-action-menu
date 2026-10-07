@@ -60,10 +60,27 @@ if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.Da
     throw "Focused native tooltip contract diverged."
 }
 
+if ($evidence.runtimeContract.assignmentNavigation.coordinateViewport.name -ne "CAM_ActionViewport" -or
+    $evidence.runtimeContract.assignmentNavigation.coordinateViewport.width -ne 800 -or
+    $evidence.runtimeContract.assignmentNavigation.coordinateViewport.height -ne 850 -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.directGridDisableScrolling -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.scrollViewerCanContentScroll -ne $true) {
+    throw "Single-list action viewport contract is incomplete."
+}
+if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedIndex" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true) {
+    throw "Resource-tab viewport contract is incomplete."
+}
+
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
+    'ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"',
+    'BringSelectionIntoView="True"',
+    'x:Name="CAM_ActionViewport"',
+    'CanContentScroll="True"',
     'x:Key="CAM_ResourceTabItemStyle"',
     'Text="{Binding ActionResource.Name}"',
     'Style="{StaticResource SpellSlotNumberStyle}"',
@@ -166,6 +183,7 @@ foreach ($forbidden in @(
     'HotBarSlotStyle',
     'HotKey',
     'SlotIconStyle',
+    'DisableScrolling="True"',
     'Public/Game/GUI/',
     'ScriptExtender'
 )) {
@@ -302,4 +320,61 @@ if ($weaponBinding.Value.Contains('BoundEvent="ToggleWeaponSet"')) {
 }
 if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
     throw "Short left navigation must remain on UILeft while weapon switching uses held UISelectionLeft."
+}
+
+
+# Post-single-list viewport ownership: one coordinate root, native tab auto-scroll,
+# and no assignment-only DisableScrolling on the direct grid.
+$actionViewport = [regex]::Match(
+    $text,
+    '<Grid\b[^>]*x:Name="CAM_ActionViewport"[^>]*Width="800"[^>]*Height="850"[\s\S]*?<Control\b[^>]*x:Name="CAM_MainSelector"[\s\S]*?/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $actionViewport.Success -or -not $actionViewport.Value.Contains('x:Name="HotBarList"')) {
+    throw "HotBarList and CAM_MainSelector must share the same 800x850 CAM_ActionViewport."
+}
+
+$actionGridPanel = [regex]::Match(
+    $text,
+    '<ItemsPanelTemplate\b[^>]*x:Key="CAM_ActionGridPanel"[\s\S]*?</ItemsPanelTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $actionGridPanel.Success -or $actionGridPanel.Value.Contains('DisableScrolling="True"')) {
+    throw "Direct CAM_ActionGridPanel must not disable scrolling."
+}
+
+if (-not $hotBarList.Value.Contains('CanContentScroll="True"')) {
+    throw "Direct HotBarList ScrollViewer must enable content scrolling."
+}
+
+$resourceTabs = [regex]::Match(
+    $text,
+    '<ls:LSListBox\b[^>]*x:Name="CAM_ResourceTabs"[\s\S]*?</ls:LSListBox>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceTabs.Success -or
+    -not $resourceTabs.Value.Contains('MaxWidth="1340"') -or
+    -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
+    -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"')) {
+    throw "Resource tabs must use the wider viewport and native SelectedIndex auto-scroll."
+}
+
+$tabSelection = [regex]::Match(
+    $resourceTabs.Value,
+    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?</b:EventTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $tabSelection.Success -or
+    -not $tabSelection.Value.Contains('TargetName="CAM_MainSelector" PropertyName="Visibility" Value="Collapsed"')) {
+    throw "Resource change must hide stale selector chrome before filtering/refocus."
+}
+
+$focusTimer = [regex]::Match(
+    $hotBarList.Value,
+    '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $focusTimer.Success -or
+    -not $focusTimer.Value.Contains('TargetName="CAM_MainSelector" PropertyName="Visibility" Value="Visible"')) {
+    throw "Delayed HotBarList focus handoff must reveal selector at the new focused cell."
 }

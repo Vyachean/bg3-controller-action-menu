@@ -266,3 +266,24 @@ Therefore CAM weapon switching must use exactly:
 `WeaponSetShortcutBinding: BoundEvent="UISelectionLeft", HoldTime="{StaticResource HoldTimeShortcuts}", Command=SwitchWeaponSetCommand, EatInput=False`.
 
 The visible `ToggleWeaponSet` remains the captured vanilla `ControllerHoldButtonStyle` hint with no BoundEvent. Grid-left remains `UILeft`. Do not use `ToggleWeaponSet` semantic binding in ActionRadials unless a future current-game capture proves different behavior.
+
+
+## Post-single-list viewport correction
+
+Runtime proof after the single-list refactor shows four presentation defects without evidence of gameplay-state regression:
+- resource-tab changes reset navigation to the first action, but the selector can remain painted at the previous tab's old coordinates until the next directional input;
+- lower action rows are focusable but remain clipped;
+- the selector is offset from the action cell;
+- the resource row is too narrow and does not follow off-screen LB/RB selection.
+
+These are presentation/navigation ownership issues, not reasons to restore duplicate executable lists.
+
+Required corrections:
+- the direct `HotBarList` and `CAM_MainSelector` must share the exact same 800x850 coordinate viewport;
+- `CAM_ActionGridPanel` must not keep the old assignment-only `DisableScrolling="True"` now that it is the direct items panel of the scroll-owning list;
+- the direct list ScrollViewer must enable content scrolling;
+- changing resource selection hides stale selector chrome until the new `HotBarList.LocalFocus` handoff completes;
+- the resource list uses the captured BG3 `AutoScrollBehavior(ScrollIntoView=SelectedIndex, BringSelectionIntoView=True)`;
+- the resource viewport may be wider than the action grid, but must not alter action focus geometry.
+
+Do not change FilterActionResourceCommand, UseSlotCommand, ClearSingleHotbarCommand, nested-state flags, upcast semantics, or weapon-set input as part of this correction.
