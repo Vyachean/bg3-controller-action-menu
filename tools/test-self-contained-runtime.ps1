@@ -612,7 +612,7 @@ if (-not $resourceTabStyle.Success -or
     -not $resourceTabStyle.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
     -not $resourceTabStyle.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration"') -or
     -not $resourceTabStyle.Value.Contains('Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
-    -not $resourceTabStyle.Value.Contains('RightOperand="{x:Null}"') -or
+    -not $resourceTabStyle.Value.Contains('Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"') -or
     -not $resourceTabStyle.Value.Contains('Binding="{Binding ActionResource.Value}" Value="0"') -or
     $resourceTabStyle.Value.Contains('CAM_FilterButtonBackground') -or
     $resourceTabStyle.Value.Contains('btn_pil_') -or
