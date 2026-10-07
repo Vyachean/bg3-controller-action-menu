@@ -50,11 +50,11 @@ The fresh capture corrected two stale development-fixture assumptions:
 - current `SelectorAssign` has no hard-coded `Width`, `Height` or `Margin`;
 - current radial focus uses `LocalFocus.DataContext`, with the native 70 ms delayed handoff, rather than `LocalFocus.Tag`.
 
-The LB/RB tabs are semantic filters (Common, current class, Items, Passives, Cantrips), not independent raw action catalogs. Resource filters are native `ActionResourcesCostPreview` objects. `SingleHotBar.SlotList` remains BG3-owned for nested/container/upcast/variant state. Native A/B dispatch is retained, while radial customization is deliberately unavailable.
+The only LB/RB navigation level is now the dynamic native resource list from `ActionResourcesCostPreview`. Selecting a resource invokes `FilterActionResourceCommand`; the grid renders native `SingleHotBar.SlotList` slots. There are no class/type tabs and no separate Live Details panel: focused cells use the ordinary BG3 tooltip. Native A/nested-state dispatch is retained, while radial customization remains unavailable.
 
 The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only.
 
-This candidate is not yet claimed runtime-correct. Static/package CI must be green first; after that, one milestone in-game run should verify long-grid navigation, semantic filters, resource preview, A dispatch, one natural nested/container case, native hints, and top-level/nested B together.
+Resource-first semantics that depend on BG3 runtime materialization are proof-gated. After green package CI, one milestone run verifies dynamic resource tabs, Spell Slot filtering/upcast materialization, Action/Bonus breadth, tooltip/A, and top-level versus true nested B behavior.
 
 ## Universal development shortcut
 
