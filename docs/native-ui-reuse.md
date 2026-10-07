@@ -16,13 +16,9 @@ VMHotBarSlot
   execution parameter -> VMHotBarSlot
 ```
 
-Therefore CAM's executable main cells come only from native hotbar-slot collections:
+Therefore CAM executes only native hotbar-slot VMs. Current HotBar evidence proves several native slot collections, but the shipping resource-first surface intentionally uses one executable source: `SingleHotBar.SlotList`, populated by BG3's own `FilterActionResourceCommand` and reused for nested variant/upcast/container state.
 
-- `CurrentShownDeck.SlotList`;
-- `CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList`;
-- `SingleHotBar.SlotList`.
-
-Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates.
+Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates. `CurrentShownDeck.SlotList` and `PassivesHotBar.SlotList` remain evidence of the VMHotBarSlot boundary, not additional top-level CAM lists.
 
 ## Controller cell presentation
 
@@ -34,11 +30,9 @@ The fresh capture distinguishes three presentation contracts:
 
 The focused/executed object remains the surrounding `VMHotBarSlot`; only presentation dereferences `slot.Content.Icon`. The action `ListBoxItem` itself is 104×104.
 
-The stock `SelectorTemplate` compensates the selector texture with a 12px outset. Runtime proved the stock `-12` treatment too large in CAM, while removing the compensation entirely made the visible frame strongly too small. The missing geometry is now explicit: CAM's focus cell is 120px while its visible icon is 104px. Therefore `CAM_SelectorTemplate` retains only `12 - (120-104)/2 = 4` pixels of the native compensation (`Margin="-4"` outside and `Margin="4"` inside). Selector width/height still come from focus; no synthetic fixed selector size is introduced.
+The detached selector experiment is retired. Current CAM follows the Patch 8 SpellBook controller pattern: each action item is `ls:MoveFocus.Focusable=True`, its own template reacts to `ls:MoveFocus.IsFocused`, and `LSGrid.Columns` is derived from the enclosing `ScrollContentPresenter.ActualWidth`. Focus chrome therefore lives in the same item coordinate space as the executable slot and cannot remain behind when a resource result is replaced.
 
-Primary type navigation now follows the current **controller SpellBook carousel** instead of imitating keyboard/mouse HotBar pills. The selected tab name is shown prominently between LB/RB glyphs, with native pagination dots underneath. This is a controller-native navigation idiom and avoids cramped pseudo-desktop tabs.
-
-The current HotBar resource controls are a separate compact 72px strip. CAM does not present `ActionResourcesCostPreview` as action cells or draw `ActionResource.Name` below them. The strip is the secondary filter layer above the action catalog. It now uses the same single horizontal StackPanel layout as HotBar rather than an `LSGrid`; hidden preview entries therefore cannot reserve empty grid rows. SpellSlot/WarlockSpellSlot resources retain `RomanNumeralLevelImage`. Controller focus alone does not change the filter; `UIAccept` invokes `FilterActionResourceCommand`.
+The top-level navigation is the resource strip itself. CAM binds one horizontal LB/RB list directly to `ActionResourcesCostPreview`; `SelectionChanged` invokes `FilterActionResourceCommand(selectedPreview)` and returns focus to the action list. SpellSlot/WarlockSpellSlot entries retain native level presentation. Generic entries use `ActionResource.Name`, with `ActionResource.TypeId` only as a null-name fallback. The strip is bounded and follows its selected index instead of widening the whole menu.
 
 ## Controller organization
 
@@ -67,10 +61,6 @@ There is no CAM Live Details panel. The ordinary native action tooltip remains t
 
 ## HotBar filter semantics
 
-The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM:
-
-- `Set## HotBar filter semantics
-
 The current keyboard `HotBar.xaml` capture proves the model/commands used by the resource-first runtime:
 
 - `CurrentPlayer.UIData.ActionResourcesCostPreview`;
@@ -91,7 +81,7 @@ They remain useful evidence for how BG3 groups SpellBook presentation, but they 
 The current native radial lifecycle uses the focused item's **DataContext**.
 
 ```text
-CAM_FilteredSlotList.LocalFocus.DataContext
+HotBarList.LocalFocus.DataContext
         |
         +--> ActionRadials.Tag
         +--> CreateFocusedTooltipDataCommand(slot)
@@ -125,11 +115,11 @@ HotBarList.LocalFocus.DataContext = VMHotBarSlot
         +--> existing 70 ms ActionRadials.Tag / focused-tooltip-data lifecycle
 ```
 
-The tooltip content is the native action/item/passive object, not CAM-authored description text. The same pattern is present on `SingleBar` for variants/upcasts.
+The tooltip content is the native action/item/passive object, not CAM-authored description text. Variants/upcasts reuse the same `HotBarList` because BG3 replaces `SingleHotBar.SlotList` rather than CAM switching to a second list.
 
 ## Navigation reuse
 
-The captured assignment UI proves `LSGrid(ActionUp/Down/Left/Right = UIUp/UIDown/UILeft/UIRight)`, focusable `ListBoxItem` cells, and a local-focus selector. CAM reuses those primitives but no longer copies the assignment screen's outer/child-list hierarchy when it has only one executable collection.
+The captured assignment UI proves the four controller direction events and focusable action cells; the current SpellBook adds the simpler adaptive-grid pattern used by CAM.
 
 The resource-first runtime has one executable controller list:
 
@@ -137,15 +127,22 @@ The resource-first runtime has one executable controller list:
 HotBarList
   ItemsSource = SingleHotBar.SlotList
   DirectionalNavigation = Contained
-  LocalFocusSelector = CAM_MainSelector
-  ScrollViewer = vertical
+  ScrollViewer = pixel scrolling
         |
         v
 CAM_ActionGridPanel
   UIUp / UIDown / UILeft / UIRight
+  Columns = floor(ScrollContentPresenter.ActualWidth / 120)
+  UseWidgetNavigation = true
+  AlwaysSelectFirst = true
+        |
+        v
+CAM_ActionGridSlotContainer
+  MoveFocus.Focusable = true
+  item-local focus chrome
 ```
 
-The list itself owns tooltip updates and the native delayed `LocalFocus.DataContext -> ActionRadials.Tag` lifecycle. This removes the old `HotBarList -> CAM_FilteredSlotList` wrapper and makes selector, scrolling, tooltip, and execution observe the same focused item.
+The list owns scrolling, tooltip updates and the native delayed `LocalFocus.DataContext -> ActionRadials.Tag` lifecycle. This removes the old wrapper lists and detached selector so navigation, focus presentation, tooltip and execution all observe the same focused slot.
 
 ## Native nested state and B
 
@@ -181,7 +178,7 @@ Radial editing is outside CAM. `ShowContextMenu` is hidden/inert and assign/swap
 
 ## Resource ownership
 
-CAM references already-loaded native styles/templates such as slot visuals, selector chrome, input hints and action-resource rendering. It does not copy the full Larian controller dictionary or any `Public/Game/GUI` resource into the mod.
+CAM references already-loaded native styles/templates such as input hints, focus visual resources and action-resource rendering. It does not copy the full Larian controller dictionary or any `Public/Game/GUI` resource into the mod.
 
 If a future Patch changes one of these dependencies, the developer capture is refreshed and the project-owned contract is reviewed before release. Installation never derives a replacement from the user's local game.
 
