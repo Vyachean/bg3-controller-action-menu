@@ -40,7 +40,7 @@ project-owned ActionRadialWidgetTemplate_P8
                 UIAccept -> UseSlotCommand(slot)
 ```
 
-There is no return to the rejected raw Common/Class/Cantrips/Items/Passives source-tab UI and no secondary resource-filter layer. The top level remains a single controller cost/source sequence. Resource previews are the primary provider, but they are not assumed to be a complete executable catalog; proven native non-resource providers may join that same sequence when needed to satisfy action parity.
+There is no return to the rejected raw Common/Class/Items/Passives source-tab UI and no secondary resource-filter layer. The top level remains a single controller cost/source sequence. Cantrips are the one proven zero-cost special provider and use BG3's own `FilterCantripsCommand` rather than a raw catalog. Resource previews are the primary provider, but they are not assumed to be a complete executable catalog; proven native non-resource providers may join that same sequence when needed to satisfy action parity.
 
 ## Evidence boundary
 
@@ -83,12 +83,12 @@ evidence, but CAM still dispatches only native `VMHotBarSlot` values.
 Current shipping providers are:
 
 - `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList`;
+- native Cantrips via `FilterCantripsCommand(h7d02199dg44ecg4a1egbcacg9cc1cec197b3) -> SingleHotBar.SlotList`;
 - `PassivesHotBar.SlotList`;
 - `SingleHotBar.SlotList` for native nested/upcast/variant/throw state.
 
-Current unresolved source classes are cantrips, free/no-resource actions,
-inventory/consumables, scrolls, item charges, metamagic toggles, temporary actions and
-recasts. These are correctness blockers for a complete HotBar replacement.
+Current unresolved source classes are free/no-resource actions, inventory/consumables,
+scrolls, item charges, metamagic toggles, temporary actions and recasts. These are correctness blockers for a complete HotBar replacement.
 
 A future provider must be proven against the current installed game and materialize
 executable `VMHotBarSlot` values. This requirement does not authorize raw source tabs,
