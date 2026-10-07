@@ -20,7 +20,7 @@ The development launcher is deliberately reusable across builds and development 
 2. download that release's `dev-entry.ps1`;
 3. run it hidden.
 
-The release-controlled entry decides the current task. In the 0.0.74 development milestone it downloads `capture-self-contained-inputs.ps1` and reads `Game.pak` only to capture the exact current HotBar/UI XAML. It does not launch BG3 or install/update the mod. After this evidence milestone, the release-controlled task returns to the normal `install-latest.ps1` path.
+The release-controlled entry decides the current task. In 0.0.75 it is back on the normal `install-latest.ps1` path and installs the already-built self-contained release PAK without inspecting or extracting BG3 game files. The temporary 0.0.74 read-only HotBar capture milestone is complete.
 
 There is no permanent local bootstrap and no second capture VBS. Existing legacy VBS+bootstrap folders migrate automatically after one successful legacy install.
 
