@@ -198,10 +198,14 @@
                                DataContext="{Binding ActionResource}"/>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
+                                <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
+                            </MultiDataTrigger.Conditions>
                             <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
-                        </Trigger>
+                        </MultiDataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
                             <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
@@ -246,11 +250,6 @@
                      Focusable="False"
                      Tag="{x:Null}"/>
             <Control x:Name="CAM_TabCycleMarker"
-                     Visibility="Collapsed"
-                     IsEnabled="False"
-                     Focusable="False"
-                     Tag="{x:Null}"/>
-            <Control x:Name="CAM_PassivesModeMarker"
                      Visibility="Collapsed"
                      IsEnabled="False"
                      Focusable="False"
@@ -452,12 +451,12 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleLeftToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <ls:SelectNextListBoxItem Reversed="True"
                                                               TargetObject="{Binding ElementName=CAM_ResourceTabs}"
                                                               ForceMode="Cycle"/>
@@ -468,7 +467,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -480,7 +479,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterPassivesToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Ordinary previous native resource. -->
@@ -488,7 +487,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="GreaterThan" RightOperand="0"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -532,7 +531,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{x:Null}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -544,7 +543,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabReturnFirstToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                 </b:EventTrigger>
 
@@ -553,7 +552,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -586,6 +585,7 @@
                         <ls:LSListBox x:Name="CAM_ResourceTabs"
                                       ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"
                                       SelectedIndex="0"
+                                      Tag="{x:Null}"
                                       HorizontalAlignment="Stretch"
                                       HorizontalContentAlignment="Center"
                                       VerticalAlignment="Center"
@@ -624,7 +624,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:EventTrigger>
 
@@ -649,7 +649,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -674,7 +674,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -691,7 +691,7 @@
                                 </b:TimerTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
-                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -717,7 +717,7 @@
                                     <Style TargetType="{x:Type Image}">
                                         <Setter Property="Visibility" Value="Visible"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -730,7 +730,7 @@
                                     <Style TargetType="{x:Type Image}">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -778,7 +778,7 @@
                                 <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
                                     <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
                                         </DataTrigger>
