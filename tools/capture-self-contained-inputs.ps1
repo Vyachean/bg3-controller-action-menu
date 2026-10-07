@@ -211,6 +211,7 @@ try {
         PreloadedActionRadials = @($manifest | Where-Object { $_.PackagedPath -like "*PreloadedActionRadials*.xaml" })
         ActionRadials = @($manifest | Where-Object { $_.PackagedPath -like "*ActionRadials.xaml" -and $_.PackagedPath -notlike "*Preloaded*" })
         HotBar = @($manifest | Where-Object { $_.PackagedPath -like "*HotBar*.xaml" })
+        HotBarPage = @($manifest | Where-Object { $_.PackagedPath -eq "Mods/MainUI/GUI/Pages/HotBar.xaml" })
         DataTemplates = @($manifest | Where-Object { $_.PackagedPath -like "*DataTemplates.xaml" })
         Controller = @($manifest | Where-Object { $_.PackagedPath -like "*Controller.xaml" })
     }

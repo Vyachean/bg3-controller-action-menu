@@ -131,7 +131,7 @@ See [docs/development-vbs.md](docs/development-vbs.md).
 
 ## Installer boundary
 
-The stable bootstrap contract must remain tiny: newest release -> download `install-latest.ps1` -> execute it. Do not make the bootstrap understand version-specific assets.
+The stable operator bootstrap contract must remain tiny: newest published release -> download `dev-entry.ps1` -> execute the release-controlled task. The VBS must not understand version-specific assets. Normal installation remains a release-controlled `dev-entry.ps1 -> install-latest.ps1` task, while an explicit development milestone may temporarily select a read-only capture task.
 
 The VBS installer is portable: caches, downloaded release assets, logs, status and diagnostics belong under a directory beside the VBS launcher. The only writes outside that portable directory are the intentional BG3 mod PAK/profile changes and their safety backups.
 
@@ -636,3 +636,24 @@ The cause is a presentation-boundary error: 0.0.69–0.0.72 used the HotBar **ac
 - Passives uses the same filter chrome so it is one visual sequence with resource tabs.
 
 Item templates, focus/tooltip authority, Passives transition serialization, nested return, and A/B dispatch stay unchanged.
+
+
+## Evidence correction — 0.0.73 -> exact current HotBar resource-filter capture
+
+0.0.73 runtime disproves the assumption that CAM's requested icon tabs correspond to the keyboard HotBar `FilterButton / ActiveFilterButton` component.
+
+There are two distinct native HotBar surfaces:
+
+- textual deck/filter buttons such as Common/Class/Items/Passives use the `FilterButton / ActiveFilterButton` pill presentation;
+- the icon row the operator is referring to is the **action-resource filter bar**, sourced from `CurrentPlayer.UIData.ActionResourcesCostPreview` and invoking `FilterActionResourceCommand`.
+
+Do not make another visual runtime candidate from historical/public HotBar markup or from reconstructed assets. Before changing the tab presentation again, capture the exact installed Xbox App 1.8.910.0 `Mods/MainUI/GUI/Pages/HotBar.xaml` with the existing read-only self-contained capture tool and derive the resource-filter presentation from that file.
+
+The next development release is capture-only:
+- the permanent operator VBS remains unchanged;
+- release-controlled `dev-entry.ps1` runs `capture-self-contained-inputs.ps1`;
+- no BG3 files, saves, profiles or mods are modified by the capture;
+- no gameplay/XAML presentation change is made in this milestone;
+- after the capture is inspected, restore the normal install task and implement one evidence-based visual correction.
+
+Already confirmed runtime behavior must remain untouched: native VMItem quantity rendering, LocalFocus authority, tooltip behavior, resource-first filtering, Passives serialization, nested return and native action dispatch.
