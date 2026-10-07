@@ -203,11 +203,9 @@ foreach ($obsoleteList in @('CAM_FilteredSlotList','CAM_FilteredSlotHolder','Sin
     }
 }
 
-# No custom details surface: focused native content goes to LSTooltip.
-foreach ($tooltipName in @('CAM_ActionTooltip','CAM_SingleActionTooltip')) {
-    if (-not $text.Contains('x:Name="' + $tooltipName + '"')) {
-        throw "Missing native focused-action tooltip: $tooltipName"
-    }
+# No custom details surface: the sole executable list owns the sole native tooltip.
+if (-not $text.Contains('x:Name="CAM_ActionTooltip"')) {
+    throw "HotBarList must own the native focused-action tooltip."
 }
 if (-not $text.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"')) {
     throw "Main tooltip must consume focused VMHotBarSlot.Content."
