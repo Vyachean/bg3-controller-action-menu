@@ -704,3 +704,26 @@ Patch 8 HotBar behavior:
 CAM must keep that renderer/binding exactly, but persistent grid focus must not emulate an endless mouse hover. In CAM action-focus triggers, preserve the proven `HighlightResourcesCommand` seam only as a disabled action and immediately clear preview state with `ClearResourceHighlightsCommand`. Tooltip data, `ActionRadials.Tag`, and A dispatch remain sourced from `HotBarList.LocalFocus.DataContext`.
 
 Do not replace the native renderer, alter resource quantities, or change filtering/Passives/nested/A/B semantics for this correction.
+
+
+## Runtime correction — 0.0.76 -> literal native ActionResourcesList item template
+
+0.0.76 fixes persistent controller resource-cost preview state, but the resource item itself is still CAM-owned through `ListBoxItem.ControlTemplate`. Runtime feedback requires the tabs to look exactly like keyboard/mouse HotBar.
+
+For every native `VMActionResourceCostPreview`, CAM must use a dedicated `DataTemplate` whose visual subtree matches current Patch 8 `ActionResourcesList`:
+- `LSButton Padding=0 Margin=4,-10,4,10`;
+- inner `Root Width=72`;
+- exact `box_resource_*` / `box_resourceNum_*` layers;
+- exact `LSActionPointResources` bindings, including `HighlightedActionPoints = Cost`;
+- exact `ResourcesNumeralDisplay` fallback and Bardic Inspiration adjustment;
+- exact SpellSlot/WarlockSpellSlot Root.Tag -> spell-slot chrome transition;
+- exact `IsMouseOver` highlight trigger;
+- exact zero-value missing-resource trigger.
+
+The outer `LSListBox` is controller transport only. Its item container may own the native presenter margin and suppress default ListBox chrome, but `ListBoxItem.IsSelected` must not alter any resource visual. LB/RB changes filtering only.
+
+Do not replace native `LSButton` with a Grid. Do not map `IsSelected -> box_resource_h`. Do not zero `HighlightedActionPoints`: the exact HotBar template binds it to preview `Cost`.
+
+The 0.0.76 resting-preview correction remains in force: controller action focus must not permanently drive HotBar resource-hover preview state.
+
+Passives remains the sole synthetic CAM entry. Item quantities, action-grid focus/tooltip authority, nested return, Passives serialization and A/B dispatch are out of scope.
