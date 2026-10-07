@@ -35,7 +35,8 @@
       "SingleHotBar.SlotList (resource filters, Cantrips, native nested state)",
       "CurrentShownDeck.SlotList when SetCurrentShownDeckCommand(ItemHotBar) materializes the native Items deck",
       "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList",
-      "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList"
+      "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
+      "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList (grouped native keyboard-HotBar fallback)"
     ],
     "resourcePreviewSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
     "resourceFilterCommand": "FilterActionResourceCommand",
@@ -54,7 +55,7 @@
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
       "executableList": "HotBarList",
-      "itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag",
+      "itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList (All fallback) via CAM_ResourceTabs.Tag",
       "directionalNavigation": "Contained",
       "nextEvent": "UIDown",
       "prevEvent": "UIUp",
@@ -144,7 +145,8 @@
           "CAM_CantripsModeToken",
           "CAM_ItemsModeToken",
           "CAM_MetamagicModeToken",
-          "CAM_PassivesModeToken"
+          "CAM_PassivesModeToken",
+          "CAM_AllModeToken"
         ],
         "cantripsSource": "FilterCantripsCommand -> SingleHotBar.SlotList",
         "cantripsParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
@@ -154,19 +156,22 @@
         "directProviderRestore": "CAM_NestedRestoringToken -> focus first direct-provider slot",
         "itemsSource": "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList",
         "itemsNestedBehavior": "nested flags -> SingleHotBar.SlotList; CurrentShownDeck remains ItemHotBar",
-        "itemsRestore": "CAM_NestedRestoringToken -> CurrentShownDeck.SlotList + first-item focus"
+        "itemsRestore": "CAM_NestedRestoringToken -> CurrentShownDeck.SlotList + first-item focus",
+        "allSource": "KeyboardHotBars[*].SlotList grouped through CAM_AllGroupTemplate",
+        "allNestedBehavior": "nested flags -> SingleHotBar.SlotList",
+        "allRestore": "CAM_NestedRestoringToken -> first non-empty KeyboardHotBars group -> first VMHotBarSlot"
       },
       "passivesReturn": {
-        "modeAuthority": "CAM_ResourceTabs.Tag = CAM_PassivesModeToken for the entire originating shoulder-button Click",
-        "rightToken": "CAM_TabReturnFirstToken",
-        "rightTarget": "preserved selected resource index 0",
-        "rightPrepare": "FilterActionResourceCommand(selected resource) while HotBarList still shows Passives",
-        "leftWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken",
-        "leftWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)",
-        "focusAfterModeSwitch": "CAM_ResetFirstFocusToken + SelectedIndex=0",
+        "modeAuthority": "CAM_ResourceTabs.Tag serializes one shoulder-button transition",
+        "rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_AllModeToken",
+        "rightFromAll": "CAM_TabReturnFirstToken -> FilterActionResourceCommand(selected resource)",
+        "leftFromAll": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken",
+        "leftFromPassivesWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken",
+        "leftFromPassivesWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)",
+        "focusAfterModeSwitch": "CAM_ResetFirstFocusToken + SelectedIndex=-1 -> 0",
         "ordinaryResourceClickHandlersEligibleDuringReturn": false,
         "singleShoulderPressSingleLogicalTransition": true,
-        "rightModeSwitchMilliseconds": 70,
+        "resourceReturnMilliseconds": 70,
         "specialModeSwitchMilliseconds": 70,
         "leftFallbackModeSwitchMilliseconds": 90
       },
@@ -178,11 +183,24 @@
           "IsShowingItemsToThrow"
         ],
         "directProviders": [
+          "CAM_ItemsModeToken",
+          "CAM_AllModeToken",
           "CAM_MetamagicModeToken",
           "CAM_PassivesModeToken"
         ],
         "restoreSignal": "CAM_NestedReturnMarker = CAM_NestedRestoringToken",
-        "restoreAction": "CAM_ResetFirstFocusToken + SelectedIndex=0"
+        "restoreAction": "provider-specific first concrete slot handoff"
+      },
+      "keyboardHotBarsFallback": {
+        "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars",
+        "groupType": "VMHotBar",
+        "executableChild": "VMHotBar.SlotList -> VMHotBarSlot",
+        "presentation": "outer HotBarList -> nested CAM_AllGroupSlots",
+        "focusAuthority": "HotBarList.LocalFocus.DataContext across nested LSListBox descendants",
+        "modeToken": "CAM_AllModeToken",
+        "role": "coverage fallback, not primary action classification",
+        "nestedOverride": "native nested flags -> SingleHotBar.SlotList",
+        "nestedRestore": "reselect first VMHotBar group -> first concrete VMHotBarSlot"
       }
     },
     "buttonHintsContainer": {
@@ -208,7 +226,7 @@
       "camSelectorOutset": null,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
       "selectorDerivation": null,
-      "tabPattern": "exact-hotbar-action-resources-plus-cantrips-plus-items-plus-metamagic-plus-passives",
+      "tabPattern": "exact-hotbar-action-resources-plus-cantrips-plus-items-plus-metamagic-plus-passives-plus-all-fallback",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
@@ -347,6 +365,14 @@
         "icon": "Core/Assets/Shared/ico_container_more_d.png",
         "chrome": "CAM resource-box-style special provider",
         "nativeEvidence": "ItemsFilter is always present in captured Patch 8 keyboard HotBar and invokes SetCurrentShownDeckCommand with CommandParameter=ItemHotBar"
+      },
+      "allTab": {
+        "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList",
+        "modeToken": "CAM_AllModeToken",
+        "icon": "GustavNoesisGUI/Assets/Shared/ico_tab_all.png",
+        "chrome": "CAM resource-box-style special provider",
+        "grouping": "VMHotBar groups rendered through nested LSListBox; executable children remain VMHotBarSlot",
+        "nativeEvidence": "Patch 8 HotBar binds KeyboardHotBars to HotBarTemplate; HotBarTemplate DataType=VMHotBar and reads SlotList"
       }
     },
     "tooltipPresentation": {
@@ -367,21 +393,21 @@
       "resourcePreviewPolicy": "CreateFocusedTooltipDataCommand remains LocalFocus.DataContext-driven; transient resource hover preview is cleared for stable tab quantity"
     },
     "organization": {
-      "mode": "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives",
+      "mode": "resource-first-plus-cantrips-plus-items-plus-metamagic-plus-passives-plus-all-fallback",
       "topLevelDimensions": 1,
       "primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "primaryTabItemType": "VMActionResourceCostPreview",
       "primarySelectionCommand": "FilterActionResourceCommand",
       "primarySelectionParameter": "CAM_ResourceTabs.SelectedItem",
-      "primaryGridSource": "SingleHotBar.SlotList | CurrentShownDeck.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList",
+      "primaryGridSource": "SingleHotBar.SlotList | CurrentShownDeck.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList",
       "typeTabsAllowed": false,
       "secondaryResourceLayerAllowed": false,
-      "tabOrdering": "BG3-native resources, Cantrips when HasCantrips, Items via ItemHotBar, Metamagic when FixedSideBar.SlotList.Count > 0, then Passives",
+      "tabOrdering": "BG3-native resources, Cantrips when HasCantrips, Items via ItemHotBar, Metamagic when FixedSideBar.SlotList.Count > 0, Passives, then All keyboard-HotBar fallback",
       "genericResourceLabel": null,
       "spellLevelPresentation": "RomanNumeralLevelImage",
       "duplicateExecutionVariantsAllowed": true,
-      "freeGroupStatus": "pending-proven-native-executable-source",
-      "consumableSourceGroupStatus": "pending-proven-native-executable-source",
+      "freeGroupStatus": "covered-by-keyboard-hotbars-fallback; radial-parity-unverified",
+      "consumableSourceGroupStatus": "covered-by-ItemHotBar-and-keyboard-hotbars; radial-parity-unverified",
       "detailsSurface": "native-tooltip-only",
       "passivesTabAllowed": true,
       "passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -401,7 +427,11 @@
       "itemsCommand": "SetCurrentShownDeckCommand",
       "itemsCommandParameter": "ItemHotBar",
       "itemsSource": "CurrentShownDeck.SlotList",
-      "itemsModeToken": "CAM_ItemsModeToken"
+      "itemsModeToken": "CAM_ItemsModeToken",
+      "allTabAllowed": true,
+      "allSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList",
+      "allModeToken": "CAM_AllModeToken",
+      "allRole": "last-resort native keyboard-HotBar coverage fallback; no string/icon/source heuristics"
     },
     "nativeEvidence": {
       "deckCommands": {
@@ -455,6 +485,14 @@
         "nativeObjectBinding": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar",
         "nativeRole": "metamagic fixed sidebar",
         "itemType": "VMHotBarSlot",
+        "shippingStatus": "wired-runtime-unverified"
+      },
+      "keyboardHotBars": {
+        "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars",
+        "itemType": "VMHotBar",
+        "childBinding": "SlotList",
+        "childType": "VMHotBarSlot",
+        "nativeTemplate": "HotBarTemplate",
         "shippingStatus": "wired-runtime-unverified"
       }
     },
@@ -542,15 +580,10 @@
         "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList",
         "FixedSideBar.SlotList (native Metamagic VMHotBar provider)",
         "PassivesHotBar.SlotList",
-        "SingleHotBar.SlotList for native nested/variant/upcast/throw state"
+        "SingleHotBar.SlotList for native nested/variant/upcast/throw state",
+        "KeyboardHotBars[*].SlotList grouped fallback for complete native keyboard-HotBar reachability"
       ],
-      "knownMissingSourceClasses": [
-        "free/no-resource actions",
-        "scrolls",
-        "item-charge actions",
-        "temporary actions",
-        "recasts"
-      ],
+      "knownMissingSourceClasses": [],
       "dynamicRuntimeProofClasses": [
         "Action resource actions",
         "Bonus Action resource actions",
@@ -601,7 +634,11 @@
         "metamagic toggles",
         "inventory/consumables",
         "scrolls",
-        "item-charge actions"
+        "item-charge actions",
+        "free/no-resource actions",
+        "temporary actions",
+        "recasts",
+        "keyboard HotBar grouped fallback"
       ],
       "itemDeckParity": {
         "provenKeyboardSource": "ItemHotBar -> CurrentShownDeck.SlotList",
@@ -612,6 +649,21 @@
           "all item-charge actions are present",
           "ItemHotBar is a strict superset of radial Inventory.Slots"
         ]
+      },
+      "parityUnresolvedClasses": [
+        "free/no-resource actions",
+        "inventory/consumables vs radial Inventory.Slots",
+        "scrolls",
+        "item-charge actions",
+        "temporary actions",
+        "recasts",
+        "mod-added radial-only candidates"
+      ],
+      "keyboardSourceCoverage": {
+        "status": "complete-by-native-provider-construction",
+        "fallback": "KeyboardHotBars[*].SlotList",
+        "claim": "All executable slots exposed by the native keyboard HotBar collection are reachable in CAM All fallback.",
+        "limitation": "Does not prove equality with the independent radial-assignment catalog."
       }
     }
   },
