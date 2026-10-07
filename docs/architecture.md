@@ -781,3 +781,43 @@ VMActionResourceCostPreview
 ```
 
 The `box_resource_*` and `box_resourceNum_*` assets are no longer part of the top-level tab chrome. Resource-value text remains absent. Passives uses the same filter chrome so the full LB/RB sequence reads as one native filter row.
+
+
+### 0.0.76 — native ActionResourcesList item, controller selection outside presentation
+
+0.0.75 copied the correct assets but still owned the resource visuals through `CAM_ResourceTabItemStyle.ControlTemplate`. That changed the native presentation boundary: a controller-selected `ListBoxItem` was mapped to `box_resource_h`, while keyboard/mouse HotBar only maps `IsMouseOver` to that highlight.
+
+0.0.76 separates behavior from presentation:
+
+```text
+CAM_ResourceTabs : LSListBox
+  selection -> FilterActionResourceCommand
+  no selection visual
+  |
+  +-- ItemContainerStyle
+  |     transparent presenter only
+  |     Margin=-4,0,-4,0
+  |
+  +-- ItemTemplate = captured ActionResourcesList visual
+        LSButton Padding=0 Margin=4,-10,4,10
+          Root Width=72
+            box_resource_* layers
+            LSActionPointResources
+              MaxActionPoints=MaxValue
+              AvailableActionPoints=Value
+              HighlightedActionPoints=Cost
+              DataContext=ActionResource
+              MaxActionPointGroups=0
+              SmallActionPointSize=24
+              ActionPointGroupSize=56
+              ActionResourcesTemplateSelector
+            RomanNumeralLevelImage
+            ResourcesNumeralDisplay
+        visual triggers:
+          Root.Tag=SpellSlot -> box_resourceNum_*
+          IsMouseOver -> highlighted box
+          Value=0 -> missing box
+          BardicInspiration -> native numeral adjustment
+```
+
+LB/RB therefore changes only selection/filter semantics. Native resource content no longer knows whether its outer controller list item is selected.
