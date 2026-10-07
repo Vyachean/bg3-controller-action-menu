@@ -116,89 +116,35 @@ if ($ResolveOnly) {
     [pscustomobject]@{
         Tag = $tag
         Version = $version
-        Task = "capture"
+        Task = "install"
     } | ConvertTo-Json
     exit 0
 }
 
-# Current release task: collect one read-only native HotBar/radial evidence archive.
-# The universal VBS remains unchanged. This temporary milestone deliberately does
-# not install/update the CAM PAK and does not launch BG3.
-$captureAsset = Get-Asset -Release $release -Name "capture-self-contained-inputs.ps1"
+# Current release task: install/update the self-contained PAK.
+# This is deliberately the only release-specific decision in the universal
+# development entry. A later release may replace this body with capture,
+# diagnostics, install+capture, or another development operation without
+# changing the operator's VBS shortcut.
+$installerAsset = Get-Asset -Release $release -Name "install-latest.ps1"
 $releaseDir = Join-Path $CacheRoot $tag
-$capture = Join-Path $releaseDir "capture-self-contained-inputs.ps1"
-Save-Asset -Asset $captureAsset -Destination $capture
+$installer = Join-Path $releaseDir "install-latest.ps1"
+Save-Asset -Asset $installerAsset -Destination $installer
 
-$captureRoot = if ($LauncherRoot) { $LauncherRoot } else { $PortableStateRoot }
-New-Item -ItemType Directory -Force -Path $captureRoot | Out-Null
-
-$captureStatus = Join-Path $captureRoot "capture-status.txt"
-$captureLog = Join-Path $captureRoot "capture.log"
-Remove-Item -LiteralPath $captureStatus -Force -ErrorAction SilentlyContinue
-
-$captureArgs = @(
-    "-NoLogo",
-    "-NoProfile",
-    "-ExecutionPolicy", "Bypass",
-    "-File", $capture,
-    "-PortableRoot", $captureRoot
-)
-
-& powershell.exe @captureArgs
-$captureExitCode = $LASTEXITCODE
-$global:LASTEXITCODE = 0
-
-if (Test-Path -LiteralPath $captureLog -PathType Leaf) {
-    $resolvedTaskLog = [System.IO.Path]::GetFullPath($LogPath)
-    $resolvedCaptureLog = [System.IO.Path]::GetFullPath($captureLog)
-    if ($resolvedTaskLog -ne $resolvedCaptureLog) {
-        Copy-Item -LiteralPath $captureLog -Destination $LogPath -Force
-    }
+$installerArgs = @{
+    Repository = $Repository
+    ReleaseApiUrl = $ReleaseApiUrl
+    ReleaseMetadataPath = $ReleaseMetadataPath
+    CacheRoot = Join-Path $releaseDir "install-cache"
+    LogPath = $LogPath
+    StatusPath = $StatusPath
+    ReportPath = $ReportPath
+    LauncherRoot = $LauncherRoot
 }
 
-$captureState = ""
-$captureMessage = ""
-$archive = ""
-if (Test-Path -LiteralPath $captureStatus -PathType Leaf) {
-    $captureLines = @(Get-Content -LiteralPath $captureStatus -Encoding Unicode)
-    if ($captureLines.Count -ge 1) { $captureState = [string]$captureLines[0] }
-    if ($captureLines.Count -ge 2) { $captureMessage = [string]$captureLines[1] }
-    if ($captureLines.Count -ge 3) { $archive = [string]$captureLines[2] }
-}
-
-$report = [ordered]@{
-    Task = "capture"
-    Release = $version
-    State = $captureState
-    Archive = $archive
-    CaptureStatus = $captureStatus
-    CaptureLog = $captureLog
-    ReadOnly = $true
-}
-$report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
-
-if ($captureExitCode -ne 0 -or $captureState -ne "SUCCESS" -or -not $archive -or -not (Test-Path -LiteralPath $archive -PathType Leaf)) {
-    $failure = if ($captureMessage) {
-        $captureMessage
-    } elseif ($captureExitCode -ne 0) {
-        "Read-only native capture failed with exit code $captureExitCode."
-    } else {
-        "Read-only native capture did not produce the expected archive."
-    }
-
-    @(
-        "ERROR",
-        $version,
-        $failure
-    ) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
-    throw $failure
-}
-
-@(
-    "SUCCESS",
-    $version,
-    "Read-only HotBar coverage capture completed. ZIP: $archive"
-) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
-
-Write-Host "Read-only HotBar coverage capture completed: $archive"
+# install-latest.ps1 is an in-process PowerShell helper. If it returns,
+# the task succeeded; failures propagate as terminating exceptions. Never use
+# $LASTEXITCODE as the status of a script invoked with & because it may be null
+# or left over from an unrelated native command.
+& $installer @installerArgs
 exit 0
