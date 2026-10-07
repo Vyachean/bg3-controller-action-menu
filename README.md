@@ -50,11 +50,13 @@ The fresh capture corrected two stale development-fixture assumptions:
 - current `SelectorAssign` has no hard-coded `Width`, `Height` or `Margin`;
 - current radial focus uses `LocalFocus.DataContext`, with the native 70 ms delayed handoff, rather than `LocalFocus.Tag`.
 
-The only LB/RB navigation level is now the dynamic native resource list from `ActionResourcesCostPreview`. Selecting a resource invokes `FilterActionResourceCommand`; the grid renders native `SingleHotBar.SlotList` slots. There are no class/type tabs and no separate Live Details panel: focused cells use the ordinary BG3 tooltip. Native A/nested-state dispatch is retained, while radial customization remains unavailable.
+The only LB/RB navigation dimension remains a controller cost/source row. Native resource previews from `ActionResourcesCostPreview` are the primary provider: selecting one invokes `FilterActionResourceCommand`, and the grid renders native `SingleHotBar.SlotList` slots. Passives use the proven `PassivesHotBar.SlotList` exception. There is no separate Live Details panel: focused cells use the ordinary BG3 tooltip. Native A/nested-state dispatch is retained, while radial customization remains unavailable.
 
-The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only.
+The resource provider is **not treated as proof of a complete HotBar catalog**. CAM now has an explicit parity contract against both the keyboard HotBar and the radial assignment catalog. Known uncovered/proof-gated classes include free/no-resource actions, Cantrips, inventory/consumables, Scrolls, item-charge actions, metamagic toggles, temporary actions and recasts. See [Action coverage](docs/action-coverage.md).
 
-Resource-first semantics that depend on BG3 runtime materialization are proof-gated. After green package CI, one milestone run verifies dynamic resource tabs, Spell Slot filtering/upcast materialization, Action/Bonus breadth, tooltip/A, and top-level versus true nested B behavior.
+The obsolete install-time `native-overlay.ps1` derivation path and its synthetic reference fixtures have been removed. The developer capture helper remains read-only evidence tooling only. It now derives a small `hotbar-coverage-contract.json` report containing the current native deck/filter command parameters, so future source work does not require manually inspecting raw captured XAML.
+
+Resource-first semantics that depend on BG3 runtime materialization remain proof-gated. After green package CI, one combined milestone run should verify the remaining semantic parity questions rather than testing each source hypothesis separately.
 
 ## Universal development shortcut
 
@@ -125,6 +127,7 @@ development VBS
 See:
 
 - [Architecture](docs/architecture.md)
+- [Action coverage](docs/action-coverage.md)
 - [Native UI reuse](docs/native-ui-reuse.md)
 - [Testing strategy](docs/testing.md)
 - [Release process](docs/release-process.md)
