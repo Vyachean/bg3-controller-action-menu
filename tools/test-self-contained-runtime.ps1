@@ -578,37 +578,50 @@ if (-not $resourceRestoreTimer.Success -or
 
 $resourceTabStyle = [regex]::Match(
     $text,
-    '<Style\b[^>]*x:Key="CAM_ResourceTabItemStyle"[\s\S]*?</Style>',
+    '<Style\b[^>]*x:Key="CAM_ResourceTabItemStyle"[\s\S]*?(?=<ItemsPanelTemplate\b[^>]*x:Key="CAM_ResourceTabsPanel")',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabStyle.Success -or
-    -not $resourceTabStyle.Value.Contains('Property="Margin" Value="-4,0"') -or
-    -not $resourceTabStyle.Value.Contains('Property="MinWidth" Value="72"') -or
-    -not $resourceTabStyle.Value.Contains('Property="Height" Value="64"') -or
-    -not $resourceTabStyle.Value.Contains('<ls:LSNineSliceImage x:Name="FilterBg"') -or
-    -not $resourceTabStyle.Value.Contains('ImageSource="{StaticResource CAM_FilterButtonBackground}"') -or
-    -not $resourceTabStyle.Value.Contains('Slices="36"') -or
-    -not $resourceTabStyle.Value.Contains('Padding="10"') -or
+    -not $resourceTabStyle.Value.Contains('Property="Margin" Value="-4,0,-4,0"') -or
+    -not $resourceTabStyle.Value.Contains('Property="Width" Value="80"') -or
+    -not $resourceTabStyle.Value.Contains('Property="Height" Value="72"') -or
+    -not $resourceTabStyle.Value.Contains('Margin="4,-10,4,10"') -or
+    -not $resourceTabStyle.Value.Contains('x:Name="Root" Width="72"') -or
+    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceBg}"') -or
+    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResource}"') -or
+    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceH}"') -or
+    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceDisabled}"') -or
     -not $resourceTabStyle.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
     -not $resourceTabStyle.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
     -not $resourceTabStyle.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
     -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
     -not $resourceTabStyle.Value.Contains('DataContext="{Binding ActionResource}"') -or
+    -not $resourceTabStyle.Value.Contains('SmallActionPointSize="24"') -or
+    -not $resourceTabStyle.Value.Contains('ActionPointGroupSize="56"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_ActiveFilterButtonBackground}"') -or
-    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_DisabledFilterButtonBackground}"') -or
-    -not $resourceTabStyle.Value.Contains('ImageSource="{StaticResource CAM_FilterMarkerBackground}"') -or
-    -not $resourceTabStyle.Value.Contains('Source="{StaticResource ActiveModArrow}"') -or
-    $resourceTabStyle.Value.Contains('ResourcesNumeralDisplay') -or
-    $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Value}"') -or
-    $resourceTabStyle.Value.Contains('CAM_BoxResource') -or
-    $resourceTabStyle.Value.Contains('box_resource') -or
+    -not $resourceTabStyle.Value.Contains('Margin="0,-10,0,0"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumBg}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNum}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumH}"') -or
+    -not $resourceTabStyle.Value.Contains('Value="{StaticResource CAM_BoxResourceNumDisabled}"') -or
+    -not $resourceTabStyle.Value.Contains('Property="Margin" Value="0,-8,0,0"') -or
+    -not $resourceTabStyle.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
+    -not $resourceTabStyle.Value.Contains('Setter Property="Visibility" Value="Hidden"') -or
+    -not $resourceTabStyle.Value.Contains('Converter="{StaticResource LessThanOrEqualMultiConverter}"') -or
+    -not $resourceTabStyle.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
+    -not $resourceTabStyle.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration"') -or
+    -not $resourceTabStyle.Value.Contains('Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"') -or
+    -not $resourceTabStyle.Value.Contains('RightOperand="{x:Null}"') -or
+    -not $resourceTabStyle.Value.Contains('Binding="{Binding ActionResource.Value}" Value="0"') -or
+    $resourceTabStyle.Value.Contains('CAM_FilterButtonBackground') -or
+    $resourceTabStyle.Value.Contains('btn_pil_') -or
+    $resourceTabStyle.Value.Contains('ActiveModArrow') -or
     $resourceTabStyle.Value.Contains('Style="{StaticResource SectionImageStyle}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Name}"') -or
     $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.TypeId}"') -or
     $resourceTabStyle.Value.Contains('AlignableWrapPanel')) {
-    throw "Resource tabs must use HotBar FilterButton chrome with native resource identity."
+    throw "Resource tabs must mirror the captured Patch 8 ActionResourcesList resource-button presentation."
 }
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
@@ -652,20 +665,25 @@ if ($passivesLeftReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyNa
 
 $passivesTab = [regex]::Match(
     $text,
-    '<Grid\b[^>]*x:Name="CAM_PassivesTab"[\s\S]*?</Grid>',
+    '<Grid\b[^>]*x:Name="CAM_PassivesTab"[\s\S]*?(?=</StackPanel>)',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $passivesTab.Success -or
     -not $passivesTab.Value.Contains('PassivesHotBar.SlotList.Count') -or
     -not $passivesTab.Value.Contains('PassiveFeature_Generic.png') -or
     -not $passivesTab.Value.Contains('CAM_PassivesModeToken') -or
-    -not $passivesTab.Value.Contains('Slices="36"') -or
-    -not $passivesTab.Value.Contains('Padding="10"') -or
-    -not $passivesTab.Value.Contains('CAM_FilterButtonBackground') -or
-    -not $passivesTab.Value.Contains('CAM_ActiveFilterButtonBackground') -or
-    $passivesTab.Value.Contains('CAM_BoxResource') -or
-    $passivesTab.Value.Contains('box_resource')) {
-    throw "Passives must use the same HotBar filter chrome as resource tabs."
+    -not $passivesTab.Value.Contains('Width="80"') -or
+    -not $passivesTab.Value.Contains('Height="72"') -or
+    -not $passivesTab.Value.Contains('Margin="-4,0,-4,0"') -or
+    -not $passivesTab.Value.Contains('Margin="4,-10,4,10"') -or
+    -not $passivesTab.Value.Contains('Width="72"') -or
+    -not $passivesTab.Value.Contains('CAM_BoxResourceBg') -or
+    -not $passivesTab.Value.Contains('CAM_BoxResource') -or
+    -not $passivesTab.Value.Contains('CAM_BoxResourceH') -or
+    $passivesTab.Value.Contains('CAM_FilterButtonBackground') -or
+    $passivesTab.Value.Contains('btn_pil_') -or
+    $passivesTab.Value.Contains('ActiveModArrow')) {
+    throw "Passives must be a resource-box-style CAM exception inside the exact HotBar resource strip."
 }
 
 $itemTemplate = [regex]::Match(
@@ -786,13 +804,15 @@ if (-not $entryFocusWake.Success -or
     $entryFocusWake.Value.Contains('SelectedItem')) {
     throw "Programmatic entry presentation must source identity only from LocalFocus.DataContext."
 }
-if ($text.Contains('ResourcesNumeralDisplay') -or
-    $text.Contains('GameObject.Count') -or
+if ($text.Contains('GameObject.Count') -or
     $text.Contains('ItemCountHolder') -or
-    $text.Contains('CAM_BoxResource') -or
-    $text.Contains('box_resource_') -or
-    $text.Contains('box_resourceNum_')) {
-    throw "0.0.72 forbids CAM-authored resource numerals and slot-level item quantity overlays."
+    $text.Contains('CAM_FilterButtonBackground') -or
+    $text.Contains('CAM_ActiveFilterButtonBackground') -or
+    $text.Contains('CAM_DisabledFilterButtonBackground') -or
+    $text.Contains('CAM_FilterMarkerBackground') -or
+    $text.Contains('btn_pil_') -or
+    $text.Contains('ActiveModArrow')) {
+    throw "0.0.75 requires exact resource-bar chrome and still forbids slot-level item quantity overlays."
 }
 if ($text.Contains('CAM_EntryFocusCommittedToken') -or
     $text.Contains('Value="{Binding SelectedItem.Content, ElementName=HotBarList}"') -or
