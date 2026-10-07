@@ -224,7 +224,6 @@ foreach ($forbidden in @(
     'HotBarSlotStyle',
     'HotKey',
     'SlotIconStyle',
-    'x:Name="CAM_MainSelector"',
     'x:Key="CAM_SelectorTemplate"',
     'x:Name="ToggleWeaponSet"',
     'x:Name="WeaponSetShortcutBinding"',
