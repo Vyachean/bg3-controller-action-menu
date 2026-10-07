@@ -333,7 +333,7 @@ def validate_semantics() -> list[str]:
                 '"leftFromAll": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken"',
                 '"leftFromPassivesWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken"',
                 '"leftFromPassivesWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)"',
-                '"rightModeSwitchMilliseconds": 70',
+                '"resourceReturnMilliseconds": 70',
                 '"leftFallbackModeSwitchMilliseconds": 90',
                 '"ordinaryResourceClickHandlersEligibleDuringReturn": false',
                 '"singleShoulderPressSingleLogicalTransition": true',
