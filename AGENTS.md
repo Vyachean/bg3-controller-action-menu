@@ -233,3 +233,20 @@ Do not combine focus-tree cleanup with this scrolling proof.
 - subsequent holds fell through to normal grid navigation.
 
 Patch 8 HotBar proves a separate semantic event: `WeaponSetSwitchStyle` binds `BoundEvent="ToggleWeaponSet"`. Therefore the input transport must use `ToggleWeaponSet`, while `UISelectionLeft` remains only the controller hint/physical hold gesture shown by the vanilla `ToggleWeaponSet` visual.
+
+
+## Architecture simplification — single action list
+
+This decision supersedes the current outer-list + filtered-child-list + separate SingleBar composition.
+
+The resource-first runtime must use exactly one controller action list:
+- `HotBarList.ItemsSource = SingleHotBar.SlotList`;
+- `HotBarList` directly owns `CAM_ActionGridPanel`, `CAM_ActionGridSlotContainer`, `CAM_ActionGridSlotTemplate`, tooltip, LocalFocusSelector, scrolling, and the 70 ms native focus handoff;
+- there is no `CAM_FilteredSlotList`, `CAM_FilteredSlotHolder`, `SingleBar`, `singleBarHolder`, `CAM_SingleSelector`, or `CAM_SingleActionTooltip`;
+- BG3 nested container/upcast/throw state continues to replace `SingleHotBar.SlotList`; the same `HotBarList` renders that collection rather than swapping to a second list;
+- when nested flags become true, any native focus-restoration trigger targets `HotBarList` itself;
+- resource tabs still invoke `FilterActionResourceCommand(CAM_ResourceTabs.SelectedItem)`;
+- A remains page-level `UseSlotCommand(ActionRadials.Tag)`;
+- B remains native `ClearSingleHotbarCommand` for nested state and `CustomEvent("CloseWidget")` at top level.
+
+This refactor is specifically intended to remove duplicate focus owners, invisible wrapper transitions, selector coordinate divergence, and scroll ownership ambiguity. Do not add a second executable action list back into the template.

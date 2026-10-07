@@ -159,3 +159,35 @@ The runtime is therefore rolled back to the 0.0.48 architecture. The following 0
 - Toggle Weapon Set hint is present but ineffective.
 
 Do not use re-entrant filter commands or multiple overlapping `UIAccept` consumers to solve these.
+
+
+## Single-list controller architecture
+
+The previous resource-first implementation retained three controller-list surfaces: an outer `HotBarList`, a nested `CAM_FilteredSlotList`, and a separate `SingleBar` for BG3 nested state. That composition is rejected as unnecessary duplication.
+
+The target controller path is now:
+
+```text
+ActionResourcesCostPreview
+        |
+        v
+FilterActionResourceCommand(selected resource)
+        |
+        v
+SingleHotBar.SlotList
+        |
+        v
+HotBarList
+  -> CAM_ActionGridPanel
+  -> LocalFocusSelector
+  -> native tooltip
+  -> ScrollViewer
+  -> 70 ms ActionRadials.Tag handoff
+        |
+        v
+UseSlotCommand(ActionRadials.Tag)
+```
+
+`SingleHotBar.SlotList` is also the BG3-owned collection for nested container/upcast/throw state. CAM therefore does not switch to a second list when those states activate. The collection changes underneath the same `HotBarList`; focus may be explicitly returned to that same list, but no second controller focus tree is created.
+
+This reduces CAM-owned state to presentation plus the selected resource filter. Gameplay rules and nested-state ownership remain entirely in BG3.

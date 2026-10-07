@@ -193,70 +193,15 @@
         <Grid>
             <b:Interaction.Triggers>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
-                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}" DeferFocusAction="True"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
-                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}" DeferFocusAction="True"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
-                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=SingleBar}" DeferFocusAction="True"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
                 </b:DataTrigger>
             </b:Interaction.Triggers>
-
-            <Grid x:Name="singleBarHolder" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <ls:LSListBox x:Name="SingleBar"
-                              Width="760"
-                              MaxHeight="850"
-                              ItemsSource="{Binding SingleHotBar.SlotList}"
-                              SelectedIndex="0"
-                              Background="Transparent"
-                              KeyboardNavigation.DirectionalNavigation="Contained"
-                              ActionNextEvent="UIDown"
-                              ActionPrevEvent="UIUp"
-                              LocalFocusSelector="{Binding ElementName=CAM_SingleSelector,Mode=OneWay}"
-                              Template="{StaticResource ScrolllessListBox}"
-                              ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
-                              ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
-                              ItemsPanel="{StaticResource CAM_ActionGridPanel}">
-                    <ls:LSListBox.ToolTip>
-                        <ls:LSTooltip x:Name="CAM_SingleActionTooltip"
-                                      ToolTipService.Placement="Right"
-                                      ToolTipService.HorizontalOffset="40"
-                                      ToolTipService.VerticalOffset="-40"
-                                      ls:TooltipExtender.Context="Hotbar"/>
-                    </ls:LSListBox.ToolTip>
-                    <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="LocalFocusChanged">
-                            <b:ChangePropertyAction TargetName="CAM_SingleActionTooltip"
-                                                    PropertyName="Content"
-                                                    Value="{Binding LocalFocus.DataContext.Content, ElementName=SingleBar}"/>
-                            <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=SingleBar, Converter={StaticResource NullToBoolFalseConverter}}"
-                                                   Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                   CommandParameter="{Binding ., ElementName=SingleBar}"/>
-                            <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=SingleBar, Converter={StaticResource NullToBoolTrueConverter}}"
-                                                   Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                   CommandParameter="{x:Null}"/>
-                        </b:EventTrigger>
-                        <b:EventTrigger EventName="LocalFocusChanged">
-                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                            <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
-                            <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
-                            <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
-                        </b:EventTrigger>
-                        <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=SingleBar}"/>
-                            <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{Binding LocalFocus.DataContext, ElementName=SingleBar}"/>
-                            <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{Binding LocalFocus.DataContext, ElementName=SingleBar}"/>
-                        </b:TimerTrigger>
-                    </b:Interaction.Triggers>
-                </ls:LSListBox>
-                <Control x:Name="CAM_SingleSelector"
-                         IsHitTestVisible="False"
-                         VerticalAlignment="Top"
-                         HorizontalAlignment="Left"
-                         Template="{StaticResource CAM_SelectorTemplate}"
-                         Visibility="{Binding Visibility, ElementName=SingleBar}"/>
-            </Grid>
 
             <Grid x:Name="MainHotbarListHolder" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid x:Name="CAM_AutoCatalogFocusRoot" Width="840" Height="950" Background="Transparent">
@@ -357,12 +302,16 @@
                         <ls:LSListBox x:Name="HotBarList"
                                       Width="800"
                                       Height="850"
+                                      ItemsSource="{Binding SingleHotBar.SlotList}"
                                       SelectedIndex="0"
                                       Background="Transparent"
                                       KeyboardNavigation.DirectionalNavigation="Contained"
                                       ActionNextEvent="UIDown"
                                       ActionPrevEvent="UIUp"
-                                      LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}">
+                                      LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"
+                                      ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
+                                      ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
+                                      ItemsPanel="{StaticResource CAM_ActionGridPanel}">
                             <ls:LSListBox.ToolTip>
                                 <ls:LSTooltip x:Name="CAM_ActionTooltip"
                                               ToolTipService.Placement="Right"
@@ -370,6 +319,7 @@
                                               ToolTipService.VerticalOffset="-40"
                                               ls:TooltipExtender.Context="Hotbar"/>
                             </ls:LSListBox.ToolTip>
+
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
                                     <ScrollViewer HorizontalScrollBarVisibility="Hidden"
@@ -384,11 +334,6 @@
                                     </ScrollViewer>
                                 </ControlTemplate>
                             </ls:LSListBox.Template>
-                            <ls:LSListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <ls:LSVirtualizingStackPanel/>
-                                </ItemsPanelTemplate>
-                            </ls:LSListBox.ItemsPanel>
 
                             <b:Interaction.Triggers>
                                 <b:EventTrigger EventName="LocalFocusChanged">
@@ -401,35 +346,19 @@
                                     <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolTrueConverter}}"
                                                            Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
+
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
                                 </b:EventTrigger>
+
+                                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                </b:TimerTrigger>
                             </b:Interaction.Triggers>
-
-                            <ls:LSListBoxItem x:Name="CAM_FilteredSlotHolder" HorizontalAlignment="Center">
-                                <ls:LSListBox x:Name="CAM_FilteredSlotList"
-                                              KeyboardNavigation.DirectionalNavigation="Continue"
-                                              Template="{StaticResource ScrolllessListBox}"
-                                              ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
-                                              ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
-                                              ItemsPanel="{StaticResource CAM_ActionGridPanel}">
-                                    <ls:LSListBox.ItemsSource>
-                                        <Binding Path="SingleHotBar.SlotList"/>
-                                    </ls:LSListBox.ItemsSource>
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="LocalFocusChanged">
-                                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                            <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
-                                            <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
-                                            <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
-                                        </b:EventTrigger>
-                                        <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{Binding LocalFocus.DataContext, ElementName=CAM_FilteredSlotList}"/>
-                                            <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FilteredSlotList}"/>
-                                            <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FilteredSlotList}"/>
-                                        </b:TimerTrigger>
-                                    </b:Interaction.Triggers>
-                                </ls:LSListBox>
-                            </ls:LSListBoxItem>
-
                         </ls:LSListBox>
 
                         <Control x:Name="CAM_MainSelector"
@@ -558,18 +487,6 @@
                 <Setter TargetName="UseSlotBinding" Property="IsEnabled" Value="{Binding Tag.Content.IsContainer, ElementName=ActionRadials, FallbackValue=False}"/>
             </DataTrigger>
 
-            <DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
-                <Setter TargetName="singleBarHolder" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
-                <Setter TargetName="singleBarHolder" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
-                <Setter TargetName="singleBarHolder" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="MainHotbarListHolder" Property="Visibility" Value="Collapsed"/>
-            </DataTrigger>
 
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
