@@ -657,3 +657,58 @@ top-level tab transition
 ```
 
 The wake-up does not use `SelectedItem`. If deferred focus has not produced a non-null `LocalFocus.DataContext`, the menu must not synthesize a first-cell tooltip or A target. The native `LocalFocusSelector` remains the visible focus source.
+
+
+### 0.0.71 — exact HotBar resource renderer and non-reentrant Passives return
+
+0.0.70 keeps the correct resource-first data model but uses the wrong visual seam and lets one shoulder-button click cross two tab-state machines.
+
+#### Native resource visual
+
+The keyboard HotBar resource button is reproduced as a presentation unit rather than reduced to a generic image:
+
+```text
+VMActionResourceCostPreview
+  -> 72px resource box
+  -> LSActionPointResources
+       MaxActionPoints         = MaxValue
+       AvailableActionPoints   = Value
+       HighlightedActionPoints = Cost
+       DataContext             = ActionResource
+       Style                   = ActionResourcesTemplateSelector
+  -> RomanNumeralLevelImage for SpellSlot / WarlockSpellSlot
+  -> ResourcesNumeralDisplay for counts larger than the native point group
+```
+
+`SectionImageStyle` is removed from the tab renderer. It belongs to other native resource-icon surfaces, not the keyboard HotBar filter button itself.
+
+#### Passives boundary
+
+Passives is not a member of `ActionResourcesCostPreview`, so its transition must not masquerade as a normal list cycle within the same input event.
+
+```text
+Passives --RB--> selected resource 0
+  click:
+    clear stale action presentation
+    filter resource 0 while HotBarList still shows Passives
+    keep Passives mode + CAM_TabReturnFirstToken
+  +70 ms:
+    leave Passives mode
+    HotBarList switches to prepared SingleHotBar.SlotList
+    select/focus first concrete action
+
+Passives --LB--> last resource
+  click:
+    clear stale action presentation
+    keep Passives mode
+    CAM_TabReturnLastToken
+    move resource-list selection 0 -> last
+  resource SelectionChanged:
+    filter selected last resource while HotBarList still shows Passives
+  +70 ms:
+    leave Passives mode
+    switch to prepared SingleHotBar.SlotList
+    select/focus first concrete action
+```
+
+Because passive mode remains set during the originating click, ordinary resource LB/RB handlers cannot become newly eligible halfway through that same event.
