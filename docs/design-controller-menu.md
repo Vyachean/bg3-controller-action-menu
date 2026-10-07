@@ -121,3 +121,10 @@ Those questions determine how much of the final execution-variant flattening BG3
 ## Runtime regression note
 
 0.0.49 is not a valid implementation milestone. It attempted to flatten native upcasts and repair navigation in the same runtime revision; in-game this made resource-tab interaction delayed and unpredictable. The target resource-first UX is unchanged, but implementation returns to the 0.0.48 behavior before further isolated fixes.
+
+
+## Simplified interaction model
+
+The action surface has one focus owner. Resource tabs are changed by LB/RB; every executable top-level or nested option is rendered through the same `HotBarList` bound to `SingleHotBar.SlotList`.
+
+There is no separate nested action window and no wrapper list around the grid. Entering a BG3 variant/upcast/throw state changes the contents of the same grid. B uses the native nested cancel path; top-level B closes the menu. This is the preferred baseline before any direct-upcast flattening or tab-layout refinements.
