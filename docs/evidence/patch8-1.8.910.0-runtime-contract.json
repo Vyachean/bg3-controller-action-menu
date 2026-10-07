@@ -199,7 +199,8 @@
         "horizontalScrollState": false,
         "wrappedRows": false,
         "scrollOwner": null,
-        "actionViewportHeight": 850
+        "actionViewportHeight": 850,
+        "selectionPresentation": "none inside native resource item"
       },
       "resourceRenderer": {
         "size": 72,
@@ -249,7 +250,20 @@
           "highlightTransport": "disabled for persistent HotBarList controller focus",
           "restingState": "ClearResourceHighlightsCommand after immediate/delayed/programmatic focus presentation",
           "reason": "HotBar activates cost preview only on MouseEnter and clears it on MouseLeave; persistent controller focus must not emulate endless hover"
-        }
+        },
+        "presentationBoundary": "literal ActionResourcesList DataTemplate inside controller-only LSListBox container",
+        "nativeItemRoot": "LSButton",
+        "nativeItemRootPadding": "0",
+        "nativeItemRootMargin": "4,-10,4,10",
+        "nativeHoverTrigger": "IsMouseOver -> box_resource_h",
+        "controllerSelectedVisual": null,
+        "controllerSelectionAffectsResourceVisual": false,
+        "spellSlotTrigger": "ActionResource.TypeId -> Root.Tag=SpellSlot -> box_resourceNum_*",
+        "outerContainerPresentation": "transparent ContentPresenter only",
+        "outerContainerSelectedVisual": false,
+        "itemContainerMargin": "-4,0,-4,0",
+        "itemTemplateOwnsVisuals": true,
+        "rejectedControllerVisualMapping": "ListBoxItem.IsSelected -> box_resource_h"
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
