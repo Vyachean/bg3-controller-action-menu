@@ -25,7 +25,8 @@ project-owned ActionRadialWidgetTemplate_P8
           |          native VMHotBarSlot variants
           |
           +-- controller action grid
-          |     LSGrid + LocalFocusSelector
+          |     adaptive LSGrid
+          |     item-local ls:MoveFocus focus chrome
           |
           +-- native tooltip/focus lifecycle
                 LocalFocus.DataContext
@@ -70,7 +71,7 @@ The resource tab list:
 - hides entries with no resource object or `MaxValue == 0`;
 - keeps BG3 ordering;
 - renders SpellSlot/WarlockSpellSlot levels from native level data;
-- renders unknown/mod resources from native resource names;
+- renders unknown/mod resources from native resource names, with `ActionResource.TypeId` as a fallback when the name is null;
 - has no class-specific cases.
 
 The product target additionally includes FREE/SCROLLS/charge-based source groups. Those require a proven BG3-owned executable-slot source and must not be synthesized from raw assignment objects.
@@ -148,7 +149,7 @@ CI cannot prove the semantic contents BG3 puts into each resource-filtered `Sing
 
 The 0.0.49 attempt to solve upcast projection, nested-filter recovery, focus/scrolling, tab viewport behavior, and weapon shortcuts in one XAML change regressed the entire interaction model. In-game, tabs became unpredictable and delayed.
 
-The runtime is therefore rolled back to the 0.0.48 architecture. The following 0.0.48 defects remain open and must be solved separately:
+The runtime was therefore rolled back to the 0.0.48 architecture. The following defects were open at that rollback point and were then addressed or re-evaluated in isolated later revisions:
 
 - spell-slot tabs show the base spell and A opens native upcast selection;
 - returning from nested upcast/throw can leave the selected resource grid empty until a tab change;
@@ -179,7 +180,7 @@ SingleHotBar.SlotList
         v
 HotBarList
   -> CAM_ActionGridPanel
-  -> LocalFocusSelector
+  -> item-local MoveFocus focus chrome
   -> native tooltip
   -> ScrollViewer
   -> 70 ms ActionRadials.Tag handoff
@@ -193,9 +194,9 @@ UseSlotCommand(ActionRadials.Tag)
 This reduces CAM-owned state to presentation plus the selected resource filter. Gameplay rules and nested-state ownership remain entirely in BG3.
 
 
-## Viewport ownership after single-list runtime proof
+## Historical viewport correction after single-list runtime proof (superseded)
 
-The one-list architecture is retained. Runtime shows the remaining problems are caused by viewport ownership left over from the former nested assignment composition.
+The one-list architecture is retained. This section records the intermediate 0.0.56–0.0.57 viewport correction. It is not the current presentation contract; the selectorless adaptive section below supersedes its fixed viewport and detached-selector requirements.
 
 The corrected presentation model is:
 

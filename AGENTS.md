@@ -94,9 +94,9 @@ Current mandatory architecture:
 - **resource-first UX is mandatory and supersedes the older type-tab design.** There is one top-level LB/RB tab row bound to `CurrentPlayer.UIData.ActionResourcesCostPreview`; selecting a native `VMActionResourceCostPreview` invokes `FilterActionResourceCommand`, and the main grid consumes `SingleHotBar.SlotList`. Do not ship Common/Class/Cantrips/Items/Passives primary tabs, class-specific tab rules, or a second nested resource-filter layer;
 - resource tabs are dynamic and generic: hide null/MaxValue=0 previews, preserve BG3 order, show native spell-slot level data for SpellSlot/WarlockSpellSlot, and use native resource names for generic/mod resources. The row may scroll horizontally. `FREE`, `SCROLLS`, item-charge groups, or other non-ActionResource groups may be added only from a proven BG3-owned executable `VMHotBarSlot` source/filter; never synthesize them from raw assignment objects or string heuristics;
 - release XAML must not depend on install-time discovery of HotBar command parameters or binding names. Any required current values must be captured during development and represented explicitly in project-owned runtime resources/tests;
-- LB/RB owns resource-tab selection; D-pad/left-stick focus stays in the action grid. The main executable grid uses `LSGrid(UIUp/UIDown/UILeft/UIRight)` plus the project-owned focus selector. Do not make resource tabs a D-pad sub-page. The selector control itself has no fixed width/height; its current compensation remains proof-gated by runtime;
+- LB/RB owns resource-tab selection; D-pad/left-stick focus stays in the action grid. The main executable grid uses an adaptive `LSGrid(UIUp/UIDown/UILeft/UIRight)` whose column count is derived from the current scroll-content width. Focus chrome is item-local through `ls:MoveFocus.IsFocused`; do not reintroduce a detached `LocalFocusSelector` or make resource tabs a D-pad sub-page;
 - do not hard-code a short/fixed action-grid height that truncates the navigation space;
-- action cells are native `VMHotBarSlot` objects. Presentation must use the captured assignment geometry directly: a 104×104 `Content.Icon` surface in a 120×120 `LSGrid` cell, with the focused `ListBoxItem` itself kept at 104×104. Do not use keyboard `HotBarSlotStyle` (keyboard `HotKey` overlay) or radial `SlotIconStyle` (captured 120×120 inner icon) as CAM's action-cell renderer. The selector remains geometry-free and follows the actual focused item. The container may retain `Tag="{Binding .}"` for presentation compatibility, but the current `1.8.910.0` gameplay-facing radial focus lifecycle consumes `LocalFocus.DataContext`;
+- action cells are native `VMHotBarSlot` objects. Presentation must use the captured assignment geometry directly: a 104×104 `Content.Icon` surface in a 120×120 `LSGrid` cell, with the focused `ListBoxItem` itself kept at 104×104. Do not use keyboard `HotBarSlotStyle` (keyboard `HotKey` overlay) or radial `SlotIconStyle` (captured 120×120 inner icon) as CAM's action-cell renderer. The focused cell itself owns the visual focus state; there is no detached selector synchronization layer. The container may retain `Tag="{Binding .}"` for presentation compatibility, but the current `1.8.910.0` gameplay-facing radial focus lifecycle consumes `LocalFocus.DataContext`;
 - main slot focus must reproduce the captured current radial `LocalFocusChanged` lifecycle: clear stale focus state immediately, then after the native 70 ms delay copy `LocalFocus.DataContext` to `ActionRadials.Tag` and invoke `CreateFocusedTooltipDataCommand` / `HighlightResourcesCommand` with that same slot. The ordinary native `LSTooltip` over `VMHotBarSlot.Content` is the **only** details surface; do not add a CAM Live Details panel or author description/cost text;
 - A remains the existing page-level `UIAccept -> UseSlotCommand(ActionRadials.Tag)` path;
 - `SingleHotBar.SlotList` is both the top-level resource-filter result and BG3's nested/upcast/variant/container collection. A populated resource filter must **not** by itself make B a nested-back action: top-level B closes CAM when no `IsShowingAContainerWithVariants`, `IsSelectingUpcastedSpell`, or `IsShowingItemsToThrow` state is active; real nested states retain BG3 cancellation;
@@ -241,7 +241,7 @@ This decision supersedes the current outer-list + filtered-child-list + separate
 
 The resource-first runtime must use exactly one controller action list:
 - `HotBarList.ItemsSource = SingleHotBar.SlotList`;
-- `HotBarList` directly owns `CAM_ActionGridPanel`, `CAM_ActionGridSlotContainer`, `CAM_ActionGridSlotTemplate`, tooltip, LocalFocusSelector, scrolling, and the 70 ms native focus handoff;
+- `HotBarList` directly owns `CAM_ActionGridPanel`, `CAM_ActionGridSlotContainer`, `CAM_ActionGridSlotTemplate`, item-local focus chrome, scrolling, tooltip, and the 70 ms native focus handoff;
 - there is no `CAM_FilteredSlotList`, `CAM_FilteredSlotHolder`, `SingleBar`, `singleBarHolder`, `CAM_SingleSelector`, or `CAM_SingleActionTooltip`;
 - BG3 nested container/upcast/throw state continues to replace `SingleHotBar.SlotList`; the same `HotBarList` renders that collection rather than swapping to a second list;
 - when nested flags become true, any native focus-restoration trigger targets `HotBarList` itself;
@@ -268,7 +268,7 @@ Therefore CAM weapon switching must use exactly:
 The visible `ToggleWeaponSet` remains the captured vanilla `ControllerHoldButtonStyle` hint with no BoundEvent. Grid-left remains `UILeft`. Do not use `ToggleWeaponSet` semantic binding in ActionRadials unless a future current-game capture proves different behavior.
 
 
-## Post-single-list viewport correction
+## Historical post-single-list viewport correction (superseded by selectorless grid)
 
 Runtime proof after the single-list refactor shows four presentation defects without evidence of gameplay-state regression:
 - resource-tab changes reset navigation to the first action, but the selector can remain painted at the previous tab's old coordinates until the next directional input;
@@ -276,7 +276,7 @@ Runtime proof after the single-list refactor shows four presentation defects wit
 - the selector is offset from the action cell;
 - the resource row is too narrow and does not follow off-screen LB/RB selection.
 
-These are presentation/navigation ownership issues, not reasons to restore duplicate executable lists.
+These were presentation/navigation ownership issues, not reasons to restore duplicate executable lists. The selector/800×850 correction below was an intermediate 0.0.56–0.0.57 step and is superseded by the selectorless adaptive architecture in the next section.
 
 Required corrections:
 - the direct `HotBarList` and `CAM_MainSelector` must share the exact same 800x850 coordinate viewport;
@@ -303,6 +303,7 @@ Current installed Patch 8 capture provides a simpler controller presentation pat
 - focused cells use `ls:MoveFocus.IsFocused` / native focus visual behavior instead of an independently positioned selector control;
 - SpellBook wraps the grid in ordinary pixel scrolling rather than forcing `CanContentScroll=True`;
 - current `HotBar.xaml` confirms `ActionResourcesCostPreview` is itself a native clickable `FilterActionResourceCommand` source and hides only `MaxValue=0` items. Therefore CAM must not invent a second semantic resource classifier merely to hide entries.
+- no current native per-preview executable-count/has-actions property is proven. Do not hide an apparently empty tab by reacting to `SingleHotBar.SlotList.Count == 0`, auto-cycling selection, or re-invoking filters from filter results; 0.0.49 already proved that re-entrant filter recovery makes tab interaction unstable.
 
 Required CAM presentation:
 - remove `CAM_MainSelector` and `CAM_SelectorTemplate` completely;
