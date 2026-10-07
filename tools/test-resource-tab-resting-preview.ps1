@@ -9,21 +9,25 @@ if (-not (Test-Path -LiteralPath $Runtime -PathType Leaf)) {
 
 $text = Get-Content -Raw -LiteralPath $Runtime
 
-$resourceTabStyle = [regex]::Match(
+$resourceTabTemplate = [regex]::Match(
     $text,
-    '<Style\b[^>]*x:Key="CAM_ResourceTabItemStyle"[\s\S]*?(?=<ItemsPanelTemplate\b[^>]*x:Key="CAM_ResourceTabsPanel")',
+    '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $resourceTabStyle.Success) {
-    throw "CAM_ResourceTabItemStyle was not found."
+if (-not $resourceTabTemplate.Success) {
+    throw "CAM_ResourceTabTemplate was not found."
 }
-if (-not $resourceTabStyle.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
-    -not $resourceTabStyle.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
-    -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
-    -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
-    -not $resourceTabStyle.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
-    -not $resourceTabStyle.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"')) {
-    throw "Resource tabs must keep the exact captured HotBar quantity renderer and native Cost binding."
+if (-not $resourceTabTemplate.Value.Contains('<ls:LSButton Padding="0"') -or
+    -not $resourceTabTemplate.Value.Contains('Margin="4,-10,4,10"') -or
+    -not $resourceTabTemplate.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
+    -not $resourceTabTemplate.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
+    -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
+    -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
+    -not $resourceTabTemplate.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
+    -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">') -or
+    $resourceTabTemplate.Value.Contains('IsSelected')) {
+    throw "Resource tabs must use the literal captured HotBar quantity renderer without controller-selected visual state."
 }
 
 $hotBarList = [regex]::Match(

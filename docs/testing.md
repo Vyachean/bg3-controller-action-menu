@@ -1144,3 +1144,23 @@ The exact capture shows why: HotBar's `Cost` highlight is transient and brackete
 - conditional native `ResourcesNumeralDisplay` stays intact.
 
 The next in-game check is limited to whether the tab contents now communicate current resource quantity like resting HotBar.
+
+
+### 2026-10-07 — literal HotBar resource item acceptance
+
+Runtime feedback after the exact-resource-bar work: resource contents still look broken compared with keyboard/mouse HotBar. The next proof is structural rather than asset-based.
+
+For native resource entries:
+
+1. `CAM_ResourceTabs` remains the LB/RB filter owner;
+2. its `ListBoxItem` container has no selected-state resource visual;
+3. `ItemTemplate` contains native `LSButton Padding="0" Margin="4,-10,4,10"`;
+4. the subtree matches captured `ActionResourcesList`: `Root Width=72`, exact resource layers, exact value/max/cost bindings, 24/56 point sizes, numeral fallback, spell-slot chrome and Bardic adjustment;
+5. `IsMouseOver`, not `ListBoxItem.IsSelected`, owns `box_resource_h`;
+6. zero resource value owns missing-resource chrome;
+7. outer presenter keeps `Margin=-4,0,-4,0`;
+8. shared `bar_resources.png` strip remains unchanged;
+9. 0.0.76 resting resource-preview behavior remains unchanged;
+10. Passives remains a synthetic adjacent entry.
+
+In-game acceptance is one direct visual comparison against keyboard/mouse HotBar.
