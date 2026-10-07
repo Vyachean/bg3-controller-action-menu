@@ -38,8 +38,9 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passive
     $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | PassivesHotBar.SlotList" -or
     $evidence.runtimeContract.organization.passivesTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
-    $evidence.runtimeContract.organization.passivesModeFlag -ne "IsShowingPassivesDeck" -or
-    $evidence.runtimeContract.organization.passivesModeCommand -ne "SetIsShowingPassivesDeckCommand" -or
+    $evidence.runtimeContract.organization.passivesModeStorage -ne "CAM_ResourceTabs.Tag" -or
+    $evidence.runtimeContract.organization.passivesModeToken -ne "CAM_PassivesModeToken" -or
+    $evidence.runtimeContract.organization.passivesModeOwnership -ne "CAM presentation-only" -or
     $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
     $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
     throw "Resource-first plus Passives organization evidence is incomplete or regressed."
@@ -110,13 +111,15 @@ if ($evidence.runtimeContract.controllerPresentation.itemQuantity.source -ne "Ga
     $evidence.runtimeContract.controllerPresentation.itemQuantity.style -ne "ItemAmountTextStyle") {
     throw "Native item quantity evidence is incomplete."
 }
-if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeFlag -ne "IsShowingPassivesDeck" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.command -ne "SetIsShowingPassivesDeckCommand" -or
+if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeToken -ne "CAM_PassivesModeToken" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.ownership -ne "CAM presentation-only" -or
     $evidence.runtimeContract.assignmentNavigation.sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
     $evidence.runtimeContract.assignmentNavigation.sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
     $evidence.runtimeContract.assignmentNavigation.sourceSwitch.executableList -ne "HotBarList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.duplicateExecutableLists -ne $false) {
-    throw "Passives must switch the sole HotBarList source through native HotBar state."
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.duplicateExecutableLists -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
+    throw "Passives must switch the sole HotBarList through CAM presentation state over the proven native PassivesHotBar source."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
@@ -154,8 +157,8 @@ $required = @(
     '<ls:LSActionPointResources x:Name="ResourcePoints"',
     'Style="{StaticResource ActionResourcesTemplateSelector}"',
     'x:Name="CAM_PassivesTab"',
-    'IsShowingPassivesDeck',
-    'SetIsShowingPassivesDeckCommand',
+    'x:Key="CAM_PassivesModeToken"',
+    'Tag="{x:Null}"',
     'PlayerCharacterProperties.PassivesHotBar.SlotList',
     'x:Key="CAM_EntryFocusCommittedToken"',
     'Value="{StaticResource CAM_EntryFocusCommittedToken}"',
@@ -244,6 +247,8 @@ foreach ($forbidden in @(
     'SetCurrentShownDeckCommand',
     'FilterCantripsCommand',
     'CurrentShownDeck.SlotList',
+    'IsShowingPassivesDeck',
+    'SetIsShowingPassivesDeckCommand',
     'CAM_ResourceFilterHolder',
     'CAM_ResourceFilterList',
     'CAM_ResourceFilterTemplate',
@@ -305,7 +310,7 @@ $mainList = [regex]::Match(
 )
 if (-not $mainList.Success -or
     -not $mainList.Value.Contains('<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>') -or
-    -not $mainList.Value.Contains('Binding="{Binding IsShowingPassivesDeck}" Value="True"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"') -or
     -not $mainList.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
     -not $mainList.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
@@ -482,11 +487,11 @@ $tabRight = [regex]::Match(
 )
 if (-not $tabLeft.Success -or -not $tabRight.Success -or
     -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
-    -not $tabLeft.Value.Contains('SetIsShowingPassivesDeckCommand') -or
+    -not $tabLeft.Value.Contains('CAM_PassivesModeToken') -or
     -not $tabLeft.Value.Contains('Reversed="True"') -or
     -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
     -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
-    -not $tabRight.Value.Contains('SetIsShowingPassivesDeckCommand') -or
+    -not $tabRight.Value.Contains('CAM_PassivesModeToken') -or
     $tabLeft.Value.Contains('ForceSelect="True"') -or
     $tabRight.Value.Contains('ForceSelect="True"')) {
     throw "LB/RB must form one resource-plus-Passives cycle without ForceSelect."
@@ -495,7 +500,7 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
 if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 3 -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
-    -not $resourceTabs.Value.Contains('Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource TrueValue}"') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"') -or
     [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
     [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 3) {
     throw "Resource selection must distinguish right-wrap Passives entry from ordinary native resource filtering and clear stale LocalFocus."
@@ -549,7 +554,7 @@ $passivesTab = [regex]::Match(
 if (-not $passivesTab.Success -or
     -not $passivesTab.Value.Contains('PassivesHotBar.SlotList.Count') -or
     -not $passivesTab.Value.Contains('PassiveFeature_Generic.png') -or
-    -not $passivesTab.Value.Contains('IsShowingPassivesDeck')) {
+    -not $passivesTab.Value.Contains('CAM_PassivesModeToken')) {
     throw "Passives must be a visible top-level native-slot tab in the compact row."
 }
 
