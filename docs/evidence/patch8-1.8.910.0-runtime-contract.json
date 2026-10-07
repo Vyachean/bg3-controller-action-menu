@@ -79,7 +79,7 @@
         "gridAlwaysSelectFirst": false,
         "gridInternalFocusable": false
       },
-      "focusPresentation": "item-local:ls:MoveFocus.IsFocused; logical-owner:LocalFocusSelector",
+      "focusPresentation": "item-local:IsSelected<-LocalFocus.DataContext; logical-owner:LocalFocusSelector",
       "adaptiveColumns": {
         "source": "ScrollContentPresenter.ActualWidth",
         "divisor": 120,
@@ -87,7 +87,10 @@
         "rounding": "Floor"
       },
       "selectorVisibleChrome": false,
-      "selectorOpacity": 0
+      "selectorOpacity": 0,
+      "visibleFocusSource": "HotBarList.SelectedItem",
+      "visibleFocusSyncEvent": "LocalFocusChanged",
+      "visibleFocusSyncValue": "HotBarList.LocalFocus.DataContext"
     },
     "buttonHintsContainer": {
       "style": "ButtonHint.Container.CenterWrap",
@@ -118,14 +121,15 @@
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "tabItemType": "VMActionResourceCostPreview",
       "genericTabLabel": "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)",
-      "spellSlotTabLabel": "SpellSlotNumberStyle",
+      "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
         "mode": "bounded-horizontal-scroll",
         "autoScrollBehavior": "AutoScrollBehavior",
         "scrollIntoView": "SelectedIndex",
         "bringSelectionIntoView": true,
-        "maxTabWidth": 260,
-        "listMaxWidth": 1160
+        "maxTabWidth": null,
+        "listMaxWidth": 1160,
+        "itemTextTrimming": false
       }
     },
     "tooltipPresentation": {
@@ -148,7 +152,7 @@
       "secondaryResourceLayerAllowed": false,
       "tabOrdering": "BG3-native",
       "genericResourceLabel": "ActionResource.Name",
-      "spellLevelPresentation": "SpellSlotNumberStyle",
+      "spellLevelPresentation": "RomanNumeralLevelImage",
       "duplicateExecutionVariantsAllowed": true,
       "freeGroupStatus": "pending-proven-native-executable-source",
       "consumableSourceGroupStatus": "pending-proven-native-executable-source",
@@ -175,12 +179,12 @@
       "sameExecutableListForNestedState": true
     },
     "runtimeProofQuestions": [
-      "Does four-direction grid navigation work again with LocalFocusSelector restored only as an invisible logical anchor?",
-      "Does A execute the same VMHotBarSlot exposed through HotBarList.LocalFocus.DataContext?",
+      "Does visible focus chrome move with the same VMHotBarSlot reported by HotBarList.LocalFocus.DataContext?",
+      "Does A still execute the same logically focused VMHotBarSlot?",
       "Do lower rows scroll using pixel scrolling and VerticalScrollOffsetMargin?",
-      "Do wider resource tabs keep native names readable and selected tabs visible?",
-      "Do null/empty resource labels expose TypeId while spell slots retain level presentation?",
-      "Is the broken CAM-owned weapon-set shortcut absent?"
+      "Do long generic resource names render without a CAM per-tab width cap while the outer viewport remains bounded?",
+      "Do SpellSlot/WarlockSpellSlot tabs render native RomanNumeralLevelImage levels instead of blank text tabs?",
+      "Is the broken CAM-owned weapon-set shortcut still absent?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
