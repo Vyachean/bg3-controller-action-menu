@@ -964,7 +964,7 @@ The next runtime check is limited to: immediate tooltip after tab switch, immedi
 2. text resource-name/fallback labels and `AlignableWrapPanel` are absent from the resource tab row;
 3. `PassivesHotBar.SlotList` enters shipping runtime only as the explicit Passives top-level mode;
 4. one `HotBarList` switches between `SingleHotBar.SlotList` and `PassivesHotBar.SlotList`; no second executable grid is introduced;
-5. passive mode uses native `IsShowingPassivesDeck` / `SetIsShowingPassivesDeckCommand`;
+5. passive mode uses only the CAM presentation token on `CAM_ResourceTabs.Tag`; no unproven BG3 passives-mode command/property exists in runtime;
 6. LB/RB cycling can cross both boundaries between the native resource sequence and Passives;
 7. action cells render item quantity from `GameObject.Count` with `AbbreviateNumberConverter` and `ItemAmountTextStyle`;
 8. tab entry clears LocalFocus before selecting index 0;
