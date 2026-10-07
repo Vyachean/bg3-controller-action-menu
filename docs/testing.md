@@ -1054,3 +1054,25 @@ Runtime proof should verify:
 - no stray numbers appear on resource tabs;
 - Action / Bonus Action / spell-slot tabs visually match the keyboard HotBar resource chrome;
 - stacked scrolls, potions and other usable items show the same stack quantity treatment as inventory/keyboard HotBar.
+
+
+### 2026-10-07 — 0.0.72 runtime result / 0.0.73 proof boundary
+
+0.0.72 runtime:
+- stray tab numbers are gone;
+- item stack counts now render correctly;
+- top-level tabs still do not resemble the keyboard/mouse HotBar filters.
+
+The remaining issue is presentation-only. Automatic proof for 0.0.73 must require:
+
+1. top-level resource tabs use the current HotBar `FilterButton / ActiveFilterButton` asset family: `btn_pil_d`, `btn_pil_active_d`, `btn_pil_disabled`;
+2. selected tabs expose the native top marker using `btn_pil_inactivemod_d + ActiveModArrow`;
+3. filter chrome uses nine-slice `Slices=36`, `Padding=10`, and native `Margin=-4,0`;
+4. `box_resource_*` and `box_resourceNum_*` are absent from the top-level tab template and Passives tab;
+5. resource identity remains native `LSActionPointResources + ActionResourcesTemplateSelector`;
+6. spell-slot tabs retain `RomanNumeralLevelImage`;
+7. no resource-name labels or resource-value numerals are introduced;
+8. Passives uses the same filter chrome as resource tabs;
+9. item templates, focus/tooltip authority, Passives transition serialization, nested return and A/B dispatch are unchanged.
+
+Next runtime proof is limited to the visual comparison of the top filter row. Item quantity does not need to be retested unless it visibly regresses.
