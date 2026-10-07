@@ -151,15 +151,16 @@
         "rightToken": "CAM_TabReturnFirstToken",
         "rightTarget": "preserved selected resource index 0",
         "rightPrepare": "FilterActionResourceCommand(selected resource) while HotBarList still shows Passives",
-        "leftToken": "CAM_TabReturnLastToken",
-        "leftTarget": "SelectNextListBoxItem(Reversed=True, ForceMode=Cycle) while passive mode remains active",
-        "leftPrepare": "SelectionChanged filters the selected last resource while HotBarList still shows Passives",
+        "leftWhenCantripsAvailable": "CAM_TabEnterSpecialToken -> CAM_CantripsModeToken -> FilterCantripsCommand",
+        "leftWhenCantripsUnavailable": "CAM_TabReturnLastToken -> SelectNextListBoxItem(Reversed=True, ForceMode=Cycle)",
+        "leftFallbackPrepare": "SelectionChanged filters the selected last resource while HotBarList still shows Passives",
         "focusAfterModeSwitch": "CAM_ResetFirstFocusToken + SelectedIndex=0",
         "ordinaryResourceClickHandlersEligibleDuringReturn": false,
         "singleShoulderPressSingleLogicalTransition": true,
         "rightModeSwitchMilliseconds": 70,
-        "leftModeSwitchMilliseconds": 90,
-        "leftSettleGuard": "generic 70 ms resource SelectionChanged focus timer is disabled while CAM_TabReturnLastToken is armed"
+        "specialModeSwitchMilliseconds": 70,
+        "leftFallbackModeSwitchMilliseconds": 90,
+        "leftFallbackSettleGuard": "generic 70 ms resource SelectionChanged focus timer is disabled while CAM_TabReturnLastToken is armed"
       }
     },
     "buttonHintsContainer": {
