@@ -474,16 +474,15 @@ def validate_semantics() -> list[str]:
             DEV_ENTRY,
             [
                 "releases?per_page=20",
-                'capture-self-contained-inputs.ps1',
+                'install-latest.ps1',
                 "ReleaseMetadataPath",
                 "foreach ($release in @($payload))",
                 "Save-Asset",
                 "LauncherRoot",
-                '$task = "capture-hotbar-resource-filter"',
-                "Current development task: capture the exact installed Patch 8 HotBar/UI inputs",
-                "-PortableRoot $captureRoot",
-                "Capture reported success but did not produce the expected ZIP archive.",
-                "HotBar resource-filter capture completed.",
+                'Task = "install"',
+                "Current release task: install/update the self-contained PAK.",
+                "& $installer @installerArgs",
+                "failures propagate as terminating exceptions",
             ],
         )
     )
@@ -492,12 +491,10 @@ def validate_semantics() -> list[str]:
         require_text(
             DEV_ENTRY_TEST,
             [
-                "Universal release-controlled HotBar capture entry fixture passed.",
-                'name = "capture-self-contained-inputs.ps1"',
-                'Task -ne "capture-hotbar-resource-filter"',
-                "bg3-controller-action-menu-inputs-fixture.zip",
-                "capture-status.txt",
-                "-ResolveOnly",
+                "Universal release-controlled development entry fixture passed.",
+                "Release-controlled helper was not executed.",
+                'cmd.exe /c "exit 23"',
+                "must use exception semantics instead",
             ],
         )
     )
