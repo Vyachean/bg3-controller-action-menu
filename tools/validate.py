@@ -589,7 +589,7 @@ def validate_semantics() -> list[str]:
             DEV_ENTRY,
             [
                 "releases?per_page=20",
-                'capture-self-contained-inputs.ps1',
+                'install-latest.ps1',
                 "ReleaseMetadataPath",
                 "foreach ($release in @($payload))",
                 "Save-Asset",
@@ -597,11 +597,10 @@ def validate_semantics() -> list[str]:
                 '$token = $env:GH_TOKEN',
                 '$token = $env:GITHUB_TOKEN',
                 '$headers["Authorization"] = "Bearer $token"',
-                'Task = "capture"',
-                "Current release task: collect one read-only native HotBar/radial evidence archive.",
-                '"-PortableRoot", $captureRoot',
-                'ReadOnly = $true',
-                "Read-only HotBar coverage capture completed.",
+                'Task = "install"',
+                "Current release task: install/update the self-contained PAK.",
+                "& $installer @installerArgs",
+                "failures propagate as terminating exceptions",
             ],
         )
     )
@@ -610,11 +609,10 @@ def validate_semantics() -> list[str]:
         require_text(
             DEV_ENTRY_TEST,
             [
-                "Universal release-controlled read-only capture entry fixture passed.",
-                "Release-controlled capture helper was not executed.",
+                "Universal release-controlled development entry fixture passed.",
+                "Release-controlled helper was not executed.",
                 'cmd.exe /c "exit 23"',
-                "Capture archive must be written beside the operator VBS.",
-                "fixture read-only capture log",
+                "must use exception semantics instead",
             ],
         )
     )
