@@ -293,8 +293,17 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <ContentPresenter HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
+                    <Grid Background="Transparent">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                        <b:Interaction.Triggers>
+                            <b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True">
+                                <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}"
+                                                        PropertyName="Tag"
+                                                        Value="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"/>
+                            </b:DataTrigger>
+                        </b:Interaction.Triggers>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -475,6 +484,11 @@
                      IsEnabled="False"
                      Focusable="False"
                      Tag="{x:Null}"/>
+            <Control x:Name="CAM_ProviderModeMarker"
+                     Visibility="Collapsed"
+                     IsEnabled="False"
+                     Focusable="False"
+                     Tag="{x:Null}"/>
             <ls:LSButton x:Name="CAM_ProviderRestoreCommand"
                          Visibility="Collapsed"
                          IsEnabled="False"
@@ -487,23 +501,23 @@
                         <Setter Property="Command" Value="{Binding FilterActionResourceCommand}"/>
                         <Setter Property="CommandParameter" Value="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_CantripsModeToken}">
                                 <Setter Property="Command" Value="{Binding FilterCantripsCommand}"/>
                                 <Setter Property="CommandParameter" Value="{StaticResource CAM_CantripFilterParameter}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_AllModeToken}">
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_AllModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
@@ -745,7 +759,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Passives -> Metamagic when the native FixedSideBar exists. -->
@@ -761,7 +775,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Passives -> Items when Metamagic is absent. -->
@@ -777,7 +791,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
                                     <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
                                 </b:EventTrigger>
 
@@ -793,7 +807,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
                                     <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
                                 </b:EventTrigger>
 
@@ -810,7 +824,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
                                     <b:InvokeCommandAction Command="{Binding FilterCantripsCommand}" CommandParameter="{StaticResource CAM_CantripFilterParameter}"/>
                                 </b:EventTrigger>
 
@@ -858,7 +872,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Ordinary previous native resource. -->
@@ -885,7 +899,7 @@
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabReturnLastToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
@@ -933,7 +947,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Metamagic -> Passives. -->
@@ -948,7 +962,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Items -> Metamagic when the native FixedSideBar exists. -->
@@ -964,7 +978,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Items -> Passives when Metamagic is absent. -->
@@ -980,7 +994,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Cantrips -> Items. -->
@@ -995,7 +1009,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
                                     <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
                                 </b:EventTrigger>
 
@@ -1022,7 +1036,7 @@
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabReturnFirstToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
@@ -1054,7 +1068,7 @@
                                       HorizontalAlignment="Stretch"
                                       HorizontalContentAlignment="Center"
                                       VerticalAlignment="Center"
-                                      MaxWidth="1160"
+                                      MaxWidth="720"
                                       KeyboardNavigation.DirectionalNavigation="Cycle"
                                       ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"
                                       ItemTemplate="{StaticResource CAM_ResourceTabTemplate}"
@@ -1062,7 +1076,21 @@
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
                                     <Grid Background="Transparent">
-                                        <ItemsPresenter HorizontalAlignment="Stretch"/>
+                                        <ls:LSScrollViewer x:Name="CAM_ResourceTabsScroller"
+                                                           Focusable="False"
+                                                           HorizontalScrollBarVisibility="Hidden"
+                                                           VerticalScrollBarVisibility="Disabled"
+                                                           CanContentScroll="False"
+                                                           ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}">
+                                            <ItemsPresenter HorizontalAlignment="Left"/>
+                                            <b:Interaction.Triggers>
+                                                <b:EventTrigger EventName="TargetPositionChanged">
+                                                    <b:ChangePropertyAction PropertyName="HorizontalScrollOffset"
+                                                                            TargetName="CAM_ResourceTabsScroller"
+                                                                            Value="{Binding TargetPosition, ElementName=CAM_ResourceTabsScroller}"/>
+                                                </b:EventTrigger>
+                                            </b:Interaction.Triggers>
+                                        </ls:LSScrollViewer>
                                     </Grid>
                                 </ControlTemplate>
                             </ls:LSListBox.Template>
@@ -1092,7 +1120,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
                                     <b:InvokeCommandAction Command="{Binding FilterCantripsCommand}"
                                                            CommandParameter="{StaticResource CAM_CantripFilterParameter}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
@@ -1116,7 +1144,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"/>
                                     <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:EventTrigger>
@@ -1142,7 +1170,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -1184,7 +1212,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -1210,7 +1238,7 @@
                                 </b:TimerTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
-                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -1241,7 +1269,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_CantripsModeToken}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1255,7 +1283,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_CantripsModeToken}">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1289,7 +1317,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1303,7 +1331,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1338,7 +1366,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1352,7 +1380,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1386,7 +1414,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1400,7 +1428,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1433,7 +1461,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_AllModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_AllModeToken}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1447,7 +1475,7 @@
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_AllModeToken}">
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_AllModeToken}">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -1498,13 +1526,13 @@
                                     <Setter Property="ItemTemplate" Value="{StaticResource CAM_ActionGridSlotTemplate}"/>
                                     <Setter Property="ItemsPanel" Value="{StaticResource CAM_ActionGridPanel}"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentShownDeck.SlotList}"/>
                                         </DataTrigger>
                                         <MultiDataTrigger>
                                             <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_AllModeToken}"/>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_AllModeToken}"/>
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
@@ -1518,11 +1546,11 @@
                                             <Setter Property="ItemsPanel"
                                                     Value="{StaticResource CAM_AllGroupsPanel}"/>
                                         </MultiDataTrigger>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
                                         </DataTrigger>
