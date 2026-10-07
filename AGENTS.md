@@ -432,3 +432,25 @@ Resource-tab scrolling must use the current Patch 8-native element scroll seam:
 - do not use `AutoScrollBehavior`, explicit SelectedIndex/SelectedItem scroll targets, or manual horizontal offsets for this strip.
 
 Because CAM reuses `SingleHotBar.SlotList` both for resource-filter results and real nested/upcast/container state, native `ClearSingleHotbarCommand` can legitimately leave the CAM top-level resource list empty after B. CAM must therefore restore the selected resource filter only after a **real nested state** was entered and then all native nested flags returned to false. Top-level B must still close the widget and must not trigger resource restoration.
+
+
+## Runtime correction — 0.0.66 -> 0.0.67
+
+0.0.66 confirms that the nested-return restoration lifecycle is correct and must remain unchanged.
+
+Two remaining defects are presentation/scroll seams:
+- after resource switching or nested return, controller focus is valid but the tooltip may remain absent until the next D-pad move;
+- selected resource tabs still do not scroll into the visible strip.
+
+0.0.67 rules:
+- keep `LocalFocus.DataContext` as the sole action identity for tooltip, highlight, `ActionRadials.Tag`, and A dispatch;
+- do not reintroduce any `SelectedItem`-derived action presentation state;
+- presentation synchronization must observe `HotBarList.LocalFocus.DataContext` with a property-change trigger, not rely solely on the `LocalFocusChanged` event. A filter/nested-return can reuse a focus container while changing the VM beneath it;
+- `LocalFocusChanged` may remain only for navigation sound;
+- remove the delayed `LocalFocusChanged` presentation timer once the property-change trigger owns presentation state.
+
+For resource-strip scrolling:
+- keep the selected resource `ListBoxItem` publishing its concrete container UIElement into `CAM_ResourceTabs.Tag`;
+- inside the resource `ControlTemplate`, bind `LSScrollViewer.ScrollToElement` to `Tag` through `RelativeSource TemplatedParent`;
+- do not use `ElementName=CAM_ResourceTabs` from inside that template because the template has its own namescope;
+- do not return to `AutoScrollBehavior`, integer/VM scroll targets, or manual offsets.
