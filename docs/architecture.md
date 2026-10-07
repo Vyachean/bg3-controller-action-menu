@@ -40,7 +40,7 @@ project-owned ActionRadialWidgetTemplate_P8
                 UIAccept -> UseSlotCommand(slot)
 ```
 
-There is no Common/Class/Cantrips/Items/Passives primary navigation layer and no secondary resource-filter layer. Resource is the single top-level organization dimension.
+There is no return to the rejected raw Common/Class/Cantrips/Items/Passives source-tab UI and no secondary resource-filter layer. The top level remains a single controller cost/source sequence. Resource previews are the primary provider, but they are not assumed to be a complete executable catalog; proven native non-resource providers may join that same sequence when needed to satisfy action parity.
 
 ## Evidence boundary
 
@@ -60,6 +60,39 @@ Proven current facts include:
 - B has BG3-owned nested-state commands.
 
 Historical public dumps and older CAM type-tab experiments are context only.
+
+## Action coverage completion gate
+
+The canonical completeness contract is `docs/action-coverage.md`.
+
+CAM is complete only when:
+
+```text
+(keyboard HotBar executable actions
+ UNION
+ radial-assignment gameplay candidates)
+ MINUS radial-editing-only operations
+    subset-of
+CAM reachable executable actions
+```
+
+The reference catalogs and the execution catalog intentionally use different object shapes.
+`SpellsAndActions`, `Inventory.Slots` and raw passive predicates are valid reference
+evidence, but CAM still dispatches only native `VMHotBarSlot` values.
+
+Current shipping providers are:
+
+- `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList`;
+- `PassivesHotBar.SlotList`;
+- `SingleHotBar.SlotList` for native nested/upcast/variant/throw state.
+
+Current unresolved source classes are cantrips, free/no-resource actions,
+inventory/consumables, scrolls, item charges, metamagic toggles, temporary actions and
+recasts. These are correctness blockers for a complete HotBar replacement.
+
+A future provider must be proven against the current installed game and materialize
+executable `VMHotBarSlot` values. This requirement does not authorize raw source tabs,
+manual action tables or string/icon classification.
 
 ## Resource-first navigation
 
@@ -94,6 +127,22 @@ CAM therefore distinguishes:
 - **current implementation seam:** BG3's native resource filter.
 
 If native Action/Bonus filters are broader than product policy, CAM may refine them only using a current BG3 property/predicate over executable native slots. No class/spell-name tables or heuristics are permitted.
+
+## Controller scrolling
+
+The action grid follows the same current Patch 8 controller scroll transport as the
+native radial:
+
+```text
+ActionRadials.FocusedElement
+        |
+        v
+LSScrollViewer.ScrollToElement
+```
+
+This is derived from controller focus rather than `SelectedIndex` or a CAM-owned
+scroll offset. The scroll target must therefore stay synchronized with the same native
+focus used for tooltip and A dispatch.
 
 ## Tooltip
 
