@@ -377,3 +377,38 @@ HotBarList.LocalFocusChanged
 The selector shares `CAM_ActionViewport` with `HotBarList`, matching the 0.0.29 focus-origin correction. This is required because the selector is also the only focus surface capable of representing LSGrid empty-cell positions, where no `ListBoxItem` exists.
 
 The resource strip uses `AutoScrollBehavior.ScrollIntoView=SelectedIndex` plus `ScrollTo=Center`. BG3 publicly uses `SelectedIndex` as the numeric AutoScroll target and `FocusedElement` as the element target; a VM `SelectedItem` is neither.
+
+
+### 0.0.65 — complete entry presentation; let selection own tab scrolling
+
+0.0.64 proves the concrete first-item focus handoff is the correct resource-entry boundary. The remaining tooltip defect is presentation/state completion, not focus establishment.
+
+After `FilterActionResourceCommand` settles, the existing entry timer already sets `HotBarList.SelectedIndex=0`. At that exact boundary, `SelectedItem` is a valid one-shot pointer to the same first `VMHotBarSlot` that is handed to `SetMoveFocusAction`.
+
+0.0.65 completes the initial state from that slot:
+
+```text
+resource SelectionChanged
+  -> filter once
+  -> 70 ms
+  -> arm concrete-focus token
+  -> SelectedIndex = 0
+  -> CAM_ActionTooltip.Content = SelectedItem.Content
+  -> ShowTooltipOnUIElementCommand(HotBarList)
+  -> ActionRadials.Tag = SelectedItem
+  -> CreateFocusedTooltipDataCommand(SelectedItem)
+  -> HighlightResourcesCommand(SelectedItem)
+       |
+       v
+selected ListBoxItem -> SetMoveFocusAction(that concrete item)
+```
+
+This is entry-only. Once the player moves, the existing `LocalFocusChanged` path remains authoritative for tooltip, Tag, highlight and A dispatch.
+
+For resource tabs, 0.0.62–0.0.64 prove that explicit `AutoScrollBehavior.ScrollIntoView` targets do not reliably reveal the selected left edge. BG3 also exposes a selection-driven mode:
+
+```xml
+<ls:AutoScrollBehavior BringSelectionIntoView="True"/>
+```
+
+That mode is now used without `ScrollIntoView` or `ScrollTo`. The behavior follows the selected ListBox container directly, avoiding index/VM target interpretation and avoiding manual scroll offsets.
