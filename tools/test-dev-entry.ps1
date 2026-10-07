@@ -16,28 +16,34 @@ try {
     New-Item -ItemType Directory -Force -Path $assetRoot | Out-Null
     New-Item -ItemType Directory -Force -Path $launcherRoot | Out-Null
 
-    $capture = Join-Path $assetRoot "capture-self-contained-inputs.ps1"
+    $installer = Join-Path $assetRoot "install-latest.ps1"
 @'
 param(
-    [string]$PortableRoot = ""
+    [string]$Repository,
+    [string]$ReleaseApiUrl,
+    [string]$ReleaseMetadataPath,
+    [string]$CacheRoot,
+    [string]$LauncherRoot,
+    [string]$LogPath,
+    [string]$StatusPath,
+    [string]$ReportPath
 )
-$ErrorActionPreference = "Stop"
-if (-not $PortableRoot) {
-    throw "PortableRoot is required by the capture fixture."
-}
-New-Item -ItemType Directory -Force -Path $PortableRoot | Out-Null
-$archive = Join-Path $PortableRoot "bg3-controller-action-menu-inputs-fixture.zip"
-$captureLog = Join-Path $PortableRoot "capture.log"
-Set-Content -LiteralPath $archive -Value "fixture archive" -Encoding UTF8
-Set-Content -LiteralPath $captureLog -Value "fixture capture completed" -Encoding UTF8
 @(
     "SUCCESS",
-    "Capture completed.",
-    $archive,
-    $captureLog
-) | Set-Content -LiteralPath (Join-Path $PortableRoot "capture-status.txt") -Encoding Unicode
-exit 0
-'@ | Set-Content -LiteralPath $capture -Encoding UTF8
+    "9.9.9-fixture",
+    "Release-controlled task executed."
+) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
+@{
+    Executed = $true
+    ReleaseMetadataPath = $ReleaseMetadataPath
+    CacheRoot = $CacheRoot
+    LauncherRoot = $LauncherRoot
+} | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+
+# A successful PowerShell helper may leave LASTEXITCODE unset or stale.
+# The universal entry must use exception semantics instead.
+& cmd.exe /c "exit 23"
+'@ | Set-Content -LiteralPath $installer -Encoding UTF8
 
     $metadata = Join-Path $TestRoot "release.json"
     @(
@@ -53,8 +59,8 @@ exit 0
             published_at = "2030-01-02T00:00:00Z"
             assets = @(
                 [ordered]@{
-                    name = "capture-self-contained-inputs.ps1"
-                    browser_download_url = $capture
+                    name = "install-latest.ps1"
+                    browser_download_url = $installer
                 }
             )
         },
@@ -77,55 +83,27 @@ exit 0
     if ($LASTEXITCODE -ne 0) {
         throw "Universal development entry fixture failed with exit code $LASTEXITCODE."
     }
-    if (-not (Test-Path -LiteralPath $report -PathType Leaf)) {
-        throw "Release-controlled capture task did not write its report."
+    if (-not (Test-Path -LiteralPath $report)) {
+        throw "Release-controlled helper was not executed."
     }
 
     $result = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
-    if ($result.Task -ne "capture-hotbar-resource-filter") {
-        throw "Development entry selected the wrong task: $($result.Task)"
+    if (-not $result.Executed) {
+        throw "Development entry execution marker is missing."
     }
     if ($result.LauncherRoot -ne $launcherRoot) {
         throw "Development entry did not preserve the operator's launcher root."
     }
-
-    $expectedArchive = Join-Path $launcherRoot "bg3-controller-action-menu-inputs-fixture.zip"
-    if ($result.Archive -ne $expectedArchive -or -not (Test-Path -LiteralPath $expectedArchive -PathType Leaf)) {
-        throw "Development entry did not preserve the capture archive path."
-    }
-    if ($result.CaptureStatusPath -ne (Join-Path $launcherRoot "capture-status.txt")) {
-        throw "Development entry did not use the portable capture status path."
-    }
-
-    $cachedCapture = Join-Path (Join-Path $cacheRoot "v9.9.9-fixture") "capture-self-contained-inputs.ps1"
-    if (-not (Test-Path -LiteralPath $cachedCapture -PathType Leaf)) {
-        throw "Development entry did not cache the release-controlled capture helper."
+    if ($result.CacheRoot -ne (Join-Path (Join-Path $cacheRoot "v9.9.9-fixture") "install-cache")) {
+        throw "Development entry did not keep helper state under its portable release cache."
     }
 
     $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
-    if ($statusLines.Count -lt 3 -or
-        $statusLines[0] -ne "SUCCESS" -or
-        $statusLines[1] -ne "9.9.9-fixture" -or
-        -not $statusLines[2].Contains("bg3-controller-action-menu-inputs-fixture.zip")) {
-        throw "Development entry did not expose the capture result through the standard launcher status contract."
+    if ($statusLines[0] -ne "SUCCESS" -or $statusLines[1] -ne "9.9.9-fixture") {
+        throw "Development entry did not preserve the helper status contract."
     }
 
-    $resolveStatus = Join-Path $TestRoot "resolve-status.txt"
-    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Entry `
-        -ReleaseMetadataPath $metadata `
-        -CacheRoot $cacheRoot `
-        -StatusPath $resolveStatus `
-        -ReportPath (Join-Path $TestRoot "resolve-report.json") `
-        -ResolveOnly
-    if ($LASTEXITCODE -ne 0) {
-        throw "ResolveOnly fixture failed with exit code $LASTEXITCODE."
-    }
-    $resolveLines = @(Get-Content -LiteralPath $resolveStatus -Encoding Unicode)
-    if ($resolveLines[0] -ne "SUCCESS" -or $resolveLines[1] -ne "9.9.9-fixture") {
-        throw "ResolveOnly no longer preserves the launcher resolution contract."
-    }
-
-    Write-Host "Universal release-controlled HotBar capture entry fixture passed."
+    Write-Host "Universal release-controlled development entry fixture passed."
 } finally {
     Remove-Item -LiteralPath $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
