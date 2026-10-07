@@ -657,3 +657,27 @@ The next development release is capture-only:
 - after the capture is inspected, restore the normal install task and implement one evidence-based visual correction.
 
 Already confirmed runtime behavior must remain untouched: native VMItem quantity rendering, LocalFocus authority, tooltip behavior, resource-first filtering, Passives serialization, nested return and native action dispatch.
+
+
+## Runtime correction — exact Patch 8 HotBar resource bar (0.0.75)
+
+The operator-provided 2026-10-07 capture from Xbox App package 1.8.910.0 contains the exact current `Mods/MainUI/GUI/Pages/HotBar.xaml` with SHA-256 `9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`.
+
+That file disproves the 0.0.73 presentation assumption. `FilterButton / ActiveFilterButton` and `btn_pil_*` are the textual deck/category buttons, not the action-resource icon row. The actual keyboard/mouse resource filter is `ActionResourcesContainer`:
+
+- background: `BarResources -> Assets/BottomBar/bar_resources.png`;
+- background geometry: `Height=64`, `MinWidth=208`, `Slices=104,0`;
+- source: `CurrentPlayer.UIData.ActionResourcesCostPreview`;
+- each native resource visual is 72 px;
+- ordinary chrome: `box_resource_empty.png`, `box_resource_d.png`, `box_resource_h.png`, `box_resource_missing.png`;
+- `LSActionPointResources` uses `SmallActionPointSize=24`, `ActionPointGroupSize=56`, `ActionResourcesTemplateSelector`;
+- SpellSlot / WarlockSpellSlot use the `box_resourceNum_*` family, shifted by `0,-8,0,0`, plus `RomanNumeralLevelImage` at `0,-10,0,0`;
+- native item container margin is `-4,0,-4,0`; native button margin is `4,-10,4,10`;
+- zero-value resources use the missing-resource chrome;
+- click invokes `FilterActionResourceCommand` with the current `VMActionResourceCostPreview`.
+
+CAM 0.0.75 must use this action-resource visual family for the LB/RB tab row and must remove `btn_pil_*` / active-marker chrome from that row. Because runtime feedback explicitly rejected stray resource numerals, CAM intentionally omits the native conditional `ResourcesNumeralDisplay`; this is the only deliberate visual deviation from the captured resource item.
+
+Passives remains a CAM-only non-resource exception. It must share the same `BarResources + box_resource_*` visual family so the one-level LB/RB sequence remains coherent, while retaining `CAM_PassivesModeToken` as presentation-only state.
+
+Do not change native VMItem quantities, LocalFocus/tooltip authority, Passives transition serialization, nested return, or A/B dispatch as part of this correction.
