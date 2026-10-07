@@ -662,7 +662,6 @@ $tabRight = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $tabLeft.Success -or -not $tabRight.Success -or
-    -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
     -not $tabLeft.Value.Contains('CAM_TabEnterSpecialToken') -or
     -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
     -not $tabLeft.Value.Contains('CAM_CantripsModeToken') -or
