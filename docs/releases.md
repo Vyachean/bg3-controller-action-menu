@@ -45,6 +45,6 @@ Every release publishes `BG3ControllerActionMenu-OneClickInstaller.zip`, contain
 
 After extracting it once, the operator keeps and reuses that same VBS. On every invocation it queries GitHub Releases, selects the newest published release (including prereleases), downloads that release's `dev-entry.ps1`, and executes it hidden.
 
-`dev-entry.ps1` is intentionally release-controlled. The current task is install/update of the ready self-contained PAK, but later releases may switch the same VBS to capture, diagnostics, or another development operation.
+`dev-entry.ps1` is intentionally release-controlled. Development milestone `0.0.79-hotbar-coverage-capture` temporarily selects the read-only capture task; later releases can return the same VBS to install/update or diagnostics.
 
 Release publication therefore includes the universal VBS, `dev-entry.ps1`, and the helper assets that the current/future entry may need. There is no permanent second capture VBS and no local bootstrap file required beside the operator shortcut.
