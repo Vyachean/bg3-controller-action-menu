@@ -41,7 +41,7 @@
                                 Visibility="Collapsed"/>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="ls:MoveFocus.IsFocused" Value="True">
+                        <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="CAM_CellFocus" Property="Visibility" Value="Visible"/>
                             <Setter Property="Panel.ZIndex" Value="1"/>
                         </Trigger>
@@ -116,7 +116,6 @@
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Margin" Value="4,0"/>
         <Setter Property="MinWidth" Value="108"/>
-        <Setter Property="MaxWidth" Value="260"/>
         <Setter Property="Height" Value="58"/>
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Foreground" Value="{StaticResource LS_baseTxtColor}"/>
@@ -125,7 +124,6 @@
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                     <Border x:Name="TabRoot"
                             MinWidth="108"
-                            MaxWidth="260"
                             Height="58"
                             Padding="16,6"
                             Background="#50000000"
@@ -140,8 +138,6 @@
                                        FontSize="{StaticResource SmallFontSize}"
                                        FontWeight="DemiBold"
                                        TextAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"
-                                       MaxWidth="226"
                                        VerticalAlignment="Center"/>
                             <TextBlock x:Name="ResourceFallback"
                                        Text="{Binding ActionResource.TypeId}"
@@ -149,19 +145,15 @@
                                        FontSize="{StaticResource SmallFontSize}"
                                        FontWeight="DemiBold"
                                        TextAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"
-                                       MaxWidth="226"
                                        VerticalAlignment="Center"
                                        Visibility="Collapsed"/>
-                            <TextBlock x:Name="SpellLevel"
-                                       DataContext="{Binding ActionResource}"
-                                       Style="{StaticResource SpellSlotNumberStyle}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="{StaticResource MediumFontSize}"
-                                       FontWeight="DemiBold"
-                                       Margin="6,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Visibility="Collapsed"/>
+                            <Image x:Name="SpellLevel"
+                                   DataContext="{Binding ActionResource}"
+                                   Style="{StaticResource RomanNumeralLevelImage}"
+                                   Stretch="None"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -371,6 +363,9 @@
 
                             <b:Interaction.Triggers>
                                 <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:ChangePropertyAction TargetName="HotBarList"
+                                                            PropertyName="SelectedItem"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                                             PropertyName="Content"
                                                             Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
