@@ -1402,18 +1402,34 @@
                                       KeyboardNavigation.DirectionalNavigation="Contained"
                                       ActionNextEvent="UIDown"
                                       ActionPrevEvent="UIUp"
-                                      LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"
-                                      ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
-                                      ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
-                                      ItemsPanel="{StaticResource CAM_ActionGridPanel}">
+                                      LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}">
                             <ls:LSListBox.Style>
                                 <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
                                     <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
+                                    <Setter Property="ItemContainerStyle" Value="{StaticResource CAM_ActionGridSlotContainer}"/>
+                                    <Setter Property="ItemTemplate" Value="{StaticResource CAM_ActionGridSlotTemplate}"/>
+                                    <Setter Property="ItemsPanel" Value="{StaticResource CAM_ActionGridPanel}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_ItemsModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentShownDeck.SlotList}"/>
                                         </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_AllModeToken}"/>
+                                                <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                                                <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
+                                                <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="ItemsSource"
+                                                    Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"/>
+                                            <Setter Property="ItemContainerStyle"
+                                                    Value="{StaticResource CAM_AllGroupContainerStyle}"/>
+                                            <Setter Property="ItemTemplate"
+                                                    Value="{StaticResource CAM_AllGroupTemplate}"/>
+                                            <Setter Property="ItemsPanel"
+                                                    Value="{StaticResource CAM_AllGroupsPanel}"/>
+                                        </MultiDataTrigger>
                                         <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"/>
