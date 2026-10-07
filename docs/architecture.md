@@ -781,3 +781,35 @@ VMActionResourceCostPreview
 ```
 
 The `box_resource_*` and `box_resourceNum_*` assets are no longer part of the top-level tab chrome. Resource-value text remains absent. Passives uses the same filter chrome so the full LB/RB sequence reads as one native filter row.
+
+
+### 0.0.75 — exact Patch 8 action-resource bar
+
+The operator-provided 1.8.910.0 capture proves that the 0.0.73 top-row visual family was wrong. The keyboard/mouse HotBar's icon resource filters are not `FilterButton / ActiveFilterButton`; those are textual deck/category controls.
+
+The exact current resource filter is `ActionResourcesContainer` in captured `Mods/MainUI/GUI/Pages/HotBar.xaml` (SHA-256 `9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`):
+
+```text
+ActionResourcesContainer
+  -> BarResources (bar_resources.png)
+       Height=64, MinWidth=208, Slices=104,0
+  -> horizontal ActionResources
+       -> ActionResourcesCostPreview
+            -> 72px resource box
+               box_resource_empty/d/h/missing
+               LSActionPointResources
+                 SmallActionPointSize=24
+                 ActionPointGroupSize=56
+               SpellSlot/WarlockSpellSlot:
+                 box_resourceNum_empty/d/h/missing
+                 backgrounds Margin=0,-8,0,0
+                 RomanNumeralLevelImage Margin=0,-10,0,0
+```
+
+CAM maps its persistent selected resource to the native hover/highlight box asset. Zero-value resources use the native missing-resource asset. The whole LB/RB row sits on the native `bar_resources.png` strip.
+
+Passives is not a native resource preview, but remains the explicit product exception and uses the same box/bar visual family with `PassiveFeature_Generic.png`.
+
+The captured HotBar contains a conditional `ResourcesNumeralDisplay` for counts larger than `LSActionPointResources.MaxGroupActionPoints`. CAM deliberately omits this one element because the operator already rejected resource-number overlays in the controller tab row. No other custom tab chrome is introduced.
+
+Item quantity rendering remains the native `Template.Item*` path and is independent from this correction.
