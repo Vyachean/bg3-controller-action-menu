@@ -690,3 +690,28 @@ Controller adaptation allowed for CAM:
 Do not use `btn_pil_*` for CAM resource tabs again. Do not omit the shared `bar_resources.png` strip. Do not restore an unconditional resource-value number.
 
 Native item quantity, LocalFocus authority, tooltip behavior, Passives transition serialization, nested return, and action dispatch remain unchanged.
+
+
+## Runtime correction — 0.0.75 -> exact native ActionResourcesList item template
+
+0.0.75 runtime proves that copying the native assets and approximate geometry is still insufficient. The resource contents look broken compared with keyboard/mouse HotBar.
+
+The returned Patch 8 `HotBar.xaml` already contains the exact authoritative `ActionResourcesList` item template. CAM must stop re-authoring that item inside a `ListBoxItem.ControlTemplate`.
+
+For every native `VMActionResourceCostPreview`, CAM must use a dedicated `DataTemplate` whose visual subtree matches current `ActionResourcesList`:
+- root visual is `LSButton Padding=0 Margin=4,-10,4,10`;
+- inner `Root` is width 72;
+- exact `box_resource_*` / `box_resourceNum_*` layers;
+- exact `LSActionPointResources` bindings, including `HighlightedActionPoints = Cost`;
+- exact `ResourcesNumeralDisplay` fallback and Bardic Inspiration adjustment;
+- exact SpellSlot/WarlockSpellSlot Root.Tag -> spell-slot box transition;
+- exact `IsMouseOver` visual trigger;
+- exact zero-value disabled visual trigger.
+
+The outer `LSListBox` is controller transport only. Its `ItemContainerStyle` may provide the native ContentPresenter margin and suppress default ListBox chrome, but `IsSelected` must not alter any resource image or resource-point visual. LB/RB selection/filter state therefore stays invisible inside the native resource item, exactly as keyboard/mouse HotBar leaves clicked resource content in its normal visual state when not hovered.
+
+Do not set `BgHL` from `ListBoxItem.IsSelected`. Do not replace the native `LSButton` with a Grid. Do not change `HighlightedActionPoints` to zero: the exact HotBar template binds it to preview `Cost`.
+
+Passives remains the sole synthetic CAM entry and may keep resource-box-compatible presentation because no native `VMActionResourceCostPreview` exists for Passives.
+
+Item quantities, action-grid focus/tooltip authority, nested return, Passives transition serialization, and native A/B dispatch are out of scope.
