@@ -344,7 +344,7 @@
       "Can LB/RB traverse resource previews -> Passives -> resource previews in both directions while keeping one HotBarList?",
       "Does Passives render executable VMHotBarSlot entries from PassivesHotBar.SlotList and execute through the same UIAccept/UseSlotCommand path?",
       "Immediately after resource or Passives tab entry, does the first concrete cell own visible focus, tooltip, ActionRadials.Tag and resource highlighting before any D-pad move?",
-      "Do item-backed action cells show GameObject.Count when Count > 1?",
+      "Do item-backed action cells use native Template.Item and show VMItem.Count when Count > 1?",
       "Does ordinary D-pad navigation remain synchronized from LocalFocus.DataContext?",
       "Does the proven nested B return still restore the selected resource and its first-cell tooltip?"
     ],
