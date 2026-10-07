@@ -828,15 +828,34 @@
                                   VerticalAlignment="Center">
                                 <Grid Width="72">
                                     <Image Source="{StaticResource CAM_BoxResourceBg}"/>
-                                    <Image x:Name="CAM_PassivesBg"
-                                           VerticalAlignment="Center"
+                                    <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResource}"/>
-                                    <Image x:Name="CAM_PassivesBgHL"
-                                           Visibility="Collapsed"
-                                           VerticalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResource}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResourceH}"/>
+                                           Source="{StaticResource CAM_BoxResourceH}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
                                     <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
                                            Width="40"
                                            Height="40"
@@ -846,16 +865,6 @@
                                            IsHitTestVisible="False"/>
                                 </Grid>
                             </Grid>
-                            <Grid.Style>
-                                <Style TargetType="Grid">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
-                                            <Setter TargetName="CAM_PassivesBg" Property="Visibility" Value="Collapsed"/>
-                                            <Setter TargetName="CAM_PassivesBgHL" Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
                         </Grid>
                             </StackPanel>
                         </Grid>
