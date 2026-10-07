@@ -31,6 +31,8 @@ foreach ($required in @(
     '*PreloadedActionRadials*.xaml',
     '*ActionRadials*.xaml',
     '*HotBar*.xaml',
+    'Mods/MainUI/GUI/Pages/HotBar.xaml',
+    'HotBarPage',
     '*DataTemplates.xaml',
     '*FocusableControls*.xaml',
     '*Tooltips*.xaml',
