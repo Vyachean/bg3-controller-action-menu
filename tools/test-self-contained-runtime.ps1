@@ -79,10 +79,10 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
 if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedIndex" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne $null -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne "Center" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTargetKind -ne "numeric-index" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne $null -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTargetKind -ne "selected-container-via-BringSelectionIntoView" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.hiddenPreviewSelection -ne "collapsed+disabled; ordinary cycle only") {
@@ -101,6 +101,11 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemMirrorsLocalFocus -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTooltipSource -ne "HotBarList.SelectedItem" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTooltipContent -ne "HotBarList.SelectedItem.Content" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTooltipCommand -ne "ShowTooltipOnUIElementCommand(HotBarList)" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryTagSource -ne "HotBarList.SelectedItem" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryOnly -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.selector -ne "CAM_MainSelector" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.template -ne "SelectorTemplate" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.sharedCoordinateRoot -ne "CAM_ActionViewport" -or
@@ -112,9 +117,7 @@ $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
-    'ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"',
     'BringSelectionIntoView="True"',
-    'ScrollTo="Center"',
     'x:Name="CAM_ActionViewport"',
     'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
@@ -384,10 +387,10 @@ $resourceTabs = [regex]::Match(
 )
 if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
-    -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
-    -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"') -or
-    -not $resourceTabs.Value.Contains('ScrollTo="Center"')) {
-    throw "Resource tabs must use the BG3-proven SelectedIndex AutoScroll target and center the selected edge tab."
+    -not $resourceTabs.Value.Contains('<ls:AutoScrollBehavior BringSelectionIntoView="True"/>') -or
+    $resourceTabs.Value.Contains('ScrollIntoView=') -or
+    $resourceTabs.Value.Contains('ScrollTo=')) {
+    throw "Resource tabs must use selection-driven AutoScrollBehavior without explicit index/VM targets."
 }
 
 if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
@@ -415,13 +418,17 @@ $resourceRestoreTimer = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceRestoreTimer.Success -or
-    -not $resourceRestoreTimer.Value.Contains('PropertyName="Tag"') -or
     -not $resourceRestoreTimer.Value.Contains('Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
     -not $resourceRestoreTimer.Value.Contains('PropertyName="SelectedIndex"') -or
     -not $resourceRestoreTimer.Value.Contains('Value="0"') -or
+    -not $resourceRestoreTimer.Value.Contains('Value="{Binding SelectedItem.Content, ElementName=HotBarList}"') -or
+    -not $resourceRestoreTimer.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    -not $resourceRestoreTimer.Value.Contains('Value="{Binding SelectedItem, ElementName=HotBarList}"') -or
+    -not $resourceRestoreTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    -not $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand') -or
     $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand') -or
     $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "After the native settle window, resource switching must arm the one-shot first-focus token before selecting index 0."
+    throw "Resource entry must select index 0 and complete tooltip/Tag/highlight state from that one-shot SelectedItem."
 }
 
 $resourceTabStyle = [regex]::Match(
