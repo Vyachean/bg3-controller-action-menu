@@ -47,15 +47,18 @@ if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-on
 if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "dynamic-resource-row" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)" -or
-    $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "SpellSlotNumberStyle") {
+    $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage") {
     throw "Dynamic resource-tab presentation evidence is incomplete."
 }
-if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "item-local:ls:MoveFocus.IsFocused; logical-owner:LocalFocusSelector" -or
+if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "item-local:IsSelected<-LocalFocus.DataContext; logical-owner:LocalFocusSelector" -or
     $evidence.runtimeContract.assignmentNavigation.selector -ne "CAM_LogicalFocusAnchor" -or
     $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.selectorVisibleChrome -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.selectorOpacity -ne 0) {
-    throw "ActionRadials must keep an invisible LocalFocusSelector owner while visible focus remains item-local."
+    $evidence.runtimeContract.assignmentNavigation.selectorOpacity -ne 0 -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusSource -ne "HotBarList.SelectedItem" -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncEvent -ne "LocalFocusChanged" -or
+    $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncValue -ne "HotBarList.LocalFocus.DataContext") {
+    throw "ActionRadials visible focus must mirror the proven LocalFocus.DataContext through HotBarList.SelectedItem."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand") {
@@ -90,7 +93,7 @@ $required = @(
     'x:Key="CAM_ResourceTabItemStyle"',
     'Text="{Binding ActionResource.Name}"',
     'Text="{Binding ActionResource.TypeId}"',
-    'Style="{StaticResource SpellSlotNumberStyle}"',
+    'Style="{StaticResource RomanNumeralLevelImage}"',
     'Binding="{Binding ActionResource.TypeId}" Value="SpellSlot"',
     'Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot"',
     'Binding="{Binding ActionResource.MaxValue}" Value="0"',
@@ -108,7 +111,9 @@ $required = @(
     'ItemsPanel="{StaticResource CAM_ActionGridPanel}"',
     'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
     'ls:MoveFocus.Focusable" Value="True"',
-    'Property="ls:MoveFocus.IsFocused" Value="True"',
+    'Trigger Property="IsSelected" Value="True"',
+    'PropertyName="SelectedItem"',
+    'Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
     'LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"',
     'x:Name="CAM_LogicalFocusAnchor"',
     'Opacity="0"',
@@ -322,9 +327,10 @@ $slotContainer = [regex]::Match(
 )
 if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('Property="ls:MoveFocus.Focusable" Value="True"') -or
-    -not $slotContainer.Value.Contains('Property="ls:MoveFocus.IsFocused" Value="True"') -or
+    -not $slotContainer.Value.Contains('Trigger Property="IsSelected" Value="True"') -or
+    $slotContainer.Value.Contains('Trigger Property="ls:MoveFocus.IsFocused" Value="True"') -or
     -not $slotContainer.Value.Contains('x:Name="CAM_CellFocus"')) {
-    throw "Each action cell must own its controller focus chrome."
+    throw "Each action cell must render visible focus from ListBox selection, not the stale MoveFocus.IsFocused state."
 }
 
 if (-not $hotBarList.Value.Contains('CanContentScroll="False"') -or
@@ -343,6 +349,21 @@ if (-not $resourceTabs.Success -or
     -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
     -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"')) {
     throw "Resource tabs must stay in a bounded SelectedIndex-following viewport."
+}
+
+$resourceTabStyle = [regex]::Match(
+    $text,
+    '<Style\b[^>]*x:Key="CAM_ResourceTabItemStyle"[\s\S]*?</Style>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $resourceTabStyle.Success -or
+    $resourceTabStyle.Value.Contains('Property="MaxWidth"') -or
+    $resourceTabStyle.Value.Contains('MaxWidth="') -or
+    $resourceTabStyle.Value.Contains('TextTrimming=') -or
+    -not $resourceTabStyle.Value.Contains('<Image x:Name="SpellLevel"') -or
+    -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
+    $resourceTabStyle.Value.Contains('SpellSlotNumberStyle')) {
+    throw "Resource items must allow natural text width and use the native RomanNumeralLevelImage spell-slot renderer."
 }
 
 if (-not $text.Contains('x:Name="ResourceFallback"') -or
@@ -367,4 +388,11 @@ if (-not $logicalAnchor.Success -or
     -not $logicalAnchor.Value.Contains('Focusable="False"') -or
     -not $hotBarList.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"')) {
     throw "HotBarList must restore LocalFocus ownership through an always-laid-out invisible selector anchor."
+}
+
+if (-not $hotBarList.Value.Contains('EventName="LocalFocusChanged"') -or
+    -not $hotBarList.Value.Contains('TargetName="HotBarList"') -or
+    -not $hotBarList.Value.Contains('PropertyName="SelectedItem"') -or
+    -not $hotBarList.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"')) {
+    throw "Visible focus must mirror HotBarList.LocalFocus.DataContext into HotBarList.SelectedItem."
 }

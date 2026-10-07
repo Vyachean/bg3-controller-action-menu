@@ -250,10 +250,12 @@ HotBarList : SingleHotBar.SlotList
               focus chrome is local to the item
 ```
 
-The invisible selector anchor preserves the captured ActionRadials/assignment `LSListBox.LocalFocus` machinery. The visible frame remains item-local, so no detached selector can lag behind a resource change. `LocalFocusChanged` again feeds tooltip/highlight state and, after the native delay, writes the focused `VMHotBarSlot` into `ActionRadials.Tag` for A.
+The invisible selector anchor preserves the captured ActionRadials/assignment `LSListBox.LocalFocus` machinery. 0.0.59 runtime proof shows that this logical focus is correct: tooltip and A follow navigation. The attached `ls:MoveFocus.IsFocused` state does not follow that logical focus in this hybrid composition, so it is not a valid visible-focus source.
 
-The current captured keyboard HotBar also confirms that `ActionResourcesCostPreview` is the game's own resource-filter button source. CAM keeps that source and `FilterActionResourceCommand`. Resource names are allowed more width, and generic tabs fall back to `ActionResource.TypeId` for null or empty displayed names. MaxValue=0 resources remain hidden exactly as native HotBar does.
+On every `HotBarList.LocalFocusChanged`, CAM mirrors `LocalFocus.DataContext` into `HotBarList.SelectedItem`. The cell template renders focus from `ListBoxItem.IsSelected`. This creates one focus identity across navigation, tooltip/highlight, `ActionRadials.Tag`, A dispatch and visible chrome without making the invisible selector visible.
 
-Resource navigation remains a bounded horizontal viewport with selected-index auto-scroll; the whole action menu must not expand horizontally just to expose every tab at once.
+The current captured keyboard HotBar also confirms that `ActionResourcesCostPreview` is the game's own resource-filter button source. CAM keeps that source and `FilterActionResourceCommand`. Generic resource names are not given an arbitrary per-tab maximum width; overflow is handled by the bounded horizontal tab viewport and selected-index auto-scroll. Null/empty generic names still fall back to `ActionResource.TypeId`.
+
+SpellSlot/WarlockSpellSlot are not generic text tabs. The current HotBar renderer presents their level with an `Image` using `RomanNumeralLevelImage` and `DataContext="{Binding ActionResource}"`; CAM reuses that exact presentation seam. MaxValue=0 resources remain hidden exactly as native HotBar does.
 
 The custom `Toggle weapon set` shortcut is not part of this focus path. Repeated runtime attempts have shown no reliable ActionRadials transport, so CAM does not bind or advertise it until a proven native seam exists.
