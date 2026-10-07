@@ -32,17 +32,8 @@
     "templateKey": "ActionRadialWidgetTemplate_P8",
     "mainSlotType": "VMHotBarSlot",
     "mainSlotSources": [
-      "CurrentShownDeck.SlotList",
-      "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
       "SingleHotBar.SlotList"
     ],
-    "deckCommands": {
-      "CommonHotBar": "SetCurrentShownDeckCommand",
-      "ClassHotBar": "SetCurrentShownDeckCommand",
-      "ItemHotBar": "SetCurrentShownDeckCommand"
-    },
-    "cantripFilterCommand": "FilterCantripsCommand",
-    "cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
     "resourcePreviewSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
     "resourceFilterCommand": "FilterActionResourceCommand",
     "focusValuePath": "LocalFocus.DataContext",
@@ -92,45 +83,71 @@
       "slotIconStyleRejectedBecauseInternalIconSize": 120,
       "keyboardStyleRejected": "HotBarSlotStyle",
       "keyboardOverlayRejected": "HotKey",
-      "resourceButtonSize": 72,
-      "resourceNameTextVisible": false,
       "nativeSelectorOutset": 12,
       "camSelectorTemplate": "CAM_SelectorTemplate",
       "camSelectorOutset": 4,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
       "selectorDerivation": "12-(120-104)/2",
-      "tabPattern": "controller-carousel",
-      "tabSelectedLabel": "CAM_FilterTabs.SelectedItem.Content",
-      "tabPaginationOnAsset": "Assets/CharacterPanel_c/c_pagination_on.png",
-      "tabPaginationOffAsset": "Assets/CharacterPanel_c/c_pagination_off.png",
+      "tabPattern": "dynamic-resource-row",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
-      "resourcePanel": "horizontal-stack"
+      "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
+      "tabItemType": "VMActionResourceCostPreview",
+      "genericTabLabel": "ActionResource.Name",
+      "spellSlotTabLabel": "SpellSlotNumberStyle"
     },
     "tooltipPresentation": {
       "pattern": "assignment-list-ui-tooltip",
       "contentPath": "LocalFocus.DataContext.Content",
       "command": "ShowTooltipOnUIElementCommand",
       "context": "Hotbar",
-      "placement": "Right"
+      "placement": "Right",
+      "detailsSurface": "native-tooltip-only"
     },
     "organization": {
-      "primaryTabs": [
-        "CommonHotBar",
-        "ClassHotBar",
-        "Cantrips",
-        "ItemHotBar",
-        "PassivesHotBar"
-      ],
-      "secondaryFilterSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
-      "secondaryFilterCommand": "FilterActionResourceCommand",
-      "secondaryFilterPlacement": "before-action-catalog",
-      "initialOuterListIndex": 1,
-      "spellLevelPresentation": "RomanNumeralLevelImage",
-      "slotOrdering": "BG3-native",
-      "cantripVisualSource": "SingleHotBar.SlotList",
-      "cantripNeverFallsBackToPreviousDeck": true
-    }
+      "mode": "resource-first",
+      "topLevelDimensions": 1,
+      "primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
+      "primaryTabItemType": "VMActionResourceCostPreview",
+      "primarySelectionCommand": "FilterActionResourceCommand",
+      "primarySelectionParameter": "CAM_ResourceTabs.SelectedItem",
+      "primaryGridSource": "SingleHotBar.SlotList",
+      "typeTabsAllowed": false,
+      "secondaryResourceLayerAllowed": false,
+      "tabOrdering": "BG3-native",
+      "genericResourceLabel": "ActionResource.Name",
+      "spellLevelPresentation": "SpellSlotNumberStyle",
+      "duplicateExecutionVariantsAllowed": true,
+      "freeGroupStatus": "pending-proven-native-executable-source",
+      "consumableSourceGroupStatus": "pending-proven-native-executable-source",
+      "detailsSurface": "native-tooltip-only"
+    },
+    "nativeEvidence": {
+      "deckCommands": {
+        "CommonHotBar": "SetCurrentShownDeckCommand",
+        "ClassHotBar": "SetCurrentShownDeckCommand",
+        "ItemHotBar": "SetCurrentShownDeckCommand"
+      },
+      "cantripFilterCommand": "FilterCantripsCommand",
+      "cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
+      "note": "Captured Patch 8 evidence only; not part of the resource-first shipping navigation."
+    },
+    "cancelBehavior": {
+      "topLevelCloseWhen": {
+        "IsShowingAContainerWithVariants": false,
+        "IsSelectingUpcastedSpell": false,
+        "IsShowingItemsToThrow": false
+      },
+      "nestedDefaultCommand": "ClearSingleHotbarCommand",
+      "topLevelCommand": "CustomEvent:CloseWidget"
+    },
+    "runtimeProofQuestions": [
+      "Does each resource preview populate the expected executable SingleHotBar.SlotList?",
+      "Does a spell-slot tab materialize level-specific VMHotBarSlot/VMUpcast variants directly?",
+      "Are Action/Bonus filters broader than the desired primary-resource policy?",
+      "Do custom/mod resources appear automatically?",
+      "Does top-level B close while true nested variant/upcast state backs out?"
+    ]
   },
   "captureMatchCount": 22,
   "captureScanErrorCount": 0

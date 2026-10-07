@@ -102,171 +102,90 @@
         </ls:LSNineSliceImage>
     </ControlTemplate>
 
-    <!-- Current controller page navigation uses a selected label plus pagination dots,
-         not keyboard/mouse HotBar pill buttons. -->
-    <BitmapImage x:Key="CAM_TabDotOn"
-                 UriSource="pack://application:,,,/Core;component/Assets/CharacterPanel_c/c_pagination_on.png"/>
-    <BitmapImage x:Key="CAM_TabDotOff"
-                 UriSource="pack://application:,,,/Core;component/Assets/CharacterPanel_c/c_pagination_off.png"/>
-
-    <Style x:Key="CAM_FilterTabItemStyle"
-           TargetType="{x:Type ListBoxItem}"
-           BasedOn="{StaticResource {x:Type ListBoxItem}}">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="Padding" Value="12,8"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Image x:Name="Point"
-                           Source="{StaticResource CAM_TabDotOff}"
-                           Stretch="None"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Point" Property="Source" Value="{StaticResource CAM_TabDotOn}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <BitmapImage x:Key="CAM_BoxResourceBg"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_empty.png"/>
-    <BitmapImage x:Key="CAM_BoxResource"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_d.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceH"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_h.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceDisabled"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_missing.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceNumBg"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_empty.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceNum"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_d.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceNumH"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_h.png"/>
-    <BitmapImage x:Key="CAM_BoxResourceNumDisabled"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_missing.png"/>
-
-    <Style x:Key="CAM_ResourceFilterContainer"
+    <!-- Resource-first top-level navigation. The items are native VMActionResourceCostPreview objects.
+         Unknown/mod-added resources use their native ActionResource.Name automatically. -->
+    <Style x:Key="CAM_ResourceTabItemStyle"
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Focusable" Value="True"/>
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Margin" Value="4,0"/>
-        <Setter Property="Width" Value="72"/>
-        <Setter Property="Height" Value="72"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Tag" Value="{Binding .}"/>
-        <Setter Property="ContentTemplate" Value="{StaticResource CAM_ResourceFilterTemplate}"/>
+        <Setter Property="MinWidth" Value="108"/>
+        <Setter Property="MaxWidth" Value="176"/>
+        <Setter Property="Height" Value="58"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Foreground" Value="{StaticResource LS_baseTxtColor}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Border Width="72" Height="72" Background="Transparent">
-                        <ContentPresenter/>
+                    <Border x:Name="TabRoot"
+                            MinWidth="108"
+                            MaxWidth="176"
+                            Height="58"
+                            Padding="16,6"
+                            Background="#50000000"
+                            BorderBrush="#504D4332"
+                            BorderThickness="0,0,0,2">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <TextBlock x:Name="ResourceName"
+                                       Text="{Binding ActionResource.Name}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{StaticResource SmallFontSize}"
+                                       FontWeight="DemiBold"
+                                       TextAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="142"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SpellLevel"
+                                       DataContext="{Binding ActionResource}"
+                                       Style="{StaticResource SpellSlotNumberStyle}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{StaticResource MediumFontSize}"
+                                       FontWeight="DemiBold"
+                                       Margin="6,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                        </StackPanel>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="TabRoot" Property="Background" Value="#7043321E"/>
+                            <Setter TargetName="TabRoot" Property="BorderBrush" Value="{StaticResource LS_specialTxtColor}"/>
+                            <Setter TargetName="TabRoot" Property="BorderThickness" Value="0,0,0,4"/>
+                            <Setter Property="Foreground" Value="{StaticResource LS_specialTxtColor}"/>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
+                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="SpellLevel" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="SpellLevel" Property="Margin" Value="0"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
+                            <Setter TargetName="SpellLevel" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
             <DataTrigger Binding="{Binding ActionResource}" Value="{x:Null}">
                 <Setter Property="Visibility" Value="Collapsed"/>
-                <Setter Property="Focusable" Value="False"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding ActionResource.MaxValue}" Value="0">
                 <Setter Property="Visibility" Value="Collapsed"/>
-                <Setter Property="Focusable" Value="False"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
+                <Setter Property="Opacity" Value="0.55"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
 
-    <!-- Current HotBar resource button is a compact 72px icon/value control, not an action-grid cell. -->
-    <DataTemplate x:Key="CAM_ResourceFilterTemplate">
-        <Grid x:Name="Root" Width="72" Height="72" Background="Transparent">
-            <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
-            <Image x:Name="Bg"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Source="{StaticResource CAM_BoxResource}"/>
-            <Image x:Name="BgHL"
-                   Visibility="Collapsed"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Source="{StaticResource CAM_BoxResourceH}"/>
-            <Image x:Name="BgDisabled"
-                   Visibility="Collapsed"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Source="{StaticResource CAM_BoxResourceDisabled}"/>
-            <Border Background="Transparent"
-                    Width="72"
-                    Height="72"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Center">
-                <ls:LSActionPointResources x:Name="ResourcePoints"
-                                           Background="Transparent"
-                                           HorizontalAlignment="Center"
-                                           MaxActionPoints="{Binding MaxValue}"
-                                           AvailableActionPoints="{Binding Value}"
-                                           HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"
-                                           DataContext="{Binding ActionResource}"
-                                           MaxActionPointGroups="0"
-                                           SmallActionPointSize="24"
-                                           ActionPointGroupSize="56"
-                                           Style="{StaticResource ActionResourcesTemplateSelector}"/>
-            </Border>
-
-            <Image x:Name="SpellSlotLevels"
-                   Stretch="None"
-                   VerticalAlignment="Top"
-                   HorizontalAlignment="Center"
-                   Margin="0,-10,0,0"
-                   IsHitTestVisible="False"
-                   Style="{StaticResource RomanNumeralLevelImage}"
-                   Visibility="Collapsed"
-                   DataContext="{Binding ActionResource}"/>
-
-            <TextBlock HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Margin="0,20,0,-20"
-                       Foreground="{Binding Foreground, ElementName=ResourcePoints}"
-                       IsHitTestVisible="False"
-                       FontWeight="Bold"
-                       FontSize="{DynamicResource MediumFontSize}"
-                       Text="{Binding ActionResource.Value}"/>
-        </Grid>
-        <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
-                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
-                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
-                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
-                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
-                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
-                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
-                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
-                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
-                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
-                <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
-                <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
-            </DataTrigger>
-        </DataTemplate.Triggers>
-    </DataTemplate>
-
-    <ItemsPanelTemplate x:Key="CAM_ResourceFilterPanel">
+    <ItemsPanelTemplate x:Key="CAM_ResourceTabsPanel">
         <StackPanel Orientation="Horizontal"
-                    HorizontalAlignment="Center"
+                    HorizontalAlignment="Left"
                     VerticalAlignment="Center"/>
     </ItemsPanelTemplate>
 
@@ -346,11 +265,11 @@
                         <RowDefinition Height="878"/>
                     </Grid.RowDefinitions>
 
-                    <DockPanel x:Name="CAM_FilterHeader"
+                    <DockPanel x:Name="CAM_ResourceHeader"
                                Grid.Row="0"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
-                               MinWidth="620">
+                               Width="820">
                         <ls:LSButton x:Name="CAM_TabLeft"
                                      BoundEvent="UITabPrev"
                                      DockPanel.Dock="Left"
@@ -360,7 +279,7 @@
                                      Height="{StaticResource ScaledControllerHintSize}"
                                      EatInput="False"
                                      VerticalAlignment="Center"
-                                     Margin="0,0,36,0"/>
+                                     Margin="0,0,12,0"/>
 
                         <ls:LSButton x:Name="CAM_TabRight"
                                      BoundEvent="UITabNext"
@@ -371,111 +290,74 @@
                                      Height="{StaticResource ScaledControllerHintSize}"
                                      EatInput="False"
                                      VerticalAlignment="Center"
-                                     Margin="36,0,0,0"/>
+                                     Margin="12,0,0,0"/>
 
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding SelectedItem.Content, ElementName=CAM_FilterTabs}"
-                                       Foreground="{StaticResource LS_specialTxtColor}"
-                                       FontSize="{StaticResource ScaledSmallishFontSize}"
-                                       FontWeight="DemiBold"
-                                       TextAlignment="Center"
-                                       HorizontalAlignment="Center"
-                                       MinWidth="320"
-                                       Margin="0,0,0,4"/>
+                        <ls:LSListBox x:Name="CAM_ResourceTabs"
+                                      ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"
+                                      SelectedIndex="0"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Center"
+                                      MaxWidth="680"
+                                      KeyboardNavigation.DirectionalNavigation="Cycle"
+                                      ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"
+                                      ItemsPanel="{StaticResource CAM_ResourceTabsPanel}">
+                            <ls:LSListBox.Template>
+                                <ControlTemplate TargetType="{x:Type ListBox}">
+                                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                                  VerticalScrollBarVisibility="Disabled"
+                                                  CanContentScroll="True">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </ControlTemplate>
+                            </ls:LSListBox.Template>
 
-                            <ls:LSListBox x:Name="CAM_FilterTabs"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"
-                                          SelectedIndex="0"
-                                          KeyboardNavigation.DirectionalNavigation="Cycle">
-                                <b:Interaction.Triggers>
-                                    <b:EventTrigger SourceName="CAM_TabLeft" EventName="Click">
-                                        <ls:SelectNextListBoxItem Reversed="True"
-                                                                  TargetObject="{Binding ElementName=CAM_FilterTabs}"
-                                                                  ForceMode="Cycle"/>
-                                    </b:EventTrigger>
-                                    <b:EventTrigger SourceName="CAM_TabRight" EventName="Click">
-                                        <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_FilterTabs}"
-                                                                  ForceMode="Cycle"/>
-                                    </b:EventTrigger>
-                                </b:Interaction.Triggers>
-                                <ls:LSListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ls:LSListBox.ItemsPanel>
+                            <b:Interaction.Triggers>
+                                <b:EventTrigger SourceName="CAM_TabLeft" EventName="Click">
+                                    <ls:SelectNextListBoxItem Reversed="True"
+                                                              TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceMode="Cycle"/>
+                                </b:EventTrigger>
+                                <b:EventTrigger SourceName="CAM_TabRight" EventName="Click">
+                                    <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceMode="Cycle"/>
+                                </b:EventTrigger>
 
-                                <ls:LSListBoxItem x:Name="CAM_CommonFilterTab"
-                                                  Style="{StaticResource CAM_FilterTabItemStyle}"
-                                                  Content="{Binding Source='haf48b625gb2f0g449egb3aegfddfa1be81c2', Converter={StaticResource TranslatedStringConverter}}"/>
-                                <ls:LSListBoxItem x:Name="CAM_ClassFilterTab"
-                                                  Content="{Binding CurrentPlayer.SelectedCharacter.Stats.ClassList[0].ClassDisplayName}">
-                                    <ls:LSListBoxItem.Style>
-                                        <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource CAM_FilterTabItemStyle}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.IsShapeShifted}" Value="True">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Setter Property="Focusable" Value="False"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ls:LSListBoxItem.Style>
-                                </ls:LSListBoxItem>
-                                <ls:LSListBoxItem x:Name="CAM_CantripsFilterTab"
-                                                  Style="{StaticResource CAM_FilterTabItemStyle}"
-                                                  Content="{Binding Source='h7d02199dg44ecg4a1egbcacg9cc1cec197b3', Converter={StaticResource TranslatedStringConverter}}"/>
-                                <ls:LSListBoxItem x:Name="CAM_ItemsFilterTab"
-                                                  Style="{StaticResource CAM_FilterTabItemStyle}"
-                                                  Content="{Binding Source='h9dc5cd87g62b9g452ag8b97gdb226aa037d8', Converter={StaticResource TranslatedStringConverter}}"/>
-                                <ls:LSListBoxItem x:Name="CAM_PassivesFilterTab"
-                                                  Style="{StaticResource CAM_FilterTabItemStyle}"
-                                                  Content="{Binding Source='hccb74959ga789g46f6g8cc2g73edf1536b6a', Converter={StaticResource TranslatedStringConverter}}"/>
-                            </ls:LSListBox>
-                        </StackPanel>
+                                <b:EventTrigger EventName="SelectionChanged">
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding FilterActionResourceCommand}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=HotBarList}"
+                                                           DeferFocusAction="True"/>
+                                </b:EventTrigger>
+
+                                <b:EventTrigger EventName="Loaded">
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding FilterActionResourceCommand}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=HotBarList}"
+                                                           DeferFocusAction="True"/>
+                                </b:EventTrigger>
+                            </b:Interaction.Triggers>
+                        </ls:LSListBox>
                     </DockPanel>
 
-                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="820" Height="878" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid x:Name="CAM_FilterContent" Grid.Row="1" Width="820" Height="870" HorizontalAlignment="Center" VerticalAlignment="Top">
                         <b:Interaction.Triggers>
                             <b:EventTrigger EventName="Loaded">
-                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"/>
-                                <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                                <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                       FocusElement="{Binding ElementName=HotBarList}"
+                                                       DeferFocusAction="True"/>
                             </b:EventTrigger>
-                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="0">
-                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"/>
-                            </b:DataTrigger>
-                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="1">
-                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"/>
-                            </b:DataTrigger>
-                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2">
-                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding FilterCantripsCommand}" CommandParameter="h7d02199dg44ecg4a1egbcacg9cc1cec197b3"/>
-                            </b:DataTrigger>
-                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="3">
-                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"/>
-                            </b:DataTrigger>
-                            <b:DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="4">
-                                <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                <b:InvokeCommandAction Command="{Binding ClearSingleHotbarCommand}"/>
-                            </b:DataTrigger>
                         </b:Interaction.Triggers>
 
                         <ls:LSListBox x:Name="HotBarList"
                                       Width="800"
                                       Height="850"
-                                      SelectedIndex="1"
+                                      SelectedIndex="0"
                                       Background="Transparent"
                                       KeyboardNavigation.DirectionalNavigation="Contained"
                                       ActionNextEvent="UIDown"
@@ -521,28 +403,6 @@
                                 </b:EventTrigger>
                             </b:Interaction.Triggers>
 
-                            <ls:LSListBoxItem x:Name="CAM_ResourceFilterHolder"
-                                              HorizontalAlignment="Center"
-                                              Height="80"
-                                              Visibility="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview.Count, Converter={StaticResource CountToVisibilityConverter}}">
-                                <ls:LSListBox x:Name="CAM_ResourceFilterList"
-                                              ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"
-                                              KeyboardNavigation.DirectionalNavigation="Continue"
-                                              ActionNextEvent="UIRight"
-                                              ActionPrevEvent="UILeft"
-                                              Template="{StaticResource ScrolllessListBox}"
-                                              ItemContainerStyle="{StaticResource CAM_ResourceFilterContainer}"
-                                              ItemsPanel="{StaticResource CAM_ResourceFilterPanel}">
-                                    <b:Interaction.Triggers>
-                                        <b:EventTrigger EventName="LocalFocusChanged">
-                                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                            <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                            <ls:LSPlaySound Sound="UI_Shared_Hover"/>
-                                        </b:EventTrigger>
-                                    </b:Interaction.Triggers>
-                                </ls:LSListBox>
-                            </ls:LSListBoxItem>
-
                             <ls:LSListBoxItem x:Name="CAM_FilteredSlotHolder" HorizontalAlignment="Center">
                                 <ls:LSListBox x:Name="CAM_FilteredSlotList"
                                               KeyboardNavigation.DirectionalNavigation="Continue"
@@ -550,22 +410,9 @@
                                               ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
                                               ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
                                               ItemsPanel="{StaticResource CAM_ActionGridPanel}">
-                                    <ls:LSListBox.Style>
-                                        <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
-                                            <Setter Property="ItemsSource" Value="{Binding CurrentShownDeck.SlotList}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2">
-                                                    <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="4">
-                                                    <Setter Property="ItemsSource" Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding CurrentSingleHotbarFilter, Converter={StaticResource NullToBoolFalseConverter}}" Value="True">
-                                                    <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ls:LSListBox.Style>
+                                    <ls:LSListBox.ItemsSource>
+                                        <Binding Path="SingleHotBar.SlotList"/>
+                                    </ls:LSListBox.ItemsSource>
                                     <b:Interaction.Triggers>
                                         <b:EventTrigger EventName="LocalFocusChanged">
                                             <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -661,24 +508,6 @@
                              Margin="10,0,20,0"
                              Width="1000"/>
 
-                <ls:LSButton x:Name="ResourceFilterBinding"
-                             Height="0"
-                             BoundEvent="UIAccept"
-                             Command="{Binding FilterActionResourceCommand}"
-                             CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
-                             HorizontalAlignment="Left">
-                    <ls:LSButton.Style>
-                        <Style TargetType="{x:Type ls:LSButton}">
-                            <Setter Property="IsEnabled" Value="False"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding LocalFocus.DataContext.ActionResource, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}" Value="True">
-                                    <Setter Property="IsEnabled" Value="True"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ls:LSButton.Style>
-                </ls:LSButton>
-
                 <ls:LSButton x:Name="UseSlotBinding"
                              Command="{Binding UseSlotCommand}"
                              CommandParameter="{Binding Tag, ElementName=ActionRadials}"
@@ -738,7 +567,8 @@
 
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
-                    <Condition Binding="{Binding SingleHotBar.SlotList.Count}" Value="0"/>
+                    <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                    <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                     <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
                 </MultiDataTrigger.Conditions>
                 <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>

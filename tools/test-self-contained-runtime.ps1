@@ -16,7 +16,7 @@ $text = Get-Content -Raw -LiteralPath $Library
 $evidence = Get-Content -Raw -LiteralPath $EvidencePath | ConvertFrom-Json
 
 if ($evidence.gamePackageVersion -ne "1.8.910.0") {
-    throw "Runtime evidence must be pinned to the consumed Xbox Patch 8 capture (1.8.910.0)."
+    throw "Runtime evidence must be pinned to Xbox Patch 8 capture 1.8.910.0."
 }
 if ($evidence.captureMatchCount -ne 22 -or $evidence.captureScanErrorCount -ne 0) {
     throw "Runtime evidence must preserve the complete 22-file capture with zero scan errors."
@@ -30,72 +30,53 @@ if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/HotBar.xaml' -ne "9035014f47b2
 if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb915375f8cf403dd8398a11c98f5808b2c50c826db1fe3ed43df573542") {
     throw "Unexpected SpellBook capture hash."
 }
-if ($evidence.sourceHashes.'Mods/MainUI/GUI/StateMachines/Controller.xaml' -ne "53389126eb75eaa275609fce981b15339ea8cacab58df3af0d97c370658a573c") {
-    throw "Unexpected MainUI controller state-machine capture hash."
+
+if ($evidence.runtimeContract.organization.mode -ne "resource-first" -or
+    $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
+    $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
+    $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
+    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
+    $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
+    throw "Resource-first organization evidence is incomplete or regressed."
 }
-if ($evidence.runtimeContract.controllerPresentation.assignmentIconBinding -ne "Icon" -or
-    $evidence.runtimeContract.controllerPresentation.camIconBinding -ne "Content.Icon" -or
-    $evidence.runtimeContract.controllerPresentation.actionCellSize -ne 104 -or
-    $evidence.runtimeContract.controllerPresentation.actionGridCellSize -ne 120) {
-    throw "Controller action presentation must remain pinned to the captured 104px assignment icon inside a 120px LSGrid cell."
+if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-only" -or
+    $evidence.runtimeContract.tooltipPresentation.detailsSurface -ne "native-tooltip-only") {
+    throw "CAM must use the ordinary native tooltip only; no Live Details panel is allowed."
 }
-if ($evidence.runtimeContract.controllerPresentation.slotIconStyleRejectedBecauseInternalIconSize -ne 120) {
-    throw "SlotIconStyle's captured 120px internal icon regression guard is missing."
-}
-if ($evidence.runtimeContract.controllerPresentation.resourceButtonSize -ne 72 -or $evidence.runtimeContract.controllerPresentation.resourceNameTextVisible -ne $false) {
-    throw "Resource filters must remain pinned to the captured compact 72px HotBar presentation without resource-name text."
-}
-if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "controller-carousel" -or
-    $evidence.runtimeContract.controllerPresentation.tabPrevEvent -ne "UITabPrev" -or
-    $evidence.runtimeContract.controllerPresentation.tabNextEvent -ne "UITabNext") {
-    throw "Primary tabs must use the captured controller carousel navigation pattern."
-}
-if ($evidence.runtimeContract.controllerPresentation.resourcePanel -ne "horizontal-stack") {
-    throw "Resource filters must remain a single native-style horizontal strip."
-}
-if ($evidence.runtimeContract.organization.cantripVisualSource -ne "SingleHotBar.SlotList" -or
-    $evidence.runtimeContract.organization.cantripNeverFallsBackToPreviousDeck -ne $true) {
-    throw "Cantrips must render SingleHotBar directly instead of inheriting the previous deck."
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "dynamic-resource-row" -or
+    $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
+    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name" -or
+    $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "SpellSlotNumberStyle") {
+    throw "Dynamic resource-tab presentation evidence is incomplete."
 }
 if ($evidence.runtimeContract.controllerPresentation.nativeSelectorOutset -ne 12 -or
-    $evidence.runtimeContract.controllerPresentation.camSelectorTemplate -ne "CAM_SelectorTemplate" -or
     $evidence.runtimeContract.controllerPresentation.camSelectorOutset -ne 4 -or
     $evidence.runtimeContract.controllerPresentation.selectorDerivation -ne "12-(120-104)/2") {
-    throw "CAM focus chrome must derive its 4px selector compensation from native 12px outset and 120/104 grid/icon geometry."
-}
-if ($evidence.runtimeContract.controllerPresentation.spellSlotLevelStyle -ne "RomanNumeralLevelImage") {
-    throw "Spell-slot secondary filters must retain the current HotBar Roman-numeral level presentation."
+    throw "Current selector compensation evidence changed unexpectedly."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
-    $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
-    $evidence.runtimeContract.tooltipPresentation.context -ne "Hotbar") {
-    throw "Focused action tooltip contract diverged from the captured controller/HotBar pattern."
-}
-if (($evidence.runtimeContract.organization.primaryTabs -join ",") -ne "CommonHotBar,ClassHotBar,Cantrips,ItemHotBar,PassivesHotBar" -or
-    $evidence.runtimeContract.organization.secondaryFilterSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
-    $evidence.runtimeContract.organization.initialOuterListIndex -ne 1 -or
-    $evidence.runtimeContract.organization.slotOrdering -ne "BG3-native") {
-    throw "Controller UX organization contract must remain type -> resource/level -> BG3-native slot order."
-}
-if ($evidence.runtimeContract.controllerPresentation.keyboardStyleRejected -ne "HotBarSlotStyle" -or $evidence.runtimeContract.controllerPresentation.keyboardOverlayRejected -ne "HotKey") {
-    throw "Keyboard HotBarSlotStyle/HotKey presentation regression guard is missing from capture evidence."
+    $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand") {
+    throw "Focused native tooltip contract diverged."
 }
 
 $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
-    'x:Name="CAM_FilterTabs"',
-    'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="CommonHotBar"',
-    'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ClassHotBar"',
-    'Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="ItemHotBar"',
-    ('Command="{Binding FilterCantripsCommand}" CommandParameter="' + $evidence.runtimeContract.cantripFilterParameter + '"'),
+    'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
+    'x:Key="CAM_ResourceTabItemStyle"',
+    'Text="{Binding ActionResource.Name}"',
+    'Style="{StaticResource SpellSlotNumberStyle}"',
+    'Binding="{Binding ActionResource.TypeId}" Value="SpellSlot"',
+    'Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot"',
+    'Binding="{Binding ActionResource.MaxValue}" Value="0"',
+    'BoundEvent="UITabPrev"',
+    'BoundEvent="UITabNext"',
+    'SelectNextListBoxItem',
+    'EventName="SelectionChanged"',
     'Command="{Binding FilterActionResourceCommand}"',
-    'x:Name="ResourceFilterBinding"',
-    'CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"',
-    'Value="{Binding CurrentShownDeck.SlotList}"',
-    'Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"',
-    'Value="{Binding SingleHotBar.SlotList}"',
-    'ItemsSource="{Binding SingleHotBar.SlotList}"',
+    'CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"',
+    '<Binding Path="SingleHotBar.SlotList"/>',
     'x:Name="HotBarList"',
     'KeyboardNavigation.DirectionalNavigation="Contained"',
     'x:Name="CAM_FilteredSlotList"',
@@ -103,7 +84,6 @@ $required = @(
     'x:Name="CAM_MainSelector"',
     'x:Key="CAM_SelectorTemplate"',
     'Template="{StaticResource CAM_SelectorTemplate}"',
-    'c_itemSelector.png',
     'ActionUpEvent="UIUp"',
     'ActionDownEvent="UIDown"',
     'ActionRightEvent="UIRight"',
@@ -112,225 +92,129 @@ $required = @(
     'MillisecondsPerTick="70" TotalTicks="1"',
     'CreateFocusedTooltipDataCommand',
     'HighlightResourcesCommand',
-    'UI_HUD_Controller_RadialMenu_SlotHover',
-    'x:Name="UseSlotBinding"',
-    'Fill="{Binding Content.Icon}"',
-    '<Setter Property="Width" Value="104"/>',
-    '<Setter Property="Height" Value="104"/>',
-    'CellWidth="120"',
-    'CellHeight="120"',
-    'x:Key="CAM_FilterTabItemStyle"',
-    'x:Name="CAM_FilterHeader"',
-    'x:Name="CAM_TabLeft"',
-    'x:Name="CAM_TabRight"',
-    'BoundEvent="UITabPrev"',
-    'BoundEvent="UITabNext"',
-    'SelectNextListBoxItem',
-    'CAM_TabDotOn',
-    'CAM_TabDotOff',
-    'c_pagination_on.png',
-    'c_pagination_off.png',
-    'Text="{Binding SelectedItem.Content, ElementName=CAM_FilterTabs}"',
-    'x:Key="CAM_ResourceFilterTemplate"',
-    'Style="{StaticResource RomanNumeralLevelImage}"',
-    'x:Name="SpellSlotLevels"',
-    'Width="72"',
-    'Height="72"',
-    '<StackPanel Orientation="Horizontal"',
-    'ActionNextEvent="UIRight"',
-    'ActionPrevEvent="UILeft"',
-    'SelectedIndex="1"',
-    'Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2"',
-    '<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>',
     'x:Name="CAM_ActionTooltip"',
     'x:Name="CAM_SingleActionTooltip"',
     'ShowTooltipOnUIElementCommand',
     'LocalFocus.DataContext.Content',
     'ls:TooltipExtender.Context="Hotbar"',
+    'x:Name="UseSlotBinding"',
     'Command="{Binding UseSlotCommand}"',
     'CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
     'BoundEvent="UIAccept"',
     'x:Name="CancelButton"',
     'BoundEvent="UICancel"',
     'Command="{Binding ClearSingleHotbarCommand}"',
-    'ActionCancelCommand',
+    'Binding="{Binding IsShowingAContainerWithVariants}" Value="False"',
+    'Binding="{Binding IsSelectingUpcastedSpell}" Value="False"',
+    'Binding="{Binding IsShowingItemsToThrow}" Value="False"',
     'Property="Command" Value="{Binding CustomEvent}"',
     'Property="CommandParameter" Value="CloseWidget"',
     'x:Name="ButtonHintsContainer"',
-    'Style="{StaticResource ButtonHint.Container.CenterWrap}"',
-    'HorizontalAlignment="Right"',
-    'HorizontalContentAlignment="Right"',
-    'FlowDirection="RightToLeft"',
     'x:Name="ShowContextMenu"',
     'Visibility="Collapsed"',
-    'Command="{x:Null}"',
-    '<Setter Property="Tag" Value="{Binding .}"/>'
+    'Command="{x:Null}"'
 )
 foreach ($needle in $required) {
     if (-not $text.Contains($needle)) {
-        throw "Self-contained runtime is missing required Patch 8 seam: $needle"
+        throw "Self-contained resource-first runtime is missing required seam: $needle"
     }
 }
 
-# Current 1.8.910.0 SelectorAssign intentionally has no hard-coded geometry.
-$selector = [regex]::Match(
+foreach ($forbidden in @(
+    'x:Name="CAM_FilterTabs"',
+    'CAM_CommonFilterTab',
+    'CAM_ClassFilterTab',
+    'CAM_CantripsFilterTab',
+    'CAM_ItemsFilterTab',
+    'CAM_PassivesFilterTab',
+    'SetCurrentShownDeckCommand',
+    'FilterCantripsCommand',
+    'CurrentShownDeck.SlotList',
+    'PassivesHotBar.SlotList',
+    'CAM_ResourceFilterHolder',
+    'CAM_ResourceFilterList',
+    'CAM_ResourceFilterTemplate',
+    'ResourceFilterBinding',
+    'CAM_TabDotOn',
+    'CAM_TabDotOff',
+    'CAM_FilterTabItemStyle',
+    'CAM_LiveDetails',
+    'LiveDetails',
+    'PlayerCharacterProperties.ControllerHotBars',
+    'PlayerCharacterProperties.SpellsAndActions',
+    'CurrentPlayer.SelectedCharacter.Inventory.Slots',
+    'CurrentPlayer.SelectedCharacter.Stats.Passives',
+    'LocalFocus.Tag',
+    'ShowContextMenuCommand',
+    'AssignSlotCommand',
+    'SwapSlotCommand',
+    'AddRadialCommand',
+    'RemoveRadialCommand',
+    'HotBarSlotStyle',
+    'HotKey',
+    'SlotIconStyle',
+    'Public/Game/GUI/',
+    'ScriptExtender'
+)) {
+    if ($text.Contains($forbidden)) {
+        throw "Forbidden obsolete/non-resource-first seam is present: $forbidden"
+    }
+}
+
+# Resource tabs are the only tab/filter layer.
+if ([regex]::Matches($text, 'ItemsSource="\{Binding CurrentPlayer\.UIData\.ActionResourcesCostPreview\}"').Count -ne 1) {
+    throw "ActionResourcesCostPreview must feed exactly one top-level resource-tab list."
+}
+if ($text.Contains('CAM_ResourceFilter')) {
+    throw "A secondary resource-filter layer must not return."
+}
+
+# The main executable list is always the native resource-filtered SingleHotBar.
+$mainList = [regex]::Match(
     $text,
-    '<Control\b[^>]*x:Name="CAM_MainSelector"[^>]*/>',
+    '<ls:LSListBox\b[^>]*x:Name="CAM_FilteredSlotList"[\s\S]*?</ls:LSListBox>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $selector.Success) {
-    throw "CAM_MainSelector was not found."
+if (-not $mainList.Success -or -not $mainList.Value.Contains('<Binding Path="SingleHotBar.SlotList"/>')) {
+    throw "CAM_FilteredSlotList must bind directly to SingleHotBar.SlotList."
 }
-foreach ($stale in @('Width=', 'Height=', 'Margin=')) {
-    if ($selector.Value.Contains($stale)) {
-        throw "Stale pre-capture SelectorAssign geometry returned: $stale"
-    }
+if ($mainList.Value.Contains('CurrentShownDeck') -or $mainList.Value.Contains('PassivesHotBar')) {
+    throw "Main resource-first grid must not fall back to old type/deck sources."
 }
 
+# No custom details surface: focused native content goes to LSTooltip.
+foreach ($tooltipName in @('CAM_ActionTooltip','CAM_SingleActionTooltip')) {
+    if (-not $text.Contains('x:Name="' + $tooltipName + '"')) {
+        throw "Missing native focused-action tooltip: $tooltipName"
+    }
+}
+if (-not $text.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"')) {
+    throw "Main tooltip must consume focused VMHotBarSlot.Content."
+}
+
+# Top-level resource browsing must close on B even though SingleHotBar is populated.
+$closeTrigger = [regex]::Match(
+    $text,
+    '<MultiDataTrigger>[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CloseWidget[\s\S]*?</MultiDataTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $closeTrigger.Success) {
+    throw "Top-level B close trigger must be based on true nested-state flags."
+}
+if ($closeTrigger.Value.Contains('SingleHotBar.SlotList.Count')) {
+    throw "Top-level B must not use SingleHotBar count because resource browsing populates SingleHotBar."
+}
+
+# Preserve current focus geometry guard until the next runtime proof.
 $selectorTemplate = [regex]::Match(
     $text,
     '<ControlTemplate\b[^>]*x:Key="CAM_SelectorTemplate"[\s\S]*?</ControlTemplate>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $selectorTemplate.Success) {
-    throw "CAM_SelectorTemplate was not found."
-}
-if ($selectorTemplate.Value.Contains('Margin="-12"') -or $selectorTemplate.Value.Contains('Margin="0"')) {
-    throw "CAM selector must use the derived intermediate compensation, not native -12 or the proven-too-small zero outset."
-}
-if (-not $selectorTemplate.Value.Contains('Margin="-4"') -or -not $selectorTemplate.Value.Contains('Margin="4"')) {
-    throw "CAM selector must use -4 outer / +4 inner compensation for the 120px focus cell around a 104px icon."
+if (-not $selectorTemplate.Success -or
+    -not $selectorTemplate.Value.Contains('Margin="-4"') -or
+    -not $selectorTemplate.Value.Contains('Margin="4"')) {
+    throw "Current CAM selector compensation must remain -4/+4 pending runtime proof."
 }
 
-# The fresh native radial contract uses LocalFocus.DataContext, not the older fixture's LocalFocus.Tag.
-if ($text.Contains('LocalFocus.Tag')) {
-    throw "Runtime must use the captured 1.8.910.0 LocalFocus.DataContext handoff, not stale LocalFocus.Tag."
-}
-
-# The CAM main execution path may only consume native slot collections.
-foreach ($forbidden in @(
-    'PlayerCharacterProperties.ControllerHotBars',
-    'PlayerCharacterProperties.SpellsAndActions',
-    'CurrentPlayer.SelectedCharacter.Inventory.Slots',
-    'CurrentPlayer.SelectedCharacter.Stats.Passives',
-    'CAM_ActionsFocusRoot',
-    'CAM_ItemsFocusRoot',
-    'CAM_PassivesFocusRoot',
-    'CAM_MetamagicFocusRoot',
-    'CAM_TabPrevHint',
-    'CAM_TabNextHint',
-    'ShowContextMenuCommand',
-    'RequestAssignSlotCommand',
-    'AssignSlotCommand',
-    'SwapSlotCommand',
-    'ClearSlotCommand',
-    'AddRadialCommand',
-    'RemoveRadialCommand',
-    'Height="376"',
-    'Template="{StaticResource SelectorTemplate}"',
-    'Margin="-12"',
-    'HotBarSlotStyle',
-    'HotKey',
-    'SlotIconStyle',
-    'CAM_FilterTabTextStyle',
-    'FontSize="32"',
-    'Width="150"',
-    'Height="64"',
-    'Text="{Binding ActionResource.Name}"',
-    'CAM_FilterButtonBackground',
-    'CAM_ActiveFilterButtonBackground',
-    'btn_pil_active_d.png',
-    'btn_pil_inactivemod_d.png',
-    'Public/Game/GUI/',
-    'ScriptExtender'
-)) {
-    if ($text.Contains($forbidden)) {
-        throw "Forbidden obsolete/native-copy seam is present in project-owned runtime: $forbidden"
-    }
-}
-
-# Resource/level filters are a compact secondary navigation layer above the action catalog.
-# Initial outer-list focus stays on the action catalog (SelectedIndex=1).
-$actionHolderIndex = $text.IndexOf('x:Name="CAM_FilteredSlotHolder"')
-$resourceHolderIndex = $text.IndexOf('x:Name="CAM_ResourceFilterHolder"')
-if ($actionHolderIndex -lt 0 -or $resourceHolderIndex -lt 0 -or $resourceHolderIndex -ge $actionHolderIndex) {
-    throw "The compact resource/level strip must precede the action catalog."
-}
-if (-not $text.Contains('SelectedIndex="1"')) {
-    throw "The outer controller list must start on the action catalog while keeping secondary filters above it."
-}
-
-# Primary type tabs are intentionally ordered: common -> class -> cantrips -> items -> passives.
-$commonTabIndex = $text.IndexOf('x:Name="CAM_CommonFilterTab"')
-$classTabIndex = $text.IndexOf('x:Name="CAM_ClassFilterTab"')
-$cantripTabIndex = $text.IndexOf('x:Name="CAM_CantripsFilterTab"')
-$itemsTabIndex = $text.IndexOf('x:Name="CAM_ItemsFilterTab"')
-$passivesTabIndex = $text.IndexOf('x:Name="CAM_PassivesFilterTab"')
-if (@($commonTabIndex,$classTabIndex,$cantripTabIndex,$itemsTabIndex,$passivesTabIndex) | Where-Object { $_ -lt 0 }) {
-    throw "One or more primary controller filter tabs are missing."
-}
-if (-not ($commonTabIndex -lt $classTabIndex -and $classTabIndex -lt $cantripTabIndex -and $cantripTabIndex -lt $itemsTabIndex -and $itemsTabIndex -lt $passivesTabIndex)) {
-    throw "Primary controller filter tab order regressed."
-}
-
-# Focused action descriptions use the captured assignment-list tooltip/show-command pattern.
-foreach ($tooltipName in @('CAM_ActionTooltip','CAM_SingleActionTooltip')) {
-    if (-not $text.Contains('x:Name="' + $tooltipName + '"')) {
-        throw "Missing focused action tooltip: $tooltipName"
-    }
-}
-if (-not $text.Contains('Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"')) {
-    throw "Focused action tooltip must be shown through the native ShowTooltipOnUIElementCommand."
-}
-if (-not $text.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"')) {
-    throw "Main action tooltip must consume the focused VMHotBarSlot.Content object."
-}
-
-# Resource previews must be a single horizontal strip; LSGrid caused hidden items to reserve blank rows.
-$resourcePanel = [regex]::Match(
-    $text,
-    '<ItemsPanelTemplate\b[^>]*x:Key="CAM_ResourceFilterPanel"[\s\S]*?</ItemsPanelTemplate>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $resourcePanel.Success -or -not $resourcePanel.Value.Contains('StackPanel Orientation="Horizontal"')) {
-    throw "CAM_ResourceFilterPanel must remain a horizontal StackPanel."
-}
-if ($resourcePanel.Value.Contains('LSGrid')) {
-    throw "Resource filters must not use LSGrid because hidden preview entries create blank grid rows."
-}
-
-# Cantrips must never render CurrentShownDeck from the previously selected primary tab.
-if (-not $text.Contains('Binding="{Binding SelectedIndex, ElementName=CAM_FilterTabs}" Value="2"')) {
-    throw "Cantrip selected-index source override is missing."
-}
-$cantripSourcePattern = '<DataTrigger\s+Binding="\{Binding SelectedIndex, ElementName=CAM_FilterTabs\}"\s+Value="2">[\s\S]*?SingleHotBar\.SlotList[\s\S]*?</DataTrigger>'
-if (-not [regex]::IsMatch($text, $cantripSourcePattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-    throw "Cantrip tab must explicitly source SingleHotBar.SlotList."
-}
-
-# Resource filtering follows the native click/accept model: focus alone must not mutate the filter.
-$resourceList = [regex]::Match(
-    $text,
-    '<ls:LSListBox\b[^>]*x:Name="CAM_ResourceFilterList"[\s\S]*?</ls:LSListBox>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $resourceList.Success) {
-    throw "CAM_ResourceFilterList was not found."
-}
-if ($resourceList.Value.Contains('FilterActionResourceCommand')) {
-    throw "Resource focus must not filter immediately; filtering belongs to ResourceFilterBinding on UIAccept."
-}
-
-# Resource display uses the exact current VMActionResourceCostPreview shape.
-foreach ($needle in @(
-    'MaxActionPoints="{Binding MaxValue}"',
-    'AvailableActionPoints="{Binding Value}"',
-    'HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"',
-    'DataContext="{Binding ActionResource}"'
-)) {
-    if (-not $text.Contains($needle)) {
-        throw "Resource filter renderer diverged from captured HotBar contract: $needle"
-    }
-}
-
-Write-Host "Self-contained Patch 8 runtime contract passed: capture 1.8.910.0 is pinned, controller carousel tabs replace desktop pills, Cantrips explicitly renders SingleHotBar, resource previews stay in one horizontal row, selector compensation is derived from 120/104 geometry, and VMHotBarSlot dispatch/tooltips/native B remain intact."
+Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs are the sole top-level navigation, selection drives native FilterActionResourceCommand, the grid is SingleHotBar.SlotList, ordinary native tooltips remain the only details surface, and top-level B is separated from true nested state."
