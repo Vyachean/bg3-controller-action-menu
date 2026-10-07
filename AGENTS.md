@@ -398,3 +398,18 @@ The stronger runtime evidence is older and already proven in-game:
 - resource-strip AutoScroll returns to the BG3-proven `SelectedIndex` input and combines it with native `ScrollTo="Center"`; `SelectedItem` is a VM and is not a valid element/index scroll target.
 
 Do not restore `ForceSelect=True`, install-time native derivation, or duplicate executable lists.
+
+
+## Runtime correction — 0.0.64 -> 0.0.65
+
+0.0.64 is the first build in this sequence that materially improves resource-switch focus/navigation. Keep its concrete-item handoff and native `SelectorTemplate` ownership.
+
+Remaining runtime defects are now narrower:
+- after a resource switch, the first action is focused, but the ordinary action tooltip does not appear until the user moves with D-pad;
+- while cycling resource tabs left, the selected edge tab can still remain outside the visible strip.
+
+0.0.65 must not change focus ownership again. Instead:
+- the existing 70 ms resource-entry timer may use `HotBarList.SelectedItem` as the one-shot first-slot source to complete the same native tooltip/tag/resource-highlight state that D-pad navigation establishes from `LocalFocus.DataContext`;
+- this one-shot synchronization is allowed only during resource entry. Normal navigation remains `LocalFocusChanged`-owned;
+- resource-tab scrolling must use the native selection-driven `AutoScrollBehavior BringSelectionIntoView=True` mode without an explicit `ScrollIntoView` target. Current runtime evidence rejects both explicit `SelectedItem` and `SelectedIndex` targets for this horizontal strip;
+- do not introduce manual horizontal offsets, tab virtualization, `ForceSelect=True`, or another tab/focus state machine.
