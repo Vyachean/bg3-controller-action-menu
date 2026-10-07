@@ -7,6 +7,13 @@
 
     <!-- CAM owns composition only. Each focused/executed action remains a native VMHotBarSlot. -->
     <System:Double x:Key="CAM_ActionGridCellSize">120</System:Double>
+    <!-- HotBar.xaml owns its resource-box keys locally, so CAM references the same game assets
+         under CAM-owned keys instead of assuming page-local resources leak into Lib_Controller. -->
+    <BitmapImage x:Key="CAM_BoxResourceBg" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resourceBG.png"/>
+    <BitmapImage x:Key="CAM_BoxResource" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resource_d.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceH" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resource_h.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceDisabled" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/box_resource_disabled.png"/>
+    <Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
@@ -144,21 +151,21 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                     <Grid x:Name="Root" Width="72" Height="72">
-                        <Image x:Name="BgBg" Source="{StaticResource BoxResourceBg}"/>
+                        <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
                         <Image x:Name="Bg"
-                               Source="{StaticResource BoxResource}"
-                               Margin="{StaticResource ResourceBackgroundMargin}"
+                               Source="{StaticResource CAM_BoxResource}"
+                               Margin="{StaticResource CAM_ResourceBackgroundMargin}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"/>
                         <Image x:Name="BgHL"
-                               Source="{StaticResource BoxResourceH}"
-                               Margin="{StaticResource ResourceBackgroundMargin}"
+                               Source="{StaticResource CAM_BoxResourceH}"
+                               Margin="{StaticResource CAM_ResourceBackgroundMargin}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"
                                Visibility="Collapsed"/>
                         <Image x:Name="BgDisabled"
-                               Source="{StaticResource BoxResourceDisabled}"
-                               Margin="{StaticResource ResourceBackgroundMargin}"
+                               Source="{StaticResource CAM_BoxResourceDisabled}"
+                               Margin="{StaticResource CAM_ResourceBackgroundMargin}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"
                                Visibility="Collapsed"/>
@@ -698,14 +705,14 @@
                               Height="72"
                               Margin="4,0,0,0"
                               Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
-                            <Image Source="{StaticResource BoxResourceBg}"/>
+                            <Image Source="{StaticResource CAM_BoxResourceBg}"/>
                             <Image x:Name="CAM_PassivesBg"
-                                   Source="{StaticResource BoxResource}"
-                                   Margin="{StaticResource ResourceBackgroundMargin}"
+                                   Source="{StaticResource CAM_BoxResource}"
+                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}"
                                    Visibility="{Binding IsShowingPassivesDeck, Converter={StaticResource BoolToCollapsedConverter}}"/>
                             <Image x:Name="CAM_PassivesBgHL"
-                                   Source="{StaticResource BoxResourceH}"
-                                   Margin="{StaticResource ResourceBackgroundMargin}"
+                                   Source="{StaticResource CAM_BoxResourceH}"
+                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}"
                                    Visibility="{Binding IsShowingPassivesDeck, Converter={StaticResource BoolToVisibleConverter}}"/>
                             <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
                                    Width="48"
