@@ -80,7 +80,12 @@
         "gridAlwaysSelectFirst": false,
         "gridInternalFocusable": false,
         "gridExtendedRows": null,
-        "emptyCellTemplate": "DynamicResource EmptyCellTemplate"
+        "emptyCellTemplate": "DynamicResource EmptyCellTemplate",
+        "focusFollow": {
+          "source": "ActionRadials.FocusedElement",
+          "transport": "LSScrollViewer.ScrollToElement",
+          "binding": "{Binding FocusedElement, ElementName=ActionRadials}"
+        }
       },
       "focusPresentation": "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext",
       "adaptiveColumns": {
@@ -414,6 +419,67 @@
       "hotBarSize": 483748,
       "actionResourcesContainer": "ActionResourcesContainer",
       "actionResourcesList": "ActionResourcesList"
+    },
+    "coverageContract": {
+      "status": "incomplete-until-native-parity-proven",
+      "invariant": "(keyboard HotBar executable actions UNION radial assignment executable candidates MINUS radial-editing-only operations) SUBSET_OF CAM reachable executable actions",
+      "dispatchType": "VMHotBarSlot",
+      "referenceSets": {
+        "keyboardHotBar": [
+          "CommonHotBar -> CurrentShownDeck.SlotList",
+          "ClassHotBar -> CurrentShownDeck.SlotList",
+          "ItemHotBar -> CurrentShownDeck.SlotList",
+          "FilterCantripsCommand",
+          "ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList",
+          "PassivesHotBar.SlotList"
+        ],
+        "radialAssignment": [
+          "PlayerCharacterProperties.SpellsAndActions[*].Actions",
+          "Stats.Passives + TogglablePassivePredicate",
+          "Stats.Passives + TogglableMetaMagicPassivePredicate",
+          "Inventory.Slots"
+        ]
+      },
+      "shippingProviders": [
+        "ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList",
+        "PassivesHotBar.SlotList",
+        "SingleHotBar.SlotList for native nested/variant/upcast/throw state"
+      ],
+      "knownMissingSourceClasses": [
+        "cantrips",
+        "free/no-resource actions",
+        "inventory/consumables",
+        "scrolls",
+        "item-charge actions",
+        "metamagic toggles",
+        "temporary actions",
+        "recasts"
+      ],
+      "dynamicRuntimeProofClasses": [
+        "Action resource actions",
+        "Bonus Action resource actions",
+        "spell-slot variants",
+        "class-resource actions",
+        "passives/toggles",
+        "mod-added actions/resources"
+      ],
+      "forbiddenClassification": [
+        "spell-name tables",
+        "class-name tables",
+        "icon heuristics",
+        "resource-name heuristics",
+        "raw radial-assignment objects passed to UseSlotCommand"
+      ],
+      "documentation": "docs/action-coverage.md",
+      "captureDiagnostics": {
+        "report": "hotbar-coverage-contract.json",
+        "commands": [
+          "SetCurrentShownDeckCommand",
+          "FilterCantripsCommand",
+          "FilterActionResourceCommand"
+        ],
+        "recordsCommandParameter": true
+      }
     }
   },
   "captureMatchCount": 22,

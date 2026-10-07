@@ -42,6 +42,13 @@ foreach ($required in @(
     'Get-ChildItem -LiteralPath $Root -Filter "Game.pak"',
     'Scanned PAKs: 1 (Game.pak only)',
     'capture-summary.txt',
+    'hotbar-coverage-contract.json',
+    'Get-HotBarCoverageReport',
+    'SetCurrentShownDeckCommand',
+    'FilterCantripsCommand',
+    'FilterActionResourceCommand',
+    'CommandParameter',
+    'RadialAssignmentReferences',
     'missing required UI groups',
     'No BG3 files, saves, profiles, or mods were modified.'
 )) {

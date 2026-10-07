@@ -16,9 +16,9 @@ VMHotBarSlot
   execution parameter -> VMHotBarSlot
 ```
 
-Therefore CAM executes only native hotbar-slot VMs. Current HotBar evidence proves several native slot collections, but the shipping resource-first surface intentionally uses one executable source: `SingleHotBar.SlotList`, populated by BG3's own `FilterActionResourceCommand` and reused for nested variant/upcast/container state.
+Therefore CAM executes only native hotbar-slot VMs. The shipping build currently uses `SingleHotBar.SlotList`, populated by BG3's own `FilterActionResourceCommand`, plus the proven `PassivesHotBar.SlotList` exception. That current provider set is not assumed to be complete.
 
-Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates. `PassivesHotBar.SlotList` is a proven executable `VMHotBarSlot` collection and is now the one deliberate non-resource top-level exception requested by the product: a Passives tab switches the same `HotBarList` to that collection. `CurrentShownDeck.SlotList` remains evidence only and is not a shipping top-level source.
+Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are reference evidence, not gameplay-dispatch candidates. `CurrentShownDeck.SlotList` and current deck/cantrip commands are proven coverage evidence and may become shipping providers only after the exact current command/filter contract is captured and the resulting entries remain executable `VMHotBarSlot` values. See `docs/action-coverage.md`.
 
 ## Controller cell presentation
 
@@ -55,7 +55,7 @@ The former Common/Class/Cantrips/Items carousel remains retired. Passives is the
 
 The resource row binds directly to `CurrentPlayer.UIData.ActionResourcesCostPreview`. SpellSlot/WarlockSpellSlot entries retain native level data; other and mod-added resources use the native resource name. Duplicated actions across resource tabs are allowed when BG3 exposes separate executable variants.
 
-`FREE`, `SCROLLS`, and other non-ActionResource source groups still require a proven native executable-slot source. They must not be reconstructed from raw assignment catalogs. Passives qualifies because `PassivesHotBar.SlotList` is already proven.
+`FREE`, `SCROLLS`, Cantrips, Items/item charges, metamagic, temporary actions and recasts remain explicit coverage requirements. Each still requires a proven native executable-slot source/filter; they must not be reconstructed from raw assignment catalogs. Passives qualifies because `PassivesHotBar.SlotList` is already proven.
 
 There is no CAM Live Details panel. The ordinary native action tooltip remains the only details surface.
 

@@ -1164,3 +1164,34 @@ For native resource entries:
 10. Passives remains a synthetic adjacent entry.
 
 In-game acceptance is one direct visual comparison against keyboard/mouse HotBar.
+
+
+## 2026-10-07 — 0.0.78 coverage-first HotBar proof boundary
+
+The current completion target is no longer "resource tabs render and execute". It is native
+HotBar/radial gameplay parity as defined by `docs/action-coverage.md`.
+
+Automatic proof before any new game run must establish:
+
+1. the pinned evidence keeps the unresolved native action classes explicit rather than
+   silently treating `FilterActionResourceCommand` as a complete catalog;
+2. the portable capture emits `hotbar-coverage-contract.json` and records every current
+   `SetCurrentShownDeckCommand`, `FilterCantripsCommand` and
+   `FilterActionResourceCommand` element with its command parameter;
+3. raw `SpellsAndActions`, `Inventory.Slots` and passive-predicate objects remain
+   reference evidence only and are never passed to `UseSlotCommand`;
+4. `HotBarList.LocalFocus.DataContext` remains the action identity authority;
+5. the action viewport uses the captured controller focus-follow transport
+   `ActionRadials.FocusedElement -> LSScrollViewer.ScrollToElement`;
+6. resource filtering, Passives, native nested/upcast/container/throw state, native
+   tooltip and page-level A/B dispatch remain unchanged.
+
+Do not request an in-game run merely to verify the action-grid scrolling change or one
+speculative missing source. The next runtime milestone is justified only after static
+source work has reduced the remaining questions to semantic parity that the BG3 VM must
+materialize at runtime.
+
+That combined run should cover, in one session where available: free/no-resource action,
+Cantrip, normal Action and Bonus Action, leveled/upcast spell, class resource, passive,
+metamagic, consumable, Scroll, item charge, temporary action, recast, nested variant,
+throw, concentration, dual-wield state and weapon-set shortcut status.

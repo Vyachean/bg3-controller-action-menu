@@ -66,9 +66,14 @@ The product target treats Action/Bonus Action as the primary tab only when they 
 
 The current native `FilterActionResourceCommand` is the first implementation seam because it preserves BG3 semantics. CAM must not invent a classifier from names/icons/classes. If runtime proof shows that BG3's Action/Bonus filter includes every spell with that secondary cost, refine only with a current native executable-slot/property seam that identifies the primary resource. Do not solve this by hard-coded spell lists.
 
-## FREE and consumable-source groups
+## Coverage-first source groups
 
-`FREE`, `SCROLLS`, item charges, and similar source groups are part of the target UX, but they are not allowed to be fabricated from raw assignment catalogs or string heuristics.
+The controller HotBar must satisfy the native parity contract in `docs/action-coverage.md`.
+Resource filters are preferred, but they are not assumed to enumerate every gameplay action.
+
+`FREE`, `SCROLLS`, item charges, Cantrips, consumables, metamagic, temporary actions,
+recasts and similar source groups are part of the correctness target, but they are not
+allowed to be fabricated from raw assignment catalogs or string heuristics.
 
 They may be added when a current BG3-owned source/filter yields executable `VMHotBarSlot` variants for that group. Raw `SpellsAndActions`, `Inventory.Slots`, or passive assignment objects remain research/presentation evidence only and are not direct dispatch candidates.
 

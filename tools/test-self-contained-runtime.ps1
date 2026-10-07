@@ -31,6 +31,32 @@ if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb
     throw "Unexpected SpellBook capture hash."
 }
 
+if ($evidence.runtimeContract.coverageContract.status -ne "incomplete-until-native-parity-proven" -or
+    $evidence.runtimeContract.coverageContract.dispatchType -ne "VMHotBarSlot" -or
+    $evidence.runtimeContract.coverageContract.documentation -ne "docs/action-coverage.md" -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.report -ne "hotbar-coverage-contract.json") {
+    throw "Runtime evidence must carry the controller HotBar parity contract."
+}
+$requiredCoverageGaps = @(
+    "cantrips",
+    "free/no-resource actions",
+    "inventory/consumables",
+    "scrolls",
+    "item-charge actions",
+    "metamagic toggles",
+    "temporary actions",
+    "recasts"
+)
+foreach ($gap in $requiredCoverageGaps) {
+    if (@($evidence.runtimeContract.coverageContract.knownMissingSourceClasses) -notcontains $gap) {
+        throw "Coverage evidence must keep unresolved native action class explicit: $gap"
+    }
+}
+if ($evidence.runtimeContract.assignmentNavigation.gridScrolling.focusFollow.source -ne "ActionRadials.FocusedElement" -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.focusFollow.transport -ne "LSScrollViewer.ScrollToElement") {
+    throw "Action-grid evidence must use the captured controller focus-follow scroll seam."
+}
+
 if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passives" -or
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
@@ -361,7 +387,9 @@ if (-not $mainList.Success -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"') -or
     -not $mainList.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
     -not $mainList.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
-    -not $mainList.Value.Contains('ItemsPanel="{StaticResource CAM_ActionGridPanel}"')) {
+    -not $mainList.Value.Contains('ItemsPanel="{StaticResource CAM_ActionGridPanel}"') -or
+    -not $mainList.Value.Contains('<ls:LSScrollViewer') -or
+    -not $mainList.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"')) {
     throw "The sole HotBarList must switch only between resource/nested SingleHotBar slots and executable PassivesHotBar slots."
 }
 if ($mainList.Value.Contains('CurrentShownDeck')) {
