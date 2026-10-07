@@ -207,6 +207,10 @@ From current `HotBar.xaml`:
 - the native item container hides only `ActionResource.MaxValue == 0`;
 - resource presentation is icon/level oriented, so `ActionResource.Name` is not guaranteed to be the only useful visual identifier.
 
-CAM therefore keeps native resource filtering and removes the old **visible** `CAM_MainSelector`/fixed `Columns=5` presentation. 0.0.58 runtime proof adds one ActionRadials-specific constraint that SpellBook itself does not have: `HotBarList.LocalFocus` must still be backed by a `LocalFocusSelector` object because tooltip/highlight and A dispatch consume `LocalFocus.DataContext`. CAM supplies an always-laid-out zero-opacity logical selector anchor while the item itself renders visible focus chrome. Missing or empty displayed resource names fall back to `ActionResource.TypeId`.
+CAM therefore keeps native resource filtering and removes the old **visible** `CAM_MainSelector`/fixed `Columns=5` presentation. 0.0.58/0.0.59 runtime proof adds one ActionRadials-specific constraint that SpellBook itself does not have: `HotBarList.LocalFocus` must still be backed by a `LocalFocusSelector` object because tooltip/highlight and A dispatch consume `LocalFocus.DataContext`. CAM supplies an always-laid-out zero-opacity logical selector anchor.
+
+0.0.59 further proves that `ls:MoveFocus.IsFocused` is not synchronized with that logical focus: it stays on the first cell while `LocalFocus.DataContext`, tooltip and A move correctly. Visible cell focus therefore follows `HotBarList.SelectedItem`, with `SelectedItem` mirrored from `LocalFocus.DataContext` on `LocalFocusChanged`.
+
+Resource-tab presentation follows current HotBar evidence rather than a text-only approximation. Generic resources show their native names without a CAM-imposed maximum width and fall back to `ActionResource.TypeId` for null/empty names. SpellSlot/WarlockSpellSlot use an `Image` with `RomanNumeralLevelImage` over `ActionResource`, matching the native resource bar.
 
 The custom weapon-set shortcut is deliberately absent until a repeatable ActionRadials-native input transport is proven. It must not compete with primary grid navigation.
