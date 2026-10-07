@@ -619,9 +619,11 @@ $resourceTabStyle = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabStyle.Success -or
-    -not $resourceTabStyle.Value.Contains('Property="Width" Value="72"') -or
-    -not $resourceTabStyle.Value.Contains('Property="Height" Value="72"') -or
-    -not $resourceTabStyle.Value.Contains('x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"') -or
+    -not $resourceTabStyle.Value.Contains('Property="Margin" Value="-4,0,-4,0"') -or
+    -not $resourceTabStyle.Value.Contains('<Grid Margin="4,-10,4,10">') -or
+    -not $resourceTabStyle.Value.Contains('<Grid x:Name="Root" Width="72" Height="72">') -or
+    -not $resourceTabStyle.Value.Contains('x:Name="BgBg"') -or
+    -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResourceBg}"') -or
     -not $resourceTabStyle.Value.Contains('x:Name="Bg"') -or
     -not $resourceTabStyle.Value.Contains('Source="{StaticResource CAM_BoxResource}"') -or
     -not $resourceTabStyle.Value.Contains('x:Name="BgHL"') -or
@@ -721,6 +723,7 @@ if (-not $passivesTab.Success -or
     -not $passivesTab.Value.Contains('CAM_BoxResourceBg') -or
     -not $passivesTab.Value.Contains('CAM_BoxResource') -or
     -not $passivesTab.Value.Contains('CAM_BoxResourceH') -or
+    -not $passivesTab.Value.Contains('Margin="0,-10,0,10"') -or
     $passivesTab.Value.Contains('CAM_FilterButton') -or
     $passivesTab.Value.Contains('btn_pil_')) {
     throw "Passives must use the same captured HotBar resource-box family as resource tabs."
