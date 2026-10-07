@@ -299,7 +299,7 @@ if ($CoverageSelfTest) {
         @'
 <Grid>
   <Button Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="Common"/>
-  <Button Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding ActionResource}"/>
+  <Button Command="{Binding DataContext.FilterActionResourceCommand, RelativeSource={RelativeSource AncestorType=ls:UIWidget}}" CommandParameter="{Binding ActionResource}"/>
   <ItemsControl ItemsSource="{Binding CurrentShownDeck.SlotList}"/>
   <ItemsControl ItemsSource="{Binding SingleHotBar.SlotList}"/>
 </Grid>
@@ -318,6 +318,7 @@ if ($CoverageSelfTest) {
         $report = Get-HotBarCoverageReport -Documents $documents -HotBarPath $hotBarFixture
         $cantrip = @($report.CommandProbes | Where-Object { $_.Command -eq "FilterCantripsCommand" })[0]
         $deck = @($report.CommandProbes | Where-Object { $_.Command -eq "SetCurrentShownDeckCommand" })[0]
+        $resourceFilter = @($report.CommandProbes | Where-Object { $_.Command -eq "FilterActionResourceCommand" })[0]
 
         if (-not $cantrip -or $cantrip.Present -or $cantrip.MatchCount -ne 0) {
             throw "Coverage self-test expected missing FilterCantripsCommand to be recorded without failure."
@@ -327,6 +328,9 @@ if ($CoverageSelfTest) {
         }
         if (-not $deck.Present -or $deck.MatchCount -ne 1 -or $deck.Matches[0].SourceFile -ne "Mods/MainUI/GUI/Pages/HotBar.xaml") {
             throw "Coverage self-test did not preserve discovered command source metadata."
+        }
+        if (-not $resourceFilter.Present -or $resourceFilter.MatchCount -ne 1) {
+            throw "Coverage self-test did not recognize DataContext/RelativeSource command bindings."
         }
         if ($report.SchemaVersion -ne 2 -or $report.ScannedXamlCount -ne 2) {
             throw "Coverage self-test produced the wrong report schema."
