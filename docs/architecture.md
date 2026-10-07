@@ -870,3 +870,24 @@ CAM_ResourceTabs : LSListBox
 ```
 
 LB/RB changes only selection/filter semantics. Native resource content does not know whether its outer controller list item is selected.
+
+
+## Resource-strip overflow — 0.0.85 architecture
+
+The controller row remains one logical LB/RB sequence, but dynamic native resources and fixed special providers have different presentation constraints. Special providers (Cantrips, Items, Metamagic, Passives, All) stay outside the scroll owner and therefore remain visible. Only `CAM_ResourceTabs` is a bounded horizontal viewport.
+
+Provider identity and scroll transport are deliberately separate:
+
+```text
+CAM_ProviderModeMarker.Tag
+  -> resource / Cantrips / Items / Metamagic / Passives / All mode
+
+CAM_ResourceTabs.Tag
+  -> selected concrete resource ListBoxItem UIElement
+  -> LSScrollViewer.ScrollToElement
+  -> TargetPosition
+  -> TargetPositionChanged
+  -> HorizontalScrollOffset = TargetPosition
+```
+
+The final two steps are copied from the current Patch 8 controller radial horizontal scroller. They are the material difference from the rejected 0.0.66–0.0.67 resource-strip experiments, which supplied a scroll target but did not commit the computed `TargetPosition`. `AutoScrollBehavior`, explicit SelectedIndex/SelectedItem targets, wrapped resource rows and hand-maintained numeric offsets remain rejected.
