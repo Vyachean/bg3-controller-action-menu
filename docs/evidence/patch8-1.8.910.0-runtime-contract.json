@@ -207,7 +207,7 @@
         "style": "ActionResourcesTemplateSelector",
         "max": "MaxValue",
         "available": "Value",
-        "highlighted": "Cost",
+        "highlighted": "0",
         "dataContext": "ActionResource",
         "smallActionPointSize": 24,
         "actionPointGroupSize": 56,
@@ -243,7 +243,11 @@
         "filterChrome": null,
         "resourceBarChromeAllowed": true,
         "resourceIdentity": "LSActionPointResources(ActionResourcesTemplateSelector)",
-        "rejectedTextFilterChrome": "btn_pil_*"
+        "rejectedTextFilterChrome": "btn_pil_*",
+        "quantityMode": "resting-resource-availability",
+        "nativeHoverPreviewSource": "VMActionResourceCostPreview.Cost",
+        "nativeHoverPreviewTransport": "HotBar slot MouseEnter -> HighlightResourcesCommand; MouseLeave -> ClearResourceHighlightsCommand",
+        "camPersistentFocusPolicy": "do not retain hover-preview state; clear resource highlights after focus/entry presentation"
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -285,7 +289,8 @@
         "HotBarList.SelectionChanged delayed LocalFocus wake"
       ],
       "stateAuthority": "HotBarList.LocalFocus.DataContext",
-      "entryStateSource": "HotBarList.LocalFocus.DataContext after concrete focus handoff"
+      "entryStateSource": "HotBarList.LocalFocus.DataContext after concrete focus handoff",
+      "resourcePreviewPolicy": "clear transient resource highlights; tooltip identity remains LocalFocus.DataContext"
     },
     "organization": {
       "mode": "resource-first-plus-passives",
@@ -363,10 +368,11 @@
       }
     },
     "runtimeProofQuestions": [
-      "Do native resource previews render as one compact 72px icon row using LSActionPointResources, with spell-slot Roman numerals and no text labels/wrapping?",
+      "Do top resource tabs show a stable resting resource amount using MaxValue/Value with no persistent focused-action cost highlight?",
+      "Does the conditional native numeral fallback appear only when ActionResource.Value exceeds ResourcePoints.MaxGroupActionPoints?",
       "Can LB/RB traverse resource previews -> Passives -> resource previews in both directions while keeping one HotBarList?",
       "Does Passives render executable VMHotBarSlot entries from PassivesHotBar.SlotList and execute through the same UIAccept/UseSlotCommand path?",
-      "Immediately after resource or Passives tab entry, does the first concrete cell own visible focus, tooltip, ActionRadials.Tag and resource highlighting before any D-pad move?",
+      "Immediately after resource or Passives tab entry, does the first concrete cell own visible focus, tooltip and ActionRadials.Tag before any D-pad move?",
       "Do item-backed action cells use native Template.Item and show VMItem.Count when Count > 1?",
       "Does ordinary D-pad navigation remain synchronized from LocalFocus.DataContext?",
       "Does the proven nested B return still restore the selected resource and its first-cell tooltip?"
