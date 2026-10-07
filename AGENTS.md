@@ -192,9 +192,14 @@ The 0.0.48 in-game observations remain valid evidence of defects, but fixes must
 
 The first post-rollback runtime correction is intentionally limited to the preserved native weapon-set shortcut.
 
-- `ToggleWeaponSet` must bind the same native event it advertises: `BoundEvent="UISelectionLeft"`.
-- The command remains the existing `SwitchWeaponSetCommand`.
+- runtime proof rejects putting `BoundEvent="UISelectionLeft"` directly on the visual `ToggleWeaponSet` hold button: it executes once but does not reliably re-arm for the next hold.
+- preserve the captured vanilla visual button shape: `ToggleWeaponSet` uses `ControllerHoldButtonStyle`, displays the `UISelectionLeft` input hint, and owns `SwitchWeaponSetCommand`, but has **no BoundEvent**.
+- input transport is a separate invisible `LSInputBinding`: `WeaponSetShortcutBinding`, `BoundEvent="UISelectionLeft"`, `Command="{Binding SwitchWeaponSetCommand}"`, `EatInput="False"`.
+- The action grid keeps `ActionLeftEvent="UILeft"`; do not remap ordinary grid-left navigation.
 - The action grid keeps `ActionLeftEvent="UILeft"`; do not remap ordinary grid-left navigation.
 - This correction must not change resource-tab selection, filtering, upcast behavior, focus hierarchy, scrolling, selector geometry, or B handling.
 
 Do not combine another runtime fix into the same release.
+
+
+Runtime proof for 0.0.51: hold D-pad Left switched weapon set once, but the same hold shortcut did not fire a second time. Treat direct BoundEvent on the visual ControllerHoldButtonStyle control as rejected for this command.
