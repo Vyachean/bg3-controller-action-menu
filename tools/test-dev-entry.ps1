@@ -16,34 +16,27 @@ try {
     New-Item -ItemType Directory -Force -Path $assetRoot | Out-Null
     New-Item -ItemType Directory -Force -Path $launcherRoot | Out-Null
 
-    $installer = Join-Path $assetRoot "install-latest.ps1"
+    $capture = Join-Path $assetRoot "capture-self-contained-inputs.ps1"
 @'
 param(
-    [string]$Repository,
-    [string]$ReleaseApiUrl,
-    [string]$ReleaseMetadataPath,
-    [string]$CacheRoot,
-    [string]$LauncherRoot,
-    [string]$LogPath,
-    [string]$StatusPath,
-    [string]$ReportPath
+    [string]$PortableRoot
 )
+$archive = Join-Path $PortableRoot "bg3-controller-action-menu-inputs-fixture.zip"
+$captureLog = Join-Path $PortableRoot "capture.log"
+"fixture archive" | Set-Content -LiteralPath $archive -Encoding UTF8
+"fixture read-only capture log" | Set-Content -LiteralPath $captureLog -Encoding UTF8
 @(
     "SUCCESS",
-    "9.9.9-fixture",
-    "Release-controlled task executed."
-) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
-@{
-    Executed = $true
-    ReleaseMetadataPath = $ReleaseMetadataPath
-    CacheRoot = $CacheRoot
-    LauncherRoot = $LauncherRoot
-} | ConvertTo-Json | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+    "Capture completed.",
+    $archive,
+    $captureLog
+) | Set-Content -LiteralPath (Join-Path $PortableRoot "capture-status.txt") -Encoding Unicode
 
-# A successful PowerShell helper may leave LASTEXITCODE unset or stale.
-# The universal entry must use exception semantics instead.
+# Prove that dev-entry trusts this child process's explicit exit status and not
+# a stale native LASTEXITCODE value produced earlier inside the helper.
 & cmd.exe /c "exit 23"
-'@ | Set-Content -LiteralPath $installer -Encoding UTF8
+exit 0
+'@ | Set-Content -LiteralPath $capture -Encoding UTF8
 
     $metadata = Join-Path $TestRoot "release.json"
     @(
@@ -59,8 +52,8 @@ param(
             published_at = "2030-01-02T00:00:00Z"
             assets = @(
                 [ordered]@{
-                    name = "install-latest.ps1"
-                    browser_download_url = $installer
+                    name = "capture-self-contained-inputs.ps1"
+                    browser_download_url = $capture
                 }
             )
         },
@@ -81,29 +74,39 @@ param(
         -ReportPath $report
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Universal development entry fixture failed with exit code $LASTEXITCODE."
+        throw "Universal development capture entry fixture failed with exit code $LASTEXITCODE."
     }
-    if (-not (Test-Path -LiteralPath $report)) {
-        throw "Release-controlled helper was not executed."
+    if (-not (Test-Path -LiteralPath $report -PathType Leaf)) {
+        throw "Release-controlled capture helper was not executed."
     }
 
     $result = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
-    if (-not $result.Executed) {
-        throw "Development entry execution marker is missing."
+    if ($result.Task -ne "capture" -or -not $result.ReadOnly) {
+        throw "Development entry did not report the read-only capture task."
     }
-    if ($result.LauncherRoot -ne $launcherRoot) {
-        throw "Development entry did not preserve the operator's launcher root."
+    if ($result.Release -ne "9.9.9-fixture") {
+        throw "Development entry reported the wrong release."
     }
-    if ($result.CacheRoot -ne (Join-Path (Join-Path $cacheRoot "v9.9.9-fixture") "install-cache")) {
-        throw "Development entry did not keep helper state under its portable release cache."
+    if (-not $result.Archive -or -not (Test-Path -LiteralPath $result.Archive -PathType Leaf)) {
+        throw "Development entry did not preserve the capture archive."
+    }
+    if ((Split-Path -Parent $result.Archive) -ne $launcherRoot) {
+        throw "Capture archive must be written beside the operator VBS."
+    }
+    if (-not (Test-Path -LiteralPath $log -PathType Leaf) -or
+        -not (Get-Content -Raw -LiteralPath $log).Contains("fixture read-only capture log")) {
+        throw "Development entry did not mirror capture diagnostics to the normal task log."
     }
 
     $statusLines = @(Get-Content -LiteralPath $status -Encoding Unicode)
-    if ($statusLines[0] -ne "SUCCESS" -or $statusLines[1] -ne "9.9.9-fixture") {
-        throw "Development entry did not preserve the helper status contract."
+    if ($statusLines.Count -lt 3 -or
+        $statusLines[0] -ne "SUCCESS" -or
+        $statusLines[1] -ne "9.9.9-fixture" -or
+        $statusLines[2] -notlike "*Read-only HotBar coverage capture completed*") {
+        throw "Development entry did not preserve the universal VBS success contract."
     }
 
-    Write-Host "Universal release-controlled development entry fixture passed."
+    Write-Host "Universal release-controlled read-only capture entry fixture passed."
 } finally {
     Remove-Item -LiteralPath $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
