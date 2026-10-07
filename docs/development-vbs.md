@@ -89,18 +89,17 @@ The universal VBS downloads a fresh copy on every invocation.
 
 That script is intentionally allowed to change between releases. It is the control plane for the current development operation.
 
-For the present release the task is normal install/update:
+For development milestone `0.0.79-hotbar-coverage-capture` the task is one read-only native evidence capture:
 
 ```text
 VBS
   -> current release dev-entry.ps1
-  -> current release install-latest.ps1
-  -> current release install-xbox-dev.ps1
-  -> copy ready self-contained PAK
-  -> update modsettings.lsx
+  -> current release capture-self-contained-inputs.ps1
+  -> inspect Game.pak read-only
+  -> write bg3-controller-action-menu-inputs-....zip beside the VBS
 ```
 
-If fresh game evidence is needed later, a release can instead make `dev-entry.ps1` download and run `capture-self-contained-inputs.ps1`. The operator still launches the same VBS.
+This milestone does not install/update CAM. A later release can switch `dev-entry.ps1` back to the normal install path without changing the operator's VBS.
 
 ## Capture boundary
 
