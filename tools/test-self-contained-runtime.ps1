@@ -110,6 +110,10 @@ $required = @(
     'Property="Command" Value="{Binding CustomEvent}"',
     'Property="CommandParameter" Value="CloseWidget"',
     'x:Name="ButtonHintsContainer"',
+    'x:Name="ToggleWeaponSet"',
+    'BoundEvent="UISelectionLeft"',
+    'Command="{Binding SwitchWeaponSetCommand}"',
+    'ActionLeftEvent="UILeft"',
     'x:Name="ShowContextMenu"',
     'Visibility="Collapsed"',
     'Command="{x:Null}"'
@@ -218,3 +222,19 @@ if (-not $selectorTemplate.Success -or
 }
 
 Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs are the sole top-level navigation, selection drives native FilterActionResourceCommand, the grid is SingleHotBar.SlotList, ordinary native tooltips remain the only details surface, and top-level B is separated from true nested state."
+
+
+# The isolated 0.0.51 correction must only restore the native weapon-set hold binding.
+$weaponSet = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="ToggleWeaponSet"[\s\S]*?/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $weaponSet.Success -or
+    -not $weaponSet.Value.Contains('BoundEvent="UISelectionLeft"') -or
+    -not $weaponSet.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"')) {
+    throw "ToggleWeaponSet must bind native UISelectionLeft to SwitchWeaponSetCommand."
+}
+if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
+    throw "Ordinary grid-left navigation must remain UILeft."
+}
