@@ -412,3 +412,58 @@ For resource tabs, 0.0.62–0.0.64 prove that explicit `AutoScrollBehavior.Scrol
 ```
 
 That mode is now used without `ScrollIntoView` or `ScrollTo`. The behavior follows the selected ListBox container directly, avoiding index/VM target interpretation and avoiding manual scroll offsets.
+
+
+### 0.0.66 — LocalFocus reset, element-based tab scrolling, nested-return restoration
+
+0.0.65 exposed a split-brain state: resource entry selected index 0 and populated tooltip/Tag from `SelectedItem`, while the visible selector could remain at another `LocalFocus` coordinate. That state is invalid because controller execution is defined by `LocalFocus.DataContext`.
+
+The resource-switch lifecycle is therefore:
+
+```text
+resource SelectionChanged
+  -> clear ActionRadials.Tag / tooltip / highlights
+  -> HotBarList.LocalFocus = null
+  -> HotBarList.SelectedIndex = -1
+  -> FilterActionResourceCommand(selected resource)
+  -> 70 ms
+  -> arm CAM_ResetFirstFocusToken
+  -> SelectedIndex = 0
+       |
+       v
+selected concrete ListBoxItem
+  -> SetMoveFocusAction(that ListBoxItem)
+       |
+       v
+fresh HotBarList.LocalFocusChanged
+  -> tooltip = LocalFocus.DataContext.Content
+  -> ActionRadials.Tag = LocalFocus.DataContext
+  -> CreateFocusedTooltipDataCommand(LocalFocus.DataContext)
+  -> HighlightResourcesCommand(LocalFocus.DataContext)
+```
+
+There is no resource-entry tooltip or A state sourced from `SelectedItem`.
+
+#### Resource strip scrolling
+
+The installed Patch 8 radial proves the native scroll contract is UI-element based:
+
+```xml
+<ls:LSScrollViewer
+  ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ...}" />
+```
+
+CAM shoulder tabs do not own controller focus, so they cannot reuse `ActionRadials.FocusedElement`. Instead the selected tab container publishes its concrete `ListBoxItem` UIElement to `CAM_ResourceTabs.Tag`, and the resource `LSScrollViewer.ScrollToElement` follows that element. The scroll target is therefore neither the VM nor an integer index.
+
+#### Returning from nested actions
+
+`SingleHotBar.SlotList` has two meanings in CAM:
+1. top-level result of `FilterActionResourceCommand`;
+2. native nested/upcast/container result.
+
+`ClearSingleHotbarCommand` correctly clears meaning (2), but cannot know that CAM then needs meaning (1) reconstructed. CAM records whether one of the native nested flags actually became true. On nested cancel, after all of these flags return false:
+- `IsShowingAContainerWithVariants`;
+- `IsSelectingUpcastedSpell`;
+- `IsShowingItemsToThrow`;
+
+CAM re-applies `FilterActionResourceCommand(CAM_ResourceTabs.SelectedItem)`, then re-enters the same LocalFocus reset/concrete-first-item path. The marker is not gameplay state; it is only a guard preventing top-level B/CloseWidget from invoking resource restoration.
