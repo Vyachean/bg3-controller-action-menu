@@ -67,6 +67,7 @@ psCommand = "$ErrorActionPreference='Stop';" & _
         "$repo='Vyachean/bg3-controller-action-menu';" & _
         "$api='https://api.github.com/repos/'+$repo+'/releases?per_page=20';" & _
         "$headers=@{'User-Agent'='BG3ControllerActionMenu-DevLauncher';'Accept'='application/vnd.github+json'};" & _
+        "$token=$env:GH_TOKEN;if(-not $token){$token=$env:GITHUB_TOKEN};if($token){$headers['Authorization']='Bearer '+$token};" & _
         "$payload=Invoke-RestMethod -Uri $api -Headers $headers;" & _
         "$published=@();" & _
         "foreach($candidate in @($payload)){" & _

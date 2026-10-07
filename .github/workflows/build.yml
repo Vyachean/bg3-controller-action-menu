@@ -37,6 +37,8 @@ jobs:
 
       - name: Test standalone one-file VBS
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: ./tools/test-standalone-vbs.ps1
 
       - name: Test latest-release install flow
