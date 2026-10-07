@@ -170,6 +170,12 @@ def validate_semantics() -> list[str]:
                 'x:Name="CAM_AllGroupSlots"',
                 'x:Key="CAM_CantripFilterParameter"',
                 'x:Name="CAM_ProviderRestoreCommand"',
+                'x:Name="CAM_ProviderModeMarker"',
+                'x:Name="CAM_ResourceTabsScroller"',
+                    'EventName="TargetPositionChanged"',
+                'PropertyName="HorizontalScrollOffset"',
+                'Value="{Binding TargetPosition, ElementName=CAM_ResourceTabsScroller}"',
+                'MaxWidth="720"',
                 'FilterCantripsCommand',
                 'h7d02199dg44ecg4a1egbcacg9cc1cec197b3',
                 'x:Name="CAM_PassivesTab"',
@@ -244,7 +250,7 @@ def validate_semantics() -> list[str]:
                 '"primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview"',
                 '"detailsSurface": "native-tooltip-only"',
                 '"executableList": "HotBarList"',
-                '"itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList (All fallback) via CAM_ResourceTabs.Tag"',
+                '"itemsSource": "SingleHotBar.SlotList (resources/Cantrips/nested) | CurrentShownDeck.SlotList (Items) | FixedSideBar.SlotList (Metamagic) | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList (All fallback) via CAM_ProviderModeMarker.Tag"',
                 '"nestedStateUsesSameList": true',
                 '"focusPresentation": "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext"',
                 '"visibleFocusSource": "HotBarList.LocalFocus via SelectorTemplate"',
@@ -272,6 +278,13 @@ def validate_semantics() -> list[str]:
                 '"resourceButtonMargin": "4,-10,4,10"',
                 '"itemContainerMargin": "-4,0,-4,0"',
                 '"wrappedRows": false',
+                '"resourceViewportMaxWidth": 720',
+                '"scrollTargetStorage": "CAM_ResourceTabs.Tag"',
+                '"scrollTargetType": "selected concrete resource ListBoxItem UIElement"',
+                '"scrollTransport": "LSScrollViewer.ScrollToElement"',
+                '"targetPositionCommit": "TargetPositionChanged -> HorizontalScrollOffset = TargetPosition"',
+                '"autoScrollBehaviorAllowed": false',
+                '"specialProviderTabsOutsideScrollOwner": true',
                 '"control": "LSActionPointResources"',
                 '"style": "ActionResourcesTemplateSelector"',
                 '"smallActionPointSize": 24',
@@ -309,9 +322,11 @@ def validate_semantics() -> list[str]:
                 '"resourceBoxChromeAllowed": true',
                 '"passivesTabAllowed": true',
                 '"passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList"',
-                '"passivesModeStorage": "CAM_ResourceTabs.Tag"',
+                '"passivesModeStorage": "CAM_ProviderModeMarker.Tag"',
                 '"passivesModeToken": "CAM_PassivesModeToken"',
                 '"passivesModeOwnership": "CAM presentation-only"',
+                '"providerModeStorage": "CAM_ProviderModeMarker.Tag"',
+                '"resourceScrollTargetStorage": "CAM_ResourceTabs.Tag"',
                 '"cantripsTabAllowed": true',
                 '"cantripsCommand": "FilterCantripsCommand"',
                 '"cantripsCommandParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3"',
@@ -351,8 +366,8 @@ def validate_semantics() -> list[str]:
                 '"entryCommitToken": null',
                 '"layoutPanel": "StackPanel"',
                 '"oneLogicalSequence": true',
-                '"horizontalScrollState": false',
-                '"scrollOwner": null',
+                '"horizontalScrollState": true',
+                '"scrollOwner": "CAM_ResourceTabsScroller"',
                 '"actionViewportHeight": 850',
                 '"cycleForceSelect": false',
                 '"hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only"',
@@ -483,6 +498,19 @@ def validate_semantics() -> list[str]:
                 errors.append(
                     f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: forbidden obsolete/native-copy seam: {forbidden}"
                 )
+
+        if (
+            'x:Name="CAM_ProviderModeMarker"' not in runtime_text
+            or 'x:Name="CAM_ResourceTabsScroller"' not in runtime_text
+            or 'ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"' not in runtime_text
+            or 'EventName="TargetPositionChanged"' not in runtime_text
+            or 'PropertyName="HorizontalScrollOffset"' not in runtime_text
+            or 'Value="{Binding TargetPosition, ElementName=CAM_ResourceTabsScroller}"' not in runtime_text
+            or 'Binding="{Binding Tag, ElementName=CAM_ResourceTabs}"' in runtime_text
+        ):
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: resource scrolling must use concrete ListBoxItem target + TargetPosition commit, while provider mode stays on CAM_ProviderModeMarker"
+            )
 
         if (
             "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars" not in runtime_text
