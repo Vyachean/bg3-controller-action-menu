@@ -657,3 +657,36 @@ The next development release is capture-only:
 - after the capture is inspected, restore the normal install task and implement one evidence-based visual correction.
 
 Already confirmed runtime behavior must remain untouched: native VMItem quantity rendering, LocalFocus authority, tooltip behavior, resource-first filtering, Passives serialization, nested return and native action dispatch.
+
+
+## Runtime correction — exact 1.8.910.0 HotBar capture -> 0.0.75
+
+The operator-provided read-only capture `bg3-controller-action-menu-inputs-20261007-201234.zip` contains the exact installed Xbox App `Mods/MainUI/GUI/Pages/HotBar.xaml` for package `1.8.910.0`, SHA-256 `9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`.
+
+It proves that the icon row the operator wants CAM to resemble is the native **Action Resources** strip, not the textual `FilterButton / ActiveFilterButton` family.
+
+Authoritative native presentation:
+
+- container: `ActionResourcesContainer`;
+- shared background: `bar_resources.png`, height 64, `Slices="104,0"`, min width 208, width = resource-row width + 208;
+- list: `ActionResourcesList`, source `CurrentPlayer.UIData.ActionResourcesCostPreview`;
+- native item type: `VMActionResourceCostPreview`;
+- per-resource button: `Padding="0"`, `Margin="4,-10,4,10"`;
+- per-resource root width: 72;
+- item presenter margin: `-4,0,-4,0`;
+- ordinary chrome: `box_resource_empty.png`, `box_resource_d.png`, `box_resource_h.png`, `box_resource_missing.png`;
+- resource renderer: `LSActionPointResources + ActionResourcesTemplateSelector`, `SmallActionPointSize=24`, `ActionPointGroupSize=56`;
+- spell/warlock slots: `box_resourceNum_*` chrome, `Margin="0,-8,0,0"`, plus `RomanNumeralLevelImage` at `Margin="0,-10,0,0"`;
+- zero-value resources use the missing/disabled chrome;
+- native `ResourcesNumeralDisplay` is **conditional**, not always visible: it appears only when `ActionResource.Value > ResourcePoints.MaxGroupActionPoints`; Bardic Inspiration adjusts its margin/font;
+- native mouse hover maps normal chrome to `box_resource_h.png`.
+
+Controller adaptation allowed for CAM:
+- retain `LSListBox` selection because LB/RB requires a persistent controller selection model;
+- map selected resource to the native hover/highlight chrome `box_resource_h.png`;
+- suppress that resource selection highlight while Passives mode is active;
+- render Passives as one additional 72px resource-box-style entry inside the same shared `bar_resources.png` strip because BG3 has no native action-resource preview object for passives.
+
+Do not use `btn_pil_*` for CAM resource tabs again. Do not omit the shared `bar_resources.png` strip. Do not restore an unconditional resource-value number.
+
+Native item quantity, LocalFocus authority, tooltip behavior, Passives transition serialization, nested return, and action dispatch remain unchanged.

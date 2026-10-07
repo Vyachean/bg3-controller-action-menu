@@ -89,9 +89,8 @@ Every run:
 - the VBS itself checks the newest published GitHub Release;
 - downloads that release's current `dev-entry.ps1` into `installer-work`;
 - runs the release-controlled task;
-- for the current 0.0.74 development task, `dev-entry.ps1` downloads `capture-self-contained-inputs.ps1` and performs a read-only Patch 8 UI capture;
-- the capture writes `bg3-controller-action-menu-inputs-*.zip` beside the launcher for return to the development chat;
-- no game launch or mod installation/update is part of this capture task.
+- for the current install task, `dev-entry.ps1` downloads `install-latest.ps1`, which installs only the ready self-contained CAM PAK;
+- after a successful legacy migration, the canonical installer refreshes the VBS and retires the obsolete local `bootstrap-latest.ps1`.
 
 The extracted development folder is intentionally reusable. Internal scripts and even the kind of development task may change, but the same VBS remains the operator entry point.
 

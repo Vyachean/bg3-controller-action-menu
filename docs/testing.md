@@ -1099,3 +1099,32 @@ The capture milestone must prove:
 6. the generated status/report identifies the ZIP that must be returned for analysis.
 
 After the ZIP is inspected, the next runtime candidate should change only the top resource-filter presentation and should be tested once against the keyboard/mouse HotBar. Item quantity does not need targeted retesting unless it visibly regresses.
+
+
+### 2026-10-07 — exact HotBar capture / 0.0.75 proof boundary
+
+The read-only 1.8.910.0 capture contains the exact current `Mods/MainUI/GUI/Pages/HotBar.xaml` with SHA-256 `9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`.
+
+The previous 0.0.73 assumption is disproven: `btn_pil_*` belongs to textual deck/category filters, not the icon resource-filter row.
+
+0.0.75 automatic proof must require:
+
+1. a shared resource-strip background using `Assets/BottomBar/bar_resources.png`, height 64, `Slices="104,0"`, min width 208 and width bound to the visible tab row plus 208;
+2. resource entries continue to come from `CurrentPlayer.UIData.ActionResourcesCostPreview`;
+3. each resource visual is 72px wide and uses the native resource-button geometry: inner margin `4,-10,4,10` and outer presenter/container margin `-4,0,-4,0`;
+4. ordinary resource chrome uses `box_resource_empty/d/h/missing`;
+5. `LSActionPointResources` uses `ActionResourcesTemplateSelector`, `SmallActionPointSize=24`, `ActionPointGroupSize=56`;
+6. SpellSlot and WarlockSpellSlot use `box_resourceNum_*`, the native -8px chrome offset, and `RomanNumeralLevelImage` with the native -10px top offset;
+7. zero-value resources show the missing/disabled chrome;
+8. controller-selected resources map to the native hover/highlight chrome and that highlight is suppressed while Passives mode is active;
+9. the resource numeral is conditional exactly like HotBar — visible only when `ActionResource.Value > ResourcePoints.MaxGroupActionPoints`, never as an unconditional value label;
+10. Passives is an explicit CAM exception rendered as a 72px resource-box-style entry inside the same shared strip;
+11. `btn_pil_*`, `ActiveModArrow`, and textual-filter marker chrome are absent from the resource tab presentation;
+12. item quantity templates, focus/tooltip authority, Passives serialization, nested return and A/B dispatch are unchanged.
+
+One runtime proof is then sufficient:
+- compare the complete top strip directly with keyboard/mouse HotBar;
+- verify Action, Bonus Action, at least one spell-slot resource and Passives;
+- confirm no stray always-on numbers;
+- confirm an actually large scalar resource uses the native numeric fallback if present;
+- confirm LB/RB still changes one logical tab and the selected grid starts at the first action with the correct tooltip.

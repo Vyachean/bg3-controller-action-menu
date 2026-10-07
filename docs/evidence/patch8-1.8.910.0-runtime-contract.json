@@ -173,7 +173,7 @@
       "camSelectorOutset": null,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
       "selectorDerivation": null,
-      "tabPattern": "hotbar-filter-chrome-resource-icons-plus-passives",
+      "tabPattern": "exact-hotbar-action-resources-plus-passives",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
@@ -181,22 +181,25 @@
       "genericTabLabel": null,
       "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
-        "mode": "single-row-hotbar-filter-chrome",
+        "mode": "single-row-exact-hotbar-action-resources",
         "layoutPanel": "StackPanel",
         "orientation": "Horizontal",
         "oneLogicalSequence": true,
         "includesPassives": true,
-        "resourceCellWidth": null,
-        "resourceVisualSize": 58,
+        "sharedBackground": "bar_resources.png",
+        "sharedBackgroundHeight": 64,
+        "sharedBackgroundSlices": "104,0",
+        "sharedBackgroundMinWidth": 208,
+        "sharedBackgroundWidthRule": "visible tab row ActualWidth + 208",
+        "resourceVisualSize": 72,
+        "resourceButtonMargin": "4,-10,4,10",
+        "itemContainerMargin": "-4,0,-4,0",
         "cycleForceSelect": false,
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
         "horizontalScrollState": false,
         "wrappedRows": false,
         "scrollOwner": null,
-        "actionViewportHeight": 850,
-        "resourceMinWidth": 72,
-        "resourceCellHeight": 64,
-        "itemMargin": "-4,0"
+        "actionViewportHeight": 850
       },
       "resourceRenderer": {
         "size": 72,
@@ -206,27 +209,41 @@
         "available": "Value",
         "highlighted": "Cost",
         "dataContext": "ActionResource",
-        "boxAssets": null,
+        "smallActionPointSize": 24,
+        "actionPointGroupSize": 56,
+        "normalBoxAssets": {
+          "background": "box_resource_empty.png",
+          "normal": "box_resource_d.png",
+          "highlight": "box_resource_h.png",
+          "missing": "box_resource_missing.png"
+        },
+        "spellSlotBoxAssets": {
+          "background": "box_resourceNum_empty.png",
+          "normal": "box_resourceNum_d.png",
+          "highlight": "box_resourceNum_h.png",
+          "missing": "box_resourceNum_missing.png",
+          "chromeMargin": "0,-8,0,0"
+        },
         "spellSlotOverlay": "RomanNumeralLevelImage",
-        "countOverlay": null,
-        "countOverlayRule": null,
+        "spellSlotOverlayMargin": "0,-10,0,0",
+        "countOverlay": "ResourcesNumeralDisplay",
+        "countOverlayRule": "visible only when ActionResource.Value > ResourcePoints.MaxGroupActionPoints",
+        "countOverlayDefaultVisibility": "Hidden",
+        "bardicInspirationAdjustment": {
+          "margin": "0,22,0,-22",
+          "fontSize": "SmallFontSize"
+        },
+        "selectedControllerMapping": "IsSelected -> native box_resource_h highlight while CAM_ResourceTabs.Tag is null",
+        "zeroValueMapping": "ActionResource.Value == 0 -> missing/disabled chrome",
         "rejectedRenderer": "SectionImageStyle",
         "spellSlotTypes": [
           "SpellSlot",
           "WarlockSpellSlot"
         ],
-        "filterChrome": {
-          "normal": "btn_pil_d.png",
-          "active": "btn_pil_active_d.png",
-          "disabled": "btn_pil_disabled.png",
-          "marker": "btn_pil_inactivemod_d.png",
-          "markerArrow": "ActiveModArrow",
-          "slices": 36,
-          "padding": 10,
-          "itemMargin": "-4,0"
-        },
-        "resourceBarChromeAllowed": false,
-        "resourceIdentity": "LSActionPointResources(ActionResourcesTemplateSelector)"
+        "filterChrome": null,
+        "resourceBarChromeAllowed": true,
+        "resourceIdentity": "LSActionPointResources(ActionResourcesTemplateSelector)",
+        "rejectedTextFilterChrome": "btn_pil_*"
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -235,9 +252,9 @@
         "icon": "PassiveFeature_Generic.png",
         "sameExecutableList": "HotBarList",
         "resourceSelectionHighlightSuppressedWhileActive": true,
-        "chrome": "HotBar FilterButton/ActiveFilterButton",
-        "resourceBoxChromeAllowed": false,
-        "sameFilterChrome": true
+        "chrome": "CAM resource-box-style exception inside shared bar_resources.png strip",
+        "resourceBoxChromeAllowed": true,
+        "sameFilterChrome": false
       },
       "itemQuantity": {
         "slotType": "Item",
@@ -367,6 +384,15 @@
           "LSInputBinding UISelectionLeft with HoldTimeShortcuts"
         ]
       }
+    },
+    "captureEvidence": {
+      "archive": "bg3-controller-action-menu-inputs-20261007-201234.zip",
+      "gamePackageVersion": "1.8.910.0",
+      "hotBarPath": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "hotBarSha256": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728",
+      "hotBarSize": 483748,
+      "actionResourcesContainer": "ActionResourcesContainer",
+      "actionResourcesList": "ActionResourcesList"
     }
   },
   "captureMatchCount": 22,

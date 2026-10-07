@@ -89,18 +89,18 @@ The universal VBS downloads a fresh copy on every invocation.
 
 That script is intentionally allowed to change between releases. It is the control plane for the current development operation.
 
-For the current 0.0.74 development release the task is an exact, read-only HotBar capture:
+For the present release the task is normal install/update:
 
 ```text
 VBS
   -> current release dev-entry.ps1
-  -> current release capture-self-contained-inputs.ps1
-  -> read Game.pak only
-  -> extract current HotBar.xaml + related UI XAML
-  -> write bg3-controller-action-menu-inputs-*.zip beside the launcher
+  -> current release install-latest.ps1
+  -> current release install-xbox-dev.ps1
+  -> copy ready self-contained PAK
+  -> update modsettings.lsx
 ```
 
-This task does not launch BG3 and does not install/update the mod. After the captured Patch 8 resource-filter template is consumed, a later release restores the normal `dev-entry.ps1 -> install-latest.ps1` task. The operator continues to use the same VBS.
+If fresh game evidence is needed later, a release can instead make `dev-entry.ps1` download and run `capture-self-contained-inputs.ps1`. The operator still launches the same VBS.
 
 ## Capture boundary
 

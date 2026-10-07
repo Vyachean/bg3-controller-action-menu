@@ -335,3 +335,41 @@ Implementation gate:
 - do not promote old public HotBar XAML to Patch 8 truth;
 - use the freshly captured installed `Mods/MainUI/GUI/Pages/HotBar.xaml` as the visual authority;
 - keep the proven `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList` semantics unchanged.
+
+
+## 12. Exact 1.8.910.0 Action Resources presentation
+
+The operator returned the 0.0.74 read-only capture from Xbox App package `1.8.910.0`. The archive contains `Mods/MainUI/GUI/Pages/HotBar.xaml` at the already-pinned SHA-256 `9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`.
+
+This closes the remaining visual ambiguity.
+
+The current HotBar has a dedicated resource strip:
+
+```text
+ActionResourcesContainer
+  HotbarBodyResourcesBg -> bar_resources.png
+  ActionResources
+    ActionResourcesList
+      VMActionResourceCostPreview
+        72px resource button
+          box_resource_* chrome
+          LSActionPointResources
+          optional RomanNumeralLevelImage
+          conditional large-value numeral
+```
+
+Important exact values:
+
+- `HotbarBodyResourcesBg`: height 64, min width 208, `Slices=104,0`, width = `ActionResources.ActualWidth + 208`;
+- resource LSButton: `Padding=0`, `Margin=4,-10,4,10`;
+- resource root: width 72;
+- item container ContentPresenter: `Margin=-4,0,-4,0`;
+- renderer sizes: 24 / 56;
+- SpellSlot/WarlockSpellSlot switches to `box_resourceNum_*` and offsets that chrome by -8px;
+- spell numeral image uses `RomanNumeralLevelImage` at top margin -10px;
+- value 0 uses the missing resource chrome;
+- the scalar number is hidden by default and shown only when the resource value exceeds the point renderer's `MaxGroupActionPoints`.
+
+The same file separately defines `FilterButton / ActiveFilterButton` using `btn_pil_*` for textual deck/category controls. This proves 0.0.73 used a genuine HotBar component, but the wrong one.
+
+CAM should therefore adapt the exact Action Resources presentation while retaining its controller-only selection semantics rather than copying the textual filter pills.
