@@ -332,17 +332,21 @@ if (-not $text.Contains('Value="{Binding LocalFocus.DataContext.Content, Element
     throw "Main tooltip must consume focused VMHotBarSlot.Content."
 }
 
-# Top-level resource browsing must close on B even though SingleHotBar is populated.
+# Top-level browsing (resource or Passives) must close on B only when native nested state is absent.
 $closeTrigger = [regex]::Match(
     $text,
-    '<MultiDataTrigger>[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CloseWidget[\s\S]*?</MultiDataTrigger>',
+    '<MultiDataTrigger>\s*<MultiDataTrigger\.Conditions>\s*' +
+    '<Condition Binding="\{Binding IsShowingAContainerWithVariants\}" Value="False"/>\s*' +
+    '<Condition Binding="\{Binding IsSelectingUpcastedSpell\}" Value="False"/>\s*' +
+    '<Condition Binding="\{Binding IsShowingItemsToThrow\}" Value="False"/>\s*' +
+    '</MultiDataTrigger\.Conditions>\s*' +
+    '<Setter TargetName="CancelButton" Property="Command" Value="\{Binding CustomEvent\}"/>\s*' +
+    '<Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>[\s\S]*?' +
+    '</MultiDataTrigger>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $closeTrigger.Success) {
-    throw "Top-level B close trigger must be based on true nested-state flags."
-}
-if ($closeTrigger.Value.Contains('SingleHotBar.SlotList.Count')) {
-    throw "Top-level B must not use SingleHotBar count because resource browsing populates SingleHotBar."
+    throw "Top-level B close trigger must be the exact three-native-nested-flags -> CloseWidget contract."
 }
 
 Write-Host "Self-contained Patch 8 runtime contract passed: compact native resource tabs plus Passives drive one executable HotBarList, item counts use GameObject.Count, entry focus is concrete-first, and top-level B remains separated from true nested state."
