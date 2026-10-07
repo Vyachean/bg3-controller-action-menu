@@ -129,30 +129,27 @@ The tooltip content is the native action/item/passive object, not CAM-authored d
 
 ## Navigation reuse
 
-The current assignment UI proves the controller hierarchy:
+The captured assignment UI proves `LSGrid(ActionUp/Down/Left/Right = UIUp/UIDown/UILeft/UIRight)`, focusable `ListBoxItem` cells, and a local-focus selector. CAM reuses those primitives but no longer copies the assignment screen's outer/child-list hierarchy when it has only one executable collection.
+
+The resource-first runtime has one executable controller list:
 
 ```text
-outer LSListBox
-  LocalFocusSelector
+HotBarList
+  ItemsSource = SingleHotBar.SlotList
   DirectionalNavigation = Contained
-  ActionNextEvent = UIDown
-  ActionPrevEvent = UIUp
+  LocalFocusSelector = CAM_MainSelector
+  ScrollViewer = vertical
         |
-        +-- child LSListBox
-              DirectionalNavigation = Continue
-              |
-              v
-            LSGrid
-              UIUp / UIDown / UILeft / UIRight
+        v
+CAM_ActionGridPanel
+  UIUp / UIDown / UILeft / UIRight
 ```
 
-The fresh `1.8.910.0` `SelectorAssign` element has no fixed width, height or margin. CAM reproduces that current selector contract instead of retaining the stale synthetic `118x118` geometry.
-
-One outer list owns scrolling/vertical continuation. Resource and action grids remain children of that navigation shell.
+The list itself owns tooltip updates and the native delayed `LocalFocus.DataContext -> ActionRadials.Tag` lifecycle. This removes the old `HotBarList -> CAM_FilteredSlotList` wrapper and makes selector, scrolling, tooltip, and execution observe the same focused item.
 
 ## Native nested state and B
 
-`SingleHotBar.SlotList` remains BG3-owned for container, variant and upcast state.
+`SingleHotBar.SlotList` is both the resource-filtered top-level result and BG3's nested container/variant/upcast/throw collection. The same `HotBarList` renders both states; CAM does not swap visibility to a separate `SingleBar`.
 
 A remains:
 
@@ -163,10 +160,10 @@ UIAccept -> UseSlotCommand(ActionRadials.Tag)
 B remains the native command lifecycle:
 
 - default: `ClearSingleHotbarCommand`;
-- top level: native `CustomEvent("CloseWidget")` condition;
-- swap state: native `UseSlotCommand(null)` behavior.
+- top level: `CustomEvent("CloseWidget")` when the three nested-state flags are false;
+- nested-state focus restoration targets the same `HotBarList`.
 
-CAM does not implement separate cancel semantics.
+A later isolated fix may reapply the selected resource filter after nested B if BG3 leaves `SingleHotBar.SlotList` empty. That recovery is deliberately not coupled to the focus-tree simplification itself.
 
 ## Resource filters
 
