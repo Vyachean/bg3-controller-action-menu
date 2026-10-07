@@ -712,3 +712,41 @@ Passives --LB--> last resource
 ```
 
 Because passive mode remains set during the originating click, ordinary resource LB/RB handlers cannot become newly eligible halfway through that same event.
+
+
+### 0.0.72 — resource-tab chrome and native item quantity
+
+0.0.71 runtime shows that two presentation details must be corrected without changing the resource-first architecture.
+
+#### Resource-tab visual contract
+
+```text
+VMActionResourceCostPreview
+  -> normal resource:
+       box_resource_empty / box_resource_d / box_resource_h / box_resource_missing
+       LSActionPointResources(ActionResourcesTemplateSelector)
+  -> SpellSlot / WarlockSpellSlot:
+       box_resourceNum_empty / box_resourceNum_d / box_resourceNum_h / box_resourceNum_missing
+       LSActionPointResources(ActionResourcesTemplateSelector)
+       RomanNumeralLevelImage
+```
+
+CAM does **not** add a resource-value text overlay to top-level tabs. Persistent selected state reuses the HotBar highlight chrome; it does not invent another tab visual language.
+
+#### Item-cell presentation contract
+
+Patch 8 `HotBarSlotStyle` proves that an item slot's content is `VMItem` and delegates item visuals to native inventory templates. CAM keeps the outer `VMHotBarSlot` as the executable/focus object but renders its item content through those same templates:
+
+```text
+VMHotBarSlot (SlotType=Item)
+  -> Content : VMItem
+  -> ordinary      Template.Item
+       -> VMItem.Count
+       -> CountToVisibilityConverter(>1)
+       -> AbbreviateNumberConverter
+       -> ItemAmountTextStyle
+  -> equipment     Template.ItemEquipment
+  -> item container Template.ItemContainer
+```
+
+Non-item cells retain the 104x104 `Content.Icon` assignment-style surface. No separate CAM quantity overlay remains.
