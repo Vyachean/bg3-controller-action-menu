@@ -250,7 +250,6 @@ def validate_semantics() -> list[str]:
             "SwapSlotCommand",
             "AddRadialCommand",
             "RemoveRadialCommand",
-            'x:Name="CAM_MainSelector"',
             'x:Key="CAM_SelectorTemplate"',
             'x:Name="ToggleWeaponSet"',
             'x:Name="WeaponSetShortcutBinding"',
