@@ -18,7 +18,7 @@ VMHotBarSlot
 
 Therefore CAM executes only native hotbar-slot VMs. Current HotBar evidence proves several native slot collections, but the shipping resource-first surface intentionally uses one executable source: `SingleHotBar.SlotList`, populated by BG3's own `FilterActionResourceCommand` and reused for nested variant/upcast/container state.
 
-Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates. `CurrentShownDeck.SlotList` and `PassivesHotBar.SlotList` remain evidence of the VMHotBarSlot boundary, not additional top-level CAM lists.
+Raw radial-assignment `SpellsAndActions`, inventory slots and passive objects are not gameplay-dispatch candidates. `PassivesHotBar.SlotList` is a proven executable `VMHotBarSlot` collection and is now the one deliberate non-resource top-level exception requested by the product: a Passives tab switches the same `HotBarList` to that collection. `CurrentShownDeck.SlotList` remains evidence only and is not a shipping top-level source.
 
 ## Controller cell presentation
 
@@ -51,11 +51,11 @@ SingleHotBar.SlotList
 VMHotBarSlot grid
 ```
 
-The former Common/Class/Cantrips/Items/Passives controller carousel is retired. Type/deck tabs are not part of the target product.
+The former Common/Class/Cantrips/Items carousel remains retired. Passives is the single explicit non-resource top-level tab because it already has a proven executable `PassivesHotBar.SlotList`; it does not revive type/deck classification.
 
 The resource row binds directly to `CurrentPlayer.UIData.ActionResourcesCostPreview`. SpellSlot/WarlockSpellSlot entries retain native level data; other and mod-added resources use the native resource name. Duplicated actions across resource tabs are allowed when BG3 exposes separate executable variants.
 
-`FREE`, `SCROLLS`, and other non-ActionResource source groups are product targets but require a proven native executable-slot source. They must not be reconstructed from raw assignment catalogs.
+`FREE`, `SCROLLS`, and other non-ActionResource source groups still require a proven native executable-slot source. They must not be reconstructed from raw assignment catalogs. Passives qualifies because `PassivesHotBar.SlotList` is already proven.
 
 There is no CAM Live Details panel. The ordinary native action tooltip remains the only details surface.
 

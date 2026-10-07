@@ -550,3 +550,70 @@ Horizontal scroll is removed. BG3's own action-resource UI uses `ls:AlignableWra
 The resource list remains one logical sequence controlled by LB/RB. When natural tab widths exceed the available width, the same sequence wraps to another visual row. Because every realized tab is laid out inside the bounded resource area, there is no scroll offset to synchronize and no selected edge tab can remain outside a scrolled viewport.
 
 The action viewport remains 850px high. The resource header becomes auto-sized, so wrapping does not steal action-grid height.
+
+
+### 0.0.69 — native resource icons, Passives mode, item counts, explicit first-cell entry
+
+The top-level controller navigation now models what the player actually needs in combat: compact cost/resource choices plus Passives.
+
+#### Resource visual contract
+
+Each native `VMActionResourceCostPreview` uses the same presentation family as Patch 8 keyboard HotBar:
+
+```text
+VMActionResourceCostPreview
+  -> 72x72 resource box
+  -> LSActionPointResources
+       DataContext = ActionResource
+       Style       = ActionResourcesTemplateSelector
+       Max          = MaxValue
+       Available    = Value
+       Highlighted  = Cost
+  -> RomanNumeralLevelImage for spell-slot types
+```
+
+This replaces both text labels and wrapped rows.
+
+#### Passives
+
+Passives are not reconstructed from raw `Stats.Passives`. The tab uses the already-proven executable source:
+
+```text
+PlayerCharacterProperties.PassivesHotBar.SlotList
+  -> VMHotBarSlot
+  -> same HotBarList
+  -> same selector / tooltip / UIAccept -> UseSlotCommand
+```
+
+`CAM_ResourceTabs.Tag = CAM_PassivesModeToken` is the mode state. It is presentation-only because the current capture proves `PassivesHotBar.SlotList` but does not prove a dedicated BG3 passives-deck toggle command/property. Resource selection clears the token; entering Passives sets it. `HotBarList.ItemsSource` switches declaratively from `SingleHotBar.SlotList` to `PassivesHotBar.SlotList`.
+
+#### Item quantity
+
+Patch 8 inventory presentation proves `VMGameObject.Count` is the stack quantity. A `VMHotBarSlot` with `SlotType=Item` exposes that object as `GameObject`. CAM overlays the native count style at the lower-right of the 104x104 icon surface:
+
+```text
+GameObject.Count
+  -> AbbreviateNumberConverter
+  -> ItemAmountTextStyle
+  -> hidden when Count <= 1
+```
+
+#### Entry focus / tooltip
+
+Tab changes are now an explicit first-cell transition:
+
+```text
+tab transition
+  -> hide stale tooltip
+  -> ActionRadials.Tag = null
+  -> HotBarList.LocalFocus = null
+  -> HotBarList.SelectedIndex = -1
+  -> change source/filter
+  -> settle
+  -> SelectedIndex = 0
+  -> concrete selected ListBoxItem receives SetMoveFocusAction
+  -> entry-only tooltip/Tag/highlight = SelectedItem
+  -> normal LocalFocusChanged owns all later navigation
+```
+
+This is deliberately different from 0.0.65: the stale LocalFocus is cleared before the first selected item becomes an entry source.

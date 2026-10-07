@@ -32,7 +32,8 @@
     "templateKey": "ActionRadialWidgetTemplate_P8",
     "mainSlotType": "VMHotBarSlot",
     "mainSlotSources": [
-      "SingleHotBar.SlotList"
+      "SingleHotBar.SlotList",
+      "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList"
     ],
     "resourcePreviewSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
     "resourceFilterCommand": "FilterActionResourceCommand",
@@ -51,7 +52,7 @@
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
       "executableList": "HotBarList",
-      "itemsSource": "SingleHotBar.SlotList",
+      "itemsSource": "SingleHotBar.SlotList | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag",
       "directionalNavigation": "Contained",
       "nextEvent": "UIDown",
       "prevEvent": "UIUp",
@@ -103,15 +104,17 @@
         "restoreSelectedIndex": 0,
         "focusTarget": "selected concrete ListBoxItem templated parent",
         "focusAction": "SetMoveFocusAction(DeferFocusAction=True)",
-        "clearsTokenAfterFocus": true,
         "clearLocalFocus": true,
         "invalidateFocus": false,
         "focusesListContainer": false,
         "selectedItemMirrorsLocalFocus": false,
-        "entryStateSource": "FocusedElement wake-up + LocalFocus.DataContext authority after concrete-item handoff",
-        "selectedItemEntryStateWrites": false,
-        "programmaticWakeSignal": "ActionRadials.FocusedElement",
-        "programmaticStateSource": "HotBarList.LocalFocus.DataContext"
+        "entryStateSource": "SelectedItem after concrete-item SetMoveFocusAction commit",
+        "selectedItemEntryStateWrites": true,
+        "programmaticWakeSignal": "HotBarList.Tag entry-focus commit",
+        "programmaticStateSource": "HotBarList.SelectedItem after LocalFocus reset",
+        "entryCommitToken": "CAM_EntryFocusCommittedToken",
+        "focusPublishesEntryCommit": true,
+        "clearsTokenAfterEntryCommit": true
       },
       "visibleFocusChrome": {
         "source": "HotBarList.LocalFocusSelector",
@@ -119,6 +122,16 @@
         "template": "SelectorTemplate",
         "sharedCoordinateRoot": "CAM_ActionViewport",
         "emptyCellPresentation": "DynamicResource EmptyCellTemplate"
+      },
+      "sourceSwitch": {
+        "modeStorage": "CAM_ResourceTabs.Tag",
+        "modeToken": "CAM_PassivesModeToken",
+        "ownership": "CAM presentation-only",
+        "resourceSource": "SingleHotBar.SlotList",
+        "passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
+        "executableList": "HotBarList",
+        "duplicateExecutableLists": false,
+        "unprovenGameplayModeCommandsAllowed": false
       }
     },
     "buttonHintsContainer": {
@@ -144,29 +157,53 @@
       "camSelectorOutset": null,
       "spellSlotLevelStyle": "RomanNumeralLevelImage",
       "selectorDerivation": null,
-      "tabPattern": "dynamic-resource-row",
+      "tabPattern": "compact-native-resource-icons-plus-passives",
       "tabPrevEvent": "UITabPrev",
       "tabNextEvent": "UITabNext",
       "tabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "tabItemType": "VMActionResourceCostPreview",
-      "genericTabLabel": "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)",
+      "genericTabLabel": null,
       "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
-        "mode": "wrapped-visible-row",
-        "layoutPanel": "ls:AlignableWrapPanel",
+        "mode": "single-row-native-icons",
+        "layoutPanel": "StackPanel",
+        "orientation": "Horizontal",
         "oneLogicalSequence": true,
-        "listMaxWidth": 1160,
-        "itemTextTrimming": false,
+        "includesPassives": true,
+        "resourceCellWidth": 76,
+        "resourceVisualSize": 72,
         "cycleForceSelect": false,
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
-        "scrollOwner": null,
-        "autoScrollBehavior": null,
-        "scrollIntoView": null,
-        "bringSelectionIntoView": null,
-        "scrollTo": null,
         "horizontalScrollState": false,
-        "headerRow": "Auto",
+        "wrappedRows": false,
+        "scrollOwner": null,
         "actionViewportHeight": 850
+      },
+      "resourceRenderer": {
+        "size": 72,
+        "control": "LSActionPointResources",
+        "style": "ActionResourcesTemplateSelector",
+        "max": "MaxValue",
+        "available": "Value",
+        "highlighted": "Cost",
+        "dataContext": "ActionResource",
+        "boxAssets": "CAM-owned references to HotBar box_resource assets",
+        "spellSlotOverlay": "RomanNumeralLevelImage"
+      },
+      "passivesTab": {
+        "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
+        "modeStorage": "CAM_ResourceTabs.Tag",
+        "modeToken": "CAM_PassivesModeToken",
+        "icon": "PassiveFeature_Generic.png",
+        "sameExecutableList": "HotBarList",
+        "resourceSelectionHighlightSuppressedWhileActive": true
+      },
+      "itemQuantity": {
+        "slotType": "Item",
+        "source": "GameObject.Count",
+        "converter": "AbbreviateNumberConverter",
+        "visibility": "CountToVisibilityConverter(1)",
+        "style": "ItemAmountTextStyle"
       }
     },
     "tooltipPresentation": {
@@ -180,28 +217,33 @@
       "delayedLocalFocusPresentationTimer": true,
       "presentationSignals": [
         "HotBarList.LocalFocusChanged",
-        "ActionRadials.FocusedElement property change (programmatic wake-up)"
+        "HotBarList.Tag=CAM_EntryFocusCommittedToken for entry-only SelectedItem synchronization"
       ],
-      "stateAuthority": "HotBarList.LocalFocus.DataContext",
-      "focusedElementRole": "wake-up-only"
+      "stateAuthority": "HotBarList.LocalFocus.DataContext during live navigation",
+      "entryStateSource": "HotBarList.SelectedItem after LocalFocus reset and concrete focus handoff"
     },
     "organization": {
-      "mode": "resource-first",
+      "mode": "resource-first-plus-passives",
       "topLevelDimensions": 1,
       "primaryTabSource": "CurrentPlayer.UIData.ActionResourcesCostPreview",
       "primaryTabItemType": "VMActionResourceCostPreview",
       "primarySelectionCommand": "FilterActionResourceCommand",
       "primarySelectionParameter": "CAM_ResourceTabs.SelectedItem",
-      "primaryGridSource": "SingleHotBar.SlotList",
+      "primaryGridSource": "SingleHotBar.SlotList | PassivesHotBar.SlotList",
       "typeTabsAllowed": false,
       "secondaryResourceLayerAllowed": false,
-      "tabOrdering": "BG3-native",
-      "genericResourceLabel": "ActionResource.Name",
+      "tabOrdering": "BG3-native resources, then Passives",
+      "genericResourceLabel": null,
       "spellLevelPresentation": "RomanNumeralLevelImage",
       "duplicateExecutionVariantsAllowed": true,
       "freeGroupStatus": "pending-proven-native-executable-source",
       "consumableSourceGroupStatus": "pending-proven-native-executable-source",
-      "detailsSurface": "native-tooltip-only"
+      "detailsSurface": "native-tooltip-only",
+      "passivesTabAllowed": true,
+      "passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
+      "passivesModeStorage": "CAM_ResourceTabs.Tag",
+      "passivesModeToken": "CAM_PassivesModeToken",
+      "passivesModeOwnership": "CAM presentation-only"
     },
     "nativeEvidence": {
       "deckCommands": {
@@ -211,7 +253,22 @@
       },
       "cantripFilterCommand": "FilterCantripsCommand",
       "cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
-      "note": "Captured Patch 8 evidence only; not part of the resource-first shipping navigation."
+      "note": "Captured Patch 8 evidence only; not part of the resource-first shipping navigation.",
+      "itemQuantity": {
+        "sourceType": "VMGameObject",
+        "property": "Count",
+        "hotbarSlotPath": "VMHotBarSlot.GameObject.Count",
+        "converter": "AbbreviateNumberConverter",
+        "style": "ItemAmountTextStyle"
+      },
+      "passives": {
+        "executableSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
+        "itemType": "VMHotBarSlot",
+        "directSourceSwitchPreviouslyUsedByCAM": true,
+        "dedicatedModeFlagProven": false,
+        "dedicatedModeCommandProven": false,
+        "note": "Passives uses proven executable slots; CAM owns only presentation selection state."
+      }
     },
     "cancelBehavior": {
       "topLevelCloseWhen": {
@@ -240,12 +297,13 @@
       }
     },
     "runtimeProofQuestions": [
-      "Immediately after a resource tab switch, is the native tooltip visible for the current HotBarList.LocalFocus.DataContext without a D-pad move?",
-      "Immediately after B returns from a nested/upcast/container view, is the native tooltip visible for the restored HotBarList.LocalFocus.DataContext?",
-      "Are all resource tabs physically visible through the single-level AlignableWrapPanel with no horizontal scroll state?",
-      "Does LB/RB continue to cycle one logical resource sequence and invoke FilterActionResourceCommand exactly once per selection?",
-      "Does ordinary D-pad navigation keep selector, tooltip, resource highlight and ActionRadials.Tag synchronized from LocalFocus.DataContext?",
-      "Does the proven 0.0.66 nested-return restoration remain intact?"
+      "Do native resource previews render as one compact 72px icon row using LSActionPointResources, with spell-slot Roman numerals and no text labels/wrapping?",
+      "Can LB/RB traverse resource previews -> Passives -> resource previews in both directions while keeping one HotBarList?",
+      "Does Passives render executable VMHotBarSlot entries from PassivesHotBar.SlotList and execute through the same UIAccept/UseSlotCommand path?",
+      "Immediately after resource or Passives tab entry, does the first concrete cell own visible focus, tooltip, ActionRadials.Tag and resource highlighting before any D-pad move?",
+      "Do item-backed action cells show GameObject.Count when Count > 1?",
+      "Does ordinary D-pad navigation remain synchronized from LocalFocus.DataContext?",
+      "Does the proven nested B return still restore the selected resource and its first-cell tooltip?"
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {

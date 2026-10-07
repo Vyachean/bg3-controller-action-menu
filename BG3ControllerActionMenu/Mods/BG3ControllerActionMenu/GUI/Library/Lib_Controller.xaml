@@ -7,9 +7,22 @@
 
     <!-- CAM owns composition only. Each focused/executed action remains a native VMHotBarSlot. -->
     <System:Double x:Key="CAM_ActionGridCellSize">120</System:Double>
+    <!-- HotBar.xaml owns its resource-box keys locally, so CAM references the same game assets
+         under CAM-owned keys instead of assuming page-local resources leak into Lib_Controller. -->
+    <BitmapImage x:Key="CAM_BoxResourceBg" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_empty.png"/>
+    <BitmapImage x:Key="CAM_BoxResource" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_d.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceH" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_h.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceDisabled" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_missing.png"/>
+    <Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
+    <System:String x:Key="CAM_EntryFocusCommittedToken">CAM_EntryFocusCommitted</System:String>
+    <System:String x:Key="CAM_TabCycleRightToken">CAM_TabCycleRight</System:String>
+    <System:String x:Key="CAM_TabCycleLeftToken">CAM_TabCycleLeft</System:String>
+    <System:String x:Key="CAM_TabEnterPassivesToken">CAM_TabEnterPassives</System:String>
+    <System:String x:Key="CAM_TabReturnFirstToken">CAM_TabReturnFirst</System:String>
+    <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
 
     <Style x:Key="CAM_ActionGridSlotContainer"
            TargetType="{x:Type ListBoxItem}"
@@ -49,7 +62,7 @@
                                                        DeferFocusAction="True"/>
                                 <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}"
                                                         PropertyName="Tag"
-                                                        Value="{x:Null}"/>
+                                                        Value="{StaticResource CAM_EntryFocusCommittedToken}"/>
                             </b:DataTrigger>
                         </b:Interaction.Triggers>
                     </Grid>
@@ -81,6 +94,16 @@
                    VerticalAlignment="Top"
                    Margin="0,8,8,0"
                    Visibility="Collapsed"/>
+            <Viewbox x:Name="ItemCountHolder"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Bottom"
+                     Margin="0,0,4,4"
+                     StretchDirection="DownOnly"
+                     Visibility="{Binding GameObject.Count, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=1}">
+                <TextBlock Text="{Binding GameObject.Count, Converter={StaticResource AbbreviateNumberConverter}}"
+                           Style="{StaticResource ItemAmountTextStyle}"
+                           Margin="6,0"/>
+            </Viewbox>
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding CanUse}" Value="False">
@@ -119,77 +142,80 @@
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="4,0"/>
-        <Setter Property="MinWidth" Value="108"/>
-        <Setter Property="Height" Value="58"/>
+        <Setter Property="Margin" Value="2,0"/>
+        <Setter Property="Width" Value="76"/>
+        <Setter Property="Height" Value="72"/>
         <Setter Property="Focusable" Value="False"/>
-        <Setter Property="Foreground" Value="{StaticResource LS_baseTxtColor}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Border x:Name="TabRoot"
-                            MinWidth="108"
-                            Height="58"
-                            Padding="16,6"
-                            Background="#50000000"
-                            BorderBrush="#504D4332"
-                            BorderThickness="0,0,0,2">
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <TextBlock x:Name="ResourceName"
-                                       Text="{Binding ActionResource.Name}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="{StaticResource SmallFontSize}"
-                                       FontWeight="DemiBold"
-                                       TextAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock x:Name="ResourceFallback"
-                                       Text="{Binding ActionResource.TypeId}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="{StaticResource SmallFontSize}"
-                                       FontWeight="DemiBold"
-                                       TextAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Visibility="Collapsed"/>
-                            <Image x:Name="SpellLevel"
-                                   DataContext="{Binding ActionResource}"
-                                   Style="{StaticResource RomanNumeralLevelImage}"
-                                   Stretch="None"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Visibility="Collapsed"/>
-                        </StackPanel>
-                    </Border>
+                    <Grid x:Name="Root" Width="72" Height="72">
+                        <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
+                        <Image x:Name="Bg"
+                               Source="{StaticResource CAM_BoxResource}"
+                               Margin="{StaticResource CAM_ResourceBackgroundMargin}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                        <Image x:Name="BgHL"
+                               Source="{StaticResource CAM_BoxResourceH}"
+                               Margin="{StaticResource CAM_ResourceBackgroundMargin}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Visibility="Collapsed"/>
+                        <Image x:Name="BgDisabled"
+                               Source="{StaticResource CAM_BoxResourceDisabled}"
+                               Margin="{StaticResource CAM_ResourceBackgroundMargin}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Visibility="Collapsed"/>
+                        <Border Background="Transparent"
+                                Width="72"
+                                Height="72"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                            <ls:LSActionPointResources x:Name="ResourcePoints"
+                                                       Background="Transparent"
+                                                       HorizontalAlignment="Center"
+                                                       MaxActionPoints="{Binding MaxValue}"
+                                                       AvailableActionPoints="{Binding Value}"
+                                                       HighlightedActionPoints="{Binding Cost}"
+                                                       DataContext="{Binding ActionResource}"
+                                                       MaxActionPointGroups="0"
+                                                       SmallActionPointSize="24"
+                                                       ActionPointGroupSize="56"
+                                                       Style="{StaticResource ActionResourcesTemplateSelector}"/>
+                        </Border>
+                        <Image x:Name="SpellSlotLevels"
+                               Stretch="None"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Center"
+                               Margin="0,-10,0,0"
+                               IsHitTestVisible="False"
+                               Style="{StaticResource RomanNumeralLevelImage}"
+                               Visibility="Collapsed"
+                               DataContext="{Binding ActionResource}"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabRoot" Property="Background" Value="#7043321E"/>
-                            <Setter TargetName="TabRoot" Property="BorderBrush" Value="{StaticResource LS_specialTxtColor}"/>
-                            <Setter TargetName="TabRoot" Property="BorderThickness" Value="0,0,0,4"/>
-                            <Setter Property="Foreground" Value="{StaticResource LS_specialTxtColor}"/>
-                        </Trigger>
-                        <DataTrigger Binding="{Binding ActionResource.Name}" Value="{x:Null}">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding ActionResource.Name}" Value="">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Visible"/>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
+                                <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
+                        <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
+                            <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="SpellLevel" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="SpellLevel" Property="Margin" Value="0"/>
+                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
-                            <Setter TargetName="ResourceName" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="ResourceFallback" Property="Visibility" Value="Collapsed"/>
-                            <Setter TargetName="SpellLevel" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="SpellLevel" Property="Margin" Value="0"/>
+                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -211,14 +237,19 @@
     </Style>
 
     <ItemsPanelTemplate x:Key="CAM_ResourceTabsPanel">
-        <ls:AlignableWrapPanel HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Center"
-                               VerticalAlignment="Center"/>
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
     </ItemsPanelTemplate>
 
     <ControlTemplate x:Key="ActionRadialWidgetTemplate_P8">
         <Grid>
             <Control x:Name="CAM_NestedReturnMarker"
+                     Visibility="Collapsed"
+                     IsEnabled="False"
+                     Focusable="False"
+                     Tag="{x:Null}"/>
+            <Control x:Name="CAM_TabCycleMarker"
                      Visibility="Collapsed"
                      IsEnabled="False"
                      Focusable="False"
@@ -353,14 +384,18 @@
                                             Value="{x:Null}"/>
                 </b:PropertyChangedTrigger>
 
-                <!-- SetMoveFocusAction changes the widget FocusedElement even when LSListBox does not
-                     emit LocalFocusChanged. Use that as a wake-up signal only; the action identity
-                     remains HotBarList.LocalFocus.DataContext. -->
-                <b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">
+
+                <!-- A reset token selects and hands physical focus to the concrete first ListBoxItem.
+                     That item publishes CAM_EntryFocusCommitted only after invoking SetMoveFocusAction.
+                     Complete entry-only tooltip/A state from that exact SelectedItem. -->
+                <b:PropertyChangedTrigger Binding="{Binding Tag, ElementName=HotBarList}">
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=HotBarList}"
+                                                       Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_EntryFocusCommittedToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=HotBarList}"
                                                        Operator="NotEqual"
                                                        RightOperand="{x:Null}"/>
                             </b:ConditionalExpression>
@@ -368,17 +403,17 @@
                     </b:Interaction.Behaviors>
                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                             PropertyName="Content"
-                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
-                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                            Value="{Binding SelectedItem.Content, ElementName=HotBarList}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                            CommandParameter="{Binding ., ElementName=HotBarList}"/>
                     <b:ChangePropertyAction TargetName="ActionRadials"
                                             PropertyName="Tag"
-                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                            Value="{Binding SelectedItem, ElementName=HotBarList}"/>
                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
                     <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{x:Null}"/>
                 </b:PropertyChangedTrigger>
             </b:Interaction.Triggers>
 
@@ -387,19 +422,19 @@
                       Width="{Binding ActualWidth, ElementName=ActionRadials}"
                       MaxWidth="1400"
                       MinWidth="800"
-                      MinHeight="922"
+                      Height="934"
                       Background="Transparent">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="84"/>
                         <RowDefinition Height="850"/>
                     </Grid.RowDefinitions>
 
                     <DockPanel x:Name="CAM_ResourceHeader"
                                Grid.Row="0"
                                HorizontalAlignment="Stretch"
-                               VerticalAlignment="Top"
+                               VerticalAlignment="Center"
                                MaxWidth="1320"
-                               Margin="0,0,0,12">
+                               Height="84">
                         <ls:LSButton x:Name="CAM_TabLeft"
                                      BoundEvent="UITabPrev"
                                      DockPanel.Dock="Left"
@@ -409,7 +444,76 @@
                                      Height="{StaticResource ScaledControllerHintSize}"
                                      EatInput="False"
                                      VerticalAlignment="Center"
-                                     Margin="0,0,12,0"/>
+                                     Margin="0,0,12,0">
+                            <b:Interaction.Triggers>
+                                <!-- Passives -> last native resource. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleLeftToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <ls:SelectNextListBoxItem Reversed="True"
+                                                              TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceMode="Cycle"/>
+                                </b:EventTrigger>
+
+                                <!-- First native resource -> Passives without changing resource selection. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterPassivesToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                </b:EventTrigger>
+
+                                <!-- Ordinary previous native resource. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="GreaterThan" RightOperand="0"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleLeftToken}"/>
+                                    <ls:SelectNextListBoxItem Reversed="True"
+                                                              TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceMode="Cycle"/>
+                                </b:EventTrigger>
+
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabEnterPassivesToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+                            </b:Interaction.Triggers>
+                        </ls:LSButton>
 
                         <ls:LSButton x:Name="CAM_TabRight"
                                      BoundEvent="UITabNext"
@@ -420,11 +524,68 @@
                                      Height="{StaticResource ScaledControllerHintSize}"
                                      EatInput="False"
                                      VerticalAlignment="Center"
-                                     Margin="12,0,0,0"/>
+                                     Margin="12,0,0,0">
+                            <b:Interaction.Triggers>
+                                <!-- Passives -> first native resource. The preserved resource selection is index 0. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{x:Null}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabReturnFirstToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                </b:EventTrigger>
 
+                                <!-- Resource -> next resource; wrap is intercepted by SelectionChanged and becomes Passives. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleRightToken}"/>
+                                    <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}"
+                                                              ForceMode="Cycle"/>
+                                </b:EventTrigger>
+
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabReturnFirstToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+                            </b:Interaction.Triggers>
+                        </ls:LSButton>
+
+                        <StackPanel x:Name="CAM_TopTabs"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
                         <ls:LSListBox x:Name="CAM_ResourceTabs"
                                       ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"
                                       SelectedIndex="0"
+                                      Tag="{x:Null}"
                                       HorizontalAlignment="Stretch"
                                       HorizontalContentAlignment="Center"
                                       VerticalAlignment="Center"
@@ -441,17 +602,21 @@
                             </ls:LSListBox.Template>
 
                             <b:Interaction.Triggers>
-                                <b:EventTrigger SourceName="CAM_TabLeft" EventName="Click">
-                                    <ls:SelectNextListBoxItem Reversed="True"
-                                                              TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceMode="Cycle"/>
-                                </b:EventTrigger>
-                                <b:EventTrigger SourceName="CAM_TabRight" EventName="Click">
-                                    <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceMode="Cycle"/>
-                                </b:EventTrigger>
-
+                                <!-- Right wrap: the ListBox cycles to index 0, but product navigation inserts Passives
+                                     between the last resource and the first resource. Do not refilter index 0 here. -->
                                 <b:EventTrigger EventName="SelectionChanged">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabCycleRightToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="0"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -459,9 +624,61 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
+
+                                <!-- Ordinary right movement within native resources. -->
+                                <b:EventTrigger EventName="SelectionChanged">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabCycleRightToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
+                                                                       Operator="GreaterThan"
+                                                                       RightOperand="0"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
+
+                                <!-- Any left resource movement (including Passives -> last resource). -->
+                                <b:EventTrigger EventName="SelectionChanged">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabCycleLeftToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding FilterActionResourceCommand}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:EventTrigger>
 
                                 <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
@@ -474,15 +691,61 @@
                                 </b:TimerTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=HotBarList}"
-                                                           DeferFocusAction="True"/>
                                 </b:EventTrigger>
+
+                                <b:TimerTrigger EventName="Loaded" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                </b:TimerTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
+
+                        <Grid x:Name="CAM_PassivesTab"
+                              Width="72"
+                              Height="72"
+                              Margin="4,0,0,0"
+                              Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                            <Image Source="{StaticResource CAM_BoxResourceBg}"/>
+                            <Image Source="{StaticResource CAM_BoxResource}"
+                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}">
+                                <Image.Style>
+                                    <Style TargetType="{x:Type Image}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <Image Source="{StaticResource CAM_BoxResourceH}"
+                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}">
+                                <Image.Style>
+                                    <Style TargetType="{x:Type Image}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
+                                   Width="48"
+                                   Height="48"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False"/>
+                        </Grid>
+                        </StackPanel>
                     </DockPanel>
 
                     <Grid x:Name="CAM_ActionViewport"
@@ -502,7 +765,6 @@
                         <ls:LSListBox x:Name="HotBarList"
                                       Height="850"
                                       HorizontalAlignment="Stretch"
-                                      ItemsSource="{Binding SingleHotBar.SlotList}"
                                       SelectedIndex="0"
                                       Background="Transparent"
                                       KeyboardNavigation.DirectionalNavigation="Contained"
@@ -512,6 +774,17 @@
                                       ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
                                       ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
                                       ItemsPanel="{StaticResource CAM_ActionGridPanel}">
+                            <ls:LSListBox.Style>
+                                <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
+                                    <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                            <Setter Property="ItemsSource"
+                                                    Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ls:LSListBox.Style>
                             <ls:LSListBox.ToolTip>
                                 <ls:LSTooltip x:Name="CAM_ActionTooltip"
                                               ToolTipService.Placement="Right"

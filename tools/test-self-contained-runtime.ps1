@@ -31,25 +31,44 @@ if ($evidence.sourceHashes.'Mods/MainUI/GUI/Pages/SpellBook_c.xaml' -ne "52095cb
     throw "Unexpected SpellBook capture hash."
 }
 
-if ($evidence.runtimeContract.organization.mode -ne "resource-first" -or
+if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passives" -or
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
-    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | PassivesHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.passivesTabAllowed -ne $true -or
+    $evidence.runtimeContract.organization.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.passivesModeStorage -ne "CAM_ResourceTabs.Tag" -or
+    $evidence.runtimeContract.organization.passivesModeToken -ne "CAM_PassivesModeToken" -or
+    $evidence.runtimeContract.organization.passivesModeOwnership -ne "CAM presentation-only" -or
     $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
     $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
-    throw "Resource-first organization evidence is incomplete or regressed."
+    throw "Resource-first plus Passives organization evidence is incomplete or regressed."
 }
 if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-only" -or
     $evidence.runtimeContract.tooltipPresentation.detailsSurface -ne "native-tooltip-only") {
     throw "CAM must use the ordinary native tooltip only; no Live Details panel is allowed."
 }
-if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "dynamic-resource-row" -or
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "compact-native-resource-icons-plus-passives" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
-    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)" -or
-    $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage") {
-    throw "Dynamic resource-tab presentation evidence is incomplete."
+    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
+    $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.control -ne "LSActionPointResources" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.style -ne "ActionResourcesTemplateSelector" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.size -ne 72 -or
+    $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList") {
+    throw "Native resource-icon / Passives tab presentation evidence is incomplete."
 }
+if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
+    $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
+    $evidence.runtimeContract.tooltipPresentation.stateAuthority -ne "HotBarList.LocalFocus.DataContext during live navigation" -or
+    $evidence.runtimeContract.tooltipPresentation.entryStateSource -ne "HotBarList.SelectedItem after LocalFocus reset and concrete focus handoff" -or
+    $evidence.runtimeContract.tooltipPresentation.localFocusChangedRole -ne "normal-navigation-presentation" -or
+    $evidence.runtimeContract.tooltipPresentation.delayedLocalFocusPresentationTimer -ne $true -or
+    @($evidence.runtimeContract.tooltipPresentation.presentationSignals).Count -ne 2) {
+    throw "Tooltip contract must separate entry-only committed SelectedItem state from live LocalFocus navigation."
+}
+
 if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "native-selector:LocalFocusSelector; live-owner:LocalFocus.DataContext" -or
     $evidence.runtimeContract.assignmentNavigation.selector -ne "CAM_MainSelector" -or
     $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne "SelectorTemplate" -or
@@ -60,16 +79,6 @@ if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "native
     $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncValue -ne $null) {
     throw "ActionRadials visible focus must use the runtime-proven native LocalFocusSelector/SelectorTemplate path."
 }
-if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
-    $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
-    $evidence.runtimeContract.tooltipPresentation.stateAuthority -ne "HotBarList.LocalFocus.DataContext" -or
-    $evidence.runtimeContract.tooltipPresentation.focusedElementRole -ne "wake-up-only" -or
-    $evidence.runtimeContract.tooltipPresentation.localFocusChangedRole -ne "normal-navigation-presentation" -or
-    $evidence.runtimeContract.tooltipPresentation.delayedLocalFocusPresentationTimer -ne $true -or
-    @($evidence.runtimeContract.tooltipPresentation.presentationSignals).Count -ne 2) {
-    throw "Tooltip state must remain LocalFocus-owned, with LocalFocusChanged plus widget FocusedElement as wake-up signals."
-}
-
 if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "ScrollContentPresenter.ActualWidth" -or
     $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.divisor -ne 120 -or
     $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.converter -ne "DivideMultiConverter" -or
@@ -83,20 +92,34 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "wrapped-visible-row" -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.layoutPanel -ne "ls:AlignableWrapPanel" -or
+if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "single-row-native-icons" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.layoutPanel -ne "StackPanel" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.orientation -ne "Horizontal" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.oneLogicalSequence -ne $true -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.includesPassives -ne $true -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceVisualSize -ne 72 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellWidth -ne 76 -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.horizontalScrollState -ne $false -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.wrappedRows -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.bringSelectionIntoView -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollTo -ne $null -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.headerRow -ne "Auto" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.actionViewportHeight -ne 850 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.hiddenPreviewSelection -ne "collapsed+disabled; ordinary cycle only") {
-    throw "Resource tabs must remain one wrapped visible sequence with no horizontal scroll state."
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false) {
+    throw "Top tabs must be one compact native-icon row with Passives and no scroll/wrap state."
+}
+if ($evidence.runtimeContract.controllerPresentation.itemQuantity.source -ne "GameObject.Count" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.converter -ne "AbbreviateNumberConverter" -or
+    $evidence.runtimeContract.controllerPresentation.itemQuantity.style -ne "ItemAmountTextStyle") {
+    throw "Native item quantity evidence is incomplete."
+}
+if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeToken -ne "CAM_PassivesModeToken" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.ownership -ne "CAM presentation-only" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.executableList -ne "HotBarList" -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.duplicateExecutableLists -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
+    throw "Passives must switch the sole HotBarList through CAM presentation state over the proven native PassivesHotBar source."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
@@ -106,15 +129,17 @@ if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.restoreSelectedIndex -ne 0 -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusTarget -ne "selected concrete ListBoxItem templated parent" -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusAction -ne "SetMoveFocusAction(DeferFocusAction=True)" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterFocus -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusPublishesEntryCommit -ne $true -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearsTokenAfterEntryCommit -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearLocalFocus -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.invalidateFocus -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.focusesListContainer -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemMirrorsLocalFocus -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "FocusedElement wake-up + LocalFocus.DataContext authority after concrete-item handoff" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticWakeSignal -ne "ActionRadials.FocusedElement" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticStateSource -ne "HotBarList.LocalFocus.DataContext" -or
-    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemEntryStateWrites -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryStateSource -ne "SelectedItem after concrete-item SetMoveFocusAction commit" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.entryCommitToken -ne "CAM_EntryFocusCommittedToken" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticWakeSignal -ne "HotBarList.Tag entry-focus commit" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.programmaticStateSource -ne "HotBarList.SelectedItem after LocalFocus reset" -or
+    $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.selectedItemEntryStateWrites -ne $true -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.selector -ne "CAM_MainSelector" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.template -ne "SelectorTemplate" -or
     $evidence.runtimeContract.assignmentNavigation.visibleFocusChrome.sharedCoordinateRoot -ne "CAM_ActionViewport" -or
@@ -126,15 +151,23 @@ $required = @(
     'x:Key="ActionRadialWidgetTemplate_P8"',
     'x:Name="CAM_ResourceTabs"',
     'ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"',
-    '<ls:AlignableWrapPanel HorizontalAlignment="Stretch"',
-    '<RowDefinition Height="Auto"/>',
+    '<RowDefinition Height="84"/>',
     '<RowDefinition Height="850"/>',
-    '<b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">',
+    'x:Name="CAM_TopTabs"',
+    '<ls:LSActionPointResources x:Name="ResourcePoints"',
+    'Style="{StaticResource ActionResourcesTemplateSelector}"',
+    'x:Name="CAM_PassivesTab"',
+    'x:Key="CAM_PassivesModeToken"',
+    'Tag="{x:Null}"',
+    'PlayerCharacterProperties.PassivesHotBar.SlotList',
+    'x:Key="CAM_EntryFocusCommittedToken"',
+    'Value="{StaticResource CAM_EntryFocusCommittedToken}"',
+    'GameObject.Count',
+    'AbbreviateNumberConverter',
+    'ItemAmountTextStyle',
     'x:Name="CAM_ActionViewport"',
     'CanContentScroll="False"',
     'x:Key="CAM_ResourceTabItemStyle"',
-    'Text="{Binding ActionResource.Name}"',
-    'Text="{Binding ActionResource.TypeId}"',
     'Style="{StaticResource RomanNumeralLevelImage}"',
     'Binding="{Binding ActionResource.TypeId}" Value="SpellSlot"',
     'Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot"',
@@ -146,7 +179,8 @@ $required = @(
     'Command="{Binding FilterActionResourceCommand}"',
     'CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"',
     'x:Name="HotBarList"',
-    'ItemsSource="{Binding SingleHotBar.SlotList}"',
+    '<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>',
+    'Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"',
     'KeyboardNavigation.DirectionalNavigation="Contained"',
     'ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"',
     'ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"',
@@ -213,7 +247,8 @@ foreach ($forbidden in @(
     'SetCurrentShownDeckCommand',
     'FilterCantripsCommand',
     'CurrentShownDeck.SlotList',
-    'PassivesHotBar.SlotList',
+    'IsShowingPassivesDeck',
+    'SetIsShowingPassivesDeckCommand',
     'CAM_ResourceFilterHolder',
     'CAM_ResourceFilterList',
     'CAM_ResourceFilterTemplate',
@@ -267,21 +302,26 @@ if ($text.Contains('CAM_ResourceFilter')) {
     throw "A secondary resource-filter layer must not return."
 }
 
-# One executable controller list owns top-level and nested SingleHotBar state.
+# One executable controller list owns resource, Passives, and nested VMHotBarSlot state.
 $mainList = [regex]::Match(
     $text,
     '<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?</ls:LSListBox>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $mainList.Success -or
-    -not $mainList.Value.Contains('ItemsSource="{Binding SingleHotBar.SlotList}"') -or
+    -not $mainList.Value.Contains('<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"') -or
     -not $mainList.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
     -not $mainList.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
     -not $mainList.Value.Contains('ItemsPanel="{StaticResource CAM_ActionGridPanel}"')) {
-    throw "HotBarList must directly own the executable SingleHotBar.SlotList grid."
+    throw "The sole HotBarList must switch only between resource/nested SingleHotBar slots and executable PassivesHotBar slots."
 }
-if ($mainList.Value.Contains('CurrentShownDeck') -or $mainList.Value.Contains('PassivesHotBar')) {
-    throw "Main resource-first grid must not fall back to old type/deck sources."
+if ($mainList.Value.Contains('CurrentShownDeck')) {
+    throw "The action grid must not fall back to the old deck architecture."
+}
+if ([regex]::Matches($text, '<ls:LSListBox\b[^>]*x:Name="HotBarList"').Count -ne 1) {
+    throw "CAM must have exactly one executable HotBarList."
 }
 foreach ($obsoleteList in @('CAM_FilteredSlotList','CAM_FilteredSlotHolder','SingleBar','singleBarHolder','CAM_SingleSelector','CAM_SingleActionTooltip')) {
     if ($text.Contains($obsoleteList)) {
@@ -297,20 +337,24 @@ if (-not $text.Contains('Value="{Binding LocalFocus.DataContext.Content, Element
     throw "Main tooltip must consume focused VMHotBarSlot.Content."
 }
 
-# Top-level resource browsing must close on B even though SingleHotBar is populated.
+# Top-level browsing (resource or Passives) must close on B only when native nested state is absent.
 $closeTrigger = [regex]::Match(
     $text,
-    '<MultiDataTrigger>[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CloseWidget[\s\S]*?</MultiDataTrigger>',
+    '<MultiDataTrigger>\s*<MultiDataTrigger\.Conditions>\s*' +
+    '<Condition Binding="\{Binding IsShowingAContainerWithVariants\}" Value="False"/>\s*' +
+    '<Condition Binding="\{Binding IsSelectingUpcastedSpell\}" Value="False"/>\s*' +
+    '<Condition Binding="\{Binding IsShowingItemsToThrow\}" Value="False"/>\s*' +
+    '</MultiDataTrigger\.Conditions>\s*' +
+    '<Setter TargetName="CancelButton" Property="Command" Value="\{Binding CustomEvent\}"/>\s*' +
+    '<Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>[\s\S]*?' +
+    '</MultiDataTrigger>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $closeTrigger.Success) {
-    throw "Top-level B close trigger must be based on true nested-state flags."
-}
-if ($closeTrigger.Value.Contains('SingleHotBar.SlotList.Count')) {
-    throw "Top-level B must not use SingleHotBar count because resource browsing populates SingleHotBar."
+    throw "Top-level B close trigger must be the exact three-native-nested-flags -> CloseWidget contract."
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs are the sole top-level navigation, selection drives native FilterActionResourceCommand, the grid is SingleHotBar.SlotList, ordinary native tooltips remain the only details surface, and top-level B is separated from true nested state."
+Write-Host "Self-contained Patch 8 runtime contract passed: compact native resource tabs plus Passives drive one executable HotBarList, item counts use GameObject.Count, entry focus is concrete-first, and top-level B remains separated from true nested state."
 
 
 # Weapon-set switching is deliberately absent from CAM after repeated runtime failures.
@@ -381,7 +425,7 @@ if (-not $slotContainer.Success -or
     -not $slotContainer.Value.Contains('FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
     -not $slotContainer.Value.Contains('DeferFocusAction="True"') -or
     -not $slotContainer.Value.Contains('PropertyName="Tag"') -or
-    -not $slotContainer.Value.Contains('Value="{x:Null}"') -or
+    -not $slotContainer.Value.Contains('Value="{StaticResource CAM_EntryFocusCommittedToken}"') -or
     $slotContainer.Value.Contains('CAM_CellFocusFill') -or
     $slotContainer.Value.Contains('CAM_CellFocusFrame') -or
     $slotContainer.Value.Contains('Trigger Property="ls:MoveFocus.IsFocused" Value="True"') -or
@@ -410,7 +454,7 @@ if (-not $resourceTabs.Success -or
     $resourceTabs.Value.Contains('ScrollIntoView=') -or
     $resourceTabs.Value.Contains('ScrollToElement=') -or
     $resourceTabs.Value.Contains('ScrollTo=')) {
-    throw "Resource tabs must be a non-scrolling wrapped list; horizontal scroll state is forbidden."
+    throw "Compact resource icons must have no horizontal scroll state."
 }
 
 $resourceTabsPanel = [regex]::Match(
@@ -419,38 +463,49 @@ $resourceTabsPanel = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabsPanel.Success -or
-    -not $resourceTabsPanel.Value.Contains('<ls:AlignableWrapPanel') -or
-    -not $resourceTabsPanel.Value.Contains('HorizontalContentAlignment="Center"') -or
-    $resourceTabsPanel.Value.Contains('<StackPanel')) {
-    throw "Resource tabs must use the BG3-native AlignableWrapPanel layout family."
+    -not $resourceTabsPanel.Value.Contains('<StackPanel Orientation="Horizontal"') -or
+    $resourceTabsPanel.Value.Contains('AlignableWrapPanel')) {
+    throw "Resource previews must remain a single horizontal row."
 }
 
-if (-not $text.Contains('<RowDefinition Height="Auto"/>') -or
+if (-not $text.Contains('<RowDefinition Height="84"/>') -or
     -not $text.Contains('<RowDefinition Height="850"/>') -or
     -not $text.Contains('x:Name="CAM_ActionViewport"') -or
     -not $text.Contains('Height="850"')) {
-    throw "Wrapped resource header must auto-size without reducing the 850px action viewport."
+    throw "Compact tab header must preserve the full 850px action viewport."
 }
 
-if ($resourceTabs.Value.Contains('ForceSelect="True"') -or
-    [regex]::Matches($resourceTabs.Value, 'ForceMode="Cycle"').Count -ne 2) {
-    throw "Shoulder cycling must remain cyclic without forcibly selecting collapsed resource previews."
-}
-
-$resourceSelectionTrigger = [regex]::Match(
-    $resourceTabs.Value,
-    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?</b:EventTrigger>',
+$tabLeft = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="CAM_TabLeft"[\s\S]*?</ls:LSButton>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $resourceSelectionTrigger.Success -or
-    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"') -or
-    -not $resourceSelectionTrigger.Value.Contains('TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"') -or
-    [regex]::Matches($resourceSelectionTrigger.Value, 'FilterActionResourceCommand').Count -ne 1 -or
-    $resourceSelectionTrigger.Value.Contains('PropertyName="SelectedItem"') -or
-    $resourceSelectionTrigger.Value.Contains('InvalidateFocus="True"') -or
-    $resourceSelectionTrigger.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource switching must clear LocalFocus and entry selection before refiltering, so concrete-item focus creates a fresh LocalFocus lifecycle."
+$tabRight = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="CAM_TabRight"[\s\S]*?</ls:LSButton>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $tabLeft.Success -or -not $tabRight.Success -or
+    -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
+    -not $tabLeft.Value.Contains('CAM_PassivesModeToken') -or
+    -not $tabLeft.Value.Contains('Reversed="True"') -or
+    -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
+    -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
+    -not $tabRight.Value.Contains('CAM_PassivesModeToken') -or
+    $tabLeft.Value.Contains('ForceSelect="True"') -or
+    $tabRight.Value.Contains('ForceSelect="True"')) {
+    throw "LB/RB must form one resource-plus-Passives cycle without ForceSelect."
 }
+
+if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 3 -or
+    -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
+    -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
+    [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 3) {
+    throw "Resource selection must distinguish right-wrap Passives entry from ordinary native resource filtering and clear stale LocalFocus."
+}
+
 $resourceRestoreTimer = [regex]::Match(
     $resourceTabs.Value,
     '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
@@ -463,11 +518,8 @@ if (-not $resourceRestoreTimer.Success -or
     $resourceRestoreTimer.Value.Contains('SelectedItem.Content') -or
     $resourceRestoreTimer.Value.Contains('ShowTooltipOnUIElementCommand') -or
     $resourceRestoreTimer.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand') -or
-    $resourceRestoreTimer.Value.Contains('TargetName="ActionRadials"') -or
-    $resourceRestoreTimer.Value.Contains('FilterActionResourceCommand') -or
-    $resourceRestoreTimer.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')) {
-    throw "Resource entry timer may only arm concrete-item focus; presentation wakes from LocalFocusChanged or widget FocusedElement."
+    $resourceRestoreTimer.Value.Contains('HighlightResourcesCommand')) {
+    throw "Tab-settle timer may only arm concrete first-item focus; entry presentation waits for the focus-commit token."
 }
 
 $resourceTabStyle = [regex]::Match(
@@ -476,20 +528,47 @@ $resourceTabStyle = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabStyle.Success -or
-    $resourceTabStyle.Value.Contains('PropertyName="Tag"') -or
-    $resourceTabStyle.Value.Contains('Value="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
-    $resourceTabStyle.Value.Contains('Property="MaxWidth"') -or
-    $resourceTabStyle.Value.Contains('MaxWidth="') -or
-    $resourceTabStyle.Value.Contains('TextTrimming=') -or
-    -not $resourceTabStyle.Value.Contains('<Image x:Name="SpellLevel"') -or
+    -not $resourceTabStyle.Value.Contains('Property="Width" Value="76"') -or
+    -not $resourceTabStyle.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
+    -not $resourceTabStyle.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
+    -not $resourceTabStyle.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
+    -not $resourceTabStyle.Value.Contains('HighlightedActionPoints="{Binding Cost}"') -or
+    -not $resourceTabStyle.Value.Contains('DataContext="{Binding ActionResource}"') -or
+    -not $resourceTabStyle.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
     -not $resourceTabStyle.Value.Contains('Style="{StaticResource RomanNumeralLevelImage}"') -or
-    $resourceTabStyle.Value.Contains('SpellSlotNumberStyle')) {
-    throw "Resource items must allow natural text width and use the native RomanNumeralLevelImage spell-slot renderer."
+    $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.Name}"') -or
+    $resourceTabStyle.Value.Contains('Text="{Binding ActionResource.TypeId}"') -or
+    $resourceTabStyle.Value.Contains('AlignableWrapPanel')) {
+    throw "Resource tabs must use compact native resource rendering without text labels or wrapping."
 }
-
 if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.MaxValue}" Value="0"').Count -ne 1 -or
     [regex]::Matches($resourceTabStyle.Value, 'Setter Property="IsEnabled" Value="False"').Count -lt 2) {
-    throw "Null/MaxValue=0 resource previews must be collapsed and disabled so shoulder cycling cannot enter invisible tabs."
+    throw "Null/MaxValue=0 resource previews must remain collapsed and disabled."
+}
+
+$passivesTab = [regex]::Match(
+    $text,
+    '<Grid\b[^>]*x:Name="CAM_PassivesTab"[\s\S]*?</Grid>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $passivesTab.Success -or
+    -not $passivesTab.Value.Contains('PassivesHotBar.SlotList.Count') -or
+    -not $passivesTab.Value.Contains('PassiveFeature_Generic.png') -or
+    -not $passivesTab.Value.Contains('CAM_PassivesModeToken')) {
+    throw "Passives must be a visible top-level native-slot tab in the compact row."
+}
+
+$itemTemplate = [regex]::Match(
+    $text,
+    '<DataTemplate\b[^>]*x:Key="CAM_ActionGridSlotTemplate"[\s\S]*?</DataTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $itemTemplate.Success -or
+    -not $itemTemplate.Value.Contains('GameObject.Count') -or
+    -not $itemTemplate.Value.Contains('AbbreviateNumberConverter') -or
+    -not $itemTemplate.Value.Contains('CountToVisibilityConverter') -or
+    -not $itemTemplate.Value.Contains('ItemAmountTextStyle')) {
+    throw "Item-backed action cells must expose native GameObject.Count."
 }
 
 $nestedMarker = [regex]::Match(
@@ -524,13 +603,6 @@ if (-not $nestedRepopulation.Success -or
     -not $nestedRepopulation.Value.Contains('PropertyName="SelectedIndex"') -or
     -not $nestedRepopulation.Value.Contains('Value="0"')) {
     throw "Repopulated nested return must reuse the concrete-first-item focus handoff."
-}
-
-if (-not $text.Contains('x:Name="ResourceFallback"') -or
-    -not $text.Contains('Text="{Binding ActionResource.TypeId}"') -or
-    -not $text.Contains('Binding="{Binding ActionResource.Name}" Value="{x:Null}"') -or
-    -not $text.Contains('Binding="{Binding ActionResource.Name}" Value=""')) {
-    throw "Null or empty native resource names must have a TypeId text fallback."
 }
 
 if ($text.Contains('CAM_LogicalFocusAnchor') -or
@@ -587,19 +659,32 @@ if (-not $localFocusTimer.Success -or
     throw "Delayed ActionRadials.Tag/resource state must remain sourced only from LocalFocus.DataContext."
 }
 
-$focusedEntryTrigger = [regex]::Match(
+$entryCommitTrigger = [regex]::Match(
     $text,
-    '<b:PropertyChangedTrigger Binding="\{Binding FocusedElement, RelativeSource=\{RelativeSource AncestorType=\{x:Type ls:UIWidget\}\}\}">[\s\S]*?</b:PropertyChangedTrigger>',
+    '<b:PropertyChangedTrigger Binding="\{Binding Tag, ElementName=HotBarList\}">[\s\S]*?CAM_EntryFocusCommittedToken[\s\S]*?</b:PropertyChangedTrigger>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $focusedEntryTrigger.Success -or
-    -not $focusedEntryTrigger.Value.Contains('LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
-    -not $focusedEntryTrigger.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
-    -not $focusedEntryTrigger.Value.Contains('ShowTooltipOnUIElementCommand') -or
-    -not $focusedEntryTrigger.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
-    -not $focusedEntryTrigger.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    -not $focusedEntryTrigger.Value.Contains('HighlightResourcesCommand') -or
-    $focusedEntryTrigger.Value.Contains('FocusedElement.DataContext') -or
-    $focusedEntryTrigger.Value.Contains('SelectedItem')) {
-    throw "Widget FocusedElement may wake programmatic-entry presentation, but all action state must still come from HotBarList.LocalFocus.DataContext."
+if (-not $entryCommitTrigger.Success -or
+    -not $entryCommitTrigger.Value.Contains('SelectedItem.Content') -or
+    -not $entryCommitTrigger.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    -not $entryCommitTrigger.Value.Contains('PropertyName="Tag"') -or
+    -not $entryCommitTrigger.Value.Contains('Value="{Binding SelectedItem, ElementName=HotBarList}"') -or
+    -not $entryCommitTrigger.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    -not $entryCommitTrigger.Value.Contains('HighlightResourcesCommand')) {
+    throw "Concrete first-item focus must commit entry-only tooltip/Tag/highlight state from that same SelectedItem."
+}
+if ($text.Contains('<b:PropertyChangedTrigger Binding="{Binding FocusedElement, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}">')) {
+    throw "The runtime-rejected 0.0.68 FocusedElement tooltip wake-up must not return."
+}
+
+$slotContainer = [regex]::Match(
+    $text,
+    '<Style\b[^>]*x:Key="CAM_ActionGridSlotContainer"[\s\S]*?</Style>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $slotContainer.Success -or
+    -not $slotContainer.Value.Contains('RightOperand="{StaticResource CAM_ResetFirstFocusToken}"') -or
+    -not $slotContainer.Value.Contains('FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"') -or
+    -not $slotContainer.Value.Contains('Value="{StaticResource CAM_EntryFocusCommittedToken}"')) {
+    throw "Selected index 0 must hand concrete focus to its ListBoxItem before publishing the entry-focus commit token."
 }
