@@ -719,8 +719,8 @@ if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionC
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabReturnLastToken') -or
-    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
-    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_ItemsModeToken}"') -or
     -not $resourceTabs.Value.Contains('SetCurrentShownDeckCommand') -or
     -not $resourceTabs.Value.Contains('CommandParameter="ItemHotBar"') -or
     -not $resourceTabs.Value.Contains('FilterCantripsCommand') -or
