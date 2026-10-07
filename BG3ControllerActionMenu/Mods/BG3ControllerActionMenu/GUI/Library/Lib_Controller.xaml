@@ -1057,6 +1057,54 @@
                             </Grid>
                         </Grid>
 
+                        <Grid x:Name="CAM_MetamagicTab"
+                              Width="80"
+                              Height="72"
+                              Margin="-4,0,-4,0"
+                              Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                            <Grid Margin="4,-10,4,10"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                                <Grid Width="72">
+                                    <Image Source="{StaticResource CAM_BoxResourceBg}"/>
+                                    <Image VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResource}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Image VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResourceH}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_MetamagicModeToken}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Rectangle Fill="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList[0].Content.Icon}"
+                                               Width="52"
+                                               Height="52"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False"/>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
                         <Grid x:Name="CAM_PassivesTab"
                               Width="80"
                               Height="72"
