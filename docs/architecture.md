@@ -191,3 +191,36 @@ UseSlotCommand(ActionRadials.Tag)
 `SingleHotBar.SlotList` is also the BG3-owned collection for nested container/upcast/throw state. CAM therefore does not switch to a second list when those states activate. The collection changes underneath the same `HotBarList`; focus may be explicitly returned to that same list, but no second controller focus tree is created.
 
 This reduces CAM-owned state to presentation plus the selected resource filter. Gameplay rules and nested-state ownership remain entirely in BG3.
+
+
+## Viewport ownership after single-list runtime proof
+
+The one-list architecture is retained. Runtime shows the remaining problems are caused by viewport ownership left over from the former nested assignment composition.
+
+The corrected presentation model is:
+
+```text
+wide resource header
+  CAM_ResourceTabs
+  + AutoScrollBehavior(SelectedIndex)
+          |
+          v
+resource SelectionChanged
+  -> hide stale CAM_MainSelector
+  -> FilterActionResourceCommand
+  -> focus HotBarList
+
+action viewport: exactly 800 x 850
+  HotBarList
+  CAM_MainSelector
+  (same coordinate root)
+          |
+          v
+CAM_ActionGridPanel
+  scrolling enabled
+  ScrollViewer.CanContentScroll = True
+```
+
+The captured assignment grid uses `DisableScrolling=True` because its child grids live under a separate outer scrolling list. That flag does not belong on CAM's direct single-list items panel.
+
+The captured ModBrowser controller UI supplies the native tab-row pattern used here: `AutoScrollBehavior` tracks `SelectedIndex` and brings the selected item into view without moving D-pad focus into the tab row.
