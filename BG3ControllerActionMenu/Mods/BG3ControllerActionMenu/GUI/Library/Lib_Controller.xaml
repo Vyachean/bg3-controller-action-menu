@@ -3,20 +3,31 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:ls="clr-namespace:ls;assembly=Code"
-    xmlns:System="clr-namespace:System;assembly=mscorlib">
+    xmlns:System="clr-namespace:System;assembly=mscorlib"
+    xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions">
 
     <!-- CAM owns composition only. Each focused/executed action remains a native VMHotBarSlot. -->
     <System:Double x:Key="CAM_ActionGridCellSize">120</System:Double>
-    <!-- Top-level entries are HotBar filters, not the HotBar action-resource bar.
-         Mirror FilterButton / ActiveFilterButton chrome and keep resource identity inside. -->
-    <BitmapImage x:Key="CAM_FilterButtonBackground"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_d.png"/>
-    <BitmapImage x:Key="CAM_ActiveFilterButtonBackground"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_active_d.png"/>
-    <BitmapImage x:Key="CAM_DisabledFilterButtonBackground"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_disabled.png"/>
-    <BitmapImage x:Key="CAM_FilterMarkerBackground"
-                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/btn_pil_inactivemod_d.png"/>
+    <!-- Exact Patch 8 keyboard HotBar Action Resources presentation, captured from
+         Mods/MainUI/GUI/Pages/HotBar.xaml in Xbox App 1.8.910.0. -->
+    <BitmapImage x:Key="CAM_BarResources"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/bar_resources.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceBg"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_empty.png"/>
+    <BitmapImage x:Key="CAM_BoxResource"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_d.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceH"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_h.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceDisabled"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_missing.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNumBg"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_empty.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNum"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_d.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNumH"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_h.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNumDisabled"
+                 UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_missing.png"/>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
@@ -149,8 +160,8 @@
         </ls:LSGrid>
     </ItemsPanelTemplate>
 
-    <!-- Resource-first top-level navigation. Items are native VMActionResourceCostPreview objects.
-         The outer control mirrors HotBar filter chrome; resource identity remains native and icon-only. -->
+    <!-- Resource-first navigation retains LSListBox selection for LB/RB, but the visual
+         is the exact Patch 8 HotBar ActionResourcesList resource button rather than a textual filter pill. -->
     <Style x:Key="CAM_ResourceTabItemStyle"
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
@@ -158,93 +169,142 @@
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="-4,0"/>
-        <Setter Property="MinWidth" Value="72"/>
-        <Setter Property="Height" Value="64"/>
+        <Setter Property="Margin" Value="-4,0,-4,0"/>
+        <Setter Property="Width" Value="80"/>
+        <Setter Property="Height" Value="72"/>
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Grid x:Name="Root" Height="64">
-                        <ls:LSNineSliceImage x:Name="FilterBg"
-                                             ImageSource="{StaticResource CAM_FilterButtonBackground}"
-                                             Slices="36"
-                                             Padding="10"
-                                             MinWidth="72"
-                                             Height="58"
-                                             VerticalAlignment="Center">
-                            <Grid x:Name="ResourceIdentity"
-                                  Width="48"
-                                  Height="48"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center">
+                    <Grid x:Name="ButtonFrame"
+                          Margin="4,-10,4,10"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center">
+                        <Grid x:Name="Root" Width="72">
+                            <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
+                            <Image x:Name="Bg"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Source="{StaticResource CAM_BoxResource}"/>
+                            <Image x:Name="BgHL"
+                                   Visibility="Collapsed"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Source="{StaticResource CAM_BoxResourceH}"/>
+                            <Image x:Name="BgDisabled"
+                                   Visibility="Collapsed"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Source="{StaticResource CAM_BoxResourceDisabled}"/>
+
+                            <Border Background="Transparent"
+                                    Width="72"
+                                    Height="72"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center">
                                 <ls:LSActionPointResources x:Name="ResourcePoints"
                                                            Background="Transparent"
                                                            HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
                                                            MaxActionPoints="{Binding MaxValue}"
                                                            AvailableActionPoints="{Binding Value}"
                                                            HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"
                                                            DataContext="{Binding ActionResource}"
                                                            MaxActionPointGroups="0"
-                                                           SmallActionPointSize="20"
-                                                           ActionPointGroupSize="44"
+                                                           SmallActionPointSize="24"
+                                                           ActionPointGroupSize="56"
                                                            Style="{StaticResource ActionResourcesTemplateSelector}"/>
-                                <Image x:Name="SpellSlotLevels"
-                                       Stretch="None"
-                                       VerticalAlignment="Top"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,-6,0,0"
-                                       IsHitTestVisible="False"
-                                       Style="{StaticResource RomanNumeralLevelImage}"
-                                       Visibility="Collapsed"
-                                       DataContext="{Binding ActionResource}"/>
-                            </Grid>
-                        </ls:LSNineSliceImage>
+                            </Border>
 
-                        <ls:LSNineSliceImage x:Name="Marker"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Top"
-                                             IsHitTestVisible="False"
-                                             ImageSource="{StaticResource CAM_FilterMarkerBackground}"
-                                             Slices="12"
-                                             MinWidth="44"
-                                             Width="44"
-                                             Height="20"
-                                             Margin="0,-8,0,0"
-                                             Visibility="Collapsed">
-                            <Image Source="{StaticResource ActiveModArrow}"
+                            <Image x:Name="SpellSlotLevels"
                                    Stretch="None"
-                                   VerticalAlignment="Center"
-                                   Margin="0,4,0,-4"/>
-                        </ls:LSNineSliceImage>
+                                   VerticalAlignment="Top"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,-10,0,0"
+                                   IsHitTestVisible="False"
+                                   Style="{StaticResource RomanNumeralLevelImage}"
+                                   Visibility="Hidden"
+                                   DataContext="{Binding ActionResource}"/>
+
+                            <TextBlock x:Name="ResourcesNumeralDisplay"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Margin="0,20,0,-20"
+                                       Foreground="{Binding Foreground, ElementName=ResourcePoints}"
+                                       IsHitTestVisible="False"
+                                       FontWeight="Bold"
+                                       FontSize="{DynamicResource MediumFontSize}"
+                                       Text="{Binding ActionResource.Value}"
+                                       noesis:Text.Stroke="{StaticResource LS_PrimaryColorOutlineColor}"
+                                       noesis:Text.StrokeThickness="4">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Value="False">
+                                                <DataTrigger.Binding>
+                                                    <MultiBinding Converter="{StaticResource LessThanOrEqualMultiConverter}">
+                                                        <Binding Path="ActionResource.Value"/>
+                                                        <Binding ElementName="ResourcePoints" Path="MaxGroupActionPoints"/>
+                                                    </MultiBinding>
+                                                </DataTrigger.Binding>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
+                                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
+                                <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
+                                <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                                <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                                <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                                <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
+                                <Setter TargetName="BgBg" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="Bg" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="BgHL" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="BgDisabled" Property="Margin" Value="0,-8,0,0"/>
+                                <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+
+                            <!-- Controller adaptation: selected tab uses the native HotBar mouse-hover resource chrome.
+                                 Passives mode suppresses the preserved native-resource selection. -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
+                                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
+                            </MultiDataTrigger>
+
+                            <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
+                                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="BgDisabled" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration">
+                                <Setter TargetName="ResourcesNumeralDisplay" Property="Margin" Value="0,22,0,-22"/>
+                                <Setter TargetName="ResourcesNumeralDisplay" Property="FontSize" Value="{DynamicResource SmallFontSize}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
                     </Grid>
-                    <ControlTemplate.Triggers>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
-                                <Condition Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}" Value="{x:Null}"/>
-                            </MultiDataTrigger.Conditions>
-                            <Setter TargetName="FilterBg"
-                                    Property="ImageSource"
-                                    Value="{StaticResource CAM_ActiveFilterButtonBackground}"/>
-                            <Setter TargetName="Marker" Property="Visibility" Value="Visible"/>
-                        </MultiDataTrigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="FilterBg"
-                                    Property="ImageSource"
-                                    Value="{StaticResource CAM_DisabledFilterButtonBackground}"/>
-                            <Setter TargetName="Marker" Property="Visibility" Value="Collapsed"/>
-                        </Trigger>
-                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
-                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
-                            <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -256,9 +316,6 @@
             <DataTrigger Binding="{Binding ActionResource.MaxValue}" Value="0">
                 <Setter Property="Visibility" Value="Collapsed"/>
                 <Setter Property="IsEnabled" Value="False"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
-                <Setter Property="Opacity" Value="0.55"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
@@ -596,10 +653,22 @@
                             </b:Interaction.Triggers>
                         </ls:LSButton>
 
-                        <StackPanel x:Name="CAM_TopTabs"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
+                        <Grid x:Name="CAM_ResourceStrip"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Height="84">
+                            <ls:LSNineSliceImage x:Name="CAM_HotbarBodyResourcesBg"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"
+                                                 Height="64"
+                                                 MinWidth="208"
+                                                 Width="{Binding ActualWidth, ElementName=CAM_TopTabs, Converter={StaticResource AddConverter}, ConverterParameter=208}"
+                                                 ImageSource="{StaticResource CAM_BarResources}"
+                                                 Slices="104,0"/>
+                            <StackPanel x:Name="CAM_TopTabs"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
                         <ls:LSListBox x:Name="CAM_ResourceTabs"
                                       ItemsSource="{Binding CurrentPlayer.UIData.ActionResourcesCostPreview}"
                                       SelectedIndex="0"
@@ -750,60 +819,46 @@
                         </ls:LSListBox>
 
                         <Grid x:Name="CAM_PassivesTab"
-                              MinWidth="72"
-                              Height="64"
-                              Margin="-4,0"
+                              Width="80"
+                              Height="72"
+                              Margin="-4,0,-4,0"
                               Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
-                            <ls:LSNineSliceImage x:Name="CAM_PassivesFilterBg"
-                                                 Slices="36"
-                                                 Padding="10"
-                                                 MinWidth="72"
-                                                 Height="58"
-                                                 VerticalAlignment="Center">
-                                <ls:LSNineSliceImage.Style>
-                                    <Style TargetType="{x:Type ls:LSNineSliceImage}">
-                                        <Setter Property="ImageSource" Value="{StaticResource CAM_FilterButtonBackground}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
-                                                <Setter Property="ImageSource" Value="{StaticResource CAM_ActiveFilterButtonBackground}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ls:LSNineSliceImage.Style>
-                                <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
-                                       Width="40"
-                                       Height="40"
-                                       Stretch="Uniform"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False"/>
-                            </ls:LSNineSliceImage>
-                            <ls:LSNineSliceImage HorizontalAlignment="Center"
-                                                 VerticalAlignment="Top"
-                                                 IsHitTestVisible="False"
-                                                 ImageSource="{StaticResource CAM_FilterMarkerBackground}"
-                                                 Slices="12"
-                                                 MinWidth="44"
-                                                 Width="44"
-                                                 Height="20"
-                                                 Margin="0,-8,0,0">
-                                <ls:LSNineSliceImage.Style>
-                                    <Style TargetType="{x:Type ls:LSNineSliceImage}">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ls:LSNineSliceImage.Style>
-                                <Image Source="{StaticResource ActiveModArrow}"
-                                       Stretch="None"
-                                       VerticalAlignment="Center"
-                                       Margin="0,4,0,-4"/>
-                            </ls:LSNineSliceImage>
+                            <Grid Margin="4,-10,4,10"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                                <Grid Width="72">
+                                    <Image Source="{StaticResource CAM_BoxResourceBg}"/>
+                                    <Image x:Name="CAM_PassivesBg"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResource}"/>
+                                    <Image x:Name="CAM_PassivesBgHL"
+                                           Visibility="Collapsed"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResourceH}"/>
+                                    <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
+                                           Width="40"
+                                           Height="40"
+                                           Stretch="Uniform"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"/>
+                                </Grid>
+                            </Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                            <Setter TargetName="CAM_PassivesBg" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="CAM_PassivesBgHL" Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
                         </Grid>
-                        </StackPanel>
+                            </StackPanel>
+                        </Grid>
                     </DockPanel>
 
                     <Grid x:Name="CAM_ActionViewport"
