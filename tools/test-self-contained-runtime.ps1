@@ -46,14 +46,16 @@ if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-on
 }
 if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "dynamic-resource-row" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
-    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name ?? ActionResource.TypeId" -or
+    $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne "ActionResource.Name ?? ActionResource.TypeId (null-or-empty)" -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "SpellSlotNumberStyle") {
     throw "Dynamic resource-tab presentation evidence is incomplete."
 }
-if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "item-local:ls:MoveFocus.IsFocused" -or
-    $evidence.runtimeContract.assignmentNavigation.selector -ne $null -or
-    $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne $null) {
-    throw "Detached selector must be retired in favor of item-local MoveFocus presentation."
+if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "item-local:ls:MoveFocus.IsFocused; logical-owner:LocalFocusSelector" -or
+    $evidence.runtimeContract.assignmentNavigation.selector -ne "CAM_LogicalFocusAnchor" -or
+    $evidence.runtimeContract.assignmentNavigation.selectorTemplate -ne $null -or
+    $evidence.runtimeContract.assignmentNavigation.selectorVisibleChrome -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.selectorOpacity -ne 0) {
+    throw "ActionRadials must keep an invisible LocalFocusSelector owner while visible focus remains item-local."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand") {
@@ -66,10 +68,10 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.rounding -ne "Floor" -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.directGridDisableScrolling -ne $false -or
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.scrollViewerCanContentScroll -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridUseWidgetNavigation -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $true -or
-    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $true) {
-    throw "Selectorless adaptive grid contract is incomplete."
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridUseWidgetNavigation -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridAlwaysSelectFirst -ne $false -or
+    $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
+    throw "Adaptive ActionRadials grid contract is incomplete."
 }
 if ($evidence.runtimeContract.controllerPresentation.resourceViewport.autoScrollBehavior -ne "AutoScrollBehavior" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollIntoView -ne "SelectedIndex" -or
@@ -107,10 +109,10 @@ $required = @(
     'ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"',
     'ls:MoveFocus.Focusable" Value="True"',
     'Property="ls:MoveFocus.IsFocused" Value="True"',
-    'UseWidgetNavigation="True"',
-    'AlwaysSelectFirst="True"',
-    'ls:MoveFocus.InternalFocusable="True"',
-    'FocusElementVisualStyle="{StaticResource Style.FocusVisualStyle}"',
+    'LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"',
+    'x:Name="CAM_LogicalFocusAnchor"',
+    'Opacity="0"',
+    'Visibility="Visible"',
     'Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"',
     'RelativeSource="{RelativeSource AncestorType={x:Type ScrollContentPresenter}}"',
     'ActionUpEvent="UIUp"',
@@ -138,11 +140,6 @@ $required = @(
     'Property="Command" Value="{Binding CustomEvent}"',
     'Property="CommandParameter" Value="CloseWidget"',
     'x:Name="ButtonHintsContainer"',
-    'x:Name="ToggleWeaponSet"',
-    'x:Name="WeaponSetShortcutBinding"',
-    'BoundEvent="UISelectionLeft"',
-    'HoldTime="{StaticResource HoldTimeShortcuts}"',
-    'Command="{Binding SwitchWeaponSetCommand}"',
     'ActionLeftEvent="UILeft"',
     'x:Name="ShowContextMenu"',
     'Visibility="Collapsed"',
@@ -195,7 +192,10 @@ foreach ($forbidden in @(
     'SlotIconStyle',
     'x:Name="CAM_MainSelector"',
     'x:Key="CAM_SelectorTemplate"',
-    'LocalFocusSelector=',
+    'x:Name="ToggleWeaponSet"',
+    'x:Name="WeaponSetShortcutBinding"',
+    'SwitchWeaponSetCommand',
+    'HoldTime="{StaticResource HoldTimeShortcuts}"',
     'Columns="5"',
     'Width="632"',
     'CanContentScroll="True"',
@@ -262,32 +262,11 @@ if ($closeTrigger.Value.Contains('SingleHotBar.SlotList.Count')) {
 Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs are the sole top-level navigation, selection drives native FilterActionResourceCommand, the grid is SingleHotBar.SlotList, ordinary native tooltips remain the only details surface, and top-level B is separated from true nested state."
 
 
-# Repeatable weapon-set shortcut: preserve vanilla visual hold button and keep input transport separate.
-$weaponSet = [regex]::Match(
-    $text,
-    '<ls:LSButton\b[^>]*x:Name="ToggleWeaponSet"[\s\S]*?/>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $weaponSet.Success -or
-    -not $weaponSet.Value.Contains('Style="{StaticResource ControllerHoldButtonStyle}"') -or
-    -not $weaponSet.Value.Contains("ConverterParameter='UISelectionLeft'") -or
-    -not $weaponSet.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"')) {
-    throw "ToggleWeaponSet visual must preserve the captured vanilla hold-button contract."
-}
-if ($weaponSet.Value.Contains('BoundEvent=')) {
-    throw "ToggleWeaponSet visual must not own BoundEvent; 0.0.51 proved that direct binding is one-shot."
-}
-$weaponBinding = [regex]::Match(
-    $text,
-    '<ls:LSInputBinding\b[^>]*x:Name="WeaponSetShortcutBinding"[\s\S]*?/>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $weaponBinding.Success -or
-    -not $weaponBinding.Value.Contains('BoundEvent="UISelectionLeft"') -or
-    -not $weaponBinding.Value.Contains('HoldTime="{StaticResource HoldTimeShortcuts}"') -or
-    -not $weaponBinding.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"') -or
-    -not $weaponBinding.Value.Contains('EatInput="False"')) {
-    throw "WeaponSetShortcutBinding must use native held UISelectionLeft transport with HoldTimeShortcuts."
+# Weapon-set switching is deliberately absent from CAM after repeated runtime failures.
+foreach ($forbiddenWeaponSeam in @('x:Name="ToggleWeaponSet"','x:Name="WeaponSetShortcutBinding"','SwitchWeaponSetCommand','HoldTime="{StaticResource HoldTimeShortcuts}"')) {
+    if ($text.Contains($forbiddenWeaponSeam)) {
+        throw "Broken CAM-owned weapon-set input must remain absent: $forbiddenWeaponSeam"
+    }
 }
 if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
     throw "Ordinary grid-left navigation must remain UILeft."
@@ -318,16 +297,7 @@ foreach ($flag in @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell'
 }
 
 
-# 0.0.56: short D-pad Left must remain grid navigation; weapon switching is hold-only.
-if ($weaponBinding.Value.Contains('BoundEvent="ToggleWeaponSet"')) {
-    throw "Semantic ToggleWeaponSet binding is rejected here: runtime proved it fires on ordinary press."
-}
-if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
-    throw "Short left navigation must remain on UILeft while weapon switching uses held UISelectionLeft."
-}
-
-
-# Selectorless adaptive presentation: focus chrome belongs to the item,
+# Adaptive presentation: ActionRadials LocalFocusSelector owns logical navigation,
 # grid columns derive from actual viewport width, and scrolling stays pixel-based.
 $actionGridPanel = [regex]::Match(
     $text,
@@ -337,12 +307,12 @@ $actionGridPanel = [regex]::Match(
 if (-not $actionGridPanel.Success -or
     $actionGridPanel.Value.Contains('Columns="5"') -or
     $actionGridPanel.Value.Contains('Width="632"') -or
-    -not $actionGridPanel.Value.Contains('UseWidgetNavigation="True"') -or
-    -not $actionGridPanel.Value.Contains('AlwaysSelectFirst="True"') -or
-    -not $actionGridPanel.Value.Contains('ls:MoveFocus.InternalFocusable="True"') -or
+    $actionGridPanel.Value.Contains('UseWidgetNavigation="True"') -or
+    $actionGridPanel.Value.Contains('AlwaysSelectFirst="True"') -or
+    $actionGridPanel.Value.Contains('ls:MoveFocus.InternalFocusable="True"') -or
     -not $actionGridPanel.Value.Contains('Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"') -or
     -not $actionGridPanel.Value.Contains('AncestorType={x:Type ScrollContentPresenter}')) {
-    throw "CAM_ActionGridPanel must use the current SpellBook adaptive controller-grid pattern."
+    throw "CAM_ActionGridPanel must keep adaptive columns without the rejected SpellBook widget-focus transport."
 }
 
 $slotContainer = [regex]::Match(
@@ -369,7 +339,7 @@ $resourceTabs = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $resourceTabs.Success -or
-    -not $resourceTabs.Value.Contains('MaxWidth="1020"') -or
+    -not $resourceTabs.Value.Contains('MaxWidth="1160"') -or
     -not $resourceTabs.Value.Contains('ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"') -or
     -not $resourceTabs.Value.Contains('BringSelectionIntoView="True"')) {
     throw "Resource tabs must stay in a bounded SelectedIndex-following viewport."
@@ -377,10 +347,24 @@ if (-not $resourceTabs.Success -or
 
 if (-not $text.Contains('x:Name="ResourceFallback"') -or
     -not $text.Contains('Text="{Binding ActionResource.TypeId}"') -or
-    -not $text.Contains('Binding="{Binding ActionResource.Name}" Value="{x:Null}"')) {
-    throw "Unnamed native resources must have a TypeId text fallback."
+    -not $text.Contains('Binding="{Binding ActionResource.Name}" Value="{x:Null}"') -or
+    -not $text.Contains('Binding="{Binding ActionResource.Name}" Value=""')) {
+    throw "Null or empty native resource names must have a TypeId text fallback."
 }
 
-if ($text.Contains('CAM_MainSelector') -or $text.Contains('CAM_SelectorTemplate') -or $text.Contains('LocalFocusSelector=')) {
-    throw "Detached selector state must not return."
+if ($text.Contains('CAM_MainSelector') -or $text.Contains('CAM_SelectorTemplate')) {
+    throw "Visible detached selector state must not return."
+}
+
+$logicalAnchor = [regex]::Match(
+    $text,
+    '<Control\\b[^>]*x:Name="CAM_LogicalFocusAnchor"[\\s\\S]*?/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $logicalAnchor.Success -or
+    -not $logicalAnchor.Value.Contains('Opacity="0"') -or
+    -not $logicalAnchor.Value.Contains('Visibility="Visible"') -or
+    -not $logicalAnchor.Value.Contains('Focusable="False"') -or
+    -not $hotBarList.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_LogicalFocusAnchor,Mode=OneWay}"')) {
+    throw "HotBarList must restore LocalFocus ownership through an always-laid-out invisible selector anchor."
 }
