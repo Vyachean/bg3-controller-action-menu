@@ -13,6 +13,10 @@
     <BitmapImage x:Key="CAM_BoxResource" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_d.png"/>
     <BitmapImage x:Key="CAM_BoxResourceH" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_h.png"/>
     <BitmapImage x:Key="CAM_BoxResourceDisabled" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resource_missing.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNumBg" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_empty.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNum" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_d.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNumH" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_h.png"/>
+    <BitmapImage x:Key="CAM_BoxResourceNumDisabled" UriSource="pack://application:,,,/GustavNoesisGUI;component/Assets/BottomBar/neo/box_resourceNum_missing.png"/>
     <Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
@@ -78,10 +82,22 @@
     </Style>
 
     <DataTemplate x:Key="CAM_ActionGridSlotTemplate">
-        <!-- Current Patch 8 assignment cells are true 104x104 icon surfaces inside 120x120 LSGrid cells.
-             VMHotBarSlot stays the item/focus/dispatch object; only its Content.Icon is rendered. -->
+        <!-- VMHotBarSlot remains the focus/dispatch object. Non-items keep the proven 104x104
+             assignment icon surface; item slots delegate presentation to the same VMItem templates
+             used by the Patch 8 keyboard HotBar/inventory so Count and item chrome stay native. -->
         <Grid Width="104" Height="104" Background="Transparent">
-            <Rectangle Fill="{Binding Content.Icon}" Width="104" Height="104"/>
+            <Rectangle x:Name="GenericIcon"
+                       Fill="{Binding Content.Icon}"
+                       Width="104"
+                       Height="104"/>
+            <ContentPresenter x:Name="ItemPresenter"
+                              Content="{Binding Content}"
+                              ContentTemplate="{StaticResource Template.Item}"
+                              Width="104"
+                              Height="104"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              Visibility="Collapsed"/>
             <Rectangle x:Name="DisabledOverlay"
                        Width="104"
                        Height="104"
@@ -94,23 +110,21 @@
                    VerticalAlignment="Top"
                    Margin="0,8,8,0"
                    Visibility="Collapsed"/>
-            <Viewbox x:Name="ItemCountHolder"
-                     HorizontalAlignment="Right"
-                     VerticalAlignment="Bottom"
-                     Margin="0,0,4,4"
-                     StretchDirection="DownOnly"
-                     Visibility="{Binding GameObject.Count, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=1}">
-                <TextBlock Text="{Binding GameObject.Count, Converter={StaticResource AbbreviateNumberConverter}}"
-                           Style="{StaticResource ItemAmountTextStyle}"
-                           Margin="6,0"/>
-            </Viewbox>
         </Grid>
         <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding CanUse}" Value="False">
-                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
+            <DataTrigger Binding="{Binding SlotType}" Value="Item">
+                <Setter TargetName="GenericIcon" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="ItemPresenter" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Content.IsEquipment}" Value="True">
+                <Setter TargetName="ItemPresenter" Property="ContentTemplate" Value="{StaticResource Template.ItemEquipment}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Content.IsContainer}" Value="True">
+                <Setter TargetName="ItemPresenter" Property="ContentTemplate" Value="{StaticResource Template.ItemContainer}"/>
                 <Setter TargetName="SubSelectIndicator" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding CanUse}" Value="False">
+                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
@@ -187,65 +201,6 @@
                                                        ActionPointGroupSize="56"
                                                        Style="{StaticResource ActionResourcesTemplateSelector}"/>
                         </Border>
-                        <TextBlock x:Name="ResourcesNumeralDisplay"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Margin="0,25,0,0"
-                                   Foreground="{Binding Foreground, ElementName=ResourcePoints}"
-                                   IsHitTestVisible="False"
-                                   FontSize="{DynamicResource MediumFontSize}"
-                                   Text="{Binding ActionResource.Value}">
-                            <b:Interaction.Triggers>
-                                <b:PropertyChangedTrigger Binding="{Binding ActionResource.Value}">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding ActionResource.Value}"
-                                                                       Operator="GreaterThan"
-                                                                       RightOperand="{Binding MaxGroupActionPoints, ElementName=ResourcePoints}"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction PropertyName="Visibility" Value="Visible"/>
-                                </b:PropertyChangedTrigger>
-                                <b:PropertyChangedTrigger Binding="{Binding ActionResource.Value}">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding ActionResource.Value}"
-                                                                       Operator="LessThanOrEqual"
-                                                                       RightOperand="{Binding MaxGroupActionPoints, ElementName=ResourcePoints}"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction PropertyName="Visibility" Value="Hidden"/>
-                                </b:PropertyChangedTrigger>
-                                <b:PropertyChangedTrigger Binding="{Binding ActionResource.Value}">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding ActionResource.Value}"
-                                                                       Operator="LessThanOrEqual"
-                                                                       RightOperand="1"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction PropertyName="Visibility" Value="Hidden"/>
-                                </b:PropertyChangedTrigger>
-                                <b:PropertyChangedTrigger Binding="{Binding ActionResource.MaxValue}">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding ActionResource.MaxValue}"
-                                                                       Operator="LessThanOrEqual"
-                                                                       RightOperand="{Binding MaxGroupActionPoints, ElementName=ResourcePoints}"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction PropertyName="Visibility" Value="Hidden"/>
-                                </b:PropertyChangedTrigger>
-                            </b:Interaction.Triggers>
-                        </TextBlock>
                         <Image x:Name="SpellSlotLevels"
                                Stretch="None"
                                VerticalAlignment="Top"
@@ -272,9 +227,17 @@
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="SpellSlot">
                             <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                            <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                            <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                            <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ActionResource.TypeId}" Value="WarlockSpellSlot">
                             <Setter TargetName="SpellSlotLevels" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="BgBg" Property="Source" Value="{StaticResource CAM_BoxResourceNumBg}"/>
+                            <Setter TargetName="Bg" Property="Source" Value="{StaticResource CAM_BoxResourceNum}"/>
+                            <Setter TargetName="BgHL" Property="Source" Value="{StaticResource CAM_BoxResourceNumH}"/>
+                            <Setter TargetName="BgDisabled" Property="Source" Value="{StaticResource CAM_BoxResourceNumDisabled}"/>
                         </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

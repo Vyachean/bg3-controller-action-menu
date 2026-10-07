@@ -966,7 +966,7 @@ The next runtime check is limited to: immediate tooltip after tab switch, immedi
 4. one `HotBarList` switches between `SingleHotBar.SlotList` and `PassivesHotBar.SlotList`; no second executable grid is introduced;
 5. passive mode uses only the CAM presentation token on `CAM_ResourceTabs.Tag`; no unproven BG3 passives-mode command/property exists in runtime;
 6. LB/RB cycling can cross both boundaries between the native resource sequence and Passives;
-7. action cells render item quantity from `GameObject.Count` with `AbbreviateNumberConverter` and `ItemAmountTextStyle`;
+7. item action cells delegate `VMHotBarSlot.Content` to native `Template.Item`, which owns `VMItem.Count`, `AbbreviateNumberConverter`, and `ItemAmountTextStyle`;
 8. tab entry clears LocalFocus before selecting index 0;
 9. entry-only tooltip/Tag/highlight state comes from the same first `HotBarList.SelectedItem` handed to concrete-item focus;
 10. normal `LocalFocusChanged` remains the live navigation authority;
@@ -1029,3 +1029,28 @@ Next runtime proof should be limited to:
 - enter Passives from both ends and return with the opposite shoulder;
 - verify each shoulder press advances exactly one logical tab;
 - verify the returned resource grid starts at the first action with matching tooltip.
+
+
+### 2026-10-07 — 0.0.71 runtime result / 0.0.72 proof boundary
+
+0.0.71 runtime:
+- top-level resource tabs show unwanted/stray numeric overlays;
+- item-backed action cells still do not show stack quantity like inventory/keyboard HotBar;
+- resource-tab chrome still differs from the current keyboard HotBar, especially spell-slot resources.
+
+0.0.72 automatic proof must require:
+
+1. `ResourcesNumeralDisplay` and any CAM-authored resource-value `TextBlock` are absent from the top-level tab template;
+2. normal resources use captured `box_resource_*` assets;
+3. SpellSlot and WarlockSpellSlot switch to captured `box_resourceNum_*` assets and retain `RomanNumeralLevelImage`;
+4. the resource glyph remains `LSActionPointResources + ActionResourcesTemplateSelector`;
+5. the action-grid template contains no `GameObject.Count` quantity overlay;
+6. `SlotType=Item` switches to a `ContentPresenter Content="{Binding Content}"` using native `Template.Item`;
+7. item equipment/container presentation uses `Template.ItemEquipment` / `Template.ItemContainer`;
+8. non-item actions retain the 104x104 `Content.Icon` assignment surface;
+9. focus, tooltip, Passives serialization, nested return and A/B dispatch remain unchanged.
+
+Runtime proof should verify:
+- no stray numbers appear on resource tabs;
+- Action / Bonus Action / spell-slot tabs visually match the keyboard HotBar resource chrome;
+- stacked scrolls, potions and other usable items show the same stack quantity treatment as inventory/keyboard HotBar.

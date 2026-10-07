@@ -205,9 +205,25 @@
         "dataContext": "ActionResource",
         "boxAssets": "CAM-owned references to HotBar box_resource assets",
         "spellSlotOverlay": "RomanNumeralLevelImage",
-        "countOverlay": "ResourcesNumeralDisplay",
-        "countOverlayRule": "visible only when Value exceeds native point-group capacity; hidden for <=1 or MaxValue within group capacity",
-        "rejectedRenderer": "SectionImageStyle"
+        "countOverlay": null,
+        "countOverlayRule": null,
+        "rejectedRenderer": "SectionImageStyle",
+        "normalChrome": {
+          "background": "box_resource_empty.png",
+          "normal": "box_resource_d.png",
+          "selected": "box_resource_h.png",
+          "disabled": "box_resource_missing.png"
+        },
+        "spellSlotChrome": {
+          "background": "box_resourceNum_empty.png",
+          "normal": "box_resourceNum_d.png",
+          "selected": "box_resourceNum_h.png",
+          "disabled": "box_resourceNum_missing.png"
+        },
+        "spellSlotTypes": [
+          "SpellSlot",
+          "WarlockSpellSlot"
+        ]
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -219,10 +235,17 @@
       },
       "itemQuantity": {
         "slotType": "Item",
-        "source": "GameObject.Count",
+        "slotContentType": "VMItem",
+        "slotContentPath": "VMHotBarSlot.Content",
+        "normalTemplate": "Template.Item",
+        "equipmentTemplate": "Template.ItemEquipment",
+        "containerTemplate": "Template.ItemContainer",
+        "property": "Count",
+        "visibilityConverter": "CountToVisibilityConverter",
         "converter": "AbbreviateNumberConverter",
-        "visibility": "CountToVisibilityConverter(1)",
-        "style": "ItemAmountTextStyle"
+        "style": "ItemAmountTextStyle",
+        "camOverlayAllowed": false,
+        "rejectedPath": "VMHotBarSlot.GameObject.Count"
       }
     },
     "tooltipPresentation": {
@@ -274,11 +297,12 @@
       "cantripFilterParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
       "note": "Captured Patch 8 evidence only; not part of the resource-first shipping navigation.",
       "itemQuantity": {
-        "sourceType": "VMGameObject",
+        "sourceType": "VMItem",
         "property": "Count",
-        "hotbarSlotPath": "VMHotBarSlot.GameObject.Count",
+        "hotbarSlotPath": "VMHotBarSlot.Content.Count",
         "converter": "AbbreviateNumberConverter",
-        "style": "ItemAmountTextStyle"
+        "style": "ItemAmountTextStyle",
+        "template": "Template.Item"
       },
       "passives": {
         "executableSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -320,7 +344,7 @@
       "Can LB/RB traverse resource previews -> Passives -> resource previews in both directions while keeping one HotBarList?",
       "Does Passives render executable VMHotBarSlot entries from PassivesHotBar.SlotList and execute through the same UIAccept/UseSlotCommand path?",
       "Immediately after resource or Passives tab entry, does the first concrete cell own visible focus, tooltip, ActionRadials.Tag and resource highlighting before any D-pad move?",
-      "Do item-backed action cells show GameObject.Count when Count > 1?",
+      "Do item-backed action cells use native Template.Item and show VMItem.Count when Count > 1?",
       "Does ordinary D-pad navigation remain synchronized from LocalFocus.DataContext?",
       "Does the proven nested B return still restore the selected resource and its first-cell tooltip?"
     ],

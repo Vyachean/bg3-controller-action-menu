@@ -510,10 +510,10 @@ This remains one level of resource tabs; wrapping changes only presentation and 
 - top-level B still closes because passive mode is not native nested/upcast/container state.
 
 ### Item counts
-- current Patch 8 `VMHotBarSlot` item entries expose `GameObject`;
-- current Patch 8 `VMGameObject` uses `Count` for stack quantity;
-- item cells display `GameObject.Count` with native `AbbreviateNumberConverter` / `ItemAmountTextStyle`, hidden for count <= 1;
-- do not infer quantity from spell names, item names, or resource costs.
+- current Patch 8 `HotBarSlotStyle` proves `SlotType=Item` content is a `VMItem`;
+- keyboard HotBar delegates that content to native `Template.Item`, whose quantity binding is direct `VMItem.Count`;
+- CAM item cells must therefore render `VMHotBarSlot.Content` through `Template.Item` (or the native equipment/container variants) and let that template own `CountToVisibilityConverter`, `AbbreviateNumberConverter`, and `ItemAmountTextStyle`;
+- do not bind stack quantity through `VMHotBarSlot.GameObject` or maintain a separate CAM count overlay.
 
 ### Resource/passive entry focus
 The 0.0.65 split-brain was caused by one-shot `SelectedItem` presentation while stale `LocalFocus` still survived. 0.0.66 later added the missing `LocalFocus = null` boundary.
@@ -585,3 +585,30 @@ Passives remains the single explicit non-resource top-level mode, but entering/l
 - no second resource selection/filter transition may occur from one LB/RB press.
 
 The action-focus authority remains `HotBarList.LocalFocus.DataContext`.
+
+
+## Runtime correction — 0.0.71 -> 0.0.72
+
+0.0.71 runtime disproves two remaining presentation assumptions:
+
+- the CAM-added `ResourcesNumeralDisplay` is not acceptable for top-level tabs; it produces stray-looking resource numbers in the tab row;
+- item quantity cannot be read from `VMHotBarSlot.GameObject.Count` in CAM's direct slot template. Current Patch 8 `HotBarSlotStyle` renders item slots by passing `VMHotBarSlot.Content` (a `VMItem`) into the native `Template.Item`, where quantity is bound directly to `VMItem.Count`.
+
+0.0.72 therefore uses the native presentation seams instead of re-implementing them.
+
+### Resource tabs
+- remove the CAM-authored `ResourcesNumeralDisplay` entirely;
+- keep `LSActionPointResources + ActionResourcesTemplateSelector` for the resource glyph itself;
+- restore the captured Patch 8 `box_resourceNum_*` chrome for `SpellSlot` / `WarlockSpellSlot`;
+- retain `RomanNumeralLevelImage` for slot level;
+- normal resources keep the captured `box_resource_*` chrome;
+- selected CAM tabs may map the native HotBar hover/highlight asset to persistent selected state, but must not invent labels or numeric overlays.
+
+### Item cells
+- a `VMHotBarSlot` remains the focus/dispatch unit;
+- for `SlotType=Item`, presentation switches from the generic `Content.Icon` rectangle to a `ContentPresenter` over `VMHotBarSlot.Content`;
+- ordinary items use native `Template.Item`, which owns `VMItem.Count -> CountToVisibilityConverter -> AbbreviateNumberConverter -> ItemAmountTextStyle`;
+- equipment and item containers use native `Template.ItemEquipment` / `Template.ItemContainer` respectively;
+- CAM must not maintain a separate quantity overlay or bind quantity through `VMHotBarSlot.GameObject`.
+
+Focus, tooltip, Passives transition serialization, and gameplay dispatch are unchanged.
