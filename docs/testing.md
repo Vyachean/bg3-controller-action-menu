@@ -858,3 +858,22 @@ This rejects the 0.0.63 hypotheses (`InvalidateFocus`, `AlwaysSelectFirst`, `Ext
 9. `ForceSelect=True` remains forbidden and hidden resource previews remain disabled.
 
 The next game run is justified only after full package/release CI. Its focused questions are: immediate first-slot focus/A after a tab change (including a one-item tab), visible selector movement through occupied and native empty grid cells, and selected resource-tab visibility when cycling left/right.
+
+
+### 2026-10-07 — 0.0.64 runtime result / 0.0.65 proof boundary
+
+0.0.64 runtime result:
+
+- resource-switch focus and subsequent D-pad navigation are materially improved;
+- the first focused action after a resource switch does not show the normal tooltip until D-pad movement;
+- the selected left-edge resource tab can still remain outside the visible strip.
+
+0.0.65 automatic proof must require:
+
+1. the 0.0.64 concrete-item focus handoff and native `CAM_MainSelector -> SelectorTemplate` path remain unchanged;
+2. the resource-entry 70 ms timer still selects index 0, then uses only that one-shot `HotBarList.SelectedItem` to populate `CAM_ActionTooltip.Content`, invoke `ShowTooltipOnUIElementCommand`, set `ActionRadials.Tag`, and invoke `CreateFocusedTooltipDataCommand` / `HighlightResourcesCommand`;
+3. normal `LocalFocusChanged` retains the existing tooltip/Tag/highlight lifecycle and does not mirror `LocalFocus` into `SelectedItem`;
+4. resource `AutoScrollBehavior` has `BringSelectionIntoView=True` but no explicit `ScrollIntoView` and no `ScrollTo`;
+5. no manual horizontal offset action, `ForceSelect=True`, or extra resource tab layer is introduced.
+
+The next in-game check is limited to two seams: the tooltip must already be visible on the first focused action immediately after a tab change, and the selected resource tab must remain visible while cycling in both directions.

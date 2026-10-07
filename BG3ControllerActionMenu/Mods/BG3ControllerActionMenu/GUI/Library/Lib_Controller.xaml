@@ -277,9 +277,7 @@
                                       ItemContainerStyle="{StaticResource CAM_ResourceTabItemStyle}"
                                       ItemsPanel="{StaticResource CAM_ResourceTabsPanel}">
                             <b:Interaction.Behaviors>
-                                <ls:AutoScrollBehavior ScrollIntoView="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
-                                                       BringSelectionIntoView="True"
-                                                       ScrollTo="Center"/>
+                                <ls:AutoScrollBehavior BringSelectionIntoView="True"/>
                             </b:Interaction.Behaviors>
                             <ls:LSListBox.Template>
                                 <ControlTemplate TargetType="{x:Type ListBox}">
@@ -303,6 +301,9 @@
 
                                 <b:EventTrigger EventName="SelectionChanged">
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
@@ -317,6 +318,22 @@
                                     <b:ChangePropertyAction TargetName="HotBarList"
                                                             PropertyName="SelectedIndex"
                                                             Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding SelectedItem.Content, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolTrueConverter}}"
+                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="ActionRadials"
+                                                            PropertyName="Tag"
+                                                            Value="{Binding SelectedItem, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
                                 </b:TimerTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
