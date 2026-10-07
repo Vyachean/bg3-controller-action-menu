@@ -49,7 +49,7 @@ if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-on
     $evidence.runtimeContract.tooltipPresentation.detailsSurface -ne "native-tooltip-only") {
     throw "CAM must use the ordinary native tooltip only; no Live Details panel is allowed."
 }
-if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "hotbar-filter-chrome-resource-icons-plus-passives" -or
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-passives" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
@@ -58,23 +58,29 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "hotbar-filt
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.max -ne "MaxValue" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.available -ne "Value" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.highlighted -ne "Cost" -or
-    $null -ne $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlay -or
-    $null -ne $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlayRule -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.normal -ne "btn_pil_d.png" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.active -ne "btn_pil_active_d.png" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.disabled -ne "btn_pil_disabled.png" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.marker -ne "btn_pil_inactivemod_d.png" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.markerArrow -ne "ActiveModArrow" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.slices -ne 36 -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.padding -ne 10 -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.filterChrome.itemMargin -ne "-4,0" -or
-    $evidence.runtimeContract.controllerPresentation.resourceRenderer.resourceBarChromeAllowed -ne $false -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.smallActionPointSize -ne 24 -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.actionPointGroupSize -ne 56 -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.normalBoxAssets.background -ne "box_resource_empty.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.normalBoxAssets.normal -ne "box_resource_d.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.normalBoxAssets.highlight -ne "box_resource_h.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.normalBoxAssets.missing -ne "box_resource_missing.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotBoxAssets.background -ne "box_resourceNum_empty.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotBoxAssets.normal -ne "box_resourceNum_d.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotBoxAssets.highlight -ne "box_resourceNum_h.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotBoxAssets.missing -ne "box_resourceNum_missing.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotBoxAssets.chromeMargin -ne "0,-8,0,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.spellSlotOverlayMargin -ne "0,-10,0,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlay -ne "ResourcesNumeralDisplay" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlayRule -ne "visible only when ActionResource.Value > ResourcePoints.MaxGroupActionPoints" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.countOverlayDefaultVisibility -ne "Hidden" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.resourceBarChromeAllowed -ne $true -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.resourceIdentity -ne "LSActionPointResources(ActionResourcesTemplateSelector)" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedRenderer -ne "SectionImageStyle" -or
+    $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedTextFilterChrome -ne "btn_pil_*" -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList" -or
-    $evidence.runtimeContract.controllerPresentation.passivesTab.sameFilterChrome -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.passivesTab.resourceBoxChromeAllowed -ne $false) {
-    throw "Top tabs must use HotBar FilterButton/ActiveFilterButton chrome while preserving native resource identity."
+    $evidence.runtimeContract.controllerPresentation.passivesTab.sameFilterChrome -ne $false -or
+    $evidence.runtimeContract.controllerPresentation.passivesTab.resourceBoxChromeAllowed -ne $true) {
+    throw "Top tabs must mirror the exact Patch 8 Action Resources strip while preserving controller selection semantics."
 }
 if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
     $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
@@ -109,22 +115,25 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "single-row-hotbar-filter-chrome" -or
+if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "single-row-exact-hotbar-action-resources" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.layoutPanel -ne "StackPanel" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.orientation -ne "Horizontal" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.oneLogicalSequence -ne $true -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.includesPassives -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceVisualSize -ne 58 -or
-    $null -ne $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellWidth -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceMinWidth -ne 72 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellHeight -ne 64 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.itemMargin -ne "-4,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackground -ne "bar_resources.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundHeight -ne 64 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundSlices -ne "104,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundMinWidth -ne 208 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.sharedBackgroundWidthRule -ne "visible tab row ActualWidth + 208" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceVisualSize -ne 72 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceButtonMargin -ne "4,-10,4,10" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.itemContainerMargin -ne "-4,0,-4,0" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.horizontalScrollState -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.wrappedRows -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne $null -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.actionViewportHeight -ne 850 -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false) {
-    throw "Top tabs must be one HotBar-filter-chrome row with Passives and no scroll/wrap state."
+    throw "Top tabs must be one exact HotBar Action Resources strip with Passives and no scroll/wrap state."
 }
 if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "Item" -or
     $evidence.runtimeContract.controllerPresentation.itemQuantity.slotContentType -ne "VMItem" -or
