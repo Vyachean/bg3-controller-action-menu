@@ -413,3 +413,22 @@ Remaining runtime defects are now narrower:
 - this one-shot synchronization is allowed only during resource entry. Normal navigation remains `LocalFocusChanged`-owned;
 - resource-tab scrolling must use the native selection-driven `AutoScrollBehavior BringSelectionIntoView=True` mode without an explicit `ScrollIntoView` target. Current runtime evidence rejects both explicit `SelectedItem` and `SelectedIndex` targets for this horizontal strip;
 - do not introduce manual horizontal offsets, tab virtualization, `ForceSelect=True`, or another tab/focus state machine.
+
+
+## Runtime correction — 0.0.65 -> 0.0.66
+
+0.0.65 proves that `HotBarList.SelectedItem` is not the live controller-focus authority. After a resource switch, its index-0 entry can diverge from the visible/native `HotBarList.LocalFocus`, causing tooltip/A state to point at a different slot from the selector.
+
+0.0.66 must keep `LocalFocus.DataContext` as the sole live focus/tooltip/A authority:
+- on resource selection change, clear stale `HotBarList.LocalFocus` before refiltering;
+- retain the 0.0.64 concrete-item handoff after the 70 ms settle window so the newly selected concrete item establishes a fresh LocalFocus event;
+- remove every 0.0.65 resource-entry tooltip/Tag/highlight write sourced from `HotBarList.SelectedItem`;
+- tooltip, `ActionRadials.Tag`, resource highlighting and A execution return exclusively to the existing `LocalFocusChanged -> LocalFocus.DataContext` lifecycle.
+
+Resource-tab scrolling must use the current Patch 8-native element scroll seam:
+- selected resource `ListBoxItem` writes its concrete templated-parent UIElement to `CAM_ResourceTabs.Tag`;
+- the resource list template uses `ls:LSScrollViewer`;
+- `ls:LSScrollViewer.ScrollToElement` binds to `CAM_ResourceTabs.Tag`;
+- do not use `AutoScrollBehavior`, explicit SelectedIndex/SelectedItem scroll targets, or manual horizontal offsets for this strip.
+
+Because CAM reuses `SingleHotBar.SlotList` both for resource-filter results and real nested/upcast/container state, native `ClearSingleHotbarCommand` can legitimately leave the CAM top-level resource list empty after B. CAM must therefore restore the selected resource filter only after a **real nested state** was entered and then all native nested flags returned to false. Top-level B must still close the widget and must not trigger resource restoration.
