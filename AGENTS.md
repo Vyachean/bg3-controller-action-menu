@@ -510,10 +510,10 @@ This remains one level of resource tabs; wrapping changes only presentation and 
 - top-level B still closes because passive mode is not native nested/upcast/container state.
 
 ### Item counts
-- current Patch 8 `VMHotBarSlot` item entries expose `GameObject`;
-- current Patch 8 `VMGameObject` uses `Count` for stack quantity;
-- item cells display `GameObject.Count` with native `AbbreviateNumberConverter` / `ItemAmountTextStyle`, hidden for count <= 1;
-- do not infer quantity from spell names, item names, or resource costs.
+- current Patch 8 `HotBarSlotStyle` proves `SlotType=Item` content is a `VMItem`;
+- keyboard HotBar delegates that content to native `Template.Item`, whose quantity binding is direct `VMItem.Count`;
+- CAM item cells must therefore render `VMHotBarSlot.Content` through `Template.Item` (or the native equipment/container variants) and let that template own `CountToVisibilityConverter`, `AbbreviateNumberConverter`, and `ItemAmountTextStyle`;
+- do not bind stack quantity through `VMHotBarSlot.GameObject` or maintain a separate CAM count overlay.
 
 ### Resource/passive entry focus
 The 0.0.65 split-brain was caused by one-shot `SelectedItem` presentation while stale `LocalFocus` still survived. 0.0.66 later added the missing `LocalFocus = null` boundary.
