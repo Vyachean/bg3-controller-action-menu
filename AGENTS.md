@@ -526,3 +526,29 @@ The 0.0.65 split-brain was caused by one-shot `SelectedItem` presentation while 
 - remove the ineffective 0.0.68 widget-`FocusedElement` presentation trigger.
 
 The one-shot `SelectedItem` path is allowed only because stale `LocalFocus` is cleared first and the exact same selected container is handed to `SetMoveFocusAction`.
+
+
+## Runtime correction — 0.0.69 -> 0.0.70
+
+0.0.69 runtime disproves two assumptions from the previous iteration:
+
+- `LSActionPointResources + ActionResourcesTemplateSelector` is the native resource **point/charge renderer**, not the HotBar resource icon presentation the player expects for tabs;
+- publishing entry state from `HotBarList.SelectedItem` immediately after a deferred `SetMoveFocusAction` can make tooltip/A state advance to index 0 while the authoritative controller `LocalFocus` has not advanced with it.
+
+0.0.70 restores one authority for action identity and uses the native action-resource icon seam:
+
+### Resource tab icons
+- each resource tab keeps the compact 72x72 HotBar resource box;
+- the icon inside the box is an `Image` with `DataContext={Binding ActionResource}` and native `SectionImageStyle`, which resolves `VMActionResource.TypeId` through BG3's action-resource icon paths (including the missing-resource variant);
+- `RomanNumeralLevelImage` remains the level overlay for SpellSlot / WarlockSpellSlot;
+- `LSActionPointResources` is not used as the tab icon renderer.
+
+### Tab-entry focus and tooltip
+- keep the runtime-proven concrete first-`ListBoxItem` focus handoff from 0.0.64;
+- the selected container consumes `CAM_ResetFirstFocusToken`, invokes deferred `SetMoveFocusAction`, then clears the reset token directly;
+- remove `CAM_EntryFocusCommittedToken` and all entry-only `SelectedItem` tooltip/Tag/highlight writes;
+- after programmatic `HotBarList.SelectionChanged`, a delayed wake-up may refresh tooltip/Tag/highlights **only** from `HotBarList.LocalFocus.DataContext`;
+- if `LocalFocus` has not actually moved, no first-cell tooltip/A target may be synthesized;
+- normal D-pad navigation remains `LocalFocusChanged -> LocalFocus.DataContext`.
+
+This makes the visible selector, tooltip, resource highlights, and A dispatch converge on the same authoritative `LocalFocus` instead of treating selection as proof that focus moved.

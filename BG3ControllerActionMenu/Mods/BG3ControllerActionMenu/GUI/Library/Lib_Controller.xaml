@@ -17,7 +17,6 @@
     <System:String x:Key="CAM_ResetFirstFocusToken">CAM_ResetFirstFocus</System:String>
     <System:String x:Key="CAM_NestedEnteredToken">CAM_NestedEntered</System:String>
     <System:String x:Key="CAM_NestedRestoringToken">CAM_NestedRestoring</System:String>
-    <System:String x:Key="CAM_EntryFocusCommittedToken">CAM_EntryFocusCommitted</System:String>
     <System:String x:Key="CAM_TabCycleRightToken">CAM_TabCycleRight</System:String>
     <System:String x:Key="CAM_TabCycleLeftToken">CAM_TabCycleLeft</System:String>
     <System:String x:Key="CAM_TabEnterPassivesToken">CAM_TabEnterPassives</System:String>
@@ -62,7 +61,7 @@
                                                        DeferFocusAction="True"/>
                                 <b:ChangePropertyAction TargetObject="{Binding RelativeSource={RelativeSource AncestorType={x:Type ls:LSListBox}}}"
                                                         PropertyName="Tag"
-                                                        Value="{StaticResource CAM_EntryFocusCommittedToken}"/>
+                                                        Value="{x:Null}"/>
                             </b:DataTrigger>
                         </b:Interaction.Triggers>
                     </Grid>
@@ -170,23 +169,12 @@
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"
                                Visibility="Collapsed"/>
-                        <Border Background="Transparent"
-                                Width="72"
-                                Height="72"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Center">
-                            <ls:LSActionPointResources x:Name="ResourcePoints"
-                                                       Background="Transparent"
-                                                       HorizontalAlignment="Center"
-                                                       MaxActionPoints="{Binding MaxValue}"
-                                                       AvailableActionPoints="{Binding Value}"
-                                                       HighlightedActionPoints="{Binding Cost}"
-                                                       DataContext="{Binding ActionResource}"
-                                                       MaxActionPointGroups="0"
-                                                       SmallActionPointSize="24"
-                                                       ActionPointGroupSize="56"
-                                                       Style="{StaticResource ActionResourcesTemplateSelector}"/>
-                        </Border>
+                        <Image x:Name="ResourceIcon"
+                               DataContext="{Binding ActionResource}"
+                               Style="{StaticResource SectionImageStyle}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
                         <Image x:Name="SpellSlotLevels"
                                Stretch="None"
                                VerticalAlignment="Top"
@@ -385,36 +373,6 @@
                 </b:PropertyChangedTrigger>
 
 
-                <!-- A reset token selects and hands physical focus to the concrete first ListBoxItem.
-                     That item publishes CAM_EntryFocusCommitted only after invoking SetMoveFocusAction.
-                     Complete entry-only tooltip/A state from that exact SelectedItem. -->
-                <b:PropertyChangedTrigger Binding="{Binding Tag, ElementName=HotBarList}">
-                    <b:Interaction.Behaviors>
-                        <b:ConditionBehavior>
-                            <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=HotBarList}"
-                                                       Operator="Equal"
-                                                       RightOperand="{StaticResource CAM_EntryFocusCommittedToken}"/>
-                                <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=HotBarList}"
-                                                       Operator="NotEqual"
-                                                       RightOperand="{x:Null}"/>
-                            </b:ConditionalExpression>
-                        </b:ConditionBehavior>
-                    </b:Interaction.Behaviors>
-                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
-                                            PropertyName="Content"
-                                            Value="{Binding SelectedItem.Content, ElementName=HotBarList}"/>
-                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
-                    <b:ChangePropertyAction TargetName="ActionRadials"
-                                            PropertyName="Tag"
-                                            Value="{Binding SelectedItem, ElementName=HotBarList}"/>
-                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
-                    <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=HotBarList}"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{x:Null}"/>
-                </b:PropertyChangedTrigger>
             </b:Interaction.Triggers>
 
             <Grid x:Name="MainHotbarListHolder" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -824,6 +782,33 @@
                                 </b:EventTrigger>
 
                                 <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:ChangePropertyAction TargetName="ActionRadials"
+                                                            PropertyName="Tag"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                </b:TimerTrigger>
+
+                                <!-- Programmatic tab entry changes SelectedIndex first, then the selected
+                                     concrete container performs deferred SetMoveFocusAction. Wake presentation
+                                     one tick later, but only from the LocalFocus that actually won navigation. -->
+                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
+                                                                       Operator="NotEqual"
+                                                                       RightOperand="{x:Null}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
                                     <b:ChangePropertyAction TargetName="ActionRadials"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>

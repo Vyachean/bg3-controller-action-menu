@@ -979,3 +979,28 @@ Next runtime proof should be limited to:
 - first action immediately focused with matching tooltip after resource and Passives transitions;
 - item/scroll/potion quantities visible when count > 1;
 - nested B return still works.
+
+
+### 2026-10-07 — 0.0.69 runtime result / 0.0.70 proof boundary
+
+0.0.69 runtime:
+- compact tabs render, but their inner resource visuals do not match the keyboard/mouse HotBar icons;
+- after a top-level tab switch the tooltip is populated from the first cell while controller focus/selection remains at the previous coordinate;
+- therefore the `CAM_EntryFocusCommittedToken -> SelectedItem` path is rejected as proof of focus.
+
+0.0.70 automatic proof must require:
+
+1. resource tabs render `ActionResource` with native `SectionImageStyle`; `LSActionPointResources` is absent from the tab template;
+2. spell-slot tabs retain `RomanNumeralLevelImage`;
+3. the concrete selected-item `SetMoveFocusAction(DeferFocusAction=True)` handoff remains, and consuming `CAM_ResetFirstFocusToken` clears the token directly;
+4. `CAM_EntryFocusCommittedToken` and entry-only `SelectedItem` tooltip/Tag/highlight writes are absent;
+5. programmatic entry refresh reads only `HotBarList.LocalFocus.DataContext`;
+6. stale `LocalFocus`, tooltip, A target and resource highlights are cleared before filtering/switching lists;
+7. ordinary D-pad presentation remains `LocalFocusChanged -> LocalFocus.DataContext`;
+8. Passives, item counts and nested-return behavior from 0.0.69 remain intact.
+
+Next runtime proof should check only:
+- resource tab icons against the keyboard/mouse HotBar;
+- resource -> resource, resource -> Passives and Passives -> resource transitions all visibly move the selector to cell 1;
+- tooltip belongs to that same visibly focused cell immediately after the transition;
+- one D-pad move continues from that first cell rather than from the old tab coordinate.

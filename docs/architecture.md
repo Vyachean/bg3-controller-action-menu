@@ -617,3 +617,43 @@ tab transition
 ```
 
 This is deliberately different from 0.0.65: the stale LocalFocus is cleared before the first selected item becomes an entry source.
+
+
+### 0.0.70 — HotBar resource icons and LocalFocus-only entry state
+
+0.0.69 runtime showed that selection and controller focus can still diverge at a top-level tab transition. It also showed that the resource-point control used in 0.0.69 is not the visual icon used by the keyboard/mouse HotBar.
+
+#### Resource visual contract
+
+```text
+VMActionResourceCostPreview
+  -> 72x72 resource box
+  -> Image
+       DataContext = ActionResource
+       Style       = SectionImageStyle
+       TypeId      -> ActionResourceIconsPath / missing-resource icon path
+  -> RomanNumeralLevelImage for SpellSlot / WarlockSpellSlot
+```
+
+`LSActionPointResources` remains a valid BG3 resource-count/point renderer elsewhere, but it is not the resource-tab icon renderer.
+
+#### Entry focus contract
+
+Programmatic tab entry is two separate facts: list selection identifies the intended first item; `LocalFocus` proves where controller navigation actually landed. Only the second fact may drive action state.
+
+```text
+top-level tab transition
+  -> clear HotBarList.LocalFocus + SelectedIndex + stale tooltip/A state
+  -> filter/switch ItemsSource
+  -> settle
+  -> HotBarList.Tag = CAM_ResetFirstFocus
+  -> SelectedIndex = 0
+  -> selected concrete ListBoxItem
+       -> SetMoveFocusAction(DeferFocusAction=True)
+       -> HotBarList.Tag = null
+  -> delayed HotBarList.SelectionChanged wake
+       -> read LocalFocus.DataContext only
+       -> tooltip / highlights / ActionRadials.Tag
+```
+
+The wake-up does not use `SelectedItem`. If deferred focus has not produced a non-null `LocalFocus.DataContext`, the menu must not synthesize a first-cell tooltip or A target. The native `LocalFocusSelector` remains the visible focus source.
