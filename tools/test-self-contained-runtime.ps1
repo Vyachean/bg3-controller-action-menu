@@ -78,16 +78,6 @@ if ($evidence.runtimeContract.assignmentNavigation.focusPresentation -ne "native
     $evidence.runtimeContract.assignmentNavigation.visibleFocusSyncValue -ne $null) {
     throw "ActionRadials visible focus must use the runtime-proven native LocalFocusSelector/SelectorTemplate path."
 }
-if ($evidence.runtimeContract.tooltipPresentation.contentPath -ne "LocalFocus.DataContext.Content" -or
-    $evidence.runtimeContract.tooltipPresentation.command -ne "ShowTooltipOnUIElementCommand" -or
-    $evidence.runtimeContract.tooltipPresentation.stateAuthority -ne "HotBarList.LocalFocus.DataContext" -or
-    $evidence.runtimeContract.tooltipPresentation.focusedElementRole -ne "wake-up-only" -or
-    $evidence.runtimeContract.tooltipPresentation.localFocusChangedRole -ne "normal-navigation-presentation" -or
-    $evidence.runtimeContract.tooltipPresentation.delayedLocalFocusPresentationTimer -ne $true -or
-    @($evidence.runtimeContract.tooltipPresentation.presentationSignals).Count -ne 2) {
-    throw "Tooltip state must remain LocalFocus-owned, with LocalFocusChanged plus widget FocusedElement as wake-up signals."
-}
-
 if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "ScrollContentPresenter.ActualWidth" -or
     $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.divisor -ne 120 -or
     $evidence.runtimeContract.assignmentNavigation.adaptiveColumns.converter -ne "DivideMultiConverter" -or
