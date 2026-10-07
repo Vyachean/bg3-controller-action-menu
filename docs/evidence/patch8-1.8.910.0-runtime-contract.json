@@ -205,9 +205,25 @@
         "dataContext": "ActionResource",
         "boxAssets": "CAM-owned references to HotBar box_resource assets",
         "spellSlotOverlay": "RomanNumeralLevelImage",
-        "countOverlay": "ResourcesNumeralDisplay",
-        "countOverlayRule": "visible only when Value exceeds native point-group capacity; hidden for <=1 or MaxValue within group capacity",
-        "rejectedRenderer": "SectionImageStyle"
+        "countOverlay": null,
+        "countOverlayRule": null,
+        "rejectedRenderer": "SectionImageStyle",
+        "normalChrome": {
+          "background": "box_resource_empty.png",
+          "normal": "box_resource_d.png",
+          "selected": "box_resource_h.png",
+          "disabled": "box_resource_missing.png"
+        },
+        "spellSlotChrome": {
+          "background": "box_resourceNum_empty.png",
+          "normal": "box_resourceNum_d.png",
+          "selected": "box_resourceNum_h.png",
+          "disabled": "box_resourceNum_missing.png"
+        },
+        "spellSlotTypes": [
+          "SpellSlot",
+          "WarlockSpellSlot"
+        ]
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
@@ -219,10 +235,17 @@
       },
       "itemQuantity": {
         "slotType": "Item",
-        "source": "GameObject.Count",
+        "slotContentType": "VMItem",
+        "slotContentPath": "VMHotBarSlot.Content",
+        "normalTemplate": "Template.Item",
+        "equipmentTemplate": "Template.ItemEquipment",
+        "containerTemplate": "Template.ItemContainer",
+        "property": "Count",
+        "visibilityConverter": "CountToVisibilityConverter",
         "converter": "AbbreviateNumberConverter",
-        "visibility": "CountToVisibilityConverter(1)",
-        "style": "ItemAmountTextStyle"
+        "style": "ItemAmountTextStyle",
+        "camOverlayAllowed": false,
+        "rejectedPath": "VMHotBarSlot.GameObject.Count"
       }
     },
     "tooltipPresentation": {
