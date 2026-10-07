@@ -143,7 +143,6 @@ $required = @(
     'b:DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"',
     'FocusElement="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"',
     'LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"',
-    'x:Name="CAM_MainSelector"',
     'Template="{StaticResource SelectorTemplate}"',
     'EmptyCellTemplate="{DynamicResource EmptyCellTemplate}"',
     'Converter="{StaticResource DivideMultiConverter}" ConverterParameter="Floor"',
