@@ -125,22 +125,26 @@ if ($evidence.runtimeContract.assignmentNavigation.adaptiveColumns.source -ne "S
     $evidence.runtimeContract.assignmentNavigation.gridScrolling.gridInternalFocusable -ne $false) {
     throw "Adaptive ActionRadials grid contract is incomplete."
 }
-if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "single-row-hotbar-filter-chrome" -or
+if ($evidence.runtimeContract.controllerPresentation.resourceViewport.mode -ne "single-row-current-hotbar-resource-bar" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.layoutPanel -ne "StackPanel" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.orientation -ne "Horizontal" -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.oneLogicalSequence -ne $true -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.includesPassives -ne $true -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceVisualSize -ne 58 -or
-    $null -ne $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellWidth -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceMinWidth -ne 72 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellHeight -ne 64 -or
-    $evidence.runtimeContract.controllerPresentation.resourceViewport.itemMargin -ne "-4,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellWidth -ne 72 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.resourceCellHeight -ne 72 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.nativeItemContainerMargin -ne "-4,0,-4,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.nativeButtonMargin -ne "4,-10,4,10" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.barBackground -ne "bar_resources.png" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.barHeight -ne 64 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.barMinWidth -ne 208 -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.barSlices -ne "104,0" -or
+    $evidence.runtimeContract.controllerPresentation.resourceViewport.barWidthExtra -ne 208 -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.horizontalScrollState -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.wrappedRows -ne $false -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.scrollOwner -ne $null -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.actionViewportHeight -ne 850 -or
     $evidence.runtimeContract.controllerPresentation.resourceViewport.cycleForceSelect -ne $false) {
-    throw "Top tabs must be one HotBar-filter-chrome row with Passives and no scroll/wrap state."
+    throw "Top tabs must be one exact HotBar action-resource-bar row with Passives and no scroll/wrap state."
 }
 if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "Item" -or
     $evidence.runtimeContract.controllerPresentation.itemQuantity.slotContentType -ne "VMItem" -or
