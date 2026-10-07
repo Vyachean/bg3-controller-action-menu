@@ -36,7 +36,10 @@
     <System:String x:Key="CAM_TabEnterPassivesToken">CAM_TabEnterPassives</System:String>
     <System:String x:Key="CAM_TabReturnFirstToken">CAM_TabReturnFirst</System:String>
     <System:String x:Key="CAM_TabReturnLastToken">CAM_TabReturnLast</System:String>
+    <System:String x:Key="CAM_TabEnterSpecialToken">CAM_TabEnterSpecial</System:String>
+    <System:String x:Key="CAM_CantripsModeToken">CAM_CantripsMode</System:String>
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
+    <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
 
     <Style x:Key="CAM_ActionGridSlotContainer"
            TargetType="{x:Type ListBoxItem}"
@@ -358,6 +361,30 @@
                      IsEnabled="False"
                      Focusable="False"
                      Tag="{x:Null}"/>
+            <ls:LSButton x:Name="CAM_ProviderRestoreCommand"
+                         Visibility="Collapsed"
+                         IsEnabled="False"
+                         Focusable="False"
+                         IsHitTestVisible="False"
+                         Width="0"
+                         Height="0">
+                <ls:LSButton.Style>
+                    <Style TargetType="{x:Type ls:LSButton}">
+                        <Setter Property="Command" Value="{Binding FilterActionResourceCommand}"/>
+                        <Setter Property="CommandParameter" Value="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                                <Setter Property="Command" Value="{Binding FilterCantripsCommand}"/>
+                                <Setter Property="CommandParameter" Value="{StaticResource CAM_CantripFilterParameter}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                <Setter Property="Command" Value="{x:Null}"/>
+                                <Setter Property="CommandParameter" Value="{x:Null}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ls:LSButton.Style>
+            </ls:LSButton>
             <b:Interaction.Triggers>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
@@ -403,8 +430,8 @@
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedRestoringToken}"/>
-                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                    <b:InvokeCommandAction Command="{Binding Command, ElementName=CAM_ProviderRestoreCommand}"
+                                           CommandParameter="{Binding CommandParameter, ElementName=CAM_ProviderRestoreCommand}"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding IsSelectingUpcastedSpell}">
                     <b:Interaction.Behaviors>
@@ -432,8 +459,8 @@
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedRestoringToken}"/>
-                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                    <b:InvokeCommandAction Command="{Binding Command, ElementName=CAM_ProviderRestoreCommand}"
+                                           CommandParameter="{Binding CommandParameter, ElementName=CAM_ProviderRestoreCommand}"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding IsShowingItemsToThrow}">
                     <b:Interaction.Behaviors>
@@ -461,8 +488,8 @@
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedRestoringToken}"/>
-                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                    <b:InvokeCommandAction Command="{Binding Command, ElementName=CAM_ProviderRestoreCommand}"
+                                           CommandParameter="{Binding CommandParameter, ElementName=CAM_ProviderRestoreCommand}"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding SingleHotBar.SlotList.Count}">
                     <b:Interaction.Behaviors>
