@@ -44,8 +44,7 @@ Current captured `HotBar.xaml` proves these executable/deck seams:
 | Native surface | Proven seam | CAM status |
 | --- | --- | --- |
 | resource filters | `ActionResourcesCostPreview -> FilterActionResourceCommand -> SingleHotBar.SlotList` | shipping |
-| Common deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
-| Class deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
+| Common/Class keyboard groups | `KeyboardHotBars[*] -> VMHotBar.SlotList` | shipping as grouped `All` fallback |
 | Items deck | `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList` | shipping / runtime-unverified |
 | Cantrips | `FilterCantripsCommand` with captured parameter `h7d02199dg44ecg4a1egbcacg9cc1cec197b3` | shipping through `SingleHotBar.SlotList` |
 | Passives | `PassivesHotBar.SlotList` | shipping |
@@ -90,13 +89,13 @@ exists but equality with the reference catalog cannot be established statically;
 | nested variants/containers | native radial | `SingleHotBar.SlotList` | proven |
 | throw nested state | native radial | `SingleHotBar.SlotList` + native flag | proven |
 | cantrips | HotBar + radial | `FilterCantripsCommand` -> `SingleHotBar.SlotList` | proven-source / runtime-unverified |
-| free/no-resource actions | Common/Class/radial | no proven complete shipping source | missing-source |
+| free/no-resource actions | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
 | inventory/consumables | ItemHotBar + radial `Inventory.Slots` | `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList` | proven keyboard source / radial parity runtime-unverified |
-| scrolls | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
-| item-charge actions | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
+| scrolls | ItemHotBar + radial `Inventory.Slots` | ItemHotBar + grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
+| item-charge actions | ItemHotBar + radial `Inventory.Slots` | ItemHotBar + grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
 | metamagic toggles | radial metamagic predicate + native `FixedSideBar` | `FixedSideBar.SlotList` | proven-source / runtime-unverified |
-| temporary actions | Common/Class/radial | equality not proven | missing-source |
-| recasts | Common/Class/radial | native nested behavior only when reached | missing-source |
+| temporary actions | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
+| recasts | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback + native nested behavior | keyboard source covered / radial parity runtime-unverified |
 | mod-added actions/resources | native dynamic models | covered only when BG3 exposes a resource preview / proven slot source | runtime-proof |
 
 This table is deliberately conservative. Absence of a known bug is not proof of parity.
@@ -115,6 +114,10 @@ controller category/source
         |
         +-- proven native deck/filter provider
         |        -> VMHotBarSlot collection
+        |
+        +-- All fallback
+        |     KeyboardHotBars[*].SlotList
+        |        -> VMHotBarSlot
         |
         +-- Passives provider
               -> PassivesHotBar.SlotList
