@@ -42,31 +42,43 @@ The current HotBar resource controls are a separate compact 72px strip. CAM does
 
 ## Controller organization
 
-CAM uses a two-level organization that stays entirely on proven BG3 models:
+CAM has one top-level organization dimension:
 
-1. primary controller carousel: **Common -> class -> Cantrips -> Items -> Passives**;
-2. secondary native resource/level strip from `ActionResourcesCostPreview`;
-3. executable `VMHotBarSlot` grid in the order BG3 already exposes.
+```text
+dynamic resource tabs
+        |
+        v
+FilterActionResourceCommand(selected VMActionResourceCostPreview)
+        |
+        v
+SingleHotBar.SlotList
+        |
+        v
+VMHotBarSlot grid
+```
 
-`FilterCantripsCommand` populates the native `SingleHotBar`. CAM therefore explicitly renders `SingleHotBar.SlotList` whenever the Cantrips page is selected instead of temporarily/finally falling back to `CurrentShownDeck.SlotList` from the previous page.
+The former Common/Class/Cantrips/Items/Passives controller carousel is retired. Type/deck tabs are not part of the target product.
 
-The resource strip is visually above the grid but `HotBarList.SelectedIndex=1` starts controller focus on actions, so opening CAM does not force the user through filter controls first.
+The resource row binds directly to `CurrentPlayer.UIData.ActionResourcesCostPreview`. SpellSlot/WarlockSpellSlot entries retain native level data; other and mod-added resources use the native resource name. Duplicated actions across resource tabs are allowed when BG3 exposes separate executable variants.
 
-This deliberately avoids CAM-owned alphabetical sorting or classification by names/icons. Spell levels come from native SpellSlot/WarlockSpellSlot resource objects and `RomanNumeralLevelImage`; class resources come from the same current HotBar preview source. Selecting a primary tab clears any secondary filter before switching the deck/filter command.
+`FREE`, `SCROLLS`, and other non-ActionResource source groups are product targets but require a proven native executable-slot source. They must not be reconstructed from raw assignment catalogs.
+
+There is no CAM Live Details panel. The ordinary native action tooltip remains the only details surface.
 
 ## HotBar filter semantics
 
 The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM:
 
-- `SetCurrentShownDeckCommand("CommonHotBar")`;
-- `SetCurrentShownDeckCommand("ClassHotBar")`;
-- `SetCurrentShownDeckCommand("ItemHotBar")`;
-- `FilterCantripsCommand` with the captured current parameter;
+- `Set## HotBar filter semantics
+
+The current keyboard `HotBar.xaml` capture proves the model/commands used by the resource-first runtime:
+
 - `CurrentPlayer.UIData.ActionResourcesCostPreview`;
 - `FilterActionResourceCommand`;
-- `ClearSingleHotbarCommand`.
+- `SingleHotBar.SlotList`;
+- `ClearSingleHotbarCommand` for actual BG3 nested state.
 
-The tabs are semantic filters, not independent source catalogs. CAM does not classify actions by names, icons, spell levels or custom resource rules.
+Resource tabs are native filters, not independent source catalogs. CAM does not classify actions by class, names, icons, spell names or custom ability tables.
 
 ## SpellBook evidence boundary
 
@@ -158,11 +170,11 @@ CAM does not implement separate cancel semantics.
 
 ## Resource filters
 
-Resource filter cells are the current native `VMActionResourceCostPreview` objects from `ActionResourcesCostPreview`.
+Resource tabs are the current native `VMActionResourceCostPreview` objects from `ActionResourcesCostPreview`.
 
-The project-owned renderer uses the captured model shape (`ActionResource`, `MaxValue`, `Value`, `Cost`) and sends the focused preview object to `FilterActionResourceCommand`.
+Selecting a resource sends that preview object to `FilterActionResourceCommand`. The executable grid then consumes BG3's `SingleHotBar.SlotList`. Resource membership, costs, and any upcast/resource-specific slot materialization remain BG3-owned.
 
-Resource membership and action costs remain BG3-owned.
+Action/Bonus primary-resource refinement is deliberately not implemented through class/spell-name heuristics. If native filters are too broad, a future correction must be based on a proven current property/predicate over executable native slots.
 
 ## Button hints and customization
 
