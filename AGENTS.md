@@ -186,3 +186,15 @@ Therefore do **not** reintroduce the 0.0.49 combination of:
 - simultaneous focus-tree, scrolling, selector, upcast-dispatch and shortcut rewrites in one runtime milestone.
 
 The 0.0.48 in-game observations remain valid evidence of defects, but fixes must be isolated and proven one architectural seam at a time. Stability of resource-tab switching is the first invariant.
+
+
+## Isolated correction after 0.0.50
+
+The first post-rollback runtime correction is intentionally limited to the preserved native weapon-set shortcut.
+
+- `ToggleWeaponSet` must bind the same native event it advertises: `BoundEvent="UISelectionLeft"`.
+- The command remains the existing `SwitchWeaponSetCommand`.
+- The action grid keeps `ActionLeftEvent="UILeft"`; do not remap ordinary grid-left navigation.
+- This correction must not change resource-tab selection, filtering, upcast behavior, focus hierarchy, scrolling, selector geometry, or B handling.
+
+Do not combine another runtime fix into the same release.
