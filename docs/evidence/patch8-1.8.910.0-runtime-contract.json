@@ -52,7 +52,7 @@
     "topLevelCancelCommand": "CustomEvent:CloseWidget",
     "assignmentNavigation": {
       "executableList": "HotBarList",
-      "itemsSource": "SingleHotBar.SlotList | PassivesHotBar.SlotList via IsShowingPassivesDeck",
+      "itemsSource": "SingleHotBar.SlotList | PassivesHotBar.SlotList via CAM_ResourceTabs.Tag",
       "directionalNavigation": "Contained",
       "nextEvent": "UIDown",
       "prevEvent": "UIUp",
