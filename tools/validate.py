@@ -118,7 +118,7 @@ def validate_semantics() -> list[str]:
                 'x:Name="ButtonHintsContainer"',
                 'x:Name="ToggleWeaponSet"',
                 'x:Name="WeaponSetShortcutBinding"',
-                'BoundEvent="UISelectionLeft"',
+                'BoundEvent="ToggleWeaponSet"',
                 'SwitchWeaponSetCommand',
                 'ActionLeftEvent="UILeft"',
                 'x:Name="ShowContextMenu"',

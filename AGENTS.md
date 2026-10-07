@@ -224,3 +224,12 @@ This correction must not change:
 - action-grid dimensions.
 
 Do not combine focus-tree cleanup with this scrolling proof.
+
+
+## Runtime proof — 0.0.52 weapon-set shortcut
+
+0.0.52 is rejected for this shortcut:
+- using an `LSInputBinding` on raw `UISelectionLeft` made the first ordinary left press switch weapon set immediately;
+- subsequent holds fell through to normal grid navigation.
+
+Patch 8 HotBar proves a separate semantic event: `WeaponSetSwitchStyle` binds `BoundEvent="ToggleWeaponSet"`. Therefore the input transport must use `ToggleWeaponSet`, while `UISelectionLeft` remains only the controller hint/physical hold gesture shown by the vanilla `ToggleWeaponSet` visual.
