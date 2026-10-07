@@ -850,10 +850,15 @@ if (-not $entryFocusWake.Success -or
 if ($text.Contains('ResourcesNumeralDisplay') -or
     $text.Contains('GameObject.Count') -or
     $text.Contains('ItemCountHolder') -or
-    $text.Contains('CAM_BoxResource') -or
-    $text.Contains('box_resource_') -or
-    $text.Contains('box_resourceNum_')) {
-    throw "0.0.72 forbids CAM-authored resource numerals and slot-level item quantity overlays."
+    $text.Contains('CAM_FilterButtonBackground') -or
+    $text.Contains('CAM_ActiveFilterButtonBackground') -or
+    $text.Contains('CAM_DisabledFilterButtonBackground') -or
+    $text.Contains('CAM_FilterMarkerBackground') -or
+    $text.Contains('btn_pil_d.png') -or
+    $text.Contains('btn_pil_active_d.png') -or
+    $text.Contains('btn_pil_disabled.png') -or
+    $text.Contains('btn_pil_inactivemod_d.png')) {
+    throw "0.0.75 requires exact HotBar resource-box chrome, keeps resource numerals removed, and forbids slot-level item quantity overlays."
 }
 if ($text.Contains('CAM_EntryFocusCommittedToken') -or
     $text.Contains('Value="{Binding SelectedItem.Content, ElementName=HotBarList}"') -or
