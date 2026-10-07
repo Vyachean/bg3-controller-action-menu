@@ -124,12 +124,14 @@
         "emptyCellPresentation": "DynamicResource EmptyCellTemplate"
       },
       "sourceSwitch": {
-        "modeFlag": "IsShowingPassivesDeck",
-        "command": "SetIsShowingPassivesDeckCommand",
+        "modeStorage": "CAM_ResourceTabs.Tag",
+        "modeToken": "CAM_PassivesModeToken",
+        "ownership": "CAM presentation-only",
         "resourceSource": "SingleHotBar.SlotList",
         "passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
         "executableList": "HotBarList",
-        "duplicateExecutableLists": false
+        "duplicateExecutableLists": false,
+        "unprovenGameplayModeCommandsAllowed": false
       }
     },
     "buttonHintsContainer": {
@@ -190,10 +192,11 @@
       },
       "passivesTab": {
         "source": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
-        "modeFlag": "IsShowingPassivesDeck",
-        "modeCommand": "SetIsShowingPassivesDeckCommand",
+        "modeStorage": "CAM_ResourceTabs.Tag",
+        "modeToken": "CAM_PassivesModeToken",
         "icon": "PassiveFeature_Generic.png",
-        "sameExecutableList": "HotBarList"
+        "sameExecutableList": "HotBarList",
+        "resourceSelectionHighlightSuppressedWhileActive": true
       },
       "itemQuantity": {
         "slotType": "Item",
@@ -238,8 +241,9 @@
       "detailsSurface": "native-tooltip-only",
       "passivesTabAllowed": true,
       "passivesSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
-      "passivesModeFlag": "IsShowingPassivesDeck",
-      "passivesModeCommand": "SetIsShowingPassivesDeckCommand"
+      "passivesModeStorage": "CAM_ResourceTabs.Tag",
+      "passivesModeToken": "CAM_PassivesModeToken",
+      "passivesModeOwnership": "CAM presentation-only"
     },
     "nativeEvidence": {
       "deckCommands": {
@@ -256,6 +260,14 @@
         "hotbarSlotPath": "VMHotBarSlot.GameObject.Count",
         "converter": "AbbreviateNumberConverter",
         "style": "ItemAmountTextStyle"
+      },
+      "passives": {
+        "executableSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList",
+        "itemType": "VMHotBarSlot",
+        "directSourceSwitchPreviouslyUsedByCAM": true,
+        "dedicatedModeFlagProven": false,
+        "dedicatedModeCommandProven": false,
+        "note": "Passives uses proven executable slots; CAM owns only presentation selection state."
       }
     },
     "cancelBehavior": {
