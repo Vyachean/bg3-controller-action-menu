@@ -701,11 +701,12 @@
                             <Image Source="{StaticResource BoxResourceBg}"/>
                             <Image x:Name="CAM_PassivesBg"
                                    Source="{StaticResource BoxResource}"
-                                   Margin="{StaticResource ResourceBackgroundMargin}"/>
+                                   Margin="{StaticResource ResourceBackgroundMargin}"
+                                   Visibility="{Binding IsShowingPassivesDeck, Converter={StaticResource BoolToCollapsedConverter}}"/>
                             <Image x:Name="CAM_PassivesBgHL"
                                    Source="{StaticResource BoxResourceH}"
                                    Margin="{StaticResource ResourceBackgroundMargin}"
-                                   Visibility="Collapsed"/>
+                                   Visibility="{Binding IsShowingPassivesDeck, Converter={StaticResource BoolToVisibleConverter}}"/>
                             <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
                                    Width="48"
                                    Height="48"
@@ -713,16 +714,6 @@
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    IsHitTestVisible="False"/>
-                            <Grid.Style>
-                                <Style TargetType="{x:Type Grid}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsShowingPassivesDeck}" Value="True">
-                                            <Setter TargetName="CAM_PassivesBg" Property="Visibility" Value="Collapsed"/>
-                                            <Setter TargetName="CAM_PassivesBgHL" Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
                         </Grid>
                         </StackPanel>
                     </DockPanel>
