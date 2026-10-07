@@ -167,3 +167,14 @@ The release workflow must fail unless, after publication:
 - transient GitHub publication propagation is tolerated for up to five minutes without accepting a stale release as success.
 
 This is a release-system invariant, not an optional manual check.
+
+
+### CI authentication for release resolution
+
+The operator-facing VBS remains usable without credentials. In GitHub Actions, release-resolution checks use the workflow-provided `GH_TOKEN` when present so CI does not depend on the anonymous Releases API rate limit.
+
+- normal operator launch: no token required;
+- CI standalone-VBS checks receive the workflow token through `GH_TOKEN`;
+- `Install-BG3ControllerActionMenu.vbs` adds an Authorization header only when `GH_TOKEN` or `GITHUB_TOKEN` already exists in its environment;
+- no token is persisted to launcher logs, metadata, cache, or release assets;
+- absence of a token preserves the public unauthenticated launcher path.
