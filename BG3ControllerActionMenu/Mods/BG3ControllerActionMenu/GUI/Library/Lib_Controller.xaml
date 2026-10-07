@@ -534,7 +534,7 @@
                 </ls:LSButton>
 
                 <ls:LSInputBinding x:Name="WeaponSetShortcutBinding"
-                                   BoundEvent="UISelectionLeft"
+                                   BoundEvent="ToggleWeaponSet"
                                    Command="{Binding SwitchWeaponSetCommand}"
                                    EatInput="False"/>
 
