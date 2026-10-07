@@ -781,3 +781,41 @@ VMActionResourceCostPreview
 ```
 
 The `box_resource_*` and `box_resourceNum_*` assets are no longer part of the top-level tab chrome. Resource-value text remains absent. Passives uses the same filter chrome so the full LB/RB sequence reads as one native filter row.
+
+
+### 0.0.77 — native ActionResourcesList item, controller selection outside presentation
+
+Controller selection and resource presentation are separate layers:
+
+```text
+CAM_ResourceTabs : LSListBox
+  selection -> FilterActionResourceCommand
+  no selection visual
+  |
+  +-- ItemContainerStyle
+  |     transparent ContentPresenter only
+  |     Margin=-4,0,-4,0
+  |
+  +-- ItemTemplate = captured ActionResourcesList visual
+        LSButton Padding=0 Margin=4,-10,4,10
+          Root Width=72
+            box_resource_* layers
+            LSActionPointResources
+              MaxActionPoints=MaxValue
+              AvailableActionPoints=Value
+              HighlightedActionPoints=Cost
+              DataContext=ActionResource
+              MaxActionPointGroups=0
+              SmallActionPointSize=24
+              ActionPointGroupSize=56
+              ActionResourcesTemplateSelector
+            RomanNumeralLevelImage
+            ResourcesNumeralDisplay
+        visual triggers:
+          Root.Tag=SpellSlot -> box_resourceNum_*
+          IsMouseOver -> highlighted box
+          Value=0 -> missing box
+          BardicInspiration -> native numeral adjustment
+```
+
+LB/RB changes only selection/filter semantics. Native resource content does not know whether its outer controller list item is selected.
