@@ -77,11 +77,18 @@ The product target additionally includes FREE/SCROLLS/charge-based source groups
 
 ## Execution and upcast boundary
 
-CAM never executes a raw `VMCharacterAction`, `VMUpcast`, `VMItem`, or `VMPassive` directly. The executable unit is the surrounding `VMHotBarSlot`.
+The normal executable unit remains the native `VMHotBarSlot`. Patch 8 HotBar evidence additionally proves one narrow exception for native upcast execution:
 
-Resource-filtered `SingleHotBar.SlotList` is intentionally used because it may already materialize resource-specific execution variants. For example, a Spell Slot IV filter may expose `VMHotBarSlot` entries whose content represents IV-level upcasts.
+```text
+VMHotBarSlot.Content.SpellUpcast -> VMUpcast[]
+HotBarSlotStyle:
+  Command = UseSlotCommand
+  CommandParameter = VMUpcast
+```
 
-This is a runtime proof boundary. If BG3 still opens `IsSelectingUpcastedSpell` after selecting an action, CAM retains the native nested `SingleHotBar` fallback rather than recreating upcast rules.
+Runtime 0.0.48 proved that `FilterActionResourceCommand(SpellSlot N)` still leaves upcastable spells as the base slot. CAM may therefore project a **native execution proxy** for spell-slot tabs: from the focused slot's existing `Content.SpellUpcast`, choose the `VMUpcast` whose `SlotLevel` equals the selected resource's `ActionResource.SpellSlotLevel`. That `VMUpcast` may be used directly for tooltip/resource highlight/`UseSlotCommand`, exactly as current HotBar does.
+
+CAM still does not construct `VMUpcast`, calculate spell values, or use raw assignment catalogs. If no matching native `VMUpcast` exists, the base `VMHotBarSlot` remains the fallback and BG3 may open its native nested selector.
 
 ## ACTION / BONUS primary-resource policy
 
@@ -110,7 +117,9 @@ The ordinary native tooltip is the details surface. On action focus:
 
 Resource filtering is the top-level browsing state, so a populated `SingleHotBar.SlotList` must not by itself make B behave as a nested-back action.
 
-Top-level B closes CAM when no BG3 nested variant/upcast/throw state is active. When BG3 opens a real nested state such as `IsShowingAContainerWithVariants`, `IsSelectingUpcastedSpell`, or `IsShowingItemsToThrow`, B retains the native nested cancellation behavior.
+Top-level B closes CAM when no BG3 nested variant/upcast/throw state is active. Real nested state still uses `ClearSingleHotbarCommand`.
+
+Runtime 0.0.48 proved an additional invariant: clearing nested state also clears the top-level resource-filter result. When the three nested-state flags return to false and a resource tab is still selected, CAM must immediately re-run `FilterActionResourceCommand(CAM_ResourceTabs.SelectedItem)` before restoring grid focus. Returning from nested B must never leave the selected resource tab visually active over an empty grid.
 
 ## Rejected data paths
 
@@ -128,6 +137,18 @@ They may provide research evidence, but dispatch remains native `VMHotBarSlot`.
 Runtime source remains `BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml`.
 
 The release PAK contains project-owned runtime resources only. Normal installation does not read `Game.pak`, run LSLib, generate XAML, or rebuild a PAK locally.
+
+## Focus and scrolling
+
+0.0.48 rejected the leftover two-list shell in which one outer list owned a single nested executable list. It produced invisible focus transitions, clipped lower rows, missing scroll tracking, and selector coordinate drift.
+
+The main resource-filtered `HotBarList` now directly owns the executable `SingleHotBar.SlotList` cells, the `LSGrid`, the native tooltip, and `LocalFocusSelector`. Its selector shares the exact same coordinate root as the list. The vertical ScrollViewer follows the focused/selected cell instead of trying to scroll a wrapper item.
+
+The resource-tab list is separate from D-pad navigation. LB/RB changes selection; the horizontal viewport must bring the newly selected tab into view and then return gameplay focus to the action grid.
+
+## Preserved controller shortcuts
+
+The native radial exposes weapon-set switching as a hold action on `UISelectionLeft` using `SwitchWeaponSetCommand`. CAM keeps that feature. Because the action grid consumes ordinary `UILeft` for navigation, the shortcut must bind the distinct `UISelectionLeft` event explicitly; the hint must not advertise a dead command.
 
 ## Proof boundary
 

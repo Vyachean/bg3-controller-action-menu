@@ -67,16 +67,16 @@ There is no CAM Live Details panel. The ordinary native action tooltip remains t
 
 ## HotBar filter semantics
 
-The current keyboard `HotBar.xaml` capture proves the model/commands used by CAM:
-
-- `Set## HotBar filter semantics
-
 The current keyboard `HotBar.xaml` capture proves the model/commands used by the resource-first runtime:
 
 - `CurrentPlayer.UIData.ActionResourcesCostPreview`;
 - `FilterActionResourceCommand`;
 - `SingleHotBar.SlotList`;
+- `CurrentActiveSlot.Content.SpellUpcast`;
+- `VMUpcast.SlotLevel`;
 - `ClearSingleHotbarCommand` for actual BG3 nested state.
+
+The same current `HotBarSlotStyle` binds `UseSlotCommand` and `CommandParameter="{Binding}"`. In the native upcast strip the DataContext is a `VMUpcast`, proving that a native `VMUpcast` itself is a valid `UseSlotCommand` parameter.
 
 Resource tabs are native filters, not independent source catalogs. CAM does not classify actions by class, names, icons, spell names or custom ability tables.
 
@@ -88,28 +88,28 @@ They remain useful evidence for how BG3 groups SpellBook presentation, but they 
 
 ## Controller focus and dispatch
 
-The current native radial lifecycle uses the focused item's **DataContext**.
+The main grid directly owns native `VMHotBarSlot` cells from `SingleHotBar.SlotList`; there is no extra one-item outer focus list.
 
 ```text
-CAM_FilteredSlotList.LocalFocus.DataContext
+HotBarList.LocalFocus.DataContext = VMHotBarSlot
         |
         +--> ActionRadials.Tag
         +--> CreateFocusedTooltipDataCommand(slot)
         +--> HighlightResourcesCommand(slot)
         |
         v
-UIAccept -> UseSlotCommand(ActionRadials.Tag)
+base UIAccept -> UseSlotCommand(ActionRadials.Tag)
 ```
 
-The capture proves the native sequence:
+For a selected SpellSlot/WarlockSpellSlot tab, the cell may additionally expose a matching native `VMUpcast` from `VMHotBarSlot.Content.SpellUpcast`. Equality is native-data-only:
 
-1. on `LocalFocusChanged`, clear the previous tag/tooltip/resource highlight and play the hover sound;
-2. after the native 70 ms delay, write `LocalFocus.DataContext` into `ActionRadials.Tag`;
-3. create focused tooltip data and highlight resources for that same native slot.
+```text
+VMUpcast.SlotLevel == CAM_ResourceTabs.SelectedItem.ActionResource.SpellSlotLevel
+```
 
-The older development fixture's `LocalFocus.Tag` handoff is rejected.
+When a matching native `VMUpcast` exists, it owns tooltip/resource highlight and an explicit `UIAccept -> UseSlotCommand(VMUpcast)`; the base page-level binding is disabled for that focused upcastable cell to avoid double dispatch. If no match exists, the base VMHotBarSlot path remains unchanged.
 
-The item container may still expose `Tag="{Binding .}"` as ordinary presentation metadata, but the current gameplay-facing focus lifecycle does not depend on it.
+The older development fixture's generic raw assignment objects and CAM-computed spell variants remain rejected.
 
 ## Focused action descriptions
 
@@ -125,7 +125,7 @@ HotBarList.LocalFocus.DataContext = VMHotBarSlot
         +--> existing 70 ms ActionRadials.Tag / focused-tooltip-data lifecycle
 ```
 
-The tooltip content is the native action/item/passive object, not CAM-authored description text. The same pattern is present on `SingleBar` for variants/upcasts.
+The tooltip content is native data, never CAM-authored description text. For a normal cell it is `VMHotBarSlot.Content`. For a spell-slot cell with a matching native `VMUpcast`, the tooltip content is that `VMUpcast` itself, which current Tooltips.xaml renders through the native SpellsTooltip template.
 
 ## Navigation reuse
 
