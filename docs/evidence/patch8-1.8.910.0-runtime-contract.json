@@ -181,19 +181,22 @@
       "genericTabLabel": null,
       "spellSlotTabLabel": "RomanNumeralLevelImage",
       "resourceViewport": {
-        "mode": "single-row-native-icons",
+        "mode": "single-row-hotbar-filter-chrome",
         "layoutPanel": "StackPanel",
         "orientation": "Horizontal",
         "oneLogicalSequence": true,
         "includesPassives": true,
-        "resourceCellWidth": 76,
-        "resourceVisualSize": 72,
+        "resourceCellWidth": null,
+        "resourceVisualSize": 58,
         "cycleForceSelect": false,
         "hiddenPreviewSelection": "collapsed+disabled; ordinary cycle only",
         "horizontalScrollState": false,
         "wrappedRows": false,
         "scrollOwner": null,
-        "actionViewportHeight": 850
+        "actionViewportHeight": 850,
+        "resourceMinWidth": 72,
+        "resourceCellHeight": 64,
+        "itemMargin": "-4,0"
       },
       "resourceRenderer": {
         "size": 72,
@@ -233,7 +236,8 @@
         "sameExecutableList": "HotBarList",
         "resourceSelectionHighlightSuppressedWhileActive": true,
         "chrome": "HotBar FilterButton/ActiveFilterButton",
-        "resourceBoxChromeAllowed": false
+        "resourceBoxChromeAllowed": false,
+        "sameFilterChrome": true
       },
       "itemQuantity": {
         "slotType": "Item",
