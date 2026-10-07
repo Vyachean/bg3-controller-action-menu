@@ -104,7 +104,6 @@
         "restoreSelectedIndex": 0,
         "focusTarget": "selected concrete ListBoxItem templated parent",
         "focusAction": "SetMoveFocusAction(DeferFocusAction=True)",
-        "clearsTokenAfterFocus": true,
         "clearLocalFocus": true,
         "invalidateFocus": false,
         "focusesListContainer": false,
@@ -113,7 +112,9 @@
         "selectedItemEntryStateWrites": true,
         "programmaticWakeSignal": "HotBarList.Tag entry-focus commit",
         "programmaticStateSource": "HotBarList.SelectedItem after LocalFocus reset",
-        "entryCommitToken": "CAM_EntryFocusCommittedToken"
+        "entryCommitToken": "CAM_EntryFocusCommittedToken",
+        "focusPublishesEntryCommit": true,
+        "clearsTokenAfterEntryCommit": true
       },
       "visibleFocusChrome": {
         "source": "HotBarList.LocalFocusSelector",
