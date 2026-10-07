@@ -265,6 +265,11 @@ $required = @(
     'x:Name="ResourcesNumeralDisplay"',
     'Converter="{StaticResource LessThanOrEqualMultiConverter}"',
     'ElementName="ResourcePoints" Path="MaxGroupActionPoints"',
+    'x:Name="CAM_CantripsTab"',
+    'x:Key="CAM_CantripsModeToken"',
+    'x:Key="CAM_CantripFilterParameter"',
+    'x:Name="CAM_ProviderRestoreCommand"',
+    'h7d02199dg44ecg4a1egbcacg9cc1cec197b3',
     'x:Name="CAM_PassivesTab"',
     'x:Key="CAM_PassivesModeToken"',
     'x:Key="CAM_TabReturnLastToken"',
@@ -433,7 +438,7 @@ if (-not $closeTrigger.Success) {
     throw "Top-level B close trigger must be the exact three-native-nested-flags -> CloseWidget contract."
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs use captured HotBar chrome, item slots delegate to native VMItem templates, Passives is serialized, entry focus is concrete-first, and top-level B remains separated from true nested state."
+Write-Host "Self-contained Patch 8 runtime contract passed: resource and Cantrips providers use captured HotBar semantics, Passives stays serialized, nested return restores the active provider, and focus/tooltip remain LocalFocus-driven."
 
 
 # Weapon-set switching is deliberately absent from CAM after repeated runtime failures.
@@ -567,27 +572,35 @@ $tabRight = [regex]::Match(
 )
 if (-not $tabLeft.Success -or -not $tabRight.Success -or
     -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
+    -not $tabLeft.Value.Contains('CAM_TabEnterSpecialToken') -or
     -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $tabLeft.Value.Contains('CAM_CantripsModeToken') -or
     -not $tabLeft.Value.Contains('CAM_PassivesModeToken') -or
+    -not $tabLeft.Value.Contains('FilterCantripsCommand') -or
     -not $tabLeft.Value.Contains('MillisecondsPerTick="90"') -or
     -not $tabLeft.Value.Contains('Reversed="True"') -or
     -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
+    -not $tabRight.Value.Contains('CAM_TabEnterSpecialToken') -or
+    -not $tabRight.Value.Contains('CAM_CantripsModeToken') -or
     -not $tabRight.Value.Contains('CAM_PassivesModeToken') -or
     -not $tabRight.Value.Contains('MillisecondsPerTick="70"') -or
     -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
     $tabLeft.Value.Contains('ForceSelect="True"') -or
     $tabRight.Value.Contains('ForceSelect="True"')) {
-    throw "LB/RB must form one resource-plus-Passives cycle without ForceSelect."
+    throw "LB/RB must form one resource-plus-Cantrips-plus-Passives cycle without ForceSelect."
 }
 
-if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 4 -or
+if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 5 -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
     -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    -not $resourceTabs.Value.Contains('FilterCantripsCommand') -or
+    -not $resourceTabs.Value.Contains('CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips') -or
     [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
-    [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 3) {
-    throw "Resource selection must distinguish right-wrap Passives entry from ordinary native resource filtering and clear stale LocalFocus."
+    [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 4) {
+    throw "Resource selection must route right-wrap to native Cantrips when available and otherwise Passives, while ordinary resource filtering stays native."
 }
 
 $resourceRestoreTimer = [regex]::Match(
@@ -676,39 +689,40 @@ if (-not $resourceTabsItemTemplate.Success -or
     throw "CAM_ResourceTabs must separate controller container behavior from native resource item presentation."
 }
 
-$passivesLeftReturn = [regex]::Match(
-    $tabLeft.Value,
-    '<b:EventTrigger EventName="Click">[\s\S]*?CAM_PassivesModeToken[\s\S]*?CAM_TabReturnLastToken[\s\S]*?SelectNextListBoxItem[\s\S]*?</b:EventTrigger>',
+$cantripTab = [regex]::Match(
+    $text,
+    '<Grid\b[^>]*x:Name="CAM_CantripsTab"[\s\S]*?(?=<Grid\b[^>]*x:Name="CAM_PassivesTab")',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-$passivesLeftTimer = [regex]::Match(
-    $tabLeft.Value,
-    '<b:TimerTrigger EventName="Click" MillisecondsPerTick="90" TotalTicks="1">[\s\S]*?CAM_TabReturnLastToken[\s\S]*?TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="\{x:Null\}"[\s\S]*?CAM_ResetFirstFocusToken[\s\S]*?</b:TimerTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-$passivesRightReturn = [regex]::Match(
-    $tabRight.Value,
-    '<b:EventTrigger EventName="Click">[\s\S]*?CAM_PassivesModeToken[\s\S]*?CAM_TabReturnFirstToken[\s\S]*?FilterActionResourceCommand[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-$passivesRightTimer = [regex]::Match(
-    $tabRight.Value,
-    '<b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?CAM_TabReturnFirstToken[\s\S]*?TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="\{x:Null\}"[\s\S]*?CAM_ResetFirstFocusToken[\s\S]*?</b:TimerTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-$returnLastPrepare = [regex]::Match(
-    $resourceTabs.Value,
-    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?CAM_TabReturnLastToken[\s\S]*?FilterActionResourceCommand[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $passivesLeftReturn.Success -or -not $passivesLeftTimer.Success -or
-    -not $passivesRightReturn.Success -or -not $passivesRightTimer.Success -or
-    -not $returnLastPrepare.Success) {
-    throw "Passives return must prepare a resource while passive mode is still active, then switch sources only at the delayed boundary."
+if (-not $cantripTab.Success -or
+    -not $cantripTab.Value.Contains('PlayerCharacterProperties.HasCantrips') -or
+    -not $cantripTab.Value.Contains('IconMiniCantrip') -or
+    -not $cantripTab.Value.Contains('CAM_CantripsModeToken') -or
+    -not $cantripTab.Value.Contains('CAM_BoxResourceBg') -or
+    -not $cantripTab.Value.Contains('CAM_BoxResourceH')) {
+    throw "Cantrips must be a native resource-box-style provider tab gated by HasCantrips."
 }
-if ($passivesLeftReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"') -or
-    $passivesRightReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"')) {
-    throw "A Passives-return Click must not clear passive mode before the originating shoulder event completes."
+
+if ([regex]::Matches($tabLeft.Value, 'CAM_CantripsModeToken').Count -lt 2 -or
+    -not $tabLeft.Value.Contains('CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips') -or
+    -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $tabRight.Value.Contains('CAM_CantripsModeToken') -or
+    -not $tabRight.Value.Contains('CAM_TabReturnFirstToken')) {
+    throw "Shoulder navigation must serialize resource <-> Cantrips <-> Passives transitions and preserve resource wrap."
+}
+
+$providerRestore = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="CAM_ProviderRestoreCommand"[\s\S]*?</ls:LSButton>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $providerRestore.Success -or
+    -not $providerRestore.Value.Contains('FilterActionResourceCommand') -or
+    -not $providerRestore.Value.Contains('CAM_CantripsModeToken') -or
+    -not $providerRestore.Value.Contains('FilterCantripsCommand') -or
+    -not $providerRestore.Value.Contains('CAM_CantripFilterParameter') -or
+    -not $providerRestore.Value.Contains('CAM_PassivesModeToken')) {
+    throw "Nested return must restore the active native provider through one provider dispatcher."
 }
 
 $passivesTab = [regex]::Match(
@@ -766,9 +780,9 @@ foreach ($flag in @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell'
     if (-not [regex]::IsMatch($text, $enterPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
         throw "Entering native nested state must arm CAM nested-return restoration: $flag"
     }
-    $exitPattern = '<b:PropertyChangedTrigger Binding="\{Binding ' + $flag + '\}">[\s\S]*?CAM_NestedEnteredToken[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CAM_NestedRestoringToken[\s\S]*?FilterActionResourceCommand[\s\S]*?CommandParameter="\{Binding SelectedItem, ElementName=CAM_ResourceTabs\}"[\s\S]*?</b:PropertyChangedTrigger>'
+    $exitPattern = '<b:PropertyChangedTrigger Binding="\{Binding ' + $flag + '\}">[\s\S]*?CAM_NestedEnteredToken[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CAM_NestedRestoringToken[\s\S]*?CAM_ProviderRestoreCommand[\s\S]*?</b:PropertyChangedTrigger>'
     if (-not [regex]::IsMatch($text, $exitPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-        throw "Exiting native nested state must restore the selected resource only after all nested flags clear: $flag"
+        throw "Exiting native nested state must restore the active provider only after all nested flags clear: $flag"
     }
 }
 $nestedRepopulation = [regex]::Match(
