@@ -22,6 +22,7 @@
     <System:String x:Key="CAM_TabCycleLeftToken">CAM_TabCycleLeft</System:String>
     <System:String x:Key="CAM_TabEnterPassivesToken">CAM_TabEnterPassives</System:String>
     <System:String x:Key="CAM_TabReturnFirstToken">CAM_TabReturnFirst</System:String>
+    <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
 
     <Style x:Key="CAM_ActionGridSlotContainer"
            TargetType="{x:Type ListBoxItem}"
@@ -197,14 +198,10 @@
                                DataContext="{Binding ActionResource}"/>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}" Value="True"/>
-                                <Condition Binding="{Binding DataContext.IsShowingPassivesDeck, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" Value="False"/>
-                            </MultiDataTrigger.Conditions>
+                        <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
-                        </MultiDataTrigger>
+                        </Trigger>
                         <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
                             <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>
@@ -249,6 +246,11 @@
                      Focusable="False"
                      Tag="{x:Null}"/>
             <Control x:Name="CAM_TabCycleMarker"
+                     Visibility="Collapsed"
+                     IsEnabled="False"
+                     Focusable="False"
+                     Tag="{x:Null}"/>
+            <Control x:Name="CAM_PassivesModeMarker"
                      Visibility="Collapsed"
                      IsEnabled="False"
                      Focusable="False"
@@ -450,12 +452,12 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsShowingPassivesDeck}" Operator="Equal" RightOperand="True"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleLeftToken}"/>
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource FalseValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <ls:SelectNextListBoxItem Reversed="True"
                                                               TargetObject="{Binding ElementName=CAM_ResourceTabs}"
                                                               ForceMode="Cycle"/>
@@ -466,7 +468,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsShowingPassivesDeck}" Operator="Equal" RightOperand="False"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -478,7 +480,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterPassivesToken}"/>
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource TrueValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                 </b:EventTrigger>
 
                                 <!-- Ordinary previous native resource. -->
@@ -486,7 +488,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsShowingPassivesDeck}" Operator="Equal" RightOperand="False"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="GreaterThan" RightOperand="0"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -530,7 +532,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsShowingPassivesDeck}" Operator="Equal" RightOperand="True"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{x:Null}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -542,7 +544,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabReturnFirstToken}"/>
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource FalseValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                 </b:EventTrigger>
 
@@ -551,7 +553,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsShowingPassivesDeck}" Operator="Equal" RightOperand="False"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -622,7 +624,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource TrueValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:EventTrigger>
 
@@ -647,7 +649,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource FalseValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -672,7 +674,7 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource FalseValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -689,7 +691,7 @@
                                 </b:TimerTrigger>
 
                                 <b:EventTrigger EventName="Loaded">
-                                    <b:InvokeCommandAction Command="{Binding SetIsShowingPassivesDeckCommand}" CommandParameter="{StaticResource FalseValue}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_PassivesModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
@@ -709,14 +711,32 @@
                               Margin="4,0,0,0"
                               Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
                             <Image Source="{StaticResource CAM_BoxResourceBg}"/>
-                            <Image x:Name="CAM_PassivesBg"
-                                   Source="{StaticResource CAM_BoxResource}"
-                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}"
-                                   Visibility="{Binding IsShowingPassivesDeck, Converter={StaticResource BoolToCollapsedConverter}}"/>
-                            <Image x:Name="CAM_PassivesBgHL"
-                                   Source="{StaticResource CAM_BoxResourceH}"
-                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}"
-                                   Visibility="{Binding IsShowingPassivesDeck, Converter={StaticResource BoolToVisibleConverter}}"/>
+                            <Image Source="{StaticResource CAM_BoxResource}"
+                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}">
+                                <Image.Style>
+                                    <Style TargetType="{x:Type Image}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <Image Source="{StaticResource CAM_BoxResourceH}"
+                                   Margin="{StaticResource CAM_ResourceBackgroundMargin}">
+                                <Image.Style>
+                                    <Style TargetType="{x:Type Image}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
                                    Width="48"
                                    Height="48"
@@ -758,7 +778,7 @@
                                 <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
                                     <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsShowingPassivesDeck}" Value="True">
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_PassivesModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
                                         </DataTrigger>
