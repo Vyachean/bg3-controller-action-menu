@@ -113,7 +113,8 @@ $required = @(
     'x:Name="ButtonHintsContainer"',
     'x:Name="ToggleWeaponSet"',
     'x:Name="WeaponSetShortcutBinding"',
-    'BoundEvent="ToggleWeaponSet"',
+    'BoundEvent="UISelectionLeft"',
+    'HoldTime="{StaticResource HoldTimeShortcuts}"',
     'Command="{Binding SwitchWeaponSetCommand}"',
     'ActionLeftEvent="UILeft"',
     'x:Name="ShowContextMenu"',
@@ -260,10 +261,11 @@ $weaponBinding = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $weaponBinding.Success -or
-    -not $weaponBinding.Value.Contains('BoundEvent="ToggleWeaponSet"') -or
+    -not $weaponBinding.Value.Contains('BoundEvent="UISelectionLeft"') -or
+    -not $weaponBinding.Value.Contains('HoldTime="{StaticResource HoldTimeShortcuts}"') -or
     -not $weaponBinding.Value.Contains('Command="{Binding SwitchWeaponSetCommand}"') -or
     -not $weaponBinding.Value.Contains('EatInput="False"')) {
-    throw "WeaponSetShortcutBinding must own native ToggleWeaponSet transport."
+    throw "WeaponSetShortcutBinding must use native held UISelectionLeft transport with HoldTimeShortcuts."
 }
 if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
     throw "Ordinary grid-left navigation must remain UILeft."
@@ -291,4 +293,13 @@ foreach ($flag in @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell'
     if (-not [regex]::IsMatch($text, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
         throw "Nested-state focus must remain on HotBarList: $flag"
     }
+}
+
+
+# 0.0.56: short D-pad Left must remain grid navigation; weapon switching is hold-only.
+if ($weaponBinding.Value.Contains('BoundEvent="ToggleWeaponSet"')) {
+    throw "Semantic ToggleWeaponSet binding is rejected here: runtime proved it fires on ordinary press."
+}
+if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
+    throw "Short left navigation must remain on UILeft while weapon switching uses held UISelectionLeft."
 }

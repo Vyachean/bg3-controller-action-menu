@@ -155,7 +155,25 @@
       "Does the direct HotBarList ScrollViewer keep lower focused rows visible?",
       "Does CAM_MainSelector align with direct HotBarList cells?",
       "After nested B, does BG3 restore the resource-filtered list or leave it empty, requiring an isolated filter-restore fix?"
-    ]
+    ],
+    "controllerShortcuts": {
+      "toggleWeaponSet": {
+        "visualInputHint": "UISelectionLeft",
+        "visualStyle": "ControllerHoldButtonStyle",
+        "visualOwnsBoundEvent": false,
+        "transportType": "LSInputBinding",
+        "transportEvent": "UISelectionLeft",
+        "transportHoldTimeResource": "HoldTimeShortcuts",
+        "transportCommand": "SwitchWeaponSetCommand",
+        "eatInput": false,
+        "shortGridLeftEvent": "UILeft",
+        "rejectedTransports": [
+          "visual BoundEvent=UISelectionLeft",
+          "LSInputBinding UISelectionLeft without HoldTime",
+          "LSInputBinding ToggleWeaponSet"
+        ]
+      }
+    }
   },
   "captureMatchCount": 22,
   "captureScanErrorCount": 0
