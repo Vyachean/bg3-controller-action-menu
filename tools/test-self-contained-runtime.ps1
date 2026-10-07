@@ -42,7 +42,6 @@ if ($evidence.runtimeContract.coverageContract.status -ne "incomplete-until-nati
     throw "Runtime evidence must carry the controller HotBar parity contract."
 }
 $requiredCoverageGaps = @(
-    "cantrips",
     "free/no-resource actions",
     "inventory/consumables",
     "scrolls",
@@ -61,11 +60,16 @@ if ($evidence.runtimeContract.assignmentNavigation.gridScrolling.focusFollow.sou
     throw "Action-grid evidence must use the captured controller focus-follow scroll seam."
 }
 
-if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passives" -or
+if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrips-plus-passives" -or
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
     $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | PassivesHotBar.SlotList" -or
+    $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
+    $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
+    $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
+    $evidence.runtimeContract.organization.cantripsCommandParameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $evidence.runtimeContract.organization.cantripsModeToken -ne "CAM_CantripsModeToken" -or
     $evidence.runtimeContract.organization.passivesTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
     $evidence.runtimeContract.organization.passivesModeStorage -ne "CAM_ResourceTabs.Tag" -or
@@ -73,13 +77,13 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-passive
     $evidence.runtimeContract.organization.passivesModeOwnership -ne "CAM presentation-only" -or
     $evidence.runtimeContract.organization.typeTabsAllowed -ne $false -or
     $evidence.runtimeContract.organization.secondaryResourceLayerAllowed -ne $false) {
-    throw "Resource-first plus Passives organization evidence is incomplete or regressed."
+    throw "Resource-first plus native Cantrips plus Passives organization evidence is incomplete or regressed."
 }
 if ($evidence.runtimeContract.organization.detailsSurface -ne "native-tooltip-only" -or
     $evidence.runtimeContract.tooltipPresentation.detailsSurface -ne "native-tooltip-only") {
     throw "CAM must use the ordinary native tooltip only; no Live Details panel is allowed."
 }
-if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-passives" -or
+if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotbar-action-resources-plus-cantrips-plus-passives" -or
     $evidence.runtimeContract.controllerPresentation.tabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.controllerPresentation.genericTabLabel -ne $null -or
     $evidence.runtimeContract.controllerPresentation.spellSlotTabLabel -ne "RomanNumeralLevelImage" -or
@@ -107,6 +111,11 @@ if ($evidence.runtimeContract.controllerPresentation.tabPattern -ne "exact-hotba
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.resourceIdentity -ne "LSActionPointResources(ActionResourcesTemplateSelector)" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedRenderer -ne "SectionImageStyle" -or
     $evidence.runtimeContract.controllerPresentation.resourceRenderer.rejectedTextFilterChrome -ne "btn_pil_*" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.source -ne "FilterCantripsCommand -> SingleHotBar.SlotList" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.visibility -ne "PlayerCharacterProperties.HasCantrips" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.parameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.modeToken -ne "CAM_CantripsModeToken" -or
+    $evidence.runtimeContract.controllerPresentation.cantripsTab.icon -ne "IconMiniCantrip" -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameExecutableList -ne "HotBarList" -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.sameFilterChrome -ne $false -or
     $evidence.runtimeContract.controllerPresentation.passivesTab.resourceBoxChromeAllowed -ne $true) {
@@ -179,26 +188,34 @@ if ($evidence.runtimeContract.controllerPresentation.itemQuantity.slotType -ne "
     $evidence.runtimeContract.controllerPresentation.itemQuantity.rejectedPath -ne "VMHotBarSlot.GameObject.Count") {
     throw "Item quantity must be delegated to native VMItem templates."
 }
-if ($evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.modeToken -ne "CAM_PassivesModeToken" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.ownership -ne "CAM presentation-only" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.executableList -ne "HotBarList" -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.duplicateExecutableLists -ne $false -or
-    $evidence.runtimeContract.assignmentNavigation.sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
-    throw "Passives must switch the sole HotBarList through CAM presentation state over the proven native PassivesHotBar source."
+$sourceSwitch = $evidence.runtimeContract.assignmentNavigation.sourceSwitch
+if ($sourceSwitch.modeStorage -ne "CAM_ResourceTabs.Tag" -or
+    @($sourceSwitch.modeTokens).Count -ne 2 -or
+    @($sourceSwitch.modeTokens) -notcontains "CAM_CantripsModeToken" -or
+    @($sourceSwitch.modeTokens) -notcontains "CAM_PassivesModeToken" -or
+    $sourceSwitch.ownership -ne "CAM presentation-only" -or
+    $sourceSwitch.resourceSource -ne "SingleHotBar.SlotList" -or
+    $sourceSwitch.cantripsSource -ne "FilterCantripsCommand -> SingleHotBar.SlotList" -or
+    $sourceSwitch.cantripsParameter -ne "h7d02199dg44ecg4a1egbcacg9cc1cec197b3" -or
+    $sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
+    $sourceSwitch.providerRestoreDispatcher -ne "CAM_ProviderRestoreCommand" -or
+    $sourceSwitch.executableList -ne "HotBarList" -or
+    $sourceSwitch.duplicateExecutableLists -ne $false -or
+    $sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
+    throw "The sole HotBarList must switch only among proven native providers and restore nested state through CAM_ProviderRestoreCommand."
 }
 
 $passiveReturn = $evidence.runtimeContract.assignmentNavigation.passivesReturn
 if ($passiveReturn.modeAuthority -ne "CAM_ResourceTabs.Tag = CAM_PassivesModeToken for the entire originating shoulder-button Click" -or
     $passiveReturn.rightToken -ne "CAM_TabReturnFirstToken" -or
-    $passiveReturn.leftToken -ne "CAM_TabReturnLastToken" -or
     $passiveReturn.rightModeSwitchMilliseconds -ne 70 -or
-    $passiveReturn.leftModeSwitchMilliseconds -ne 90 -or
+    $passiveReturn.leftWhenCantripsAvailable -ne "CAM_TabEnterSpecialToken -> CAM_CantripsModeToken -> FilterCantripsCommand" -or
+    $passiveReturn.leftWhenCantripsUnavailable -ne "CAM_TabReturnLastToken -> SelectNextListBoxItem(Reversed=True, ForceMode=Cycle)" -or
+    $passiveReturn.specialModeSwitchMilliseconds -ne 70 -or
+    $passiveReturn.leftFallbackModeSwitchMilliseconds -ne 90 -or
     $passiveReturn.ordinaryResourceClickHandlersEligibleDuringReturn -ne $false -or
     $passiveReturn.singleShoulderPressSingleLogicalTransition -ne $true) {
-    throw "Passives return must remain a serialized transition outside the ordinary resource-cycle click path."
+    throw "Passives/Cantrips/resource return must remain one serialized provider transition per shoulder press."
 }
 if ($evidence.runtimeContract.assignmentNavigation.visibleFocusVisualStyle -ne $null -or
     $evidence.runtimeContract.assignmentNavigation.resourceSelectionRestore.clearSelectedIndex -ne -1 -or
@@ -265,6 +282,11 @@ $required = @(
     'x:Name="ResourcesNumeralDisplay"',
     'Converter="{StaticResource LessThanOrEqualMultiConverter}"',
     'ElementName="ResourcePoints" Path="MaxGroupActionPoints"',
+    'x:Name="CAM_CantripsTab"',
+    'x:Key="CAM_CantripsModeToken"',
+    'x:Key="CAM_CantripFilterParameter"',
+    'x:Name="CAM_ProviderRestoreCommand"',
+    'h7d02199dg44ecg4a1egbcacg9cc1cec197b3',
     'x:Name="CAM_PassivesTab"',
     'x:Key="CAM_PassivesModeToken"',
     'x:Key="CAM_TabReturnLastToken"',
@@ -322,7 +344,6 @@ foreach ($forbidden in @(
     'CAM_ItemsFilterTab',
     'CAM_PassivesFilterTab',
     'SetCurrentShownDeckCommand',
-    'FilterCantripsCommand',
     'CurrentShownDeck.SlotList',
     'IsShowingPassivesDeck',
     'SetIsShowingPassivesDeckCommand',
@@ -433,7 +454,7 @@ if (-not $closeTrigger.Success) {
     throw "Top-level B close trigger must be the exact three-native-nested-flags -> CloseWidget contract."
 }
 
-Write-Host "Self-contained Patch 8 runtime contract passed: resource tabs use captured HotBar chrome, item slots delegate to native VMItem templates, Passives is serialized, entry focus is concrete-first, and top-level B remains separated from true nested state."
+Write-Host "Self-contained Patch 8 runtime contract passed: resource and Cantrips providers use captured HotBar semantics, Passives stays serialized, nested return restores the active provider, and focus/tooltip remain LocalFocus-driven."
 
 
 # Weapon-set switching is deliberately absent from CAM after repeated runtime failures.
@@ -567,27 +588,35 @@ $tabRight = [regex]::Match(
 )
 if (-not $tabLeft.Success -or -not $tabRight.Success -or
     -not $tabLeft.Value.Contains('CAM_TabEnterPassivesToken') -or
+    -not $tabLeft.Value.Contains('CAM_TabEnterSpecialToken') -or
     -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $tabLeft.Value.Contains('CAM_CantripsModeToken') -or
     -not $tabLeft.Value.Contains('CAM_PassivesModeToken') -or
+    -not $tabLeft.Value.Contains('FilterCantripsCommand') -or
     -not $tabLeft.Value.Contains('MillisecondsPerTick="90"') -or
     -not $tabLeft.Value.Contains('Reversed="True"') -or
     -not $tabRight.Value.Contains('CAM_TabReturnFirstToken') -or
+    -not $tabRight.Value.Contains('CAM_TabEnterSpecialToken') -or
+    -not $tabRight.Value.Contains('CAM_CantripsModeToken') -or
     -not $tabRight.Value.Contains('CAM_PassivesModeToken') -or
     -not $tabRight.Value.Contains('MillisecondsPerTick="70"') -or
     -not $tabRight.Value.Contains('CAM_TabCycleRightToken') -or
     $tabLeft.Value.Contains('ForceSelect="True"') -or
     $tabRight.Value.Contains('ForceSelect="True"')) {
-    throw "LB/RB must form one resource-plus-Passives cycle without ForceSelect."
+    throw "LB/RB must form one resource-plus-Cantrips-plus-Passives cycle without ForceSelect."
 }
 
-if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 4 -or
+if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 5 -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"') -or
     -not $resourceTabs.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"') -or
+    -not $resourceTabs.Value.Contains('FilterCantripsCommand') -or
+    -not $resourceTabs.Value.Contains('CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips') -or
     [regex]::Matches($resourceTabs.Value, 'FilterActionResourceCommand').Count -lt 2 -or
-    [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 3) {
-    throw "Resource selection must distinguish right-wrap Passives entry from ordinary native resource filtering and clear stale LocalFocus."
+    [regex]::Matches($resourceTabs.Value, 'TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"').Count -lt 4) {
+    throw "Resource selection must route right-wrap to native Cantrips when available and otherwise Passives, while ordinary resource filtering stays native."
 }
 
 $resourceRestoreTimer = [regex]::Match(
@@ -676,39 +705,40 @@ if (-not $resourceTabsItemTemplate.Success -or
     throw "CAM_ResourceTabs must separate controller container behavior from native resource item presentation."
 }
 
-$passivesLeftReturn = [regex]::Match(
-    $tabLeft.Value,
-    '<b:EventTrigger EventName="Click">[\s\S]*?CAM_PassivesModeToken[\s\S]*?CAM_TabReturnLastToken[\s\S]*?SelectNextListBoxItem[\s\S]*?</b:EventTrigger>',
+$cantripTab = [regex]::Match(
+    $text,
+    '<Grid\b[^>]*x:Name="CAM_CantripsTab"[\s\S]*?(?=<Grid\b[^>]*x:Name="CAM_PassivesTab")',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-$passivesLeftTimer = [regex]::Match(
-    $tabLeft.Value,
-    '<b:TimerTrigger EventName="Click" MillisecondsPerTick="90" TotalTicks="1">[\s\S]*?CAM_TabReturnLastToken[\s\S]*?TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="\{x:Null\}"[\s\S]*?CAM_ResetFirstFocusToken[\s\S]*?</b:TimerTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-$passivesRightReturn = [regex]::Match(
-    $tabRight.Value,
-    '<b:EventTrigger EventName="Click">[\s\S]*?CAM_PassivesModeToken[\s\S]*?CAM_TabReturnFirstToken[\s\S]*?FilterActionResourceCommand[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-$passivesRightTimer = [regex]::Match(
-    $tabRight.Value,
-    '<b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?CAM_TabReturnFirstToken[\s\S]*?TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="\{x:Null\}"[\s\S]*?CAM_ResetFirstFocusToken[\s\S]*?</b:TimerTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-$returnLastPrepare = [regex]::Match(
-    $resourceTabs.Value,
-    '<b:EventTrigger EventName="SelectionChanged">[\s\S]*?CAM_TabReturnLastToken[\s\S]*?FilterActionResourceCommand[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $passivesLeftReturn.Success -or -not $passivesLeftTimer.Success -or
-    -not $passivesRightReturn.Success -or -not $passivesRightTimer.Success -or
-    -not $returnLastPrepare.Success) {
-    throw "Passives return must prepare a resource while passive mode is still active, then switch sources only at the delayed boundary."
+if (-not $cantripTab.Success -or
+    -not $cantripTab.Value.Contains('PlayerCharacterProperties.HasCantrips') -or
+    -not $cantripTab.Value.Contains('IconMiniCantrip') -or
+    -not $cantripTab.Value.Contains('CAM_CantripsModeToken') -or
+    -not $cantripTab.Value.Contains('CAM_BoxResourceBg') -or
+    -not $cantripTab.Value.Contains('CAM_BoxResourceH')) {
+    throw "Cantrips must be a native resource-box-style provider tab gated by HasCantrips."
 }
-if ($passivesLeftReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"') -or
-    $passivesRightReturn.Value.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{x:Null}"')) {
-    throw "A Passives-return Click must not clear passive mode before the originating shoulder event completes."
+
+if ([regex]::Matches($tabLeft.Value, 'CAM_CantripsModeToken').Count -lt 2 -or
+    -not $tabLeft.Value.Contains('CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips') -or
+    -not $tabLeft.Value.Contains('CAM_TabReturnLastToken') -or
+    -not $tabRight.Value.Contains('CAM_CantripsModeToken') -or
+    -not $tabRight.Value.Contains('CAM_TabReturnFirstToken')) {
+    throw "Shoulder navigation must serialize resource <-> Cantrips <-> Passives transitions and preserve resource wrap."
+}
+
+$providerRestore = [regex]::Match(
+    $text,
+    '<ls:LSButton\b[^>]*x:Name="CAM_ProviderRestoreCommand"[\s\S]*?</ls:LSButton>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $providerRestore.Success -or
+    -not $providerRestore.Value.Contains('FilterActionResourceCommand') -or
+    -not $providerRestore.Value.Contains('CAM_CantripsModeToken') -or
+    -not $providerRestore.Value.Contains('FilterCantripsCommand') -or
+    -not $providerRestore.Value.Contains('CAM_CantripFilterParameter') -or
+    -not $providerRestore.Value.Contains('CAM_PassivesModeToken')) {
+    throw "Nested return must restore the active native provider through one provider dispatcher."
 }
 
 $passivesTab = [regex]::Match(
@@ -766,9 +796,9 @@ foreach ($flag in @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell'
     if (-not [regex]::IsMatch($text, $enterPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
         throw "Entering native nested state must arm CAM nested-return restoration: $flag"
     }
-    $exitPattern = '<b:PropertyChangedTrigger Binding="\{Binding ' + $flag + '\}">[\s\S]*?CAM_NestedEnteredToken[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CAM_NestedRestoringToken[\s\S]*?FilterActionResourceCommand[\s\S]*?CommandParameter="\{Binding SelectedItem, ElementName=CAM_ResourceTabs\}"[\s\S]*?</b:PropertyChangedTrigger>'
+    $exitPattern = '<b:PropertyChangedTrigger Binding="\{Binding ' + $flag + '\}">[\s\S]*?CAM_NestedEnteredToken[\s\S]*?IsShowingAContainerWithVariants[\s\S]*?IsSelectingUpcastedSpell[\s\S]*?IsShowingItemsToThrow[\s\S]*?CAM_NestedRestoringToken[\s\S]*?CAM_ProviderRestoreCommand[\s\S]*?</b:PropertyChangedTrigger>'
     if (-not [regex]::IsMatch($text, $exitPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-        throw "Exiting native nested state must restore the selected resource only after all nested flags clear: $flag"
+        throw "Exiting native nested state must restore the active provider only after all nested flags clear: $flag"
     }
 }
 $nestedRepopulation = [regex]::Match(

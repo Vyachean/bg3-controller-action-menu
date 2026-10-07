@@ -36,7 +36,10 @@
     <System:String x:Key="CAM_TabEnterPassivesToken">CAM_TabEnterPassives</System:String>
     <System:String x:Key="CAM_TabReturnFirstToken">CAM_TabReturnFirst</System:String>
     <System:String x:Key="CAM_TabReturnLastToken">CAM_TabReturnLast</System:String>
+    <System:String x:Key="CAM_TabEnterSpecialToken">CAM_TabEnterSpecial</System:String>
+    <System:String x:Key="CAM_CantripsModeToken">CAM_CantripsMode</System:String>
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
+    <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
 
     <Style x:Key="CAM_ActionGridSlotContainer"
            TargetType="{x:Type ListBoxItem}"
@@ -358,6 +361,30 @@
                      IsEnabled="False"
                      Focusable="False"
                      Tag="{x:Null}"/>
+            <ls:LSButton x:Name="CAM_ProviderRestoreCommand"
+                         Visibility="Collapsed"
+                         IsEnabled="False"
+                         Focusable="False"
+                         IsHitTestVisible="False"
+                         Width="0"
+                         Height="0">
+                <ls:LSButton.Style>
+                    <Style TargetType="{x:Type ls:LSButton}">
+                        <Setter Property="Command" Value="{Binding FilterActionResourceCommand}"/>
+                        <Setter Property="CommandParameter" Value="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                                <Setter Property="Command" Value="{Binding FilterCantripsCommand}"/>
+                                <Setter Property="CommandParameter" Value="{StaticResource CAM_CantripFilterParameter}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_PassivesModeToken}">
+                                <Setter Property="Command" Value="{x:Null}"/>
+                                <Setter Property="CommandParameter" Value="{x:Null}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ls:LSButton.Style>
+            </ls:LSButton>
             <b:Interaction.Triggers>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
@@ -403,8 +430,8 @@
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedRestoringToken}"/>
-                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                    <b:InvokeCommandAction Command="{Binding Command, ElementName=CAM_ProviderRestoreCommand}"
+                                           CommandParameter="{Binding CommandParameter, ElementName=CAM_ProviderRestoreCommand}"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding IsSelectingUpcastedSpell}">
                     <b:Interaction.Behaviors>
@@ -432,8 +459,8 @@
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedRestoringToken}"/>
-                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                    <b:InvokeCommandAction Command="{Binding Command, ElementName=CAM_ProviderRestoreCommand}"
+                                           CommandParameter="{Binding CommandParameter, ElementName=CAM_ProviderRestoreCommand}"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding IsShowingItemsToThrow}">
                     <b:Interaction.Behaviors>
@@ -461,8 +488,8 @@
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedRestoringToken}"/>
-                    <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                    <b:InvokeCommandAction Command="{Binding Command, ElementName=CAM_ProviderRestoreCommand}"
+                                           CommandParameter="{Binding CommandParameter, ElementName=CAM_ProviderRestoreCommand}"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding SingleHotBar.SlotList.Count}">
                     <b:Interaction.Behaviors>
@@ -520,12 +547,34 @@
                                      VerticalAlignment="Center"
                                      Margin="0,0,12,0">
                             <b:Interaction.Triggers>
-                                <!-- Passives -> last native resource. -->
+                                <!-- Passives -> Cantrips when the native cantrip provider exists. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
                                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
+                                    <b:InvokeCommandAction Command="{Binding FilterCantripsCommand}" CommandParameter="{StaticResource CAM_CantripFilterParameter}"/>
+                                </b:EventTrigger>
+
+                                <!-- Passives -> last native resource when Cantrips is unavailable. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}" Operator="Equal" RightOperand="{StaticResource FalseValue}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -536,9 +585,26 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabReturnLastToken}"/>
-                                    <ls:SelectNextListBoxItem Reversed="True"
-                                                              TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceMode="Cycle"/>
+                                    <ls:SelectNextListBoxItem Reversed="True" TargetObject="{Binding ElementName=CAM_ResourceTabs}" ForceMode="Cycle"/>
+                                </b:EventTrigger>
+
+                                <!-- Cantrips -> last native resource. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_CantripsModeToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabReturnLastToken}"/>
+                                    <ls:SelectNextListBoxItem Reversed="True" TargetObject="{Binding ElementName=CAM_ResourceTabs}" ForceMode="Cycle"/>
                                 </b:EventTrigger>
 
                                 <!-- First native resource -> Passives without changing resource selection. -->
@@ -546,7 +612,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
@@ -566,24 +632,33 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="GreaterThan" RightOperand="0"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleLeftToken}"/>
-                                    <ls:SelectNextListBoxItem Reversed="True"
-                                                              TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceMode="Cycle"/>
+                                    <ls:SelectNextListBoxItem Reversed="True" TargetObject="{Binding ElementName=CAM_ResourceTabs}" ForceMode="Cycle"/>
                                 </b:EventTrigger>
 
                                 <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
-                                                                       Operator="Equal"
-                                                                       RightOperand="{StaticResource CAM_TabEnterPassivesToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterPassivesToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -596,9 +671,7 @@
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
-                                                                       Operator="Equal"
-                                                                       RightOperand="{StaticResource CAM_TabReturnLastToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabReturnLastToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -621,7 +694,7 @@
                                      VerticalAlignment="Center"
                                      Margin="12,0,0,0">
                             <b:Interaction.Triggers>
-                                <!-- Passives -> first native resource. The preserved resource selection is index 0. -->
+                                <!-- Passives -> first native resource. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
@@ -641,27 +714,56 @@
                                     <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                 </b:EventTrigger>
 
-                                <!-- Resource -> next resource; wrap is intercepted by SelectionChanged and becomes Passives. -->
+                                <!-- Cantrips -> Passives. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_CantripsModeToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                </b:EventTrigger>
+
+                                <!-- Resource -> next resource; wrap is intercepted by SelectionChanged. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleRightToken}"/>
-                                    <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}"
-                                                              ForceMode="Cycle"/>
+                                    <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}" ForceMode="Cycle"/>
                                 </b:EventTrigger>
 
                                 <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
                                             <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
-                                                                       Operator="Equal"
-                                                                       RightOperand="{StaticResource CAM_TabReturnFirstToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabReturnFirstToken}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -710,8 +812,7 @@
                             </ls:LSListBox.Template>
 
                             <b:Interaction.Triggers>
-                                <!-- Right wrap: the ListBox cycles to index 0, but product navigation inserts Passives
-                                     between the last resource and the first resource. Do not refilter index 0 here. -->
+                                <!-- Right wrap: prefer the native Cantrips provider when this character has cantrips. -->
                                 <b:EventTrigger EventName="SelectionChanged">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior>
@@ -722,6 +823,39 @@
                                                 <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
                                                                        Operator="Equal"
                                                                        RightOperand="0"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource TrueValue}"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_CantripsModeToken}"/>
+                                    <b:InvokeCommandAction Command="{Binding FilterCantripsCommand}"
+                                                           CommandParameter="{StaticResource CAM_CantripFilterParameter}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
+
+                                <!-- Characters without cantrips keep the existing resource -> Passives wrap. -->
+                                <b:EventTrigger EventName="SelectionChanged">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource CAM_TabCycleRightToken}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="0"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}"
+                                                                       Operator="Equal"
+                                                                       RightOperand="{StaticResource FalseValue}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -838,6 +972,55 @@
                                 </b:TimerTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
+
+                        <Grid x:Name="CAM_CantripsTab"
+                              Width="80"
+                              Height="72"
+                              Margin="-4,0,-4,0"
+                              Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips, Converter={StaticResource BoolToVisibleConverter}}">
+                            <Grid Margin="4,-10,4,10"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+                                <Grid Width="72">
+                                    <Image Source="{StaticResource CAM_BoxResourceBg}"/>
+                                    <Image VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResource}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Image VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResourceH}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ResourceTabs}" Value="{StaticResource CAM_CantripsModeToken}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Image Source="{StaticResource IconMiniCantrip}"
+                                           Width="52"
+                                           Height="52"
+                                           Stretch="None"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"/>
+                                </Grid>
+                            </Grid>
+                        </Grid>
 
                         <Grid x:Name="CAM_PassivesTab"
                               Width="80"

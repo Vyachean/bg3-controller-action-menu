@@ -47,7 +47,7 @@ Current captured `HotBar.xaml` proves these executable/deck seams:
 | Common deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
 | Class deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
 | Items deck | `SetCurrentShownDeckCommand` + `CurrentShownDeck.SlotList` | coverage evidence only |
-| Cantrips | native HotBar/radial evidence; exact current filter seam is discovery-gated | coverage evidence only |
+| Cantrips | `FilterCantripsCommand` with captured parameter `h7d02199dg44ecg4a1egbcacg9cc1cec197b3` | shipping through `SingleHotBar.SlotList` |
 | Passives | `PassivesHotBar.SlotList` | shipping |
 
 ### Controller radial assignment
@@ -89,7 +89,7 @@ exists but equality with the reference catalog cannot be established statically;
 | passives/toggles | radial + PassivesHotBar | `PassivesHotBar.SlotList` | runtime-proof |
 | nested variants/containers | native radial | `SingleHotBar.SlotList` | proven |
 | throw nested state | native radial | `SingleHotBar.SlotList` + native flag | proven |
-| cantrips | HotBar + radial | no dedicated shipping source | missing-source |
+| cantrips | HotBar + radial | `FilterCantripsCommand` -> `SingleHotBar.SlotList` | proven-source / runtime-unverified |
 | free/no-resource actions | Common/Class/radial | no proven complete shipping source | missing-source |
 | inventory/consumables | ItemHotBar + radial `Inventory.Slots` | only items incidentally returned by resource filter | missing-source |
 | scrolls | ItemHotBar + radial `Inventory.Slots` | no proven complete source group | missing-source |
@@ -169,7 +169,9 @@ The report searches the whole captured XAML set for:
 - `FilterActionResourceCommand`;
 
 and records `Present`, `MatchCount`, source file and available attributes such as
-`CommandParameter`, `Content` and `Tag`.
+`CommandParameter`, `Content` and `Tag`. Native bindings may use `DataContext.<Command>`
+plus `RelativeSource`; discovery matches the command name inside the complete Binding
+expression rather than requiring the short `{Binding Command}` spelling.
 
 If a probe is absent, that absence is written to `MissingCommands`; it must not abort the
 capture. Capture fails only for technical evidence failures such as inability to locate
