@@ -20,7 +20,7 @@ The development launcher is deliberately reusable across builds and development 
 2. download that release's `dev-entry.ps1`;
 3. run it hidden.
 
-The release-controlled entry decides the current task. For the current install task it downloads `install-latest.ps1`, which installs the already-built self-contained release PAK without inspecting or extracting BG3 game files.
+The release-controlled entry decides the current task. Development milestone `0.0.79-hotbar-coverage-capture` temporarily downloads `capture-self-contained-inputs.ps1` and performs read-only evidence capture; normal install releases use `install-latest.ps1` to install the already-built self-contained PAK.
 
 There is no permanent local bootstrap and no second capture VBS. Existing legacy VBS+bootstrap folders migrate automatically after one successful legacy install.
 
