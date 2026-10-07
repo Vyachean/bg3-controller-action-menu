@@ -303,6 +303,7 @@ Current installed Patch 8 capture provides a simpler controller presentation pat
 - focused cells use `ls:MoveFocus.IsFocused` / native focus visual behavior instead of an independently positioned selector control;
 - SpellBook wraps the grid in ordinary pixel scrolling rather than forcing `CanContentScroll=True`;
 - current `HotBar.xaml` confirms `ActionResourcesCostPreview` is itself a native clickable `FilterActionResourceCommand` source and hides only `MaxValue=0` items. Therefore CAM must not invent a second semantic resource classifier merely to hide entries.
+- no current native per-preview executable-count/has-actions property is proven. Do not hide an apparently empty tab by reacting to `SingleHotBar.SlotList.Count == 0`, auto-cycling selection, or re-invoking filters from filter results; 0.0.49 already proved that re-entrant filter recovery makes tab interaction unstable.
 
 Required CAM presentation:
 - remove `CAM_MainSelector` and `CAM_SelectorTemplate` completely;
