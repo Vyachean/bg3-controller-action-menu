@@ -290,6 +290,7 @@ if ($sourceSwitch.modeStorage -ne "CAM_ProviderModeMarker.Tag" -or
     $sourceSwitch.allNestedBehavior -ne "nested flags -> SingleHotBar.SlotList" -or
     $sourceSwitch.allRestore -ne "CAM_NestedRestoringToken -> first non-empty KeyboardHotBars group -> first VMHotBarSlot" -or
     $sourceSwitch.metamagicSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
+    $sourceSwitch.metamagicNestedRestore -ne "FilterActionResourceCommand(selected resource) + CAM_NestedRestoringToken -> first CAM_FixedSideBarList VMHotBarSlot" -or
     $sourceSwitch.directProviderNestedOverride -ne "nested flags -> SingleHotBar.SlotList" -or
     $sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
     $sourceSwitch.providerRestoreDispatcher -ne "CAM_ProviderRestoreCommand" -or
@@ -1303,9 +1304,10 @@ $mainFocusHandoff = @(
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     ) | Where-Object { $_.Value.Contains('CAM_FixedSideBarList') }
 ) | Select-Object -First 1
-$missingNestedGuards = @(
-    'IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow'
-) | Where-Object { -not $mainFocusHandoff.Value.Contains($_) }
+$missingNestedGuards = if ($mainFocusHandoff) {
+    @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow') |
+        Where-Object { -not $mainFocusHandoff.Value.Contains($_) }
+} else { @('No valid main-list focus handoff') }
 if (-not $mainFocusHandoff -or
     -not $mainFocusHandoff.Value.Contains('CAM_MetamagicModeToken') -or
     @($missingNestedGuards).Count -gt 0) {
