@@ -134,6 +134,20 @@
                    VerticalAlignment="Top"
                    Margin="0,8,8,0"
                    Visibility="Collapsed"/>
+            <!-- Native Patch 8 templates consume the game's VMHotBarSlot state.
+                 No CAM spell compatibility or metamagic cost classification. -->
+            <Control x:Name="CAM_ModifiedSpellGlow"
+                     Width="104" Height="104"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     IsHitTestVisible="False" Focusable="False"
+                     Visibility="Collapsed"
+                     Template="{StaticResource HotbarSlotGlow}"/>
+            <Control x:Name="CAM_ActiveMetamagicGlow"
+                     Width="104" Height="104"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     IsHitTestVisible="False" Focusable="False"
+                     Visibility="Collapsed"
+                     Template="{StaticResource HotBarActiveSlotIndicatorMetamagic}"/>
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding SlotType}" Value="Item">
@@ -150,6 +164,16 @@
             <DataTrigger Binding="{Binding CanUse}" Value="False">
                 <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
             </DataTrigger>
+            <DataTrigger Binding="{Binding Content.IsModified}" Value="True">
+                <Setter TargetName="CAM_ModifiedSpellGlow" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Content.IsMetaMagic}" Value="True"/>
+                    <Condition Binding="{Binding IsActive}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="CAM_ActiveMetamagicGlow" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
 
@@ -736,6 +760,20 @@
         </DataTemplate.Triggers>
     </DataTemplate>
 
+    <!-- Native FixedSideBar slots are vertically independent of the action grid. -->
+    <ItemsPanelTemplate x:Key="CAM_FixedSideBarPanel">
+        <ls:LSGrid ActionUpEvent="UIUp"
+                   ActionDownEvent="UIDown"
+                   ActionRightEvent="UIRight"
+                   ActionLeftEvent="UILeft"
+                   AutoIndex="True"
+                   ContainerData="{Binding}"
+                   Columns="1"
+                   CellWidth="{StaticResource CAM_ActionGridCellSize}"
+                   CellHeight="{StaticResource CAM_ActionGridCellSize}"
+                   VerticalAlignment="Top"/>
+    </ItemsPanelTemplate>
+
     <ItemsPanelTemplate x:Key="CAM_ResourceTabsPanel">
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Center"
@@ -999,8 +1037,12 @@
                         <RowDefinition Height="84"/>
                         <RowDefinition Height="850"/>
                     </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <DockPanel x:Name="CAM_ResourceHeader"
+                    <DockPanel Grid.ColumnSpan="2" x:Name="CAM_ResourceHeader"
                                Grid.Row="0"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
@@ -1815,6 +1857,7 @@
 
                     <Grid x:Name="CAM_ActionViewport"
                           Grid.Row="1"
+                          Grid.Column="1"
                           Height="850"
                           Margin="40,0"
                           HorizontalAlignment="Stretch"
