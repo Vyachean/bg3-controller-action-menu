@@ -990,3 +990,18 @@ the new resource item template itself is active. Both are
 selection/focus/tooltip unchanged. A screenshot determines whether
 the source image or its point-control presentation is responsible;
 the diagnostic markup must then be removed.
+
+
+## 0.0.95 point-image measurement boundary
+
+v0.0.94 established live controller item-template execution and
+isolated oversized/clipped point glyphs from correctly bounded
+independent icon-source preview. The correction moves the bounded
+image into a CAM-owned native `LSActionPointResources.ActionPointTemplate`
+per-point renderer; the native style, `MaxGroupActionPoints`, resource
+states and `VMActionResourceCostPreview.Cost` still choose count,
+source and availability. The image uses the native icon converter
+and each game's resource `TypeId`, constrained to the keyboard native
+small-point size (24), with `Stretch=Uniform`. No hard-coded classes,
+icons or resource mapping, no changes to controller navigation.
+The ephemeral `94` and `B` diagnostic items are removed.
