@@ -251,3 +251,62 @@ After obtaining the files, compare
 default icon converter/TypeId mappings and keyboard-vs-controller theme
 definitions. Then make **one source-proven** rendering change; do not
 again copy keyboard group templates or scale individual bitmaps.
+
+
+## 0.0.97 failed-capture archive — exact proven root cause, 0.0.98 correction
+
+The operator's failed-status archive
+`bg3-controller-action-menu-inputs-20261008-132651.zip` **is usable**.
+Capture wrote all extracted XAML files before its erroneously strict
+`KeyboardThemeStyles` group check. It required
+`Public/Game/GUI/Theme/DefaultTheme_k.Styles.xaml`, a file that does
+not exist in this installed BG3 1.8.910.0 package. The keyboard
+dictionary is actually **`DefaultTheme.Styles.xaml`** and the
+controller dictionary is `DefaultTheme_c.Styles.xaml`:
+
+| Resource key | keyboard (DefaultTheme.Styles.xaml) | controller (DefaultTheme_c.Styles.xaml) |
+| --- | --- | --- |
+| `ActionResourcePointIconsPath` | `Assets/Shared/Resources/` | `Assets/ActionResources_c/Icons/Resources/` |
+| `ActionResourcePointHighlightIconsPath` | `Assets/Shared/Resources/Highlight/` | `Assets/ActionResources_c/Icons/Resources/Highlight/` |
+| `ActionResourcePointMissingIconsPath` | `Assets/Shared/Resources/Missing/` | `Assets/ActionResources_c/Icons/Resources/Missing/` |
+| `ActionResourcePointUsedIconsPath` | `Assets/Shared/Resources/Used/` | `Assets/ActionResources_c/Icons/Resources/Used/` |
+
+The installed `DefaultThemeLibs.xaml` merges
+`DefaultTheme.Styles.xaml`, while `DefaultThemeLibs_c.xaml`
+merges `DefaultTheme_c.Styles.xaml`. The shared game-owned
+`DataTemplates.xaml` `ActionResources.ActionGroup.ActionPoint`
+DataTemplate contains **StaticResource** bindings to these four
+keys, including default, highlight, missing and used states.
+When CAM runs in the controller theme, referencing that shared
+native template does **not** force the keyboard bitmap directory.
+The 24 copied keyboard group ControlTemplates of 0.0.96 still
+reference the shared point DataTemplate and cannot change its
+already-resolved StaticResource paths. This explains persistent
+large, incorrect controller-mode glyphs despite source-identical
+group templates.
+
+The correction copies the original **8,143-character**
+`ActionResources.ActionGroup.ActionPoint` DataTemplate *unchanged*
+from the installed `DataTemplates.xaml` into CAM's resource tile
+`Grid.Resources`; SHA-256
+`eee27b44205de8d3fbacac302c9427b8c33f785fea0f39b9b4dfda51cba22d84`.
+Immediately preceding the native point DataTemplate, local
+`System:String` resources define the **four exact keyboard paths**.
+The 24 original keyboard group ControlTemplates remain declared
+after the local point DataTemplate, so each group's
+`ContentPresenter ContentTemplate="{StaticResource
+ActionResources.ActionGroup.ActionPoint}"` resolves the local
+keyboard-themed template. The game retains the native converter,
+resource TypeId, animations, cost, counters and
+`ActionPointState` triggers without class-specific icon maps.
+
+This makes all resource graphic dependencies explicit and scoped
+inside the mod's resource item, not a global override to other game UI.
+The incorrect Capture requirement is corrected to
+`DefaultTheme.Styles.xaml`, and the same operator-facing VBS returns
+to its canonical release-controlled install/update workflow for 0.0.98.
+
+**Acceptance:** equality of native XAML and theme path sources is
+proved statically, but actual Noesis rendering still needs one
+in-game screenshot. If parity fails, inspect in-game resource
+lookup/template precedence rather than editing image sizes again.

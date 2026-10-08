@@ -1043,3 +1043,35 @@ using SHA-256 `9e017778ec41ef2e03f192392ca944640f7d8ad3c227f69d9742aefbdaff4651`
 rejects CAM-owned glyph overrides. These are **static proof** of exact
 source composition, not proof of Noesis runtime dynamic resource
 resolution. One real in-game screenshot must still establish parity.
+
+
+## 0.0.98 — keyboard resource image path ownership
+
+Resource icon parity requires both the original keyboard
+`ActionResources.ActionGroup.*` group ControlTemplates and the
+game's `ActionResources.ActionGroup.ActionPoint` DataTemplate
+**resolved against keyboard theme path keys**. The former was
+present in 0.0.96; the latter was incorrectly inherited from
+controller-mode `DefaultTheme_c.Styles.xaml`.
+
+The 1.8.910.0 capture proves keyboard `DefaultTheme.Styles.xaml`
+defines resource-point bitmap paths under `Assets/Shared/Resources/`;
+controller mode uses `Assets/ActionResources_c/Icons/Resources/`.
+Because the game's shared point DataTemplate binds these strings via
+`StaticResource`, merely supplying local group template keys cannot
+change the globally resolved bitmap path.
+
+Inside `CAM_ResourceTabTemplate`'s `Grid.Resources` only, declare:
+1. Native keyboard group, point and small-point sizes 56/48/24.
+2. Four original keyboard point bitmap directory strings, including
+   Highlight, Missing and Used variants.
+3. A source-exact native `DataTemplates.xaml`
+   `ActionResources.ActionGroup.ActionPoint` DataTemplate (no CAM
+   image code or uniform scaling).
+4. All original 24 keyboard `DataTemplates_k.xaml` point-group
+   ControlTemplates, referencing the point DataTemplate above.
+
+The rest of BG3 controller mode retains original theme resources.
+Native `LSActionPointResources`, TypeId, numeric counters, resource
+availability/state, LB/RB, tooltip, grid focus and A/B execution do
+not change. Validate SHA-256 of both copied native XAML blocks.

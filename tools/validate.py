@@ -103,6 +103,43 @@ def validate_semantics() -> list[str]:
                     "Keyboard resource group XAML differs from the exact installed "
                     f"BG3 Patch 8 DataTemplates_k.xaml group block: {digest}"
                 )
+        # The controller library loads DefaultTheme_c.Styles.xaml. A
+        # verbatim keyboard group without the *keyboard point DataTemplate*
+        # still resolves the controller's image-path StaticResources.
+        # Both the exact native point XAML and its four keyboard path values
+        # must be present inside CAM_ResourceTabTemplate.Grid.Resources.
+        keyboard_paths = {
+            "ActionResourcePointIconsPath": "Assets/Shared/Resources/",
+            "ActionResourcePointHighlightIconsPath": "Assets/Shared/Resources/Highlight/",
+            "ActionResourcePointMissingIconsPath": "Assets/Shared/Resources/Missing/",
+            "ActionResourcePointUsedIconsPath": "Assets/Shared/Resources/Used/",
+        }
+        for key, value in keyboard_paths.items():
+            pair = f'<System:String x:Key="{key}">{value}</System:String>'
+            if runtime.count(pair) != 1:
+                errors.append(f"CAM must declare exactly one local original keyboard resource path: {key}")
+
+        point_key = '    <DataTemplate x:Key="ActionResources.ActionGroup.ActionPoint">'
+        point_start = runtime.find(point_key)
+        point_end_marker = '    </DataTemplate>\n\n'
+        point_end = runtime.find(point_end_marker, point_start) if point_start >= 0 else -1
+        if point_start < 0 or point_end < 0 or (group_start >= 0 and point_start >= group_start):
+            errors.append("Original keyboard resource glyph DataTemplate must precede local group templates.")
+        else:
+            point_end += len(point_end_marker)
+            point = runtime[point_start:point_end]
+            point_sha = hashlib.sha256(point.encode("utf-8")).hexdigest()
+            expected_point_sha = "eee27b44205de8d3fbacac302c9427b8c33f785fea0f39b9b4dfda51cba22d84"
+            if point_sha != expected_point_sha:
+                errors.append(
+                    "Original BG3 1.8.910.0 point DataTemplate differs from captured source: "
+                    f"{point_sha}"
+                )
+        if group_start >= 0:
+            root_resources_start = runtime.rfind("<Grid.Resources>", 0, point_start)
+            if point_start < 0 or root_resources_start < 0 or root_resources_start > group_start:
+                errors.append("Keyboard icon paths and point template must be scoped to the resource item.")
+
         if 'CAM_KeyboardHotBarPointGlyph' in runtime or 'ActionPointTemplate="{StaticResource CAM_' in runtime:
             errors.append("CAM must let the native resource selector choose exact keyboard group templates.")
 
@@ -584,11 +621,31 @@ def validate_semantics() -> list[str]:
                 f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: undefined CAM visual resources: {sorted(missing_cam_keys)}"
             )
 
-        preview = re.search(
-            r'<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
+        # The native ActionPoint DataTemplate is nested inside CAM's item
+        # template; stopping on the first </DataTemplate> truncates the
+        # outer item's selected/highlight/disabled native triggers.
+        preview_head = re.search(
+            r'<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[^>]*>',
             runtime_text,
         )
-        preview_text = preview.group() if preview else ""
+        preview_text = ""
+        if preview_head:
+            nesting = 1
+            template_tokens = re.finditer(
+                r'</?DataTemplate\b[^>]*>',
+                runtime_text[preview_head.end():],
+            )
+            for token in template_tokens:
+                if token.group().startswith("</DataTemplate"):
+                    nesting -= 1
+                elif not token.group().endswith("/>"):
+                    nesting += 1
+                if nesting == 0:
+                    preview_text = runtime_text[
+                        preview_head.start():preview_head.end() + token.end()
+                    ]
+                    break
+
         active_resource = '<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>'
         normal_mode = '<Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>'
         disabled_resource = '<DataTrigger Binding="{Binding ActionResource.Value}" Value="0">'
@@ -688,11 +745,16 @@ def validate_semantics() -> list[str]:
                 '$token = $env:GH_TOKEN',
                 '$token = $env:GITHUB_TOKEN',
                 '$headers["Authorization"] = "Bearer $token"',
-                'Task = "capture"',
-                'capture-self-contained-inputs.ps1',
-                'ReadOnly = $true',
-                "Read-only keyboard/controller theme source capture completed.",
-                '"-PortableRoot", $captureRoot',
+                'Task = "install"',
+                "0.0.93 restores the tested self-contained PAK install/update entry",
+                'Get-Asset -Release $release -Name "install-latest.ps1"',
+                '& $installer @installArgs',
+                'ReadOnly = $false',
+                'The install helper did not report success.',
+                'InstallStatus = $installStatus',
+                'InstallLog = $installLog',
+                'EnvironmentReport = $installReport',
+                "Self-contained CAM PAK installed:",
             ],
         )
     )
@@ -701,11 +763,12 @@ def validate_semantics() -> list[str]:
         require_text(
             DEV_ENTRY_TEST,
             [
-                "Universal release-controlled read-only capture entry fixture passed.",
-                "Release-controlled capture helper was not executed.",
+                "Universal release-controlled install entry fixture passed.",
+                "Release-controlled install helper was not executed.",
                 'cmd.exe /c "exit 23"',
-                "Capture archive must be written beside the operator VBS.",
-                "fixture read-only capture log",
+                "fixture in-process install log",
+                "Fixture install rejected the package.",
+                "Failed install must report the real helper error",
             ],
         )
     )
@@ -980,6 +1043,7 @@ def validate_semantics() -> list[str]:
                 '*DefaultTheme*.xaml',
                 '*DefaultShared*.xaml',
                 'KeyboardThemeStyles',
+                'Public/Game/GUI/Theme/DefaultTheme.Styles.xaml',
                 'ControllerThemeStyles',
                 'SharedThemeStyles',
                 'KeyboardPointTemplates',

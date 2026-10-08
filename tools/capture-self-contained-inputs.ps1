@@ -554,7 +554,7 @@ try {
         ControllerPointTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates_c.xaml" })
         ControllerActionResourceTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/ActionResourceTemplates_c.xaml" })
         ControllerResourceImports = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/Libs_Controller.xaml" })
-        KeyboardThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultTheme_k.Styles.xaml" })
+        KeyboardThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultTheme.Styles.xaml" })
         ControllerThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultTheme_c.Styles.xaml" })
         SharedThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultShared.Styles.xaml" })
         Controller = @($manifest | Where-Object { $_.PackagedPath -like "*Controller.xaml" })

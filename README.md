@@ -201,3 +201,17 @@ to capture the original keyboard/controller theme style XAML that
 was absent from the previous archive. It does not install a modified
 gameplay PAK or launch BG3. The output ZIP is created beside the VBS.
 This evidence is needed before another rendering fix can be justified.
+
+
+### 0.0.98 native keyboard resource icons
+
+The 0.0.97 archive was created successfully even though its
+post-capture status errored on an incorrect expected filename.
+It proved that keyboard and controller modes use distinct
+resource-point bitmap directories. Version 0.0.98 now scopes
+the **original keyboard bitmap path strings and unmodified native
+point DataTemplate** inside the resource tabs, retaining all 24
+original keyboard group templates from 0.0.96. No guessed image
+sizes and no replacement icon assets. The existing universal VBS
+has resumed normal mod installation; no further capture is needed.
+In-game visual parity remains to be confirmed.

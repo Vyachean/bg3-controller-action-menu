@@ -200,3 +200,19 @@ change. The archive is placed next to the operator launcher; the
 game, installed CAM, profiles and saves are untouched. After
 inspecting the source, restore normal install mode for the next
 actual visual correction.
+
+
+## 0.0.98 capture correction and installer restoration
+
+The 0.0.97 run wrote a complete usable archive but marked it ERROR
+because `KeyboardThemeStyles` incorrectly required
+`DefaultTheme_k.Styles.xaml`. Installed 1.8.910.0 provides
+`DefaultTheme.Styles.xaml` for keyboard and
+`DefaultTheme_c.Styles.xaml` for controller. This exact-name
+assertion and its test are corrected; earlier archive remains valid.
+
+For 0.0.98 the universal VBS continues to fetch the latest published
+`dev-entry.ps1` but the development task is restored to the tested
+self-contained PAK **install/update** flow. It no longer launches the
+read-only capture automatically. The capture helper is retained
+for future evidence tasks.
