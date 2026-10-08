@@ -877,3 +877,30 @@ No inference of confirmed pixel parity without this proof.
 
 Keep all gameplay/provider/tooltip/focus/LB/RB logic untouched; remove
 diagnostic overlays after the decision. Do not promote 0.0.94 as fixed.
+
+
+## 0.0.94 result → 0.0.95 point bitmap constraint
+
+Operator screenshot `image(8).png` shows the yellow/magenta
+diagnostic markers on the resource tiles: the CAM 0.0.94 resource item
+XAML is active, so another installer/PAK-load attempt is not the fix.
+The original `LSActionPointResources` draws large and partly clipped
+resource glyphs (notably spell squares, flame and clover); a separate
+explicitly bounded `IconIdToSourceConverter` image on the *same*
+`VMActionResourceCostPreview.ActionResource.TypeId` renders compactly.
+This does not prove that all bitmap shapes exactly match the original.
+
+0.0.95 moves the proven image-measurement boundary into the actual
+per-point `CAM_KeyboardHotBarPointGlyph` DataTemplate:
+`Width=24 Height=24 Stretch=Uniform`. The `24` is the captured native
+keyboard `SmallActionPointSize`; not another invented UI offset.
+The native `LSActionPointResources`, `ActionResourcesTemplateSelector`,
+`VMActionResourceCostPreview`, per-TypeId cost/count grouping and
+state-specific native image converter remain. The temporary diagnostic
+`94` and independent `B` are deleted. No new per-resource icon
+mapping is introduced. This is a bounded-image **runtime candidate**,
+not accepted visual parity until a game screenshot verifies it.
+
+Do not touch LB/RB, source/provider routing, focus, tooltip, nested
+execution, available/used resource logic or item counts. If still
+wrong, prove source bitmap identity/intrinsic size, not random scale.
