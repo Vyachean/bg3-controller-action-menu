@@ -501,7 +501,6 @@ foreach ($forbidden in @(
     'x:Name="singleBarHolder"',
     'x:Name="CAM_SingleSelector"',
     'x:Name="CAM_SingleActionTooltip"',
-    'PlayerCharacterProperties.ControllerHotBars',
     'PlayerCharacterProperties.SpellsAndActions',
     'CurrentPlayer.SelectedCharacter.Inventory.Slots',
     'CurrentPlayer.SelectedCharacter.Stats.Passives',
@@ -529,6 +528,18 @@ foreach ($forbidden in @(
     if ($text.Contains($forbidden)) {
         throw "Forbidden obsolete/non-resource-first seam is present: $forbidden"
     }
+}
+
+# Original radial read-only source is allowed only for one optional
+# provider-availability gate and one native grouped VMHotBarSlot source.
+# No raw radial candidate, cloned slot or separate action dispatch.
+$controllerSource = 'CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars'
+if ([regex]::Matches($text, 'PlayerCharacterProperties\.ControllerHotBars').Count -ne 2 -or
+    -not $text.Contains('Visibility="{Binding ' + $controllerSource + '.Count, Converter={StaticResource CountToVisibilityConverter}}"') -or
+    -not $text.Contains('Value="{Binding ' + $controllerSource + '}"') -or
+    -not $text.Contains('x:Name="CAM_OriginalRadialsTab"') -or
+    -not $text.Contains('Value="{StaticResource CAM_AllGroupTemplate}"')) {
+    throw "ControllerHotBars is only permitted as the optional native VMHotBarSlot grouped fallback."
 }
 
 # Resource tabs are the only tab/filter layer.
