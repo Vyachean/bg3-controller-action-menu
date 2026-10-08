@@ -158,3 +158,19 @@ same VBS
 ```
 
 The entry checks a successful install status **and exact release version** rather than relying on the native process `LASTEXITCODE` value. A helper failure results in generic `ERROR` status and a discoverable log. Its automated fixture also covers an intentionally failed child install. The read-only capture helper remains available as a release asset but is no longer automatically invoked.
+
+
+## 0.0.92 targeted resource-template capture
+
+Operator feedback proves that 0.0.91 did not change the keyboard vs
+controller tab glyphs. The initial schema-v3 archive missed
+`DataTemplates_c.xaml`, `DataTemplates_k.xaml`, and
+`ActionResourceTemplates_c.xaml`, although the captured
+`Libs_Controller.xaml` imports controller mode-specific resources.
+
+For this single evidence milestone the latest published `dev-entry.ps1`
+uses the already-proven read-only capture task rather than install.
+The permanent VBS remains unchanged. The expanded capture requires
+all three missing dictionaries and records their hashes, preserving
+the existing 22-file evidence set. Once reviewed, the development entry
+must return to normal installation with an actual evidence-based UI fix.
