@@ -174,3 +174,14 @@ The permanent VBS remains unchanged. The expanded capture requires
 all three missing dictionaries and records their hashes, preserving
 the existing 22-file evidence set. Once reviewed, the development entry
 must return to normal installation with an actual evidence-based UI fix.
+
+
+## 0.0.93 — installer restored after dictionary capture
+
+The 0.0.92 read-only capture provided the missing installed keyboard
+and controller resource dictionaries. Starting with 0.0.93, the
+unchanged operator-facing VBS again fetches and runs release-controlled
+`dev-entry.ps1` in its normal **install/update** mode, delegating to
+`install-latest.ps1`. The capture helper remains an optional asset.
+Running VBS on this release installs the self-contained PAK, not
+another input ZIP. All installer error/status checks remain unchanged.
