@@ -1010,8 +1010,8 @@ if ($specialStart -lt 0 -or $specialEnd -le $specialStart) {
     throw "Cannot find the special-provider strip."
 }
 $specialTabs = $text.Substring($specialStart, $specialEnd - $specialStart)
-if ([regex]::Matches($specialTabs, 'Margin="\{StaticResource CAM_ResourceBackgroundMargin\}"').Count -ne 10 -or
-    [regex]::Matches($specialTabs, 'Width="72"').Count -lt 5 -or
+if ([regex]::Matches($specialTabs, 'Margin="\{StaticResource CAM_ResourceBackgroundMargin\}"').Count -ne 12 -or
+    [regex]::Matches($specialTabs, 'Width="72"').Count -lt 6 -or
     -not $specialTabs.Contains('Source="{StaticResource IconMiniCantrip}"') -or
     -not [regex]::IsMatch($specialTabs, 'Source="\{StaticResource IconMiniCantrip\}"\s+Width="72"\s+Height="72"')) {
     throw "Special resource-box tabs must align chrome with the captured HotBar and preserve the native Cantrips glyph scale."
