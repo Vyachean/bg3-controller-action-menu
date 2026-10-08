@@ -56,14 +56,29 @@ development Script Extender output location. It does **not** modify
 the game, characters, input bindings, saves, native PAKs or the CAM
 shipping package.
 
-**Important:** this uses the old Script Extender Noesis API as a
-source-backed development hypothesis. Xbox App/Windows runtime
-compatibility and actual data availability have **not** yet been
-confirmed. Do not require end users to install it. The normal
-one-click installer never invokes, installs or depends on this probe.
-Only if a separate developer environment already supports this API
-can it supply the data. No repeated game tests or operator action
-are requested in this stage.
+**Important — Xbox App support blocker (verified 2026-10-08):**
+Norbyte/bg3se [issue #593](https://github.com/Norbyte/bg3se/issues/593)
+remains open for the Microsoft Store/Xbox Play Anywhere version of
+BG3. The native packaging/executable layout is different from
+Steam/GOG. An unofficial community SE port is described for
+**Microsoft package 1.8.907.0**; it does **not** prove compatibility
+with the operator's installed **1.8.910.0** and must not be
+recommended or installed as a prerequisite.
+
+The optional gameplay inventory probe is therefore **not currently
+a viable required diagnostic on the primary Xbox App target**. It
+is reusable only in a separate compatible development environment,
+if the older Ext.UI/Noesis API still works there. It cannot be
+treated as the implementation strategy for #135 on Xbox.
+
+The main restoration path must use a **native no-SE PAK** with
+BG3-owned executable providers. Issue
+[#138](https://github.com/Vyachean/bg3-controller-action-menu/issues/138)
+investigates exposing original `ControllerHotBars[*].SlotList` as
+an optional, controller-focusable native fallback for actions
+missing from the resource/keyboard providers. This does not
+cover global weapon/light commands by itself. No repeated game
+tests or operator actions are requested here.
 
 ## Analysis
 
