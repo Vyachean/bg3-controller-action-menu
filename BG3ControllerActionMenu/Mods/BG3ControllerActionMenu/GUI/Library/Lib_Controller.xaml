@@ -281,68 +281,12 @@
         </ls:LSListBox>
     </DataTemplate>
 
-    <!-- Controller-mode resource-point glyphs differ from the original keyboard
-         HotBar. Keep BG3's point counter, resource identity, costs and chrome,
-         but force the keyboard resource-icon source path for each point. This
-         uses native IconIdToSourceConverter and TypeId; there is no CAM icon table. -->
-    <DataTemplate x:Key="CAM_KeyboardHotBarPointGlyph">
-        <Image x:Name="ResourceGlyph"
-               Stretch="None"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center">
-            <Image.Source>
-                <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                              FallbackValue="{StaticResource TypeIdToSourceFallback}">
-                    <Binding Source="{StaticResource ActionResourcePointIconsPath}"/>
-                    <Binding Path="DataContext.TypeId"
-                             RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                </MultiBinding>
-            </Image.Source>
-        </Image>
-        <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
-                         Value="Highlight">
-                <Setter TargetName="ResourceGlyph" Property="Source">
-                    <Setter.Value>
-                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                      FallbackValue="{StaticResource DefaultHighlightTypeIdFallback}">
-                            <Binding Source="{StaticResource ActionResourcePointHighlightIconsPath}"/>
-                            <Binding Path="DataContext.TypeId"
-                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                        </MultiBinding>
-                    </Setter.Value>
-                </Setter>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
-                         Value="Used">
-                <Setter TargetName="ResourceGlyph" Property="Source">
-                    <Setter.Value>
-                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                      FallbackValue="{StaticResource DefaultUsedTypeIdFallback}">
-                            <Binding Source="{StaticResource ActionResourcePointUsedIconsPath}"/>
-                            <Binding Path="DataContext.TypeId"
-                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                        </MultiBinding>
-                    </Setter.Value>
-                </Setter>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
-                         Value="Missing">
-                <Setter TargetName="ResourceGlyph" Property="Source">
-                    <Setter.Value>
-                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                      FallbackValue="{StaticResource DefaultMissingTypeIdFallback}">
-                            <Binding Source="{StaticResource ActionResourcePointMissingIconsPath}"/>
-                            <Binding Path="DataContext.TypeId"
-                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                        </MultiBinding>
-                    </Setter.Value>
-                </Setter>
-            </DataTrigger>
-        </DataTemplate.Triggers>
-    </DataTemplate>
-    <ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup" TargetType="{x:Type ls:LSActionPoint}">
-        <ContentPresenter ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"/>
+    <!-- Exact keyboard DataTemplates_k.xaml point-group mapping from the installed
+         BG3 1.8.910.0 Game.pak. Use the native shared DataTemplates.xaml glyph
+         (including state transitions) instead of controller-sized templates.
+         Controller LB/RB selection remains on the outer LSListBox. -->
+    <ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
     </ControlTemplate>
 
     <!-- Controller selection is transport only. Native resource content is the current Patch 8
@@ -401,6 +345,16 @@
             </ls:AttachedProperties.AutomationId>
 
             <Grid x:Name="Root" Width="72">
+                <!-- The controller scope loads DataTemplates_c.xaml (80/80/36);
+                     the keyboard HotBar's DataTemplates_k.xaml declares 56/48/24.
+                     Scope these original keyboard values to this resource item
+                     so DynamicResource in the native selector resolves correctly
+                     without changing global controller UI resource dictionaries. -->
+                <Grid.Resources>
+                    <System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>
+                    <System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>
+                    <System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>
+                </Grid.Resources>
                 <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
                 <Image x:Name="Bg"
                        VerticalAlignment="Center"
