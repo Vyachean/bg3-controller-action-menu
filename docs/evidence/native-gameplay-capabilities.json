@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "projectRequirement": "All native BG3 gameplay capabilities reachable from replaced controller actions must remain available; UI editing/layout is excluded by explicit product policy.",
+  "proofStatus": "incomplete-no-runtime-action-instance-equivalence",
+  "gamePackageVersion": "1.8.910.0",
+  "coverageRules": [
+    "Source command presence alone is not gameplay execution proof",
+    "Native game's own input globally available outside the CAM menu can satisfy an action only when the exact engine transport is proven",
+    "Each dynamic action class must be covered by BG3-owned VMHotBarSlot or exact native command; never fabricate raw radial assignment object",
+    "A runtime action present in vanilla but missing from CAM is a functional regression even when all static source checks pass",
+    "Radial layout editor and keyboard-only mouse-resize handlers are outside gameplay scope; their removal is deliberate"
+  ],
+  "capabilities": [
+    {
+      "id": "action-attack-melee",
+      "source": "UseMeleeWeaponCommand; MainMeleeSpell; radial SpellsAndActions",
+      "route": "KeyboardHotBars/SingleHotBar or native melee command",
+      "status": "unverified",
+      "gate": "native melee action executable with expected target and action cost"
+    },
+    {
+      "id": "action-attack-ranged",
+      "source": "UseRangedWeaponCommand; radial SpellsAndActions",
+      "route": "KeyboardHotBars/SingleHotBar or native ranged command",
+      "status": "unverified",
+      "gate": "native ranged action executable with expected target"
+    },
+    {
+      "id": "switch-weapon-sets",
+      "source": "SwitchWeaponSetCommand; WeaponSetSwitchStyle; ToggleWeaponSet input",
+      "route": "no proven CAM-safe direct controller transport; older hold-input implementations failed",
+      "status": "blocked",
+      "gate": "repeatable switching with ordinary short UILeft unaffected"
+    },
+    {
+      "id": "swap-light-source",
+      "source": "SwapLightSourceCommand; Equipment.LightSource.Item",
+      "route": "native slot or separate native controller transport unproven",
+      "status": "blocked",
+      "gate": "equipped light source toggles while main action menu open"
+    },
+    {
+      "id": "default-jump",
+      "source": "LaunchDefaultActionCommand(Jump); radial SpellsAndActions",
+      "route": "CAM native slot/provider equality unproven",
+      "status": "unverified",
+      "gate": "Jump available with normal targeting and move cost"
+    },
+    {
+      "id": "default-shove",
+      "source": "LaunchDefaultActionCommand(Shove); radial SpellsAndActions",
+      "route": "CAM native slot/provider equality unproven",
+      "status": "unverified",
+      "gate": "Shove available with correct bonus action and target"
+    },
+    {
+      "id": "default-throw",
+      "source": "LaunchDefaultActionCommand(Throw); radial SpellsAndActions",
+      "route": "CAM native slot/provider equality unproven",
+      "status": "unverified",
+      "gate": "Throw and nested item picker available"
+    },
+    {
+      "id": "default-hide",
+      "source": "LaunchDefaultActionCommand(Hide); radial SpellsAndActions",
+      "route": "CAM native slot/provider equality unproven",
+      "status": "unverified",
+      "gate": "Hide and conditional actions available"
+    },
+    {
+      "id": "action-resource",
+      "source": "ActionResourcesCostPreview; FilterActionResourceCommand",
+      "route": "SingleHotBar.SlotList",
+      "status": "unverified",
+      "gate": "both Action and Bonus resource variants included"
+    },
+    {
+      "id": "spell-level-upcast",
+      "source": "FilterActionResourceCommand; IsSelectingUpcastedSpell",
+      "route": "SingleHotBar.SlotList nested native",
+      "status": "unverified",
+      "gate": "native level 1-4 spells and upcasts available"
+    },
+    {
+      "id": "cantrips",
+      "source": "FilterCantripsCommand",
+      "route": "SingleHotBar.SlotList",
+      "status": "unverified",
+      "gate": "all native cantrip actions reachable"
+    },
+    {
+      "id": "class-resource",
+      "source": "ActionResourcesCostPreview; SpellsAndActions",
+      "route": "SingleHotBar.SlotList",
+      "status": "unverified",
+      "gate": "native class resource actions reachable dynamically"
+    },
+    {
+      "id": "passives-toggle",
+      "source": "PassivesHotBar.SlotList; TogglablePassivePredicate",
+      "route": "PassivesHotBar.SlotList",
+      "status": "unverified",
+      "gate": "game-owned passive selection and is-active behavior"
+    },
+    {
+      "id": "metamagic-toggle",
+      "source": "FixedSideBar.SlotList; TogglableMetaMagicPassivePredicate",
+      "route": "CAM_FixedSideBarList VMHotBarSlot",
+      "status": "blocked",
+      "gate": "tooltip, A and modified-spell eligibility/real cost correct; issue #125"
+    },
+    {
+      "id": "item-consumable",
+      "source": "ItemHotBar; radial Inventory.Slots",
+      "route": "CurrentShownDeck.SlotList",
+      "status": "unverified",
+      "gate": "all executable radial inventory candidates covered"
+    },
+    {
+      "id": "item-scroll",
+      "source": "ItemHotBar; Inventory.Slots",
+      "route": "CurrentShownDeck/KeyboardHotBars",
+      "status": "unverified",
+      "gate": "every native usable scroll reachable with correct resource"
+    },
+    {
+      "id": "item-charge",
+      "source": "ItemHotBar; Inventory.Slots",
+      "route": "CurrentShownDeck/KeyboardHotBars",
+      "status": "unverified",
+      "gate": "each item charge action reachable"
+    },
+    {
+      "id": "temporary-actions",
+      "source": "SpellsAndActions; native temporary action VM",
+      "route": "KeyboardHotBars/SingleHotBar native slot",
+      "status": "unverified",
+      "gate": "temporary actions do not disappear from CAM"
+    },
+    {
+      "id": "recasts",
+      "source": "SpellsAndActions; native recast VM",
+      "route": "KeyboardHotBars/SingleHotBar native slot",
+      "status": "unverified",
+      "gate": "recasts keep original cost, availability and targeting"
+    },
+    {
+      "id": "nested-container-variants",
+      "source": "IsShowingAContainerWithVariants; IsShowingItemsToThrow",
+      "route": "SingleHotBar.SlotList",
+      "status": "unverified",
+      "gate": "nested selection, B return and A dispatch"
+    },
+    {
+      "id": "concentration-release",
+      "source": "ReleaseConcentrationCommand",
+      "route": "CAM native footer command",
+      "status": "source-present",
+      "gate": "native command executable when concentrating"
+    },
+    {
+      "id": "dual-wield-toggle",
+      "source": "ToggleDualWieldingCommand",
+      "route": "CAM native footer command",
+      "status": "source-present",
+      "gate": "native dual wield toggles without conflicting with grid"
+    },
+    {
+      "id": "targeting-cancel",
+      "source": "ActionCancelCommand; ClearSingleHotbarCommand; CancelTaskCommand; TargetGameobjectCommand",
+      "route": "CAM native B/nested; action-specific task/targeting parity unverified",
+      "status": "unverified",
+      "gate": "targeting cancellation and object targeting match BG3"
+    },
+    {
+      "id": "free-no-resource",
+      "source": "SpellsAndActions; KeyboardHotBars",
+      "route": "All grouped fallback",
+      "status": "unverified",
+      "gate": "all free executable native actions reachable"
+    },
+    {
+      "id": "modded-actions",
+      "source": "native dynamic VMHotBarSlot providers; modded resources",
+      "route": "native provider availability varies per mod",
+      "status": "unverified",
+      "gate": "new mod-added radial gameplay candidate is not silently omitted"
+    }
+  ],
+  "excludedNonGameplayUiCommands": {
+    "SetCursorCommand": "Keyboard-only mouse pointer resize for an editable hotbar splitter; no controller gameplay capability",
+    "CancelTaskCommand": "Keyboard hotbar nested task/filter dismissal; equivalent native B/close behavior still requires gameplay verification, not a duplicate command button",
+    "radialLayout": [
+      "AddRadialCommand",
+      "AssignSlotCommand",
+      "ClearSlotCommand",
+      "RemoveRadialCommand",
+      "RequestAssignSlotCommand",
+      "SwapSlotCommand"
+    ],
+    "keyboardLayout": [
+      "DecreaseRowsCommand",
+      "IncreaseRowsCommand",
+      "SaveColumnsCommand",
+      "SetColumnsCommand",
+      "LockHotBarCommand"
+    ],
+    "debug": [
+      "ClearDebugUIEntityCommand",
+      "SetDebugUIEntityCommand"
+    ],
+    "otherPresentation": [
+      "SetIsShowingCustomDeckCommand",
+      "SetIsShowingPassivesDeckCommand",
+      "ShowContextMenuCommand"
+    ]
+  },
+  "requireRuntimeInventoryComparison": true,
+  "sourceTestNotGameAcceptance": true
+}
