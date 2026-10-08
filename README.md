@@ -181,3 +181,13 @@ diagnostic marks and constrains **each** native resource-point
 image to 24x24 uniform scaling while retaining the native resource
 group/availability logic. This is a visual correction candidate
 awaiting game verification, not a completed parity claim.
+
+
+### 0.0.96 — native keyboard HotBar resource indicators
+
+The v0.0.95 per-point scaling approach was visually unsuccessful.
+v0.0.96 replaces that approximation with the **complete 24-template
+resource-group block from the installed Patch 8 keyboard HotBar**,
+scoped to CAM's resource tabs. This preserves the native selector,
+original resource-state images and animations, and LB/RB controls.
+The release requires an in-game screenshot for final parity acceptance.
