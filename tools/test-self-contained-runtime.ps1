@@ -575,9 +575,33 @@ if (-not $sidebar.Success -or
     $sidebar.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"') -or
     $mainList.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"') -or
     -not $sidebar.Value.Contains('EventName="LocalFocusChanged"') -or
-    -not $sidebar.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"')) {
+    -not $sidebar.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"') -or
+    -not $sidebar.Value.Contains('Height="818"')) {
     throw "The fixed sidebar must remain a native, independently focused executable VMHotBarSlot list."
 }
+# 0.0.103 had a visible sidebar LocalFocusSelector but no tooltip or A
+# command after entering the Metamagic tab. Main HotBarList already uses
+# a SelectionChanged settle wake; the sidebar must also publish the
+# same native LocalFocus.DataContext when its first slot is selected.
+$sideEntryWake = [regex]::Match(
+    $sidebar.Value,
+    '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sideEntryWake.Success -or
+    -not $sideEntryWake.Value.Contains('CAM_MetamagicModeToken') -or
+    -not $sideEntryWake.Value.Contains('IsEnabled, ElementName=CAM_FixedSideBarList') -or
+    -not $sideEntryWake.Value.Contains('LocalFocus.DataContext, ElementName=CAM_FixedSideBarList') -or
+    -not $sideEntryWake.Value.Contains('TargetName="CAM_FixedSideBarTooltip"') -or
+    -not $sideEntryWake.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    -not $sideEntryWake.Value.Contains('TargetName="ActionRadials"') -or
+    -not $sideEntryWake.Value.Contains('PropertyName="Tag"') -or
+    -not $sideEntryWake.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    $sideEntryWake.Value.Contains('SelectedItem') -or
+    $sideEntryWake.Value.Contains('TargetName="CAM_ProviderModeMarker"')) {
+    throw "Metamagic entry must wake tooltip and UseSlotCommand identity from authoritative sidebar LocalFocus, never from visual selection."
+}
+
 $gridTemplate = [regex]::Match(
     $text,
     '<DataTemplate x:Key="CAM_ActionGridSlotTemplate">[\s\S]*?</DataTemplate>',
@@ -676,11 +700,16 @@ if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
 }
 
 
-# The native LocalFocusSelector controls are siblings of their ScrollViewer,
-# not children of its clipping surface. The UI's own fixed-height action
-# regions therefore need explicit clipping so scroll-boundary selection
-# cannot render into the LB/RB resource-tab header. This is a render-only
-# invariant, NOT proof of one-row-at-a-time navigation.
+# The selector is a native sibling of each scroll owner and can extend
+# outside its 104px slot. Clip the complete two-column action row, not the
+# individual columns: the original per-column ClipToBounds caused visible
+# cropping at the sidebar/grid division in the user's 0.0.103 game test.
+# Give the chrome a 16px vertical gutter inside the same 850px body row.
+$rowClip = [regex]::Match(
+    $text,
+    '<Grid\s+x:Name="CAM_ActionRowClip"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
 $actionViewport = [regex]::Match(
     $text,
     '<Grid\s+x:Name="CAM_ActionViewport"[^>]*>',
@@ -691,13 +720,22 @@ $fixedSidebarRegion = [regex]::Match(
     '<Grid\s+x:Name="CAM_FixedSideBarRegion"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $actionViewport.Success -or
-    -not $actionViewport.Value.Contains('ClipToBounds="True"') -or
-    -not $actionViewport.Value.Contains('Grid.Row="1"') -or
+if (-not $rowClip.Success -or
+    -not $rowClip.Value.Contains('Grid.Row="1"') -or
+    -not $rowClip.Value.Contains('Grid.ColumnSpan="2"') -or
+    -not $rowClip.Value.Contains('ClipToBounds="True"') -or
+    -not $rowClip.Value.Contains('Height="850"') -or
+    -not $actionViewport.Success -or
+    -not $actionViewport.Value.Contains('Grid.Row="0"') -or
+    -not $actionViewport.Value.Contains('Height="818"') -or
+    -not $actionViewport.Value.Contains('Margin="40,16"') -or
+    $actionViewport.Value.Contains('ClipToBounds="True"') -or
     -not $fixedSidebarRegion.Success -or
-    -not $fixedSidebarRegion.Value.Contains('ClipToBounds="True"') -or
-    -not $fixedSidebarRegion.Value.Contains('Grid.Row="1"')) {
-    throw "Both native scroll-focus selectors must be clipped by their action-row viewports, not paint across the resource-tab header."
+    -not $fixedSidebarRegion.Value.Contains('Grid.Row="0"') -or
+    -not $fixedSidebarRegion.Value.Contains('Height="818"') -or
+    -not $fixedSidebarRegion.Value.Contains('Margin="0,16,0,16"') -or
+    $fixedSidebarRegion.Value.Contains('ClipToBounds="True"')) {
+    throw "One clipped catalog row with native focus gutters must protect the tabs without cropping selectors between lists."
 }
 
 # The direct executable list is also the sole scroll owner.
@@ -707,6 +745,7 @@ $hotBarList = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $hotBarList.Success -or
+    -not $hotBarList.Value.Contains('Height="818"') -or
     -not $hotBarList.Value.Contains('ls:ScrollViewerHelper.VerticalScrollOffsetMargin="120"')) {
     throw "Direct HotBarList must own controller scroll-follow behavior."
 }
