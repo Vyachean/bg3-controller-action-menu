@@ -148,3 +148,13 @@ If fresh native UI evidence is needed, the next development release can make the
 ### Current operator task (0.0.92)
 
 Run the **same existing VBS once** to collect the keyboard/controller resource style dictionaries missing from the previous archive. It reads Game.pak only, does not launch BG3 and does not install/update the PAK. Upload the resulting `bg3-controller-action-menu-inputs-*.zip`; the required new members are `DataTemplates_k.xaml`, `DataTemplates_c.xaml` and `ActionResourceTemplates_c.xaml`. Do not test CAM icons in game for this capture-only version.
+
+
+### 0.0.93 resource-indicator appearance
+
+The 0.0.92 dictionary capture is complete. Release 0.0.93 restores
+the one-file development VBS to normal self-contained PAK installation
+and adapts the native controller resource preview to the exact
+installed keyboard HotBar point-group template and local sizes.
+The operator does **not** need another capture. In-game visual
+parity remains to be confirmed; the 0.0.91 glyph workaround is retired.

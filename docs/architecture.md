@@ -948,3 +948,31 @@ parity. If runtime still renders geometric fallback glyphs, inspect the
 current installed 1.8.910.0 `DataTemplates.xaml` icon path resources and
 controller dictionary lookup before another presentation change. Do not
 guess scale factors or implement a CAM-specific resource-name/icon map.
+
+
+## 0.0.93 — keyboard resource point visuals within controller tabs
+
+The installed Xbox App 1.8.910.0 `DataTemplates_k.xaml` and
+`DataTemplates_c.xaml` differ at the resource point group/style
+boundary. CAM must preserve **keyboard hotbar resource presentation**
+inside its controller-owned selected-tab transport, not inherit the
+game's unrelated full-screen controller resource-bar dimensions.
+
+The `VMActionResourceCostPreview` template therefore has one
+presentation-only boundary:
+
+```text
+Controller CAM_ResourceTabs (LB/RB, filters, scrolling)
+  -> native VMActionResourceCostPreview
+     -> native LSActionPointResources(ActionResourcesTemplateSelector)
+        -> CAM_KeyboardHotBarPointGroup
+           -> native ActionResources.ActionGroup.ActionPoint glyph
+     -> scoped keyboard resource group/point/small sizes 56 / 48 / 24
+```
+
+All resource identity, images, available/spent states, conditional
+numerals, spell-level overlays, native `FilterActionResourceCommand`,
+VMHotBarSlot execution, tooltip, item quantities, and B return remain
+native. Do not merge `DataTemplates_k.xaml` globally or mutate
+controller UI resource dictionaries. The literal keyboard mapping
+removes the failed 0.0.91 hand-authored glyph template.
