@@ -1005,7 +1005,7 @@ if ($resourceTabTemplate.Value.IndexOf('x:Key="ActionResourcePointIconsPath"') -
     $resourceTabTemplate.Value.IndexOf('x:Key="ActionResources.ActionGroup.ActionPoint"') -or
     $resourceTabTemplate.Value.IndexOf('x:Key="ActionResources.ActionGroup.ActionPoint"') -gt
     $resourceTabTemplate.Value.IndexOf('x:Key="ActionResources.ActionGroup.ActionPointGroup"') -or
-    $resourceTabTemplate.Value.Contains('Assets/ActionResources_c/Icons/Resources/')) {
+    $resourceTabTemplate.Value.Contains('<System:String x:Key="ActionResourcePointIconsPath">Assets/ActionResources_c/Icons/Resources/')) {
     throw "Keyboard point image resolution must precede group templates without controller art."
 }
 
