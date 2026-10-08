@@ -820,3 +820,30 @@ resource/filter semantics, focus/tooltip, item counts and nested A/B.
 Do not ask for another in-game screenshot until a proven renderer fix
 passes static/package checks. See
 `docs/research/keyboard-controller-resource-glyph-investigation-2026-10-08.md`.
+
+
+## 0.0.93 exact 1.8.910.0 keyboard resource template proof
+
+The `bg3-controller-action-menu-inputs-20261008-114231.zip`
+provides all missing native dictionaries. `DataTemplates_k.xaml`
+defines ActionResources group/point/small sizes **56/48/24**, whereas
+`DataTemplates_c.xaml` defines **80/80/36** and sends
+ActionPoint/BonusActionPoint to the background-backed
+`ActionResources.ActionGroup.ActionPointWithBG`. Keyboard point groups
+use shared `ActionResources.ActionGroup.ActionPoint`.
+
+The previous 0.0.91 manually cloned per-state point glyph was
+runtime-rejected; never restore it as the solution. The 0.0.93
+controller template locally adopts the exact keyboard point-group
+ContentPresenter and locally scopes keyboard sizing resources inside
+`CAM_ResourceTabTemplate`'s Root; the native game's selector retains
+resource TypeId, costs, value/group logic and other per-type overrides.
+Keep these scoped, not global: do not copy/import all `DataTemplates_k`
+or replace controller library dictionaries.
+
+0.0.93 restores the universal VBS's normal release-controlled
+self-contained **install** task; capture remains optional. The first
+in-game proof is limited to visible HotBar resource glyph/spacing
+parity, with a quick check of LB/RB and tooltip; do not ask for
+separate repeated experiments. If unchanged, return to the specific
+resource-lookup reason, not speculative new image or scale overrides.
