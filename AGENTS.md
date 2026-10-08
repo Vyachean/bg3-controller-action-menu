@@ -796,3 +796,27 @@ not create hard-coded icons, class mappings, or gameplay filters.
 Do not change controller navigation, resource tab selection, provider modes,
 grid focus, tooltip, A/B, nested return or item quantities together with
 this visual fix. It remains static-proof-only until verified in game.
+
+
+## 0.0.91 runtime rejection; 0.0.92 mode-resource proof gate
+
+Operator observed **no visual change** from the 0.0.91
+`CAM_KeyboardHotBarPointGlyph` / `ActionPointTemplate` override.
+Do not claim this fixes resource icon parity or keep layering resource
+image/size guesses on it.
+
+The 1.8.910.0 archive examined on 2026-10-08 proves the controller's
+`Libs_Controller.xaml` imports mode-specific `DataTemplates_c.xaml`
+and `ActionResourceTemplates_c.xaml`. The 22-file capture did not
+include either dictionary nor `DataTemplates_k.xaml`. Before changing
+resource visuals again, inspect the exact installed copies of all three
+and compare them to the pinned `DataTemplates.xaml` / `HotBar.xaml`.
+Historical public copies show controller/keyboard icon/size differences
+but do not authorize unverified changes against the installed game.
+
+0.0.92 is read-only capture **only**. Its universal VBS does not install
+or alter CAM/game data. Preserve the mod execution model, tab navigation,
+resource/filter semantics, focus/tooltip, item counts and nested A/B.
+Do not ask for another in-game screenshot until a proven renderer fix
+passes static/package checks. See
+`docs/research/keyboard-controller-resource-glyph-investigation-2026-10-08.md`.
