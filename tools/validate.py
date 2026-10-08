@@ -121,7 +121,7 @@ def validate_semantics() -> list[str]:
 
         point_key = '    <DataTemplate x:Key="ActionResources.ActionGroup.ActionPoint">'
         point_start = runtime.find(point_key)
-        point_end_marker = '    </DataTemplate>\\n\\n'
+        point_end_marker = '    </DataTemplate>\n\n'
         point_end = runtime.find(point_end_marker, point_start) if point_start >= 0 else -1
         if point_start < 0 or point_end < 0 or (group_start >= 0 and point_start >= group_start):
             errors.append("Original keyboard resource glyph DataTemplate must precede local group templates.")
