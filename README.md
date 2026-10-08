@@ -191,3 +191,13 @@ resource-group block from the installed Patch 8 keyboard HotBar**,
 scoped to CAM's resource tabs. This preserves the native selector,
 original resource-state images and animations, and LB/RB controls.
 The release requires an in-game screenshot for final parity acceptance.
+
+
+### 0.0.97 read-only resource-theme research
+
+v0.0.96 did not achieve visual parity. v0.0.97 temporarily sets the
+**same universal VBS** back to a read-only Game.pak input collection
+to capture the original keyboard/controller theme style XAML that
+was absent from the previous archive. It does not install a modified
+gameplay PAK or launch BG3. The output ZIP is created beside the VBS.
+This evidence is needed before another rendering fix can be justified.
