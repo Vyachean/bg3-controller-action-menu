@@ -904,3 +904,28 @@ not accepted visual parity until a game screenshot verifies it.
 Do not touch LB/RB, source/provider routing, focus, tooltip, nested
 execution, available/used resource logic or item counts. If still
 wrong, prove source bitmap identity/intrinsic size, not random scale.
+
+
+## 0.0.96 source-exact keyboard HotBar point-groups
+
+0.0.95 screenshot showed that the per-point 24×24 Uniform Image
+workaround made resource symbols too tiny and did not restore parity.
+Do not restore it or tune arbitrary icon measurements.
+
+The authoritative installed keyboard `DataTemplates_k.xaml` exports
+24 `ActionResources.ActionGroup.*` ControlTemplates, all of which
+are pinned byte-for-byte in `CAM_ResourceTabTemplate`'s `Grid.Resources`.
+The captured block SHA-256 is
+`9e017778ec41ef2e03f192392ca944640f7d8ad3c227f69d9742aefbdaff4651`.
+Using the original native `ActionResourcesTemplateSelector` means its
+DynamicResource group lookup can select these keyboard templates in
+the item control's own visual scope, without changing the game's
+global controller library. The original `DataTemplates.xaml`
+`ActionResources.ActionGroup.ActionPoint` is used unchanged.
+
+Do not add any CAM-specific point Image, forced `ActionPointTemplate`,
+hand-maintained TypeId->bitmap map, or global `DataTemplates_k.xaml`
+merge. LB/RB, resource filtering, native used/missing/highlight states,
+spell numerals, tooltip, focus, native nested A/B and item quantities
+are outside this change. CI guards the copied block digest, not live
+Noesis layout. Only a screenshot can accept visual parity.

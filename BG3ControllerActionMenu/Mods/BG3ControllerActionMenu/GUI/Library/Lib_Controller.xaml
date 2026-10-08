@@ -281,72 +281,10 @@
         </ls:LSListBox>
     </DataTemplate>
 
-    <!-- 0.0.94 proved that independently size-constrained converter icons render
-         even while native LSActionPointResources clips oversized point images.
-         Keep every native resource group/state, but bound each point bitmap in
-         its own image layout as in diagnostic B, not Stretch=None. -->
-    <DataTemplate x:Key="CAM_KeyboardHotBarPointGlyph">
-        <Image x:Name="ResourceGlyph"
-               Width="24"
-               Height="24"
-               Stretch="Uniform"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center">
-            <Image.Source>
-                <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                              FallbackValue="{StaticResource TypeIdToSourceFallback}">
-                    <Binding Source="{StaticResource ActionResourcePointIconsPath}"/>
-                    <Binding Path="DataContext.TypeId"
-                             RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                </MultiBinding>
-            </Image.Source>
-        </Image>
-        <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
-                         Value="Highlight">
-                <Setter TargetName="ResourceGlyph" Property="Source">
-                    <Setter.Value>
-                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                      FallbackValue="{StaticResource DefaultHighlightTypeIdFallback}">
-                            <Binding Source="{StaticResource ActionResourcePointHighlightIconsPath}"/>
-                            <Binding Path="DataContext.TypeId"
-                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                        </MultiBinding>
-                    </Setter.Value>
-                </Setter>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
-                         Value="Used">
-                <Setter TargetName="ResourceGlyph" Property="Source">
-                    <Setter.Value>
-                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                      FallbackValue="{StaticResource DefaultUsedTypeIdFallback}">
-                            <Binding Source="{StaticResource ActionResourcePointUsedIconsPath}"/>
-                            <Binding Path="DataContext.TypeId"
-                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                        </MultiBinding>
-                    </Setter.Value>
-                </Setter>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
-                         Value="Missing">
-                <Setter TargetName="ResourceGlyph" Property="Source">
-                    <Setter.Value>
-                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                      FallbackValue="{StaticResource DefaultMissingTypeIdFallback}">
-                            <Binding Source="{StaticResource ActionResourcePointMissingIconsPath}"/>
-                            <Binding Path="DataContext.TypeId"
-                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
-                        </MultiBinding>
-                    </Setter.Value>
-                </Setter>
-            </DataTrigger>
-        </DataTemplate.Triggers>
-    </DataTemplate>
-    <ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup" TargetType="{x:Type ls:LSActionPoint}">
-        <ContentPresenter ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"/>
-    </ControlTemplate>
-
+    <!-- Resource group templates are resolved locally from the literal installed
+         Patch 8 keyboard DataTemplates_k.xaml definitions below. The native
+         shared ActionResources.ActionGroup.ActionPoint DataTemplate and game
+         ActionResourcesTemplateSelector retain all point state animations. -->
     <!-- Controller selection is transport only. Native resource content is the current Patch 8
          ActionResourcesList item template; ListBoxItem.IsSelected must not alter its visuals. -->
     <Style x:Key="CAM_ResourceTabItemStyle"
@@ -409,9 +347,115 @@
                      so DynamicResource in the native selector resolves correctly
                      without changing global controller UI resource dictionaries. -->
                 <Grid.Resources>
+                    <!-- Pixel-for-pixel source XAML from keyboard Patch 8 DataTemplates_k.xaml,
+                         groups only; scoped to CAM resource previews so the rest of
+                         BG3's controller UI retains its own DataTemplates_c.xaml. -->
                     <System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>
                     <System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>
                     <System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.ActionPointGroup">
+        <ContentPresenter ContentTemplate="{DynamicResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>    
+    
+    <ControlTemplate x:Key="ActionResources.ActionGroup.DefaultActionPointGroup">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.BonusActionPointGroup">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.ReactionActionPointGroup">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.SorceryPointGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.KiActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.LayOnHandsChargeActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.RageActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.DivinityActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.OathActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.SuperiorityDieActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.ArcaneRecoveryActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.InspirationActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.SpellSlot" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.WarlockSpellSlot" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.RitualPointActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.NaturalRecoveryPointActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.WildShapeActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.TidesOfChaosActionGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.WarPriestActionPointGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.FungalInfestationChargeGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.LuckPointGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.ShadowSpellSlotGroup" TargetType="ls:LSActionPoint">
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ActionResources.ActionGroup.ArcaneShotGroup" TargetType="ls:LSActionPoint">
+        <ControlTemplate.Resources>
+            <ImageSource x:Key="Highlight">/GustavNoesisGUI;component/Assets/Shared/Resources/ico_classRes_arcaneShot_h.png</ImageSource>
+            <ImageSource x:Key="Available">/GustavNoesisGUI;component/Assets/Shared/Resources/ico_classRes_arcaneShot_d.png</ImageSource>
+            <ImageSource x:Key="Used">/GustavNoesisGUI;component/Assets/Shared/Resources/ico_classRes_arcaneShot_spent.png</ImageSource>
+            <ImageSource x:Key="Missing">/GustavNoesisGUI;component/Assets/Shared/Resources/ico_classRes_arcaneShot_missing.png</ImageSource>
+        </ControlTemplate.Resources>
+        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    </ControlTemplate>
+
                 </Grid.Resources>
                 <Image x:Name="BgBg" Source="{StaticResource CAM_BoxResourceBg}"/>
                 <Image x:Name="Bg"
@@ -454,7 +498,6 @@
                                                MaxActionPointGroups="0"
                                                SmallActionPointSize="24"
                                                ActionPointGroupSize="56"
-                                               ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"
                                                Style="{StaticResource ActionResourcesTemplateSelector}"/>
                 </Border>
 

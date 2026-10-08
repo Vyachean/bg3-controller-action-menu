@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -84,6 +85,27 @@ def validate_semantics() -> list[str]:
             f"{script_extender.relative_to(ROOT)}: runtime package must not contain Script Extender files"
         )
 
+    # 1.8.910.0 keyboard DataTemplates_k.xaml point-group block copied
+    # unchanged under the CAM resource tile only. Static validation must
+    # fail on any hand-edited/removed/added group in the canonical block.
+    if SELF_CONTAINED_RUNTIME.exists():
+        runtime = SELF_CONTAINED_RUNTIME.read_text(encoding="utf-8")
+        group_start = runtime.find('    <ControlTemplate x:Key="ActionResources.ActionGroup.ActionPointGroup">')
+        group_end = runtime.find('                </Grid.Resources>', group_start)
+        if group_start < 0 or group_end < 0:
+            errors.append("CAM resource item must locally contain native keyboard resource group templates.")
+        else:
+            groups = runtime[group_start:group_end]
+            digest = hashlib.sha256(groups.encode("utf-8")).hexdigest()
+            expected = "9e017778ec41ef2e03f192392ca944640f7d8ad3c227f69d9742aefbdaff4651"
+            if digest != expected:
+                errors.append(
+                    "Keyboard resource group XAML differs from the exact installed "
+                    f"BG3 Patch 8 DataTemplates_k.xaml group block: {digest}"
+                )
+        if 'CAM_KeyboardHotBarPointGlyph' in runtime or 'ActionPointTemplate="{StaticResource CAM_' in runtime:
+            errors.append("CAM must let the native resource selector choose exact keyboard group templates.")
+
     # Raw copied game resources are forbidden. Project-owned self-contained
     # runtime XAML belongs under Mods/BG3ControllerActionMenu and is expected
     # once the migration is completed.
@@ -113,19 +135,12 @@ def validate_semantics() -> list[str]:
                 'x:Name="CAM_TopTabs"',
                 '<ls:LSActionPointResources x:Name="ResourcePoints"',
                 'Style="{StaticResource ActionResourcesTemplateSelector}"',
-                'x:Key="CAM_KeyboardHotBarPointGroup"',
-                'ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"',
-                'ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"',
-                'x:Key="CAM_KeyboardHotBarPointGlyph"',
-                'x:Name="ResourceGlyph"',
-                'Width="24"',
-                'Height="24"',
-                'Stretch="Uniform"',
-                'ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"',
-                'ActionResourcePointIconsPath',
-                'ActionResourcePointHighlightIconsPath',
-                'ActionResourcePointUsedIconsPath',
-                'ActionResourcePointMissingIconsPath',
+                'x:Key="ActionResources.ActionGroup.ActionPointGroup"',
+                'x:Key="ActionResources.ActionGroup.DefaultActionPointGroup"',
+                'x:Key="ActionResources.ActionGroup.BonusActionPointGroup"',
+                'x:Key="ActionResources.ActionGroup.SpellSlot"',
+                'x:Key="ActionResources.ActionGroup.WarlockSpellSlot"',
+                'ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"',
                 '<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>',
                 '<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>',
                 '<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>',
