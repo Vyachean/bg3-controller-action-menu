@@ -1,6 +1,23 @@
-# BG3 vs CAM: static gameplay-capability parity audit (2026-10-08)
+## Subsequent source-backed implementation — native SummonHotBar (#146)
+
+The exact raw-source comparison below describes pre-#146 CAM state. The
+source-backed implementation in `feature/native-summon-hotbar-provider`
+binds `SummonHotBar.SlotList` directly to `HotBarList.ItemsSource` when
+`SummonHotBar.SlotList.Count > 0`, using the existing `VMHotBarSlot`
+styles, source focus and `UseSlotCommand`. The original keyboard HotBar and
+controller ActionRadials use the same DCHotBar context. Native
+`SingleHotBar.SlotList` nested/upcast/throw state retains priority.
+The separate metamagic sidebar's input is disabled while the summoned
+source owns the main grid. **No new UI tab or action catalog is created.**
+
+This proves a code-level native source integration, **not** execution or
+first-frame controller focus in-game; other action coverage gaps remain.
 
 ## Exact installed-game archive verification — 2026-10-08
+
+# BG3 vs CAM: static gameplay-capability parity audit (2026-10-08)
+
+
 
 The operator supplied the **original read-only capture** `bg3-controller-action-menu-inputs-20261008-132651.zip`. This archive was opened and all **45 native XAML files parsed offline**, without launching BG3. ZIP integrity check passed; the package manifest says Xbox App `1.8.910.0`; the two critical raw XAML files match the pinned byte-level SHA-256 values:
 
@@ -12,7 +29,7 @@ The operator supplied the **original read-only capture** `bg3-controller-action-
 | Original source (exact game file/lines) | Verified native construction | CAM counterpart | Source-only verdict |
 | --- | --- | --- | --- |
 | `HotBar.xaml:1565–1566` | `KeyboardHotBars` collection | Grouped All list | Same provider reference present; completeness of game action catalog not proven |
-| `HotBar.xaml:1759` | `ContentControl Content="{Binding SummonHotBar}"`, `HotBarTemplate`, visible when `SummonHotBar.SlotList.Count` | **No `SummonHotBar` reference in CAM** | **New confirmed uncovered direct provider**; cannot infer slot overlap |
+| `HotBar.xaml:1759` | `ContentControl Content="{Binding SummonHotBar}"`, `HotBarTemplate`, visible when `SummonHotBar.SlotList.Count` | Pre-#146: absent. #146: native `SummonHotBar.SlotList` override of main `HotBarList` | Source-level route restored; real focus/dispatch still runtime-unverified |
 | `HotBar.xaml:1752–1754` | `PlayerCharacterProperties.CustomHotBar`, `HotBarTemplate`, guarded by `IsShowingCustomDeck` | **No `CustomHotBar` reference** | Configurable UI excluded from design, but any unique gameplay entries must be available automatically elsewhere |
 | `HotBar.xaml:4516–4532` | Native `CallAllies` object used directly by `UseSlotCommand`, with game-owned `BoundEvent` | No explicit CAM-template button | Not sufficient to declare a gameplay loss: original controller page has independent semantic path (next rows) |
 | `ActionRadials.xaml:31–39` | On `Loaded`, if `Metadata == CallAllies`, invokes game `CallAllies` command | **Native page unchanged**; CAM changes the template `ActionRadialWidgetTemplate_P8` | **Page-level transport retained by source composition**, not proof of all effects |
