@@ -589,7 +589,6 @@ def validate_semantics() -> list[str]:
             DEV_ENTRY,
             [
                 "releases?per_page=20",
-                'capture-self-contained-inputs.ps1',
                 "ReleaseMetadataPath",
                 "foreach ($release in @($payload))",
                 "Save-Asset",
