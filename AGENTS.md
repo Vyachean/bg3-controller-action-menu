@@ -32,6 +32,30 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## Metamagic functional parity — source-gated 0.0.99 candidate
+
+The operator confirmed that 0.0.98 finally matches the original
+keyboard resource glyphs; **do not touch that visual implementation**.
+A separate gap #125 is metamagic: the keyboard HotBar renders native
+`FixedSideBar` concurrently with spells, while old CAM replaced the
+entire grid with that list. Original installed 1.8.910.0
+`HotBar.xaml` and `DataTemplates.xaml` were inspected in
+`bg3-controller-action-menu-inputs-20261008-132651.zip`; pinned
+SHA-256 and binding/trigger evidence are in
+`docs/research/metamagic-parity-2026-10-08.md`.
+
+The candidate adds a **parallel VMHotBarSlot** sidebar and restores
+the original native `Content.IsModified` and `IsActive` visual
+indicators. Side actions still dispatch through the existing
+`ActionRadials.Tag -> UseSlotCommand`; spell compatibility and
+metamagic effects remain BG3-owned. Do not reintroduce a tab
+substitution or a raw passive/SpellBook object as an execution slot.
+The original keyboard `HotBarSlotStyle` must not replace the
+controller grid's 104×104 item geometry.
+
+Focus handoff and live casting are pending one combined runtime
+sorcerer proof; static success does **not** close #125.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:
