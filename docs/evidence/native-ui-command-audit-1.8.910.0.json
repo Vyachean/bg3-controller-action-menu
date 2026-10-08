@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "gamePackageVersion": "1.8.910.0",
+  "sources": {
+    "keyboard": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+    "controller": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"
+  },
+  "nativeCommands": {
+    "keyboard": [
+      "CancelTaskCommand",
+      "ClearDebugUIEntityCommand",
+      "ClearResourceHighlightsCommand",
+      "ClearSingleHotbarCommand",
+      "DecreaseRowsCommand",
+      "FilterActionResourceCommand",
+      "FilterCantripsCommand",
+      "HighlightResourcesCommand",
+      "IncreaseRowsCommand",
+      "LaunchDefaultActionCommand",
+      "LockHotBarCommand",
+      "ReleaseConcentrationCommand",
+      "SaveColumnsCommand",
+      "SetColumnsCommand",
+      "SetCurrentShownDeckCommand",
+      "SetCursorCommand",
+      "SetDebugUIEntityCommand",
+      "SetIsShowingCustomDeckCommand",
+      "SetIsShowingPassivesDeckCommand",
+      "SwapLightSourceCommand",
+      "SwitchWeaponSetCommand",
+      "TargetGameobjectCommand",
+      "ToggleDualWieldingCommand",
+      "UseMeleeWeaponCommand",
+      "UseRangedWeaponCommand",
+      "UseSlotCommand"
+    ],
+    "controller": [
+      "ActionCancelCommand",
+      "AddRadialCommand",
+      "AssignSlotCommand",
+      "ClearSingleHotbarCommand",
+      "ClearSlotCommand",
+      "CreateFocusedTooltipDataCommand",
+      "HighlightResourcesCommand",
+      "ReleaseConcentrationCommand",
+      "RemoveRadialCommand",
+      "RequestAssignSlotCommand",
+      "ShowContextMenuCommand",
+      "ShowTooltipOnUIElementCommand",
+      "SwapSlotCommand",
+      "SwitchWeaponSetCommand",
+      "ToggleDualWieldingCommand",
+      "UseSlotCommand"
+    ]
+  },
+  "classification": {
+    "presentInCam": [
+      "ActionCancelCommand",
+      "ClearResourceHighlightsCommand",
+      "ClearSingleHotbarCommand",
+      "CreateFocusedTooltipDataCommand",
+      "FilterActionResourceCommand",
+      "FilterCantripsCommand",
+      "ReleaseConcentrationCommand",
+      "SetCurrentShownDeckCommand",
+      "ShowTooltipOnUIElementCommand",
+      "ToggleDualWieldingCommand",
+      "UseSlotCommand"
+    ],
+    "presentButBehaviorIntentionallyRestricted": [
+      "HighlightResourcesCommand"
+    ],
+    "missingGameplayOrUtilityTransport": [
+      "CancelTaskCommand",
+      "LaunchDefaultActionCommand",
+      "SetCursorCommand",
+      "SwapLightSourceCommand",
+      "SwitchWeaponSetCommand",
+      "TargetGameobjectCommand",
+      "UseMeleeWeaponCommand",
+      "UseRangedWeaponCommand"
+    ],
+    "nativeEditorOrLayoutNotPartOfCam": [
+      "AddRadialCommand",
+      "AssignSlotCommand",
+      "ClearDebugUIEntityCommand",
+      "ClearSlotCommand",
+      "DecreaseRowsCommand",
+      "IncreaseRowsCommand",
+      "LockHotBarCommand",
+      "RemoveRadialCommand",
+      "RequestAssignSlotCommand",
+      "SaveColumnsCommand",
+      "SetColumnsCommand",
+      "SetDebugUIEntityCommand",
+      "SetIsShowingCustomDeckCommand",
+      "SetIsShowingPassivesDeckCommand",
+      "ShowContextMenuCommand",
+      "SwapSlotCommand"
+    ]
+  },
+  "runtimeParityUnresolved": [
+    "action/bonus/class resource actions",
+    "spell-slot variants and upcasts",
+    "passives and metamagic",
+    "cantrips",
+    "free/no-resource radial-only actions",
+    "Inventory.Slots vs ItemHotBar (scrolls/consumables/charges)",
+    "temporary actions and recasts",
+    "mod-added radial-only actions"
+  ],
+  "note": "This is a source/command inventory, NOT proof every native action is reachable or executable. Missing gameplay/utility transports are known absent from CAM UI, but may remain available through other game UI or native slots. Intentionally omitted radial editing/layout commands do not establish missing combat actions.",
+  "generatedFrom": "Xbox App BG3 1.8.910.0 read-only capture bg3-controller-action-menu-inputs-20261008-132651.zip, command-binding scan of current keyboard HotBar and controller PreloadedActionRadials source"
+}
