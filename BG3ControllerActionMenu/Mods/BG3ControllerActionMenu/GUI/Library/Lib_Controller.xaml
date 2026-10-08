@@ -2041,6 +2041,30 @@
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                 </b:TimerTrigger>
+                                <!-- Sidebar selection is programmatic at LB/RB entry. The
+                                     selector can be visible with a stable LocalFocus,
+                                     so LocalFocusChanged alone need not fire. Mirror
+                                     the proven main-list SelectionChanged wake seam. -->
+                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
+                                                               Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}"
+                                                               Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"
+                                                               Operator="NotEqual" RightOperand="{x:Null}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
+                                    <b:ChangePropertyAction TargetName="ActionRadials"
+                                                            PropertyName="Tag"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                </b:TimerTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
                         <Control x:Name="CAM_FixedSideBarSelector"
