@@ -1,3 +1,5 @@
+# BG3 vs CAM: static gameplay-capability parity audit (2026-10-08)
+
 ## Subsequent source-backed implementation — native SummonHotBar (#146)
 
 The exact raw-source comparison below describes pre-#146 CAM state. The
@@ -14,10 +16,6 @@ This proves a code-level native source integration, **not** execution or
 first-frame controller focus in-game; other action coverage gaps remain.
 
 ## Exact installed-game archive verification — 2026-10-08
-
-# BG3 vs CAM: static gameplay-capability parity audit (2026-10-08)
-
-
 
 The operator supplied the **original read-only capture** `bg3-controller-action-menu-inputs-20261008-132651.zip`. This archive was opened and all **45 native XAML files parsed offline**, without launching BG3. ZIP integrity check passed; the package manifest says Xbox App `1.8.910.0`; the two critical raw XAML files match the pinned byte-level SHA-256 values:
 
