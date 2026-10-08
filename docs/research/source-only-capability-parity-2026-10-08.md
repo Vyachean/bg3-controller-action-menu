@@ -69,6 +69,12 @@ Seven absent **direct gameplay/utility-related bindings** requiring equivalence 
 
 `SetCursorCommand` is the eighth omitted utility command, but it controls the keyboard-only hotbar resize cursor and is **not** a missing gameplay capability. The other 16 omitted native command names concern original radial editing, keyboard layout, or debug/presentation; they are not automatically required merely because their names appear in the vanilla XAML.
 
+## Additional original controller input readback
+
+`docs/research/schema-v3-capture-2026-10-08.md` records a real `Game.pak` extraction of 22 targeted native XAML files, identical by SHA-256 to the preceding read-only capture. The original controller radial uses `ls:LSButton x:Name="ToggleWeaponSet"` with `ControllerHoldButtonStyle` and `SwitchWeaponSetCommand`; `UISelectionLeft` appears as the displayed controller hint, **not** a direct `BoundEvent="UISelectionLeft"` on that element. The keyboard HotBar uses `WeaponSetSwitchStyle` with `BoundEvent="ToggleWeaponSet"`. These are distinct input mechanisms, so neither is a proven drop-in CAM mapping. The existing 0.0.51–0.0.54 direct event adaptations failed the player's actual controller acceptance tests. The source-only result is **native transport unresolved**, not evidence that arbitrary new hold bindings are safe.
+
+The readback explicitly states that the 22 extracted XAML files have already been examined; repeating that unchanged capture cannot reveal compiled ViewModel producer logic. Inspect those producer implementations **offline from available game binaries** if legally and technically accessible, and preserve a hard evidence blocker if not.
+
 ## Required next source-inspection steps (still no game launch)
 
 1. **Original input:** inspect the entire previously captured native Patch 8 XAML archive (the repository currently holds hashes/derived findings, not complete source), not merely the 36 command-name manifest. For every gameplay-relevant original element, record its actual command parameter, binding data owner, relevant `DataTrigger` conditions, `BoundEvent` and provider scope; compare with the complete CAM template and game-owned page/state logic.
