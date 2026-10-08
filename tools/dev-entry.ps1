@@ -36,6 +36,7 @@ if (-not $ReportPath) {
     $ReportPath = Join-Path $PortableStateRoot "dev-report.json"
 }
 
+New-Item -ItemType Directory -Force -Path $PortableStateRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $CacheRoot | Out-Null
 
 $headers = @{
@@ -205,8 +206,14 @@ try {
     $failure = $_.Exception.Message
     Write-DevReport -State "ERROR" -Message $failure
     Write-DevStatus -State "ERROR" -Message $failure
-    if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) {
-        "Install entry failed: $failure" | Set-Content -LiteralPath $LogPath -Encoding UTF8
+    if (Test-Path -LiteralPath $installLog -PathType Leaf) {
+        $resolvedTaskLog = [System.IO.Path]::GetFullPath($LogPath)
+        $resolvedInstallLog = [System.IO.Path]::GetFullPath($installLog)
+        if ($resolvedTaskLog -ne $resolvedInstallLog) {
+            Copy-Item -LiteralPath $installLog -Destination $LogPath -Force -ErrorAction SilentlyContinue
+        }
     }
+    # An early failure must not leave a stale success log from a prior run.
+    "Install entry failed: $failure" | Add-Content -LiteralPath $LogPath -Encoding UTF8
     throw
 }
