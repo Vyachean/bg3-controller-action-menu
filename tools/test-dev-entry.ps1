@@ -141,6 +141,9 @@ if ($env:CAM_FIXTURE_INSTALL_FAIL -eq "1") {
     }
 
     Write-Host "Universal release-controlled install entry fixture passed."
+    # The preceding intentionally failed child left a native exit code of 1;
+    # the test's actual assertions completed successfully.
+    $global:LASTEXITCODE = 0
 } finally {
     Remove-Item -LiteralPath $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
