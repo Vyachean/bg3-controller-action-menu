@@ -1290,9 +1290,20 @@ python tools/compare-runtime-gameplay.py --self-test
 The test must reject missing native executable IDs, missing native
 global controller capabilities and incomplete observations, while
 allowing one executable identity to appear in multiple native
-providers. Game-state observations must contain a full variant-
-and-resource-aware stable native identity; generic spell labels
-alone are insufficient.
+providers. It now also rejects empty playable native inventories,
+CAM identities without `executable: true`, different gameplay
+capabilities with an equal identity string, contradictory native
+provider records and malformed array elements. These are concrete
+false-positive parity failures; synthetic matching names alone
+cannot establish executable parity.
+
+Game-state observations must contain a full variant- and
+resource-aware stable native identity; generic spell labels alone
+are insufficient. Both independently captured reference actions
+and CAM-visible native `VMHotBarSlot` entries must have verified
+`executable: true` evidence from a future engine-owned identity
+adapter. The existing developer-only count/name Noesis inventory
+is *not* such an adapter.
 
 A future development-only read-only probe can supply:
 
