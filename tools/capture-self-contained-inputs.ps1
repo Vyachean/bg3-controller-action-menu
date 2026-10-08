@@ -288,6 +288,10 @@ function Get-HotBarCoverageReport {
         }
     )
 
+    # All missing native gameplay/utility command names are read-only
+    # discovery targets, not permission to bind unproven gamepad input.
+    # Capture raw associated UI tags and availability predicates without
+    # synthesizing VMHotBarSlot objects or altering the installed game.
     $inputTransportSymbols = @(
         "SwitchWeaponSetCommand",
         "ToggleWeaponSet",
@@ -295,7 +299,15 @@ function Get-HotBarCoverageReport {
         "ControllerHoldButtonStyle",
         "WeaponSetSwitchStyle",
         "LSInputBinding",
-        "HoldTimeShortcuts"
+        "HoldTimeShortcuts",
+        "SwapLightSourceCommand",
+        "Equipment.LightSource.Item",
+        "UseMeleeWeaponCommand",
+        "UseRangedWeaponCommand",
+        "LaunchDefaultActionCommand",
+        "TargetGameobjectCommand",
+        "CancelTaskCommand",
+        "SetCursorCommand"
     )
     $inputTransportProbes = @(
         foreach ($symbol in $inputTransportSymbols) {
@@ -322,6 +334,10 @@ function Get-HotBarCoverageReport {
                             CommandParameter = Get-XamlAttributeFromTag -Tag $tag -AttributeName "CommandParameter"
                             Style = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Style"
                             Content = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Content"
+                            IsEnabled = Get-XamlAttributeFromTag -Tag $tag -AttributeName "IsEnabled"
+                            Visibility = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Visibility"
+                            IsChecked = Get-XamlAttributeFromTag -Tag $tag -AttributeName "IsChecked"
+                            DataContext = Get-XamlAttributeFromTag -Tag $tag -AttributeName "DataContext"
                             HoldTime = Get-XamlAttributeFromTag -Tag $tag -AttributeName "HoldTime"
                             TapTime = Get-XamlAttributeFromTag -Tag $tag -AttributeName "TapTime"
                             EatInput = Get-XamlAttributeFromTag -Tag $tag -AttributeName "EatInput"
@@ -382,6 +398,11 @@ if ($CoverageSelfTest) {
 <Grid>
   <Button Command="{Binding SetCurrentShownDeckCommand}" CommandParameter="Common"/>
   <Button Command="{Binding DataContext.FilterActionResourceCommand, RelativeSource={RelativeSource AncestorType=ls:UIWidget}}" CommandParameter="{Binding ActionResource}"/>
+  <ls:LSToggleButton x:Name="LightSourceToggle"
+                     Command="{Binding SwapLightSourceCommand}"
+                     IsEnabled="{Binding CurrentPlayer.SelectedCharacter.Equipment.LightSource.Item, Converter={StaticResource NullToBoolFalseConverter}}"/>
+  <ls:LSButton x:Name="DefaultJump"
+               Command="{Binding LaunchDefaultActionCommand}" CommandParameter="Jump"/>
   <ItemsControl ItemsSource="{Binding CurrentShownDeck.SlotList}"/>
   <ItemsControl ItemsSource="{Binding SingleHotBar.SlotList}"/>
 </Grid>
@@ -454,8 +475,25 @@ if ($CoverageSelfTest) {
             -not $weaponStyle.Present) {
             throw "Coverage self-test did not preserve input-binding/style transport structure."
         }
-        if (@($report.MissingInputTransportSymbols).Count -ne 0) {
-            throw "Coverage self-test unexpectedly reported missing input-transport symbols."
+        # Some targets are *intentionally missing* from a tiny fixture.
+        # Missing symbols are evidence, not a failure of the read-only capture.
+        $light = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "SwapLightSourceCommand" })[0]
+        $lightItem = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "Equipment.LightSource.Item" })[0]
+        $jump = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "LaunchDefaultActionCommand" })[0]
+        if (-not $light.Present -or $light.MatchCount -ne 1 -or
+            $light.Matches[0].ElementName -ne "LightSourceToggle" -or
+            -not $light.Matches[0].IsEnabled.Contains("Equipment.LightSource.Item")) {
+            throw "Coverage self-test did not capture native light command and IsEnabled evidence."
+        }
+        if (-not $lightItem.Present -or $lightItem.MatchCount -ne 1) {
+            throw "Coverage self-test lost equipped-light gating source metadata."
+        }
+        if (-not $jump.Present -or $jump.Matches[0].CommandParameter -ne "Jump") {
+            throw "Coverage self-test did not preserve native default-action command parameter."
+        }
+        if ($report.MissingInputTransportSymbols -notcontains "UseRangedWeaponCommand" -or
+            $report.MissingInputTransportSymbols -contains "SwapLightSourceCommand") {
+            throw "Coverage self-test did not report missing optional transport symbols correctly."
         }
         if ($report.SchemaVersion -ne 3 -or $report.ScannedXamlCount -ne 2) {
             throw "Coverage self-test produced the wrong report schema."
