@@ -61,3 +61,35 @@ both tooltip/dispatch and selector visibility by actual owner. All
 provider transitions are controlled by LB/RB, not events from the
 background list. These are source-verified corrections, **not yet
 proven in-game**.
+
+## Operator runtime observation on v0.0.101 and sourced compatibility feedback
+
+The operator confirmed in game that v0.0.101 now moves focus to the
+Metamagic column and visibly toggles the native metamagic selection.
+When CAM is closed/reopened the metamagic slot still shows active;
+this is bound to BG3-owned `VMHotBarSlot.IsActive`, so persistence
+alone is not evidence of a stale UI state. Whether a real spell
+remains modified after reopening needs runtime proof; **do not**
+automatically clear this native state.
+
+The spell grid currently shows only `Content.IsModified ->
+HotbarSlotGlow`, but omitted a second essential behavior of the
+installed controller radial: BG3 `MetamagicActive=True` dims
+**non-modified** spell slots. Source research above records the
+installed controller `PreloadedActionRadials_c.xaml` native triggers.
+A historical public ActionRadials XAML independently resolves the
+scope of the same native property as
+`UIWidget.DataContext.CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive`
+and applies a weak disabled overlay and opacity 0.7 for unmodified
+spells. This older dump is corroboration, not the source of the
+current Patch 8 slot-content property:
+https://github.com/akintos/bg3-data/blob/main/Public/Game/GUI/Widgets/ActionRadials.xaml
+
+The 0.0.102 candidate uses the current Patch 8 `Content.IsModified`
+plus `SlotType=Spell` and native `MetamagicActive` to show the
+original subdued incompatible-spell state while preserving the
+existing native glow for modified spells. It neither changes spell
+VMS nor reexecutes the resource filter and it does **not** prove that
+`SingleHotBar.SlotList` exposes up-to-date modified state at runtime.
+No claim of in-game success before verifying both spell highlights
+and actual metamagic cost/effect. Issue #125 stays open.
