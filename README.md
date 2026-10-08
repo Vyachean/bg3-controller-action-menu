@@ -170,3 +170,14 @@ reference icon while preserving the original point symbols. A single
 in-game screenshot of the resource tab strip establishes which renderer
 or image source is actually active. Remove this overlay in the next
 evidence-based fix.
+
+
+### 0.0.95 native point-glyph correction candidate
+
+Diagnostic 0.0.94 confirmed the current XAML was loading, and that
+the independent bounded icon could display compactly while the
+unbounded native point was enlarged/clipped. 0.0.95 removes the
+diagnostic marks and constrains **each** native resource-point
+image to 24x24 uniform scaling while retaining the native resource
+group/availability logic. This is a visual correction candidate
+awaiting game verification, not a completed parity claim.

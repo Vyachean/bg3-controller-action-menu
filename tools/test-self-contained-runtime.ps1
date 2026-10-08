@@ -373,7 +373,12 @@ $required = @(
     'ActionPointGroupSize="56"',
     'Style="{StaticResource ActionResourcesTemplateSelector}"',
     'x:Key="CAM_KeyboardHotBarPointGroup"',
-    'ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"',
+    'ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"',
+    'x:Key="CAM_KeyboardHotBarPointGlyph"',
+    'x:Name="ResourceGlyph"',
+    'Stretch="Uniform"',
+    'Width="24"',
+    'Height="24"',
     'ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"',
     '<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>',
     '<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>',
@@ -922,12 +927,6 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>') -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>') -or
     -not $resourceTabTemplate.Value.Contains('ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"') -or
-    -not $resourceTabTemplate.Value.Contains('x:Name="CAM_DiagnosticDirectPointFrame"') -or
-    -not $resourceTabTemplate.Value.Contains('x:Name="CAM_DiagnosticDirectPointGlyph"') -or
-    -not $resourceTabTemplate.Value.Contains('x:Name="CAM_DiagnosticTemplateFingerprint"') -or
-    -not $resourceTabTemplate.Value.Contains('Text="94"') -or
-    -not $resourceTabTemplate.Value.Contains('<Binding Path="ActionResource.TypeId"/>') -or
-    -not $resourceTabTemplate.Value.Contains('<Binding Source="{StaticResource ActionResourcePointIconsPath}"/>') -or
     -not $resourceTabTemplate.Value.Contains('SmallActionPointSize="24"') -or
     -not $resourceTabTemplate.Value.Contains('ActionPointGroupSize="56"') -or
     -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
@@ -947,32 +946,35 @@ if (-not $resourceTabTemplate.Success -or
     throw "Native resource contents must be owned by the literal Patch 8 ActionResourcesList item template."
 }
 
-# Source-locked keyboard HotBar group must reference the native shared
-# glyph template, not reproduce a smaller controller icon/fallback by hand.
+# 0.0.94 screenshot proves a directly constrained converter image renders
+# smaller than the clipped native point. Apply that image constraint to
+# each point inside LSActionPointResources, preserving group/count/state.
 $keyboardPointGroup = [regex]::Match(
     $text,
     '(?s)<ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup"[^>]*>.*?</ControlTemplate>'
 )
 if (-not $keyboardPointGroup.Success -or
-    -not $keyboardPointGroup.Value.Contains('ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"') -or
-    $text.Contains('CAM_KeyboardHotBarPointGlyph')) {
-    throw "Keyboard resource-point presentation must select the native shared HotBar template."
+    -not $keyboardPointGroup.Value.Contains('ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"')) {
+    throw "Per-point native group must use CAM's bounded icon renderer."
 }
-
-# Diagnostic version is intentionally recognizable and probes source
-# selection independently of LSActionPointResources. The probe is visual
-# only and must not replace the original native point / cost preview.
-$directPointProbe = [regex]::Match(
-    $resourceTabTemplate.Value,
-    '(?s)<Image x:Name="CAM_DiagnosticDirectPointGlyph".*?</Image>'
+$boundedPoint = [regex]::Match(
+    $text,
+    '(?s)<DataTemplate x:Key="CAM_KeyboardHotBarPointGlyph">.*?</DataTemplate>'
 )
-if (-not $directPointProbe.Success -or
-    -not $directPointProbe.Value.Contains('Converter="{StaticResource IconIdToSourceConverter}"') -or
-    -not $directPointProbe.Value.Contains('<Binding Source="{StaticResource ActionResourcePointIconsPath}"/>') -or
-    -not $directPointProbe.Value.Contains('<Binding Path="ActionResource.TypeId"/>') -or
-    -not $resourceTabTemplate.Value.Contains('x:Name="ResourcePoints"') -or
-    -not $resourceTabTemplate.Value.Contains('MaxActionPoints="{Binding MaxValue}"')) {
-    throw "0.0.94 direct icon probe must bypass native point grouping without replacing it."
+if (-not $boundedPoint.Success -or
+    -not $boundedPoint.Value.Contains('x:Name="ResourceGlyph"') -or
+    -not $boundedPoint.Value.Contains('Width="24"') -or
+    -not $boundedPoint.Value.Contains('Height="24"') -or
+    -not $boundedPoint.Value.Contains('Stretch="Uniform"') -or
+    -not $boundedPoint.Value.Contains('Converter="{StaticResource IconIdToSourceConverter}"') -or
+    -not $boundedPoint.Value.Contains('ActionResourcePointIconsPath') -or
+    -not $boundedPoint.Value.Contains('ActionResourcePointHighlightIconsPath') -or
+    -not $boundedPoint.Value.Contains('ActionResourcePointUsedIconsPath') -or
+    -not $boundedPoint.Value.Contains('ActionResourcePointMissingIconsPath') -or
+    -not $boundedPoint.Value.Contains('ActionPointState') -or
+    $text.Contains('CAM_DiagnosticDirectPointFrame') -or
+    $text.Contains('CAM_DiagnosticTemplateFingerprint')) {
+    throw "Point glyph must remain source-driven, bounded, and state-aware without diagnostic overlay."
 }
 
 $resourceTabsItemTemplate = [regex]::Match(
