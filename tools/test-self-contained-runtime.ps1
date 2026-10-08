@@ -111,6 +111,7 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrip
     $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList" -or
     $evidence.runtimeContract.organization.parallelSidebarSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
     $evidence.runtimeContract.organization.parallelSidebarFocus -ne "CAM_FixedSideBarList.LocalFocus.DataContext -> ActionRadials.Tag -> UseSlotCommand" -or
+    $evidence.runtimeContract.organization.focusOwnership -ne "exclusive: LB/RB provider marker enables metamagic side rail vs HotBarList; native nested temporarily enables HotBarList; passive LocalFocusChanged cannot write provider mode" -or
     $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
     $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
