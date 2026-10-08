@@ -32,8 +32,9 @@
       "nativeBinding": "SummonHotBar",
       "nativeTemplate": "HotBarTemplate -> SlotList",
       "visibility": "SummonHotBar.SlotList.Count",
-      "camSourcePresent": false,
-      "proof": "independent native slot producer not directly bound in CAM; equivalence with other CAM collections unproven"
+      "camSourcePresent": true,
+      "proof": "same native DCHotBar ContextName on original HotBar and ActionRadials; VMHotBarTemplate -> SlotList; static controller route wired, runtime input behavior unverified",
+      "camBinding": "SummonHotBar.SlotList -> HotBarList.ItemsSource when Count > 0; nested SingleHotBar override"
     },
     {
       "id": "custom-hotbar",
@@ -148,7 +149,7 @@
       "proof": "native keyboard direct attack routes absent; automatic catalog equivalence unproven"
     }
   ],
-  "verdict": "source-only-incomplete-do-not-ship-parity-claim",
+  "verdict": "summon-source-wired-other-gameplay-parity-unresolved",
   "limitations": [
     "Original extracted XAML and native command owners are verified, but BG3 closed-source ViewModel producer implementations are not included",
     "Absence of a direct CAM binding is not proof of a missing gameplay effect when a separate native slot or page command exists",

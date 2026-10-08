@@ -39,6 +39,7 @@ REQUIRED_ROUTES = {
         "IsShowingItemsToThrow",
     ),
     "native-A-dispatch": ('BoundEvent="UIAccept"', "UseSlotCommand", "ActionRadials"),
+    "native-summon-overlay": ("SummonHotBar.SlotList.Count", "SummonHotBar.SlotList", "CAM_ActionGridSlotTemplate"),
 }
 # Configured vanilla radial slots are comparison evidence, not a CAM provider.
 # Reject accidental reintroduction of the canceled #140 Original Radials UI.
@@ -199,6 +200,151 @@ def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
     }
 
 
+def validate_summon_source_route(runtime: str) -> list[str]:
+    """Source-owner and precedence gate for the native summon overlay.
+
+    The captured keyboard HotBar and controller ActionRadials both use DCHotBar.
+    A native VMHotBar.SlotList may override the main LSListBox directly; it
+    must not be converted to an ad hoc action or mask nested SingleHotBar.
+    """
+    errors: list[str] = []
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"CAM summon source cannot be checked: invalid XAML: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    def named(name: str) -> ET.Element | None:
+        return next((n for n in root.iter() if _attribute(n.attrib, "Name") == name), None)
+
+    def style_triggers(control: ET.Element | None) -> list[ET.Element]:
+        if control is None:
+            return []
+        for child in control:
+            if local(child) != "LSListBox.Style":
+                continue
+            for style in child:
+                for trigger_section in style:
+                    if local(trigger_section) == "Style.Triggers":
+                        return list(trigger_section)
+        return []
+
+    def setters(trigger: ET.Element) -> dict[str, str | None]:
+        return {
+            _attribute(child.attrib, "Property"): _attribute(child.attrib, "Value")
+            for child in trigger if local(child) == "Setter"
+        }
+
+    main = named("HotBarList")
+    side = named("CAM_FixedSideBarList")
+    if main is None or side is None:
+        return ["CAM summon route missing main or metamagic input-owner LSListBox"]
+    main_triggers = style_triggers(main)
+    summoner_indices = [
+        i for i, t in enumerate(main_triggers)
+        if local(t) == "DataTrigger"
+        and "SummonHotBar.SlotList.Count" in (_attribute(t.attrib, "Binding") or "")
+        and "GreaterThanConverter" in (_attribute(t.attrib, "Binding") or "")
+        and _attribute(t.attrib, "Value") == "True"
+    ]
+    if len(summoner_indices) != 1:
+        errors.append("CAM main slot source must have exactly one native nonempty summon override")
+    else:
+        i = summoner_indices[0]
+        expected = {
+            "ItemsSource": "{Binding SummonHotBar.SlotList}",
+            "ItemContainerStyle": "{StaticResource CAM_ActionGridSlotContainer}",
+            "ItemTemplate": "{StaticResource CAM_ActionGridSlotTemplate}",
+            "ItemsPanel": "{StaticResource CAM_ActionGridPanel}",
+            "IsEnabled": "True",
+        }
+        values = setters(main_triggers[i])
+        if any(values.get(prop) != value for prop, value in expected.items()):
+            errors.append("CAM summon override must use native direct-slot grid and own main focus")
+        for flag in (
+            "IsShowingAContainerWithVariants",
+            "IsSelectingUpcastedSpell",
+            "IsShowingItemsToThrow",
+        ):
+            later = [
+                t for t in main_triggers[i+1:]
+                if local(t) == "DataTrigger"
+                and flag in (_attribute(t.attrib, "Binding") or "")
+                and setters(t).get("ItemsSource") == "{Binding SingleHotBar.SlotList}"
+            ]
+            if not later:
+                errors.append(f"native {flag} must override summoned slots as final grid source")
+
+    sidebar = style_triggers(side)
+    side_gate = [
+        i for i, t in enumerate(sidebar)
+        if local(t) == "DataTrigger"
+        and "SummonHotBar.SlotList.Count" in (_attribute(t.attrib, "Binding") or "")
+        and setters(t).get("IsEnabled") == "False"
+    ]
+    active_side = [
+        i for i, t in enumerate(sidebar)
+        if local(t) == "MultiDataTrigger"
+        and any("CAM_MetamagicModeToken" in str(c.attrib)
+                for child in t for c in child.iter())
+    ]
+    if len(side_gate) != 1 or (active_side and side_gate[0] <= max(active_side)):
+        errors.append("Summon override must disable fixed-sidebar input after Metamagic activation")
+
+    # A change of native source invalidates prior focus/tag/tooltip data.
+    reset_triggers = [
+        t for t in root.iter()
+        if local(t) == "DataTrigger"
+        and _attribute(t.attrib, "Value") == "True"
+        and "SummonHotBar.SlotList.Count" in (_attribute(t.attrib, "Binding") or "")
+        and any(local(action) == "SetMoveFocusAction" and
+                _attribute(action.attrib, "TargetName") == "ActionRadials"
+                for action in t)
+    ]
+    if len(reset_triggers) != 1 or not all(
+        any(_attribute(a.attrib, "TargetName") == target and
+            _attribute(a.attrib, "PropertyName") == prop
+            for a in reset_triggers[0])
+        for target, prop in (
+            ("ActionRadials", "Tag"),
+            ("CAM_ActionTooltip", "Content"),
+            ("HotBarList", "SelectedIndex"),
+        )
+    ):
+        errors.append("Native summon population must clear stale tooltip/tag and restore first-slot focus")
+
+    exit_triggers = [
+        t for t in root.iter()
+        if local(t) == "DataTrigger"
+        and _attribute(t.attrib, "Value") == "False"
+        and "SummonHotBar.SlotList.Count" in (_attribute(t.attrib, "Binding") or "")
+    ]
+    cleanup = [
+        t for t in exit_triggers
+        if all(any(_attribute(a.attrib, "TargetName") == target
+                   and _attribute(a.attrib, "PropertyName") == prop
+                   for a in t)
+               for target, prop in (
+                   ("ActionRadials", "Tag"),
+                   ("CAM_ActionTooltip", "Content"),
+                   ("HotBarList", "SelectedIndex"),
+               ))
+    ]
+    fallback_focus = [
+        a for t in exit_triggers for a in t.iter()
+        if local(a) == "SetMoveFocusAction"
+    ]
+    if len(cleanup) != 1 or not all(
+        any(_attribute(a.attrib, "FocusElement") == f"{{Binding ElementName={owner}}}"
+            for a in fallback_focus)
+        for owner in ("HotBarList", "CAM_FixedSideBarList")
+    ):
+        errors.append("Native summon exit must clear stale dispatch and restore the prior grid or sidebar focus")
+    return errors
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -232,6 +378,8 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     for identifier in FORBIDDEN_RADIAL_FALLBACK:
         if identifier in runtime:
             errors.append(f"configured-radial fallback is forbidden in CAM runtime: {identifier}")
+
+    errors.extend(validate_summon_source_route(runtime))
 
     route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
@@ -334,6 +482,25 @@ def main() -> int:
             report["errors"].append("self-test failed: configured original radial tab not rejected")
         if extract_commands('<ls:LSButton Command="{Binding UseSlotCommand}"/>') != {"UseSlotCommand"}:
             report["errors"].append("self-test failed: native exact command binding was not recognized")
+        removed_summon_source = runtime.replace(
+            'Value="{Binding SummonHotBar.SlotList}"',
+            'Value="{Binding SingleHotBar.SlotList}"',
+        )
+        if not any("native direct-slot" in err or "native summon overlay" in err
+                   for err in validate_summon_source_route(removed_summon_source)):
+            report["errors"].append("self-test failed: missing native summon slots not rejected")
+        removed_sidebar_gate = runtime.replace(
+            '<DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="True">\n                                            <Setter Property="IsEnabled" Value="False"/>',
+            '<DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="True">\n                                            <Setter Property="IsEnabled" Value="True"/>',
+        )
+        if not any("fixed-sidebar input" in err for err in validate_summon_source_route(removed_sidebar_gate)):
+            report["errors"].append("self-test failed: simultaneous summon/metamagic focus not rejected")
+        removed_nested = runtime.replace(
+            '<DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">\n                                            <Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>',
+            '<DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">\n                                            <Setter Property="ItemsSource" Value="{Binding SummonHotBar.SlotList}"/>',
+        )
+        if not any("IsShowingItemsToThrow" in err for err in validate_summon_source_route(removed_nested)):
+            report["errors"].append("self-test failed: summon override masking nested throw not rejected")
         # An additional native direct parameter must not be hidden merely
         # because both widgets invoke a command named UseSlotCommand.
         fixture = (
