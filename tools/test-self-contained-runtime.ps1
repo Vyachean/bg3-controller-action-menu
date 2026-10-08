@@ -683,12 +683,12 @@ if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
 # invariant, NOT proof of one-row-at-a-time navigation.
 $actionViewport = [regex]::Match(
     $text,
-    '<Grid\\s+x:Name="CAM_ActionViewport"[^>]*>',
+    '<Grid\s+x:Name="CAM_ActionViewport"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 $fixedSidebarRegion = [regex]::Match(
     $text,
-    '<Grid\\s+x:Name="CAM_FixedSideBarRegion"[^>]*>',
+    '<Grid\s+x:Name="CAM_FixedSideBarRegion"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $actionViewport.Success -or
