@@ -36,6 +36,7 @@ if (-not $ReportPath) {
     $ReportPath = Join-Path $PortableStateRoot "dev-report.json"
 }
 
+New-Item -ItemType Directory -Force -Path $PortableStateRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $CacheRoot | Out-Null
 
 $headers = @{
@@ -116,89 +117,102 @@ if ($ResolveOnly) {
     [pscustomobject]@{
         Tag = $tag
         Version = $version
-        Task = "capture"
+        Task = "install"
     } | ConvertTo-Json
     exit 0
 }
 
-# Current release task: collect original keyboard and controller theme image-path sources for HotBar glyph parity.
-# The universal VBS remains unchanged. This temporary milestone deliberately does
-# not install/update the CAM PAK and does not launch BG3.
-$captureAsset = Get-Asset -Release $release -Name "capture-self-contained-inputs.ps1"
-$releaseDir = Join-Path $CacheRoot $tag
-$capture = Join-Path $releaseDir "capture-self-contained-inputs.ps1"
-Save-Asset -Asset $captureAsset -Destination $capture
+# 0.0.93 restores the tested self-contained PAK install/update entry after
+# capturing exact keyboard/controller resource dictionaries in 0.0.92.
+# Keep the universal VBS unchanged; read-only capture remains optional.
+$installStatus = Join-Path $PortableStateRoot "install-status.txt"
+$installLog = Join-Path $PortableStateRoot "install-latest.log"
+$installReport = Join-Path $PortableStateRoot "xbox-dev-environment.json"
 
-$captureRoot = if ($LauncherRoot) { $LauncherRoot } else { $PortableStateRoot }
-New-Item -ItemType Directory -Force -Path $captureRoot | Out-Null
+function Write-DevStatus {
+    param([string]$State, [string]$Message)
+    @($State, $version, $Message) |
+        Set-Content -LiteralPath $StatusPath -Encoding Unicode
+}
 
-$captureStatus = Join-Path $captureRoot "capture-status.txt"
-$captureLog = Join-Path $captureRoot "capture.log"
-Remove-Item -LiteralPath $captureStatus -Force -ErrorAction SilentlyContinue
+function Write-DevReport {
+    param([string]$State, [string]$Message)
+    [ordered]@{
+        Task = "install"
+        Release = $version
+        State = $State
+        Message = $Message
+        InstallStatus = $installStatus
+        InstallLog = $installLog
+        EnvironmentReport = $installReport
+        ReadOnly = $false
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+}
 
-$captureArgs = @(
-    "-NoLogo",
-    "-NoProfile",
-    "-ExecutionPolicy", "Bypass",
-    "-File", $capture,
-    "-PortableRoot", $captureRoot
-)
+try {
+    $releaseDir = Join-Path $CacheRoot $tag
+    New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+    $installerAsset = Get-Asset -Release $release -Name "install-latest.ps1"
+    $installer = Join-Path $releaseDir "install-latest.ps1"
+    Save-Asset -Asset $installerAsset -Destination $installer
 
-& powershell.exe @captureArgs
-$captureExitCode = $LASTEXITCODE
-$global:LASTEXITCODE = 0
+    Remove-Item -LiteralPath $installStatus -Force -ErrorAction SilentlyContinue
 
-if (Test-Path -LiteralPath $captureLog -PathType Leaf) {
-    $resolvedTaskLog = [System.IO.Path]::GetFullPath($LogPath)
-    $resolvedCaptureLog = [System.IO.Path]::GetFullPath($captureLog)
-    if ($resolvedTaskLog -ne $resolvedCaptureLog) {
-        Copy-Item -LiteralPath $captureLog -Destination $LogPath -Force
+    $installArgs = @{
+        CacheRoot = $CacheRoot
+        LogPath = $installLog
+        StatusPath = $installStatus
+        ReportPath = $installReport
     }
-}
-
-$captureState = ""
-$captureMessage = ""
-$archive = ""
-if (Test-Path -LiteralPath $captureStatus -PathType Leaf) {
-    $captureLines = @(Get-Content -LiteralPath $captureStatus -Encoding Unicode)
-    if ($captureLines.Count -ge 1) { $captureState = [string]$captureLines[0] }
-    if ($captureLines.Count -ge 2) { $captureMessage = [string]$captureLines[1] }
-    if ($captureLines.Count -ge 3) { $archive = [string]$captureLines[2] }
-}
-
-$report = [ordered]@{
-    Task = "capture"
-    Release = $version
-    State = $captureState
-    Archive = $archive
-    CaptureStatus = $captureStatus
-    CaptureLog = $captureLog
-    ReadOnly = $true
-}
-$report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
-
-if ($captureExitCode -ne 0 -or $captureState -ne "SUCCESS" -or -not $archive -or -not (Test-Path -LiteralPath $archive -PathType Leaf)) {
-    $failure = if ($captureMessage) {
-        $captureMessage
-    } elseif ($captureExitCode -ne 0) {
-        "Read-only native capture failed with exit code $captureExitCode."
+    if ($LauncherRoot) {
+        $installArgs.LauncherRoot = $LauncherRoot
+    }
+    if ($ReleaseMetadataPath) {
+        $installArgs.ReleaseMetadataPath = $ReleaseMetadataPath
     } else {
-        "Read-only native capture did not produce the expected archive."
+        $installArgs.ReleaseApiUrl = $ReleaseApiUrl
     }
 
-    @(
-        "ERROR",
-        $version,
-        $failure
-    ) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
-    throw $failure
+    # .ps1 helpers run in-process. Their terminating exception and explicit
+    # status are authoritative, never a stale $LASTEXITCODE.
+    & $installer @installArgs
+
+    if (-not (Test-Path -LiteralPath $installStatus -PathType Leaf)) {
+        throw "The install helper did not write install-status.txt."
+    }
+    $installLines = @(Get-Content -LiteralPath $installStatus -Encoding Unicode)
+    if ($installLines.Count -lt 2 -or $installLines[0] -ne "SUCCESS") {
+        throw "The install helper did not report success."
+    }
+    if ($installLines[1] -ne $version) {
+        throw "The install helper selected $($installLines[1]) instead of the resolved release $version."
+    }
+
+    if (Test-Path -LiteralPath $installLog -PathType Leaf) {
+        $resolvedTaskLog = [System.IO.Path]::GetFullPath($LogPath)
+        $resolvedInstallLog = [System.IO.Path]::GetFullPath($installLog)
+        if ($resolvedTaskLog -ne $resolvedInstallLog) {
+            Copy-Item -LiteralPath $installLog -Destination $LogPath -Force
+        }
+    }
+
+    Write-DevReport -State "SUCCESS" -Message "Self-contained CAM PAK installation completed."
+    Write-DevStatus -State "SUCCESS" -Message "CAM installed: $version"
+    $global:LASTEXITCODE = 0
+    Write-Host "Self-contained CAM PAK installed: $version"
+    exit 0
+} catch {
+    $failure = $_.Exception.Message
+    Write-DevReport -State "ERROR" -Message $failure
+    Write-DevStatus -State "ERROR" -Message $failure
+    if (Test-Path -LiteralPath $installLog -PathType Leaf) {
+        $resolvedTaskLog = [System.IO.Path]::GetFullPath($LogPath)
+        $resolvedInstallLog = [System.IO.Path]::GetFullPath($installLog)
+        if ($resolvedTaskLog -ne $resolvedInstallLog) {
+            Copy-Item -LiteralPath $installLog -Destination $LogPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+    # An early failure must not leave a stale success log from a prior run.
+    "Install entry failed: $failure" | Add-Content -LiteralPath $LogPath -Encoding UTF8
+    throw
 }
-
-@(
-    "SUCCESS",
-    $version,
-    "Read-only keyboard/controller theme source capture completed. ZIP: $archive"
-) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
-
-Write-Host "Read-only HotBar coverage capture completed: $archive"
-exit 0
