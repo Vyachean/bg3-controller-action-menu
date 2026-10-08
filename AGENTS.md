@@ -929,3 +929,23 @@ merge. LB/RB, resource filtering, native used/missing/highlight states,
 spell numerals, tooltip, focus, native nested A/B and item quantities
 are outside this change. CI guards the copied block digest, not live
 Noesis layout. Only a screenshot can accept visual parity.
+
+
+## 0.0.96 glyph rejection and 0.0.97 theme-input evidence gate
+
+The operator reports that 0.0.96 still renders wrong resource symbols.
+Do not mark #119 fixed or assume matching keyboard
+`DataTemplates_k.xaml` proves visual parity. The native shared
+`ActionResources.ActionGroup.ActionPoint` glyph resolves its bitmap
+through `StaticResource ActionResourcePointIconsPath` and TypeId,
+which can depend on the loaded input-mode theme. The 0.0.96
+keyboard templates did not replace the controller's
+`DefaultTheme_c.Styles.xaml` with keyboard theme definitions.
+
+0.0.97 is a **read-only theme capture milestone** through the same
+unchanged universal VBS. Target and require current installed-game
+keyboard and controller `DefaultTheme_*.Styles.xaml` and
+`DefaultShared.Styles.xaml`; record their exact origin/hashes.
+No mod/XAML runtime correction in this milestone. Resolve the
+image-source provenance before another fix; no artistic guessing,
+hardcoded TypeId mapping, or repeated ineffective install tests.

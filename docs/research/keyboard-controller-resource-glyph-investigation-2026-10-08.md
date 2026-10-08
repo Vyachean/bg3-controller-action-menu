@@ -216,3 +216,38 @@ We have not yet proved whether Noesis resolves all
 parity remains absent in the next runtime proof, treat local-resource
 resolution or more distant scope as the next investigation target
 rather than copying another custom bitmap or changing its dimensions.
+
+
+## 0.0.96 runtime rejection — theme source not included in earlier capture
+
+Operator screenshot `image(10).png` demonstrates that copying the 24
+unmodified keyboard group templates into controller CAM is **not**
+sufficient. Specifically keyboard flame, blue sun and clover icons remain
+collapsed into narrow columns and spell-slot square groups retain
+incorrect aspect/size, while the original HotBar displays full shapes.
+
+The native keyboard UI resource graph uses
+`DefaultThemeLibs_k.xaml -> DefaultTheme_k.Styles.xaml`, while the
+controller uses `DefaultThemeLibs_c.xaml -> DefaultTheme_c.Styles.xaml`.
+The earlier archive contains `DefaultThemeLibs_c.xaml` but NOT
+the keyboard/controller theme *style* files. The shared
+`DataTemplates.xaml` actually creates each resource glyph from
+`IconIdToSourceConverter` and `StaticResource ActionResourcePointIconsPath`,
+plus three state-specific path keys. Literal keyboard group templates
+continue to reference the same shared glyph; copying them does not
+force the keyboard image-path keys or bitmap assets.
+
+We must resolve the exact current 1.8.910.0 theme path definitions
+BEFORE another art change. 0.0.97 restores the proven, read-only
+release-controlled developer capture and targets the missing
+`DefaultTheme_k.Styles.xaml`, `DefaultTheme_c.Styles.xaml`,
+`DefaultShared.Styles.xaml` and theme dependency dictionaries.
+It **does not** alter the game or CAM runtime. The helper requires
+these three exact current-game XAML files and fails closed if missing,
+preserving the archive and a missing-group diagnosis.
+
+After obtaining the files, compare
+`ActionResourcePoint[Highlight|Used|Missing]IconsPath`, the
+default icon converter/TypeId mappings and keyboard-vs-controller theme
+definitions. Then make **one source-proven** rendering change; do not
+again copy keyboard group templates or scale individual bitmaps.

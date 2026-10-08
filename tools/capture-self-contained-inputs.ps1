@@ -23,6 +23,11 @@ $TargetExpressions = @(
     "*ActionResourceTemplates*.xaml",
     "*Libs_*.xaml",
     "*Resource*.xaml",
+    # Prove the keyboard/controller theme dependency that defines the
+    # resolved resource point image path. The earlier capture included only
+    # controller theme imports and no mode-specific theme style definitions.
+    "*DefaultTheme*.xaml",
+    "*DefaultShared*.xaml",
     "*FocusableControls*.xaml",
     "*Tooltips*.xaml",
     "*SpellBook*.xaml",
@@ -549,6 +554,9 @@ try {
         ControllerPointTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates_c.xaml" })
         ControllerActionResourceTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/ActionResourceTemplates_c.xaml" })
         ControllerResourceImports = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/Libs_Controller.xaml" })
+        KeyboardThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultTheme_k.Styles.xaml" })
+        ControllerThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultTheme_c.Styles.xaml" })
+        SharedThemeStyles = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Theme/DefaultShared.Styles.xaml" })
         Controller = @($manifest | Where-Object { $_.PackagedPath -like "*Controller.xaml" })
     }
 

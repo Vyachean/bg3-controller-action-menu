@@ -185,3 +185,18 @@ unchanged operator-facing VBS again fetches and runs release-controlled
 `install-latest.ps1`. The capture helper remains an optional asset.
 Running VBS on this release installs the self-contained PAK, not
 another input ZIP. All installer error/status checks remain unchanged.
+
+
+## 0.0.97 temporary native theme capture
+
+The operator rejected v0.0.96 resource graphics. Missing sources:
+`Public/Game/GUI/Theme/DefaultTheme_k.Styles.xaml`,
+`DefaultTheme_c.Styles.xaml` and `DefaultShared.Styles.xaml`.
+These mode-specific resource dictionaries are necessary to understand
+native `ActionResourcePointIconsPath` image resolution. The release's
+`dev-entry.ps1` temporarily uses the previously tested read-only
+Game.pak capture workflow, while the permanent VBS itself does not
+change. The archive is placed next to the operator launcher; the
+game, installed CAM, profiles and saves are untouched. After
+inspecting the source, restore normal install mode for the next
+actual visual correction.
