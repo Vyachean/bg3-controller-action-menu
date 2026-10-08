@@ -566,6 +566,8 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('ActionNextEvent="UIDown"') -or
     -not $sidebar.Value.Contains('ActionPrevEvent="UIUp"') -or
     -not $sidebar.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}"') -or
+    -not $sidebar.Value.Contains('Spatial navigation into the side rail') -or
+    -not $sidebar.Value.Contains('CAM_ProviderModeMarker') -or
     -not $sidebar.Value.Contains('EventName="LocalFocusChanged"') -or
     -not $sidebar.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"')) {
     throw "The fixed sidebar must remain a native, independently focused executable VMHotBarSlot list."
@@ -1332,11 +1334,13 @@ if ($hotBarList.Value.Contains('<b:PropertyChangedTrigger Binding="{Binding Loca
     throw "The 0.0.67 nested LocalFocus.DataContext property trigger is runtime-rejected and must not return."
 }
 
-$localFocusEvent = [regex]::Match(
-    $hotBarList.Value,
-    '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
+$localFocusEvent = @(
+    [regex]::Matches(
+        $hotBarList.Value,
+        '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object { $_.Value.Contains('ShowTooltipOnUIElementCommand') }
+) | Select-Object -First 1
 if (-not $localFocusEvent.Success -or
     -not $localFocusEvent.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
     -not $localFocusEvent.Value.Contains('ShowTooltipOnUIElementCommand') -or
