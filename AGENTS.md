@@ -78,6 +78,37 @@ be gated by their own active list. Avoid claiming cross-list spatial
 navigation without actual engine proof. Do not alter the accepted
 0.0.98 glyph paths or the native VMHotBarSlot execution command.
 
+## Scroll boundary regression gate (issue #130)
+
+The operator observed a row seeming to be skipped at the action
+grid scroll edge, with the native external selector rendering above
+the grid into resource tabs. The operator clarified that the **logical
+focus always reaches the correct action/tooltip**, and it is only the
+native selector frame that appears to skip at the scroll boundary.
+Thus no LSGrid navigation/SelectedIndex correction is justified.
+
+Separately the operator reported that entering the Metamagic tab leaves
+no initial selected controller focus on the side rail. The old LB/RB
+entry handler selected slot zero but did not explicitly move focus
+into the sidebar list. It must use native `ls:SetMoveFocusAction` to
+`CAM_FixedSideBarList` after selecting the Metamagic provider mode
+and before the existing index -1→0 concrete slot handoff, on
+**both** LB/RB directions. Do not let LocalFocusChanged set the
+provider mode again or reintroduce dual focus. `CAM_MainSelector` is a sibling of
+`HotBarList` and is outside its inner `LSScrollViewer` clip.
+The action and fixed sidebar row containers must have
+`ClipToBounds=True`. This source-backed clipping change cannot
+itself prove a logical focus-step correction.
+
+Keep `LSGrid`, `LocalFocus.DataContext`, scroll transport
+`ActionRadials.FocusedElement -> LSScrollViewer.ScrollToElement`,
+and `VerticalScrollOffsetMargin=120` unchanged until actual
+Noesis/installed-game evidence distinguishes a skipped logical
+`VMHotBarSlot` from visual selector discontinuity on scroll.
+Do not ship an arbitrary margin/timer/SelectionChanged focus fix.
+Keep #130 open until both clipping and one-row navigation are
+game-verified.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:

@@ -676,6 +676,30 @@ if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
 }
 
 
+# The native LocalFocusSelector controls are siblings of their ScrollViewer,
+# not children of its clipping surface. The UI's own fixed-height action
+# regions therefore need explicit clipping so scroll-boundary selection
+# cannot render into the LB/RB resource-tab header. This is a render-only
+# invariant, NOT proof of one-row-at-a-time navigation.
+$actionViewport = [regex]::Match(
+    $text,
+    '<Grid\s+x:Name="CAM_ActionViewport"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$fixedSidebarRegion = [regex]::Match(
+    $text,
+    '<Grid\s+x:Name="CAM_FixedSideBarRegion"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $actionViewport.Success -or
+    -not $actionViewport.Value.Contains('ClipToBounds="True"') -or
+    -not $actionViewport.Value.Contains('Grid.Row="1"') -or
+    -not $fixedSidebarRegion.Success -or
+    -not $fixedSidebarRegion.Value.Contains('ClipToBounds="True"') -or
+    -not $fixedSidebarRegion.Value.Contains('Grid.Row="1"')) {
+    throw "Both native scroll-focus selectors must be clipped by their action-row viewports, not paint across the resource-tab header."
+}
+
 # The direct executable list is also the sole scroll owner.
 $hotBarList = [regex]::Match(
     $text,
@@ -853,6 +877,35 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
     $tabLeft.Value.Contains('ForceSelect="True"') -or
     $tabRight.Value.Contains('ForceSelect="True"')) {
     throw "LB/RB must form one resource-plus-Cantrips-plus-Items-plus-Metamagic-plus-Passives-plus-All cycle without ForceSelect."
+}
+
+# Runtime report: Metamagic LB/RB showed its provider but had no initial
+# concrete focus. SelectedIndex is not controller focus for a second list.
+# Require the game-native SetMoveFocusAction before selecting slot zero.
+foreach ($shoulder in @(
+    @{Name='UITabPrev'; Text=$tabLeft.Value},
+    @{Name='UITabNext'; Text=$tabRight.Value}
+)) {
+    $metamagicEntry = @(
+        [regex]::Matches(
+            $shoulder.Text,
+            '<b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline
+        ) | Where-Object {
+            $_.Value.Contains('Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"') -and
+            $_.Value.Contains('CAM_ResetFirstFocusToken')
+        }
+    ) | Select-Object -First 1
+    if (-not $metamagicEntry -or
+        -not $metamagicEntry.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="ActionRadials"') -or
+        -not $metamagicEntry.Value.Contains('DeferFocusAction="True"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
+        $metamagicEntry.Value.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
+        $metamagicEntry.Value.IndexOf('PropertyName="SelectedIndex" Value="0"')) {
+        throw "Metamagic shoulder $($shoulder.Name) must transfer native focus to the enabled sidebar before selecting its first concrete VMHotBarSlot."
+    }
 }
 
 # Regression 0.0.85: CAM_ResourceTabs.Tag was repurposed for the selected

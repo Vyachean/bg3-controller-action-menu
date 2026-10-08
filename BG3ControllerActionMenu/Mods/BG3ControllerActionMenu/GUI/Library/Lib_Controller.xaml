@@ -1271,7 +1271,14 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <!-- Selection and controller focus are distinct native
+                                         states. Explicitly transfer input ownership to the
+                                         enabled sidebar as the game does for HotBarList,
+                                         then select its first concrete VMHotBarSlot. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                           DeferFocusAction="True"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
@@ -1443,7 +1450,14 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <!-- Selection and controller focus are distinct native
+                                         states. Explicitly transfer input ownership to the
+                                         enabled sidebar as the game does for HotBarList,
+                                         then select its first concrete VMHotBarSlot. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                           DeferFocusAction="True"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
@@ -1933,6 +1947,7 @@
                     <Grid x:Name="CAM_FixedSideBarRegion"
                           Grid.Row="1"
                           Grid.Column="0"
+                          ClipToBounds="True"
                           Width="128"
                           Height="850"
                           HorizontalAlignment="Left"
@@ -2058,6 +2073,7 @@
                     <Grid x:Name="CAM_ActionViewport"
                           Grid.Row="1"
                           Grid.Column="1"
+                          ClipToBounds="True"
                           Height="850"
                           Margin="40,0"
                           HorizontalAlignment="Stretch"

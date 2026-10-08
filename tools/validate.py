@@ -226,6 +226,7 @@ def validate_semantics() -> list[str]:
                 'CurrentShownDeck.SlotList',
                 'x:Name="CAM_MetamagicTab"',
                 'x:Name="CAM_FixedSideBarRegion"',
+                'ClipToBounds="True"',
                 'x:Name="CAM_FixedSideBarList"',
                 'x:Key="CAM_FixedSideBarPanel"',
                 'Content.IsModified',
