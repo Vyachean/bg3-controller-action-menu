@@ -43,6 +43,10 @@ at most 512 entries per collection and 2600 items per snapshot.
 Truncation, inaccessible properties and missing collections remain
 visible in the report. The auto observer does not consume or remap
 controller input and records only while `ActionRadials` is present.
+It deduplicates observations by the current native CAM provider
+mode, selected resource index, and nested-state flags, so moving
+within a tab does not waste all eight snapshots before another
+native action category is selected.
 The dev console command `!cam_gameplay_inventory` allows a manual
 snapshot when the runtime supports it.
 
