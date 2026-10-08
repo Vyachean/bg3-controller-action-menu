@@ -185,3 +185,34 @@ still shows wrong native resource bitmap shapes or counts, do not
 claim correction or add another arbitrary size multiplier: investigate
 native `ActionResourcePointIconsPath` source resolution and the
 keyboard/controller bitmap identity before another release.
+
+
+## 0.0.95 runtime rejection → 0.0.96 exact keyboard dictionary
+
+The 0.0.95 operator screenshot shows dramatically reduced/clipped
+point symbols and continued divergence from the keyboard HotBar.
+The hypothesis that a fixed 24×24 point bitmap solves the problem is
+rejected. We must stop inventing per-point sizes.
+
+The installed game capture shows:
+- `DataTemplates_k.xaml`: 24 `ActionResources.ActionGroup.*`
+  ControlTemplates in one contiguous 6,186-character block.
+- `DataTemplates_c.xaml`: different controller point-group definitions.
+- `DataTemplates.xaml`: shared `ActionResourcesTemplateSelector`,
+  using `DynamicResource ActionResources.ActionGroup.*` for every
+  TypeId-specific point group. The same shared template has native
+  animations, point-state image variants and paths.
+- The original `HotBar.xaml` uses that shared selector with
+  keyboard group templates and `56/48/24` base sizes.
+
+The full keyboard block is copied into CAM's resource-tile local scope.
+Cross-check of captured `DataTemplates_k.xaml` against the upstream
+Patch 8 source copy agrees on 6,186 characters and FNV32
+`5254fbdf`; authoritative capture SHA-256 for that exact
+block is `9e017778ec41ef2e03f192392ca944640f7d8ad3c227f69d9742aefbdaff4651`.
+
+We have not yet proved whether Noesis resolves all
+`DynamicResource` lookups from this new local scope. If keyboard
+parity remains absent in the next runtime proof, treat local-resource
+resolution or more distant scope as the next investigation target
+rather than copying another custom bitmap or changing its dimensions.
