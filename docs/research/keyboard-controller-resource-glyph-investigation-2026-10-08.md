@@ -151,3 +151,37 @@ Read the screenshot as follows:
 The B icon is deliberately uniform-scaled, so **compare shape**, not
 relative size. The overlay is temporary and must be removed after
 one discriminating observation. This does not complete issue #119.
+
+
+## 0.0.94 observed runtime result and 0.0.95 change
+
+Screenshot `image(8).png` proves the in-game resource row is the
+0.0.94 template: the extra per-resource yellow/magenta overlays appear,
+so XAML installation and item renderer activity are established.
+The large native A glyphs remain partially clipped (flame appears as
+a solid vertical red bar; clover as green bar; spell-slot points
+appear as elongated cyan rectangles). The small independently bounded
+B renderer uses the same native `IconIdToSourceConverter` and
+`ActionResourcePointIconsPath` but does not inherit
+`LSActionPointResources` image sizing.
+
+This distinguishes an image-measurement/clipping problem from an
+unapplied item template. It does **not** establish identical keyboard
+bitmap contents at any specific size or the exact XAML precedence of
+the `LSActionPointResources.ActionPointTemplate`.
+
+0.0.95 removes both proof overlays and replaces the native per-point
+unbounded `Image Stretch=None` with a state-aware native converter
+image constrained by `Width=24 Height=24 Stretch=Uniform`, matching
+the captured keyboard `SmallActionPointSize=24`. The
+`LSActionPointResources` source/count/availability grouping still
+owns every per-resource point. The 0.0.91 attempt also authored a
+native converter image, but left `Stretch=None`, which did not
+resolve the underlying image clipping; do not mistake that earlier
+failed attempt for proof that explicit image measurement is ineffective.
+
+Static and package checks prove XAML shape only. If an in-game screenshot
+still shows wrong native resource bitmap shapes or counts, do not
+claim correction or add another arbitrary size multiplier: investigate
+native `ActionResourcePointIconsPath` source resolution and the
+keyboard/controller bitmap identity before another release.
