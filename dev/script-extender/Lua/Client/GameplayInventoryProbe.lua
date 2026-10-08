@@ -14,6 +14,7 @@ local errors = {}
 local pending = 0
 local autoRequests = 0
 local usedSlots = 0
+local seenAutoStates = {}
 
 local function attempt(label, fn)
     local ok, value = pcall(fn)
@@ -153,6 +154,24 @@ local function snapshot(reason)
     local stats = prop(character, "Stats")
     local shownDeck = prop(dc, "CurrentShownDeck")
     local single = prop(dc, "SingleHotBar")
+    local modeNode = attempt("provider-mode", function()
+        return page:Find("CAM_ProviderModeMarker")
+    end)
+    local resourceTabs = attempt("resource-tabs", function()
+        return page:Find("CAM_ResourceTabs")
+    end)
+    local currentMode = tostring(prop(modeNode, "Tag") or "")
+    local resourceIndex = tostring(prop(resourceTabs, "SelectedIndex") or "")
+    local nestedSignature = table.concat({
+        tostring(prop(dc, "IsShowingAContainerWithVariants")),
+        tostring(prop(dc, "IsSelectingUpcastedSpell")),
+        tostring(prop(dc, "IsShowingItemsToThrow"))
+    }, ":")
+    local fingerprint = currentMode .. ":" .. resourceIndex .. ":" .. nestedSignature
+    if reason ~= "manual-console-command" and seenAutoStates[fingerprint] then
+        return
+    end
+    seenAutoStates[fingerprint] = true
     local fields = {
         {"KeyboardHotBars", props and prop(props, "KeyboardHotBars"), true},
         {"ControllerHotBars", props and prop(props, "ControllerHotBars"), true},
@@ -171,9 +190,9 @@ local function snapshot(reason)
         SelectedCharacterPresent = character ~= nil,
         NativeSourceCollections = {},
         CamVisibleLists = {},
-        CamModeMarker = tostring(prop(attempt("provider-mode", function()
-            return page:Find("CAM_ProviderModeMarker")
-        end), "Tag") or ""),
+        CamModeMarker = currentMode,
+        CamResourceSelectedIndex = prop(resourceTabs, "SelectedIndex"),
+        AutoStateFingerprint = fingerprint,
         ActionRadialsSlotTag = describe(prop(page, "Tag")),
         NestedFlags = {
             IsShowingAContainerWithVariants = prop(dc, "IsShowingAContainerWithVariants"),
