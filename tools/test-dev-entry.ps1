@@ -102,7 +102,7 @@ exit 0
     if ($statusLines.Count -lt 3 -or
         $statusLines[0] -ne "SUCCESS" -or
         $statusLines[1] -ne "9.9.9-fixture" -or
-        $statusLines[2] -notlike "*Read-only HotBar coverage capture completed*") {
+        $statusLines[2] -notlike "*Read-only keyboard/controller resource-template capture completed*") {
         throw "Development entry did not preserve the universal VBS success contract."
     }
 
