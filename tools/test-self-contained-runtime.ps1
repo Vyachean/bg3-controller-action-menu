@@ -857,7 +857,7 @@ $localKeys = @{}
 foreach ($match in [regex]::Matches($text, 'x:Key="(CAM_[A-Za-z0-9_.]+)"')) {
     $localKeys[$match.Groups[1].Value] = $true
 }
-foreach ($match in [regex]::Matches($text, '\\{(?:StaticResource|DynamicResource) (CAM_[A-Za-z0-9_.]+)\\}')) {
+foreach ($match in [regex]::Matches($text, '\{(?:StaticResource|DynamicResource) (CAM_[A-Za-z0-9_.]+)\}')) {
     $key = $match.Groups[1].Value
     if (-not $localKeys.ContainsKey($key)) {
         throw "CAM template refers to an undefined local visual resource: $key"
