@@ -51,6 +51,22 @@ if ($env:CAM_FIXTURE_INSTALL_FAIL -eq "1") {
 & cmd.exe /c "exit 23"
 '@ | Set-Content -LiteralPath $fixtureInstaller -Encoding UTF8
 
+    $fixtureCapture = Join-Path $assetRoot "capture-self-contained-inputs.ps1"
+@'
+param([string]$PortableRoot)
+if (-not $PortableRoot -or -not (Test-Path -LiteralPath $PortableRoot -PathType Container)) {
+    throw "Read-only capture did not inherit the portable launcher folder."
+}
+if ($env:CAM_FIXTURE_CAPTURE_FAIL -eq "1") {
+    throw "Fixture read-only capture failed."
+}
+$archive = Join-Path $PortableRoot "bg3-controller-action-menu-inputs-fixture.zip"
+[System.IO.File]::WriteAllBytes($archive, [byte[]](1,2,3,4))
+"fixture read-only capture log" | Set-Content -LiteralPath (Join-Path $PortableRoot "capture.log") -Encoding UTF8
+@("SUCCESS", "Capture complete.", $archive, (Join-Path $PortableRoot "capture.log")) |
+    Set-Content -LiteralPath (Join-Path $PortableRoot "capture-status.txt") -Encoding Unicode
+'@ | Set-Content -LiteralPath $fixtureCapture -Encoding UTF8
+
     $metadata = Join-Path $TestRoot "release.json"
     @(
         [ordered]@{
@@ -67,6 +83,10 @@ if ($env:CAM_FIXTURE_INSTALL_FAIL -eq "1") {
                 [ordered]@{
                     name = "install-latest.ps1"
                     browser_download_url = $fixtureInstaller
+                },
+                [ordered]@{
+                    name = "capture-self-contained-inputs.ps1"
+                    browser_download_url = $fixtureCapture
                 }
             )
         },
@@ -79,6 +99,7 @@ if ($env:CAM_FIXTURE_INSTALL_FAIL -eq "1") {
     ) | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $metadata -Encoding UTF8
 
     & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Entry `
+        -TaskMode install `
         -ReleaseMetadataPath $metadata `
         -CacheRoot $cacheRoot `
         -LauncherRoot $launcherRoot `
@@ -119,6 +140,7 @@ if ($env:CAM_FIXTURE_INSTALL_FAIL -eq "1") {
     $env:CAM_FIXTURE_INSTALL_FAIL = "1"
     try {
         & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Entry `
+            -TaskMode install `
             -ReleaseMetadataPath $metadata `
             -CacheRoot $cacheRoot `
             -LauncherRoot $launcherRoot `
@@ -139,6 +161,51 @@ if ($env:CAM_FIXTURE_INSTALL_FAIL -eq "1") {
     } finally {
         Remove-Item Env:CAM_FIXTURE_INSTALL_FAIL -ErrorAction SilentlyContinue
     }
+
+    # The published universal VBS calls dev-entry without explicit TaskMode.
+    # The temporary visual-evidence release must therefore capture read-only.
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Entry `
+        -ReleaseMetadataPath $metadata `
+        -CacheRoot $cacheRoot `
+        -LauncherRoot $launcherRoot `
+        -LogPath $log `
+        -StatusPath $status `
+        -ReportPath $report
+    if ($LASTEXITCODE -ne 0) {
+        throw "Read-only resource capture entry fixture failed."
+    }
+    $captureResult = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
+    $captureStatus = @(Get-Content -LiteralPath $status -Encoding Unicode)
+    if ($captureResult.Task -ne "capture" -or $captureResult.State -ne "SUCCESS" -or
+        -not $captureResult.ReadOnly -or -not (Test-Path -LiteralPath $captureResult.Archive -PathType Leaf) -or
+        $captureStatus[0] -ne "SUCCESS" -or $captureStatus[1] -ne "9.9.9-fixture") {
+        throw "Universal VBS failed to report a verified read-only ZIP capture."
+    }
+    if (-not (Get-Content -Raw -LiteralPath $log).Contains("fixture read-only capture log")) {
+        throw "Universal read-only capture log was not preserved."
+    }
+
+    $env:CAM_FIXTURE_CAPTURE_FAIL = "1"
+    try {
+        & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $Entry `
+            -ReleaseMetadataPath $metadata `
+            -CacheRoot $cacheRoot `
+            -LauncherRoot $launcherRoot `
+            -LogPath $log `
+            -StatusPath $status `
+            -ReportPath $report 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            throw "A failed read-only capture must fail closed."
+        }
+        $failedCapture = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
+        if ($failedCapture.Task -ne "capture" -or $failedCapture.State -ne "ERROR" -or
+            $failedCapture.Message -notlike "*Fixture read-only capture failed*") {
+            throw "Read-only capture must report the helper failure."
+        }
+    } finally {
+        Remove-Item Env:CAM_FIXTURE_CAPTURE_FAIL -ErrorAction SilentlyContinue
+    }
+    Write-Host "Universal read-only resource capture entry fixture passed."
 
     Write-Host "Universal release-controlled install entry fixture passed."
     # The preceding intentionally failed child left a native exit code of 1;
