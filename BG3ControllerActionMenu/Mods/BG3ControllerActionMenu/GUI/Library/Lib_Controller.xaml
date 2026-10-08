@@ -134,6 +134,20 @@
                    VerticalAlignment="Top"
                    Margin="0,8,8,0"
                    Visibility="Collapsed"/>
+            <!-- Native Patch 8 templates consume the game's VMHotBarSlot state.
+                 No CAM spell compatibility or metamagic cost classification. -->
+            <Control x:Name="CAM_ModifiedSpellGlow"
+                     Width="104" Height="104"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     IsHitTestVisible="False" Focusable="False"
+                     Visibility="Collapsed"
+                     Template="{StaticResource HotbarSlotGlow}"/>
+            <Control x:Name="CAM_ActiveMetamagicGlow"
+                     Width="104" Height="104"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     IsHitTestVisible="False" Focusable="False"
+                     Visibility="Collapsed"
+                     Template="{StaticResource HotBarActiveSlotIndicatorMetamagic}"/>
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding SlotType}" Value="Item">
@@ -150,6 +164,16 @@
             <DataTrigger Binding="{Binding CanUse}" Value="False">
                 <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
             </DataTrigger>
+            <DataTrigger Binding="{Binding Content.IsModified}" Value="True">
+                <Setter TargetName="CAM_ModifiedSpellGlow" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Content.IsMetaMagic}" Value="True"/>
+                    <Condition Binding="{Binding IsActive}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="CAM_ActiveMetamagicGlow" Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
 
@@ -736,6 +760,20 @@
         </DataTemplate.Triggers>
     </DataTemplate>
 
+    <!-- Native FixedSideBar slots are vertically independent of the action grid. -->
+    <ItemsPanelTemplate x:Key="CAM_FixedSideBarPanel">
+        <ls:LSGrid ActionUpEvent="UIUp"
+                   ActionDownEvent="UIDown"
+                   ActionRightEvent="UIRight"
+                   ActionLeftEvent="UILeft"
+                   AutoIndex="True"
+                   ContainerData="{Binding}"
+                   Columns="1"
+                   CellWidth="{StaticResource CAM_ActionGridCellSize}"
+                   CellHeight="{StaticResource CAM_ActionGridCellSize}"
+                   VerticalAlignment="Top"/>
+    </ItemsPanelTemplate>
+
     <ItemsPanelTemplate x:Key="CAM_ResourceTabsPanel">
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Center"
@@ -999,8 +1037,12 @@
                         <RowDefinition Height="84"/>
                         <RowDefinition Height="850"/>
                     </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <DockPanel x:Name="CAM_ResourceHeader"
+                    <DockPanel Grid.ColumnSpan="2" x:Name="CAM_ResourceHeader"
                                Grid.Row="0"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
@@ -1049,6 +1091,12 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <!-- Restore a native resource-filtered spell grid alongside
+                                         metamagic, even when arriving from Items/Passives. -->
+                                    <b:InvokeCommandAction
+                                        IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                        Command="{Binding FilterActionResourceCommand}"
+                                        CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
                                 </b:EventTrigger>
 
@@ -1078,6 +1126,9 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip" PropertyName="Content" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
@@ -1176,10 +1227,22 @@
                                 <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+                                <!-- Meta shoulder entry focuses its parallel native-slot region. -->
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
 
@@ -1249,6 +1312,9 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip" PropertyName="Content" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
@@ -1274,6 +1340,12 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <!-- Restore a native resource-filtered spell grid alongside
+                                         metamagic, even when arriving from Items/Passives. -->
+                                    <b:InvokeCommandAction
+                                        IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                        Command="{Binding FilterActionResourceCommand}"
+                                        CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
                                 </b:EventTrigger>
 
@@ -1327,10 +1399,22 @@
                                 <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+                                <!-- Meta shoulder entry focuses its parallel native-slot region. -->
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
 
@@ -1813,8 +1897,106 @@
                         </Grid>
                     </DockPanel>
 
+                    <!-- Keyboard HotBar.xaml shows FixedSideBar alongside the main deck.
+                         Preserve native VMHotBarSlot values, source order and count. -->
+                    <Grid x:Name="CAM_FixedSideBarRegion"
+                          Grid.Row="1"
+                          Grid.Column="0"
+                          Width="128"
+                          Height="850"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Top"
+                          Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                        <ls:LSListBox x:Name="CAM_FixedSideBarList"
+                                      Width="120"
+                                      Height="850"
+                                      HorizontalAlignment="Left"
+                                      SelectedIndex="-1"
+                                      Background="Transparent"
+                                      ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"
+                                      ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
+                                      ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
+                                      ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"
+                                      KeyboardNavigation.DirectionalNavigation="Continue"
+                                      ActionNextEvent="UIDown"
+                                      ActionPrevEvent="UIUp"
+                                      LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}">
+                            <ls:LSListBox.Template>
+                                <ControlTemplate TargetType="{x:Type ListBox}">
+                                    <ls:LSScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                                       VerticalScrollBarVisibility="Auto"
+                                                       CanContentScroll="False"
+                                                       ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}">
+                                        <ItemsPresenter/>
+                                    </ls:LSScrollViewer>
+                                </ControlTemplate>
+                            </ls:LSListBox.Template>
+                            <ls:LSListBox.ToolTip>
+                                <ls:LSTooltip x:Name="CAM_FixedSideBarTooltip"
+                                              ToolTipService.Placement="Right"
+                                              ToolTipService.HorizontalOffset="40"
+                                              ToolTipService.VerticalOffset="-40"
+                                              ls:TooltipExtender.Context="Hotbar"/>
+                            </ls:LSListBox.ToolTip>
+                            <b:Interaction.Triggers>
+                                <!-- Spatial navigation into the side rail must also work
+                                     without first selecting the Metamagic shoulder tab. -->
+                                <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="NotEqual" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding FilterActionResourceCommand}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                                </b:EventTrigger>
+                                <b:EventTrigger EventName="LocalFocusChanged">
+                                    <!-- The same ActionRadials.Tag -> UseSlotCommand route
+                                         used by the main grid must own the side selection. -->
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
+                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
+                                </b:EventTrigger>
+                                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior><b:ConditionalExpression>
+                                            <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
+                                                                   Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                        </b:ConditionalExpression></b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials"
+                                                            PropertyName="Tag"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                </b:TimerTrigger>
+                            </b:Interaction.Triggers>
+                        </ls:LSListBox>
+                        <Control x:Name="CAM_FixedSideBarSelector"
+                                 IsHitTestVisible="False"
+                                 Focusable="False"
+                                 Panel.ZIndex="2"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Top"
+                                 Template="{StaticResource SelectorTemplate}"
+                                 Visibility="{Binding Visibility, ElementName=CAM_FixedSideBarList}"/>
+                    </Grid>
+
                     <Grid x:Name="CAM_ActionViewport"
                           Grid.Row="1"
+                          Grid.Column="1"
                           Height="850"
                           Margin="40,0"
                           HorizontalAlignment="Stretch"
@@ -1863,10 +2045,8 @@
                                             <Setter Property="ItemsPanel"
                                                     Value="{StaticResource CAM_AllGroupsPanel}"/>
                                         </MultiDataTrigger>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
-                                            <Setter Property="ItemsSource"
-                                                    Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"/>
-                                        </DataTrigger>
+                                        <!-- Native FixedSideBar is rendered independently.
+                                             Entering its provider mode must not replace spells. -->
                                         <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
@@ -1905,6 +2085,17 @@
                             </ls:LSListBox.Template>
 
                             <b:Interaction.Triggers>
+                                <!-- Spatial navigation back from the fixed sidebar restores
+                                     the normal resource/provider focus authority. -->
+                                <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}" Operator="NotEqual" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
                                 <b:EventTrigger EventName="LocalFocusChanged">
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                                             PropertyName="Content"

@@ -108,7 +108,9 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrip
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
-    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList" -or
+    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList" -or
+    $evidence.runtimeContract.organization.parallelSidebarSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
+    $evidence.runtimeContract.organization.parallelSidebarFocus -ne "CAM_FixedSideBarList.LocalFocus.DataContext -> ActionRadials.Tag -> UseSlotCommand" -or
     $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
     $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
@@ -291,10 +293,10 @@ if ($sourceSwitch.modeStorage -ne "CAM_ProviderModeMarker.Tag" -or
     $sourceSwitch.directProviderNestedOverride -ne "nested flags -> SingleHotBar.SlotList" -or
     $sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
     $sourceSwitch.providerRestoreDispatcher -ne "CAM_ProviderRestoreCommand" -or
-    $sourceSwitch.executableList -ne "HotBarList" -or
+    $sourceSwitch.executableList -ne "HotBarList + CAM_FixedSideBarList" -or
     $sourceSwitch.duplicateExecutableLists -ne $false -or
     $sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
-    throw "The sole HotBarList must switch only among proven native providers and restore nested state through CAM_ProviderRestoreCommand."
+    throw "Native executable slot providers and the parallel FixedSideBar must preserve the BG3 focus/execution contract."
 }
 
 $passiveReturn = $evidence.runtimeContract.assignmentNavigation.passivesReturn
@@ -524,7 +526,8 @@ if ($text.Contains('CAM_ResourceFilter')) {
     throw "A secondary resource-filter layer must not return."
 }
 
-# One executable controller list owns resource, Passives, and nested VMHotBarSlot state.
+# The central HotBarList owns resource/Passives/nested VMHotBarSlot state.
+# FixedSideBar is a second, simultaneously visible native VMHotBarSlot list.
 $mainList = [regex]::Match(
     $text,
     '<ls:LSListBox\b[^>]*x:Name="HotBarList"[\s\S]*?</ls:LSListBox>',
@@ -534,8 +537,7 @@ if (-not $mainList.Success -or
     -not $mainList.Value.Contains('<Setter Property="ItemsSource" Value="{Binding SingleHotBar.SlotList}"/>') -or
     -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentShownDeck.SlotList}"') -or
-    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}"') -or
-    -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
+    $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
     -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"') -or
     -not $mainList.Value.Contains('Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"') -or
@@ -547,8 +549,48 @@ if (-not $mainList.Success -or
     -not $mainList.Value.Contains('<Setter Property="ItemsPanel" Value="{StaticResource CAM_ActionGridPanel}"/>') -or
     -not $mainList.Value.Contains('<ls:LSScrollViewer') -or
     -not $mainList.Value.Contains('ls:LSScrollViewer.ScrollToElement="{Binding FocusedElement, ElementName=ActionRadials}"')) {
-    throw "The sole HotBarList must switch only among proven executable SingleHotBar, ItemHotBar, FixedSideBar, PassivesHotBar, and grouped KeyboardHotBars slots."
+    throw "The main HotBarList must retain native SingleHotBar/ItemHotBar/PassivesHotBar/KeyboardHotBars providers and must never substitute FixedSideBar for spells."
 }
+# Original installed HotBar 1.8.910.0 renders FixedSideBar alongside the
+# spell deck; this must be a separate, controller-focusable VMHotBarSlot list.
+$sidebar = [regex]::Match(
+    $text,
+    '<ls:LSListBox\b[^>]*x:Name="CAM_FixedSideBarList"[\s\S]*?</ls:LSListBox>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sidebar.Success -or
+    -not $sidebar.Value.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
+    -not $sidebar.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
+    -not $sidebar.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
+    -not $sidebar.Value.Contains('ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"') -or
+    -not $sidebar.Value.Contains('ActionNextEvent="UIDown"') -or
+    -not $sidebar.Value.Contains('ActionPrevEvent="UIUp"') -or
+    -not $sidebar.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}"') -or
+    -not $sidebar.Value.Contains('Spatial navigation into the side rail') -or
+    -not $sidebar.Value.Contains('CAM_ProviderModeMarker') -or
+    -not $sidebar.Value.Contains('EventName="LocalFocusChanged"') -or
+    -not $sidebar.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"')) {
+    throw "The fixed sidebar must remain a native, independently focused executable VMHotBarSlot list."
+}
+$gridTemplate = [regex]::Match(
+    $text,
+    '<DataTemplate x:Key="CAM_ActionGridSlotTemplate">[\s\S]*?</DataTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $gridTemplate.Success -or
+    -not $gridTemplate.Value.Contains('Content.IsModified') -or
+    -not $gridTemplate.Value.Contains('HotbarSlotGlow') -or
+    -not $gridTemplate.Value.Contains('Content.IsMetaMagic') -or
+    -not $gridTemplate.Value.Contains('HotBarActiveSlotIndicatorMetamagic') -or
+    -not $gridTemplate.Value.Contains('IsActive') -or
+    -not $gridTemplate.Value.Contains('CanUse')) {
+    throw "Controller cells must consume original game-owned active/modified metamagic state and retain CanUse."
+}
+if ([regex]::Matches($text, 'Meta shoulder entry focuses its parallel native-slot region').Count -ne 2 -or
+    [regex]::Matches($text, 'CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"').Count -lt 3) {
+    throw "Both LB/RB transitions to metamagic must preserve a resource-filtered spell grid while focusing the parallel sidebar."
+}
+
 if ([regex]::Matches($text, 'SetCurrentShownDeckCommand').Count -lt 3 -or
     [regex]::Matches($text, 'CommandParameter="ItemHotBar"').Count -lt 3 -or
     $text.Contains('CommandParameter="CommonHotBar"') -or
@@ -1292,11 +1334,13 @@ if ($hotBarList.Value.Contains('<b:PropertyChangedTrigger Binding="{Binding Loca
     throw "The 0.0.67 nested LocalFocus.DataContext property trigger is runtime-rejected and must not return."
 }
 
-$localFocusEvent = [regex]::Match(
-    $hotBarList.Value,
-    '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
+$localFocusEvent = @(
+    [regex]::Matches(
+        $hotBarList.Value,
+        '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object { $_.Value.Contains('ShowTooltipOnUIElementCommand') }
+) | Select-Object -First 1
 if (-not $localFocusEvent.Success -or
     -not $localFocusEvent.Value.Contains('Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"') -or
     -not $localFocusEvent.Value.Contains('ShowTooltipOnUIElementCommand') -or

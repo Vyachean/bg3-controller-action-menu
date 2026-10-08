@@ -96,6 +96,37 @@ A future provider must be proven against the current installed game and material
 executable `VMHotBarSlot` values. This requirement does not authorize raw source tabs,
 manual action tables or string/icon classification.
 
+## Native metamagic side rail (0.0.99 candidate)
+
+The installed 1.8.910.0 keyboard HotBar renders native `FixedSideBar`
+**beside** the primary deck. CAM now composes:
+
+```text
+                   ActionRadials (one BG3 UseSlotCommand)
+                             ^
+                   ActionRadials.Tag (focused VMHotBarSlot)
+                          /          \
+             sidebar LocalFocus    HotBarList LocalFocus
+                      |                      |
+          FixedSideBar.SlotList       resource-filtered SingleHotBar.SlotList
+                      |                      |
+             one-column LSGrid          adaptive LSGrid
+```
+
+The FixedSideBar column is native and count-conditional; it is not a
+synthetic list of metamagic spells. LB/RB retains the historical
+Metamagic entry to focus this separate column without replacing
+`HotBarList.ItemsSource`. Entering from Items/Passives re-applies the
+BG3-owned selected resource filter to keep spells in the central grid.
+The game supplies `Content.IsModified`, `Content.IsMetaMagic`,
+`IsActive`, and `MetamagicActive` (controller state); CAM reuses
+shared native effect templates without duplicating the game rules.
+
+The research source audit is [here](research/metamagic-parity-2026-10-08.md).
+Independent sidebar focus, native tooltip and B/nested transitions
+are **not** game-verified merely because the XAML and package pass CI;
+#125 remains open for a combined sorcerer acceptance run.
+
 ## Resource-first navigation
 
 LB/RB traverses one cost/source row. Resource entries invoke `FilterActionResourceCommand`; proven special providers use Cantrips, ItemHotBar, FixedSideBar, PassivesHotBar, and finally a grouped native `KeyboardHotBars` fallback. The executable identity remains `VMHotBarSlot` in every case.

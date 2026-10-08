@@ -93,12 +93,34 @@ exists but equality with the reference catalog cannot be established statically;
 | inventory/consumables | ItemHotBar + radial `Inventory.Slots` | `SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList` | proven keyboard source / radial parity runtime-unverified |
 | scrolls | ItemHotBar + radial `Inventory.Slots` | ItemHotBar + grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
 | item-charge actions | ItemHotBar + radial `Inventory.Slots` | ItemHotBar + grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
-| metamagic toggles | radial metamagic predicate + native `FixedSideBar` | `FixedSideBar.SlotList` | proven-source / runtime-unverified |
+| metamagic toggles | radial metamagic predicate + native `FixedSideBar` | parallel `CAM_FixedSideBarList` bound to `FixedSideBar.SlotList`; native `IsActive`/`IsModified` presentation | proven-source / runtime-unverified |
 | temporary actions | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
 | recasts | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback + native nested behavior | keyboard source covered / radial parity runtime-unverified |
 | mod-added actions/resources | native dynamic models | covered only when BG3 exposes a resource preview / proven slot source | runtime-proof |
 
 This table is deliberately conservative. Absence of a known bug is not proof of parity.
+
+## Metamagic is a parallel native provider
+
+Installed-game `HotBar.xaml` (Xbox App 1.8.910.0) displays `FixedSideBar`
+**at the same time** as the ordinary HotBar deck. It is not a resource
+filter. CAM therefore displays native `FixedSideBar.SlotList` in a
+separate, count-conditional vertical controller list. The Metamagic
+LB/RB entry provides controller access to this list and restores the
+last selected **native** resource filter for the center grid; it never
+substitutes FixedSideBar slots for spell grid slots.
+
+The shared installed-game `DataTemplates.xaml` uses
+`Content.IsModified -> HotbarSlotGlow` for the spell-modification effect
+and `Content.IsMetaMagic + IsActive -> HotBarActiveSlotIndicatorMetamagic`
+for the active metamagic indicator. CAM must bind these existing game
+values, not calculate compatible spells. A side slot is executed only
+as `VMHotBarSlot` through the existing `ActionRadials.Tag ->
+UseSlotCommand` route. Whether the filter materializes live modified
+spell states and whether two-list focus/tooltip handoff behaves
+correctly remain in-game acceptance gates for #125.
+
+See [exact installed-source audit](research/metamagic-parity-2026-10-08.md).
 
 ## Provider architecture
 
