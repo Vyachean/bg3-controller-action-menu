@@ -97,11 +97,13 @@ if ($clearActions.Count -lt 3) {
     throw "HotBarList must clear transient resource preview on ordinary focus and programmatic entry."
 }
 
-$localFocusEvent = [regex]::Match(
-    $hotBarList.Value,
-    '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
+$localFocusEvent = @(
+    [regex]::Matches(
+        $hotBarList.Value,
+        '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object { $_.Value.Contains('CreateFocusedTooltipDataCommand') -and $_.Value.Contains('ClearResourceHighlightsCommand') }
+) | Select-Object -First 1
 $localFocusTimer = [regex]::Match(
     $hotBarList.Value,
     '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
