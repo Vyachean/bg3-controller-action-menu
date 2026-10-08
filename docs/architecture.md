@@ -96,6 +96,27 @@ A future provider must be proven against the current installed game and material
 executable `VMHotBarSlot` values. This requirement does not authorize raw source tabs,
 manual action tables or string/icon classification.
 
+## Explicit initial controller focus for Metamagic (0.0.103 candidate)
+
+The operator's 0.0.101/0.0.102 runtime test confirmed the Metamagic
+LB/RB provider enters the side region, but **the first concrete slot
+has no initial controller focus**. The prior entry only wrote the
+`CAM_ResetFirstFocusToken` and reselected index zero; selecting a
+ListBoxItem is not sufficient proof of native controller focus
+transfer between independent lists.
+
+Both Metamagic LB/RB entry timers now also call BG3's existing
+`ls:SetMoveFocusAction(TargetName=ActionRadials,
+FocusElement=CAM_FixedSideBarList, DeferFocusAction=True)`
+before the first-slot selection. The proven item-container selection
+trigger still promotes the chosen concrete VMHotBarSlot into native
+focus after that. This does **not** re-enable both list owners or
+mutate the provider mode from a passive focus event.
+
+Static testing verifies symmetric entry and preserved command
+bindings, but a Noesis runtime check remains necessary to prove
+the initial frame, tooltip and A dispatch.
+
 ## Native metamagic side rail (0.0.99 candidate)
 
 The installed 1.8.910.0 keyboard HotBar renders native `FixedSideBar`
@@ -237,7 +258,13 @@ focus identity, `LSGrid` columns, selected indexes or tab mode.
 
 Operator observation (2026-10-08): in long Items lists, visible
 focus sometimes appears to skip a row near the scrolling boundary,
-and at the top it paints over tabs. Clipping **only proves a
+and at the top it paints over tabs. Operator clarification: **the
+actual selected action and tooltip do not skip**; only native selector
+chrome jumps visually as the list scrolls. Consequently, the
+`LSGrid` input, selected slot, column count, scrolling transport
+and 120px vertical margin remain untouched. This local clipping
+prevents the external selector from painting over tabs. It is not
+proof of smooth selector animation during scrolling. Clipping **only proves a
 render-boundary correction**; it does not prove whether a row was
 skipped logically. The `LSScrollViewer.ScrollToElement` transport
 still follows `ActionRadials.FocusedElement` with
