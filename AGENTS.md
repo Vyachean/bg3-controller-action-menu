@@ -130,6 +130,32 @@ command-risk inventory is documented in
 Do not close action coverage merely because all captured native
 command *names* are classified; they are not action instances.
 
+## Full gameplay capability parity is a blocking acceptance gate (#135)
+
+User explicitly requires no lost native BG3 gameplay capability.
+The game ships keyboard and controller action sources with differing
+command/menu structures. Do **not** add all native command names
+blindly: `SetCursorCommand` is mouse-resize UI, radial slot
+editing is intentionally excluded, and blindly rebinding input
+previously broke normal UILeft/held weapon switching.
+
+The [25-capability matrix](docs/evidence/native-gameplay-capabilities.json)
+lists required action classes including Jump/Shove/Throw/Hide,
+weapons and light source, spell resources and variants, items,
+charges, recasts, metamagic, targeting, cancellation and mod-added
+actions. Any `blocked` or `unverified` item is still **unfinished**,
+even when native XAML command audit and build CI pass.
+
+The source audit `tools/audit-native-ui-commands.py` checks
+provider/command names only. A separate strict runtime identity
+comparator `tools/compare-runtime-gameplay.py` must reject missing
+actual playable native action identities and lost native global
+controller controls. Its synthetic CI self-test is **not**
+runtime BG3 proof. It needs data from a future development-only,
+read-only state probe. Do not put a Script Extender, native loader,
+or manual mock action identity into the shipping package. Do not
+call the mod functionally complete until this gate is satisfied.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:

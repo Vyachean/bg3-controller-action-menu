@@ -1266,3 +1266,37 @@ CI must now require zero undeclared CAM local resources, the original zero resou
 After successful 0.0.89 LB/RB operation, the user still reports visually crooked resource-tab indicators. Static comparison with the already captured original `HotBar.xaml` reveals that four native resource-strip elements are bottom-aligned while CAM has centered their counterparts within an 84-unit row. The five special provider frames were also centered. This correction pins `VerticalAlignment=Bottom` on the corresponding CAM elements, preserving every VM slot/filter/input binding and image resource.
 
 Regression checks assert bottom anchoring of the resource strip, nine-slice chrome, resource StackPanel, resource list/panel, and all five special providers. Resource art and point-size values stay unchanged because the existing screenshot predates the 0.0.89 correction and cannot justify arbitrary scaling. The next in-game screenshot should compare the new 0.0.90 geometry against the native HotBar before selecting any additional image-size changes.
+
+## 2026-10-08 — full BG3 gameplay reachability comparator (#135)
+
+The operator requires **every gameplay capability** of the vanilla
+controller action menu to remain accessible. There is no feasible
+manual test matrix for every BG3 class, equipment state, mod,
+temporary action or recast. The source audit of 36 command names
+is therefore only an early regression check.
+
+The full 25-capability policy is now pinned in
+`docs/evidence/native-gameplay-capabilities.json`. Every CI
+Validate run executes:
+
+```text
+python tools/compare-runtime-gameplay.py --self-test
+```
+
+The test must reject missing native executable IDs, missing native
+global controller capabilities and incomplete observations, while
+allowing one executable identity to appear in multiple native
+providers. Game-state observations must contain a full variant-
+and-resource-aware stable native identity; generic spell labels
+alone are insufficient.
+
+A future development-only read-only probe can supply:
+
+```text
+python tools/compare-runtime-gameplay.py --observation observation.json --json
+```
+
+No real runtime inventory is available in CI or the existing static
+capture, so the checker reports `awaiting-runtime-proof`. Its
+successful synthetic fixture check does not close gameplay parity,
+and the user must **not** be asked to enumerate all actions manually.

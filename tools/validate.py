@@ -1120,6 +1120,19 @@ def main() -> int:
     else:
         print(audit.stdout, end="")
 
+    # The source inventory cannot prove parity for a dynamic BG3 runtime
+    # state. Still validate the strict comparison algorithm, its 25 explicit
+    # gameplay capability contracts, and its failure on missing action IDs.
+    runtime_parity = subprocess.run(
+        [sys.executable, str(ROOT / "tools/compare-runtime-gameplay.py"), "--self-test"],
+        cwd=ROOT, text=True, capture_output=True, check=False,
+    )
+    if runtime_parity.returncode != 0:
+        errors.append("Runtime gameplay parity comparator fixture failed:\n"
+                      + runtime_parity.stdout + runtime_parity.stderr)
+    else:
+        print(runtime_parity.stdout, end="")
+
     if errors:
         print("Static validation failed:")
         for error in errors:
