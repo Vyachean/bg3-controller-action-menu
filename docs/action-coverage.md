@@ -22,6 +22,40 @@ CAM reachable executable actions
 A release must not be described as a complete HotBar replacement while a known native
 action class has no proven CAM route.
 
+## Scope: presentation replacement, not a second gameplay engine
+
+CAM replaces the original gamepad **radial layout and manual slot editor**
+with a **read-only, automatically populated grid**. Keyboard HotBar is a
+visual reference, not the contract that determines which controller actions
+exist. The gameplay authority is still BG3's controller action model and its
+native commands/targeting. A player must not arrange, clear, or synchronize
+radial slots before opening CAM. One horizontal resource/category tab level
+organizes the available actions; no nested category tabs or manual grids.
+
+Parity includes not just successful `UseSlotCommand` execution but native
+refusal feedback, cancellation, target/variant selection, cost and
+availability explanations, combat/control shortcuts, and tooltip behavior.
+Replacing a visual control must preserve the original semantics when an
+action **cannot** be executed.
+
+### First confirmed visual transport regression: unavailable-action feedback
+
+Installed Xbox App 1.8.910.0
+`Public/Game/GUI/Library/PreloadedActionRadials_c.xaml:1897–1915`
+has `SelectButtonVisual` wired to `BoundEvent="UIAccept"`,
+`EatInput="False"`. Its `Click` trigger plays `UI_Shared_Error`
+only when the **game-owned** focused slot reports `Tag.CanUse == False`
+and `Tag.ThothError` is nonempty. BG3's neighboring
+`UseSlotBinding` is separately gated by `Tag.CanUse`; the error sound
+does not try to cast an unavailable action.
+
+CAM previously kept the select visual and native execution gating but
+accidentally dropped this `Click` trigger. Restore the original conditional
+sound verbatim. This is a controller feedback regression, not a reason to
+replace native `VMHotBarSlot` execution or create a second catalog. The
+native dynamic warning/cost presentation remains a separate UX review.
+Static XAML presence tests are not proof that an input event fires in-game.
+
 ## Capability preservation, not radial preservation
 
 The player must never configure or browse **Original Radials** to make actions accessible in CAM. The original `ControllerHotBars` collection is useful as comparison evidence but is not a CAM provider: cleared or incomplete vanilla radial slots must not remove actions from the automatic catalogue. Preserve keyboard and controller gameplay, including native global commands, weapon/light switches, targeting, nesting, metamagic and other-mod actions. Unknown executable providers or omitted capabilities remain blocking, not reasons to expose raw radial layout.
