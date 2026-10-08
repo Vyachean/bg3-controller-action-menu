@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "offline-native-XAML-verified",
+  "gamePackageVersion": "1.8.910.0",
+  "archive": "bg3-controller-action-menu-inputs-20261008-132651.zip",
+  "archiveFileCount": 45,
+  "nativeSources": {
+    "keyboard": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+    "controllerLibrary": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+    "controllerPage": "Mods/MainUI/GUI/Pages/ActionRadials.xaml",
+    "controllerStateMachine": "Mods/MainUI/GUI/StateMachines/Controller.xaml"
+  },
+  "sourceSha256": {
+    "Mods/MainUI/GUI/Pages/HotBar.xaml": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728",
+    "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml": "4f5cf52e6839debe6d1b247a02d6e60987c26e92586a374892f65ba6b4f19d8b"
+  },
+  "producers": [
+    {
+      "id": "keyboard-hotbars",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 1565,
+      "kind": "collection",
+      "nativeBinding": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars",
+      "camSourcePresent": true,
+      "proof": "native provider bound; complete game catalog not proven"
+    },
+    {
+      "id": "summon-hotbar",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 1759,
+      "kind": "vmhotbar-content",
+      "nativeBinding": "SummonHotBar",
+      "nativeTemplate": "HotBarTemplate -> SlotList",
+      "visibility": "SummonHotBar.SlotList.Count",
+      "camSourcePresent": false,
+      "proof": "independent native slot producer not directly bound in CAM; equivalence with other CAM collections unproven"
+    },
+    {
+      "id": "custom-hotbar",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 1752,
+      "kind": "vmhotbar-content",
+      "nativeBinding": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.CustomHotBar",
+      "nativeTemplate": "HotBarTemplate -> SlotList",
+      "camSourcePresent": false,
+      "proof": "player-customized deck is excluded as editor UI only; any unique playable slot still needs automatic source coverage"
+    },
+    {
+      "id": "call-allies-direct",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 4519,
+      "kind": "direct-use-slot",
+      "nativeBinding": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.CallAllies",
+      "nativeCommand": "UseSlotCommand",
+      "nativeBoundEvent": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.CallAllies.BoundEvent",
+      "camSourcePresent": false,
+      "proof": "not directly in CAM template; separate original controller page CallAllies transport exists"
+    },
+    {
+      "id": "call-allies-controller-page",
+      "source": "Mods/MainUI/GUI/Pages/ActionRadials.xaml",
+      "line": 35,
+      "kind": "page-metadata-command",
+      "nativeBinding": "Metadata == CallAllies -> CallAllies",
+      "camSourcePresent": true,
+      "proof": "original controller page and state machine survive CAM template override; actual gameplay effect not statically evaluated"
+    },
+    {
+      "id": "call-allies-controller-state",
+      "source": "Mods/MainUI/GUI/StateMachines/Controller.xaml",
+      "line": 676,
+      "kind": "state-event",
+      "nativeBinding": "OpenActionRadialsAndCallAllies -> ActionRadials Metadata=CallAllies",
+      "camSourcePresent": true,
+      "proof": "original state machine declares native conditional open route"
+    },
+    {
+      "id": "controller-assignment-actions",
+      "source": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+      "line": 161,
+      "kind": "radial-assignment",
+      "nativeBinding": "SpellsAndActions[*].Actions",
+      "camSourcePresent": false,
+      "proof": "raw assignment candidates, not VMHotBarSlot; must prove native executable source mapping"
+    },
+    {
+      "id": "controller-assignment-items",
+      "source": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+      "line": 1286,
+      "kind": "radial-assignment",
+      "nativeBinding": "CurrentPlayer.SelectedCharacter.Inventory.Slots",
+      "camSourcePresent": false,
+      "proof": "not equivalent by inspection to CurrentShownDeck.SlotList"
+    },
+    {
+      "id": "controller-passives",
+      "source": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+      "line": 1267,
+      "kind": "predicate-assignment",
+      "nativeBinding": "Stats.Passives + Data.TogglablePassivePredicate",
+      "camSourcePresent": false,
+      "proof": "native PassivesHotBar route exists but full predicate-equivalence is unproven"
+    },
+    {
+      "id": "controller-metamagic",
+      "source": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+      "line": 1277,
+      "kind": "predicate-assignment",
+      "nativeBinding": "Stats.Passives + Data.TogglableMetaMagicPassivePredicate",
+      "camSourcePresent": false,
+      "proof": "CAM FixedSideBar.SlotList route exists; predicate-equivalence and UI behavior remain unproven"
+    },
+    {
+      "id": "weapon-set",
+      "source": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml",
+      "line": 1926,
+      "kind": "native-command",
+      "nativeBinding": "SwitchWeaponSetCommand",
+      "camSourcePresent": false,
+      "proof": "previous CAM controller transport experiments unsuccessful; no reliable direct route"
+    },
+    {
+      "id": "light-source",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 1493,
+      "kind": "native-command",
+      "nativeBinding": "SwapLightSourceCommand",
+      "nativeEnabledBinding": "CurrentPlayer.SelectedCharacter.Equipment.LightSource.Item",
+      "camSourcePresent": false,
+      "proof": "direct keyboard command missing; alternate CAM slot not proven"
+    },
+    {
+      "id": "default-actions",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 1079,
+      "kind": "input-commands",
+      "nativeBinding": "LaunchDefaultActionCommand(Jump/Shove/Throw/Hide)",
+      "camSourcePresent": false,
+      "proof": "four original native input command routes not directly reproduced; slot parity unproven"
+    },
+    {
+      "id": "melee-ranged",
+      "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+      "line": 1348,
+      "kind": "native-commands",
+      "nativeBinding": "UseMeleeWeaponCommand / UseRangedWeaponCommand / MainMeleeSpell",
+      "camSourcePresent": false,
+      "proof": "native keyboard direct attack routes absent; automatic catalog equivalence unproven"
+    }
+  ],
+  "verdict": "source-only-incomplete-do-not-ship-parity-claim",
+  "limitations": [
+    "Original extracted XAML and native command owners are verified, but BG3 closed-source ViewModel producer implementations are not included",
+    "Absence of a direct CAM binding is not proof of a missing gameplay effect when a separate native slot or page command exists",
+    "Presence of matching command names is not a proof of runtime action equivalence",
+    "Configured ControllerHotBars are forbidden as the automatic CAM action provider"
+  ]
+}
