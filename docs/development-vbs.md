@@ -158,3 +158,14 @@ same VBS
 ```
 
 The entry checks a successful install status **and exact release version** rather than relying on the native process `LASTEXITCODE` value. A helper failure results in generic `ERROR` status and a discoverable log. Its automated fixture also covers an intentionally failed child install. The read-only capture helper remains available as a release asset but is no longer automatically invoked.
+
+
+## 0.0.92 — resource-renderer evidence collection
+
+The same universal VBS temporarily performs read-only Game.pak capture.
+Its ZIP beside the VBS contains the current keyboard HotBar template,
+`DataTemplates.xaml`, `DataTemplates_c.xaml` and
+`ActionResourceTemplates_c.xaml`, with per-file SHA256 in the manifest.
+Missing required files fail closed. No PAK installation, game configuration
+change, or save modification occurs. The normal install task resumes with
+the next evidence-backed gameplay release.
