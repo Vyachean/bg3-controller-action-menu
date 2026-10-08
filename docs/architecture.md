@@ -122,6 +122,17 @@ The game supplies `Content.IsModified`, `Content.IsMetaMagic`,
 `IsActive`, and `MetamagicActive` (controller state); CAM reuses
 shared native effect templates without duplicating the game rules.
 
+Nested variant/upcast/throw flows temporarily focus the central action
+list without changing the selected Metamagic tab. On their exit, the
+Metamagic provider **must reapply** BG3's selected resource filter to
+restore the spell grid and then return focus to the first native
+`FixedSideBar.SlotList` slot. Restoring `HotBarList.SelectedIndex`
+instead is the old, incorrect pre-0.0.99 behavior. The ordinary
+`SingleHotBar.SlotList.Count` nested-restoration trigger must skip
+Metamagic so it does not steal focus from the side rail. While a nested
+choice is active, a main-list focus change must not be confused with
+D-pad navigation out of the side rail.
+
 The research source audit is [here](research/metamagic-parity-2026-10-08.md).
 Independent sidebar focus, native tooltip and B/nested transitions
 are **not** game-verified merely because the XAML and package pass CI;
