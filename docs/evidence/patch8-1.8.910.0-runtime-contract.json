@@ -146,7 +146,8 @@
           "CAM_ItemsModeToken",
           "CAM_MetamagicModeToken",
           "CAM_PassivesModeToken",
-          "CAM_AllModeToken"
+          "CAM_AllModeToken",
+          "CAM_OriginalRadialsModeToken"
         ],
         "cantripsSource": "FilterCantripsCommand -> SingleHotBar.SlotList",
         "cantripsParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
@@ -160,13 +161,18 @@
         "itemsRestore": "CAM_NestedRestoringToken -> CurrentShownDeck.SlotList + first-item focus",
         "allSource": "KeyboardHotBars[*].SlotList grouped through CAM_AllGroupTemplate",
         "allNestedBehavior": "nested flags -> SingleHotBar.SlotList",
-        "allRestore": "CAM_NestedRestoringToken -> first non-empty KeyboardHotBars group -> first VMHotBarSlot"
+        "allRestore": "CAM_NestedRestoringToken -> first non-empty KeyboardHotBars group -> first VMHotBarSlot",
+        "originalRadialsSource": "ControllerHotBars[*].SlotList grouped through CAM_AllGroupTemplate",
+        "originalRadialsNestedBehavior": "nested flags -> SingleHotBar.SlotList",
+        "originalRadialsRestore": "CAM_NestedRestoringToken -> first non-empty ControllerHotBars group -> first VMHotBarSlot",
+        "originalRadialsReadOnly": true,
+        "originalRadialsRuntimeParityProven": false
       },
       "passivesReturn": {
         "modeAuthority": "CAM_ProviderModeMarker.Tag serializes one shoulder-button transition",
-        "rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_AllModeToken",
+        "rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_OriginalRadialsModeToken if available, else CAM_AllModeToken",
         "rightFromAll": "CAM_TabReturnFirstToken -> FilterActionResourceCommand(selected resource)",
-        "leftFromAll": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken",
+        "leftFromAll": "CAM_TabEnterSpecialToken -> CAM_OriginalRadialsModeToken if available, else CAM_PassivesModeToken",
         "leftFromPassivesWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken",
         "leftFromPassivesWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)",
         "focusAfterModeSwitch": "CAM_ResetFirstFocusToken + SelectedIndex=-1 -> 0",
@@ -174,7 +180,9 @@
         "singleShoulderPressSingleLogicalTransition": true,
         "resourceReturnMilliseconds": 70,
         "specialModeSwitchMilliseconds": 70,
-        "leftFallbackModeSwitchMilliseconds": 90
+        "leftFallbackModeSwitchMilliseconds": 90,
+        "rightFromOriginalRadials": "CAM_TabEnterSpecialToken -> CAM_AllModeToken",
+        "leftFromOriginalRadials": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken"
       },
       "directProviderNestedOverride": {
         "nestedSource": "SingleHotBar.SlotList",
