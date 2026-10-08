@@ -75,6 +75,7 @@ def extract_native_action_sites(source: str, source_path: str) -> dict:
     root = ET.fromstring(source)
     dispatches: list[dict] = []
     collections: list[dict] = []
+    content_providers: list[dict] = []
 
     def visit(node: ET.Element, owners: tuple[str, ...]) -> None:
         tag = node.tag.rsplit("}", 1)[-1]
@@ -93,6 +94,20 @@ def extract_native_action_sites(source: str, source_path: str) -> dict:
                 "element": "/".join(path),
                 "itemsSource": items_source,
                 "dataType": _attribute(attributes, "DataType"),
+                "predicate": _attribute(attributes, "Predicate"),
+            })
+        # Original keyboard HotBar mounts independently executable native
+        # VMHotBar objects with Content + HotBarTemplate, not ItemsSource.
+        # Without this pass SummonHotBar/CustomHotBar disappear from the audit.
+        content = _attribute(attributes, "Content")
+        content_template = _attribute(attributes, "ContentTemplate")
+        if content and content_template and "HotBarTemplate" in content_template:
+            content_providers.append({
+                "source": source_path,
+                "element": "/".join(path),
+                "content": content,
+                "contentTemplate": content_template,
+                "visibility": _attribute(attributes, "Visibility"),
             })
         command = _attribute(attributes, "Command")
         if not command and tag == "Setter" and _attribute(attributes, "Property") == "Command":
@@ -122,7 +137,7 @@ def extract_native_action_sites(source: str, source_path: str) -> dict:
 
     ancestor_nodes: list[ET.Element] = []
     visit(root, ())
-    return {"dispatches": dispatches, "collections": collections}
+    return {"dispatches": dispatches, "collections": collections, "contentProviders": content_providers}
 
 
 def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
@@ -134,6 +149,7 @@ def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
     """
     vanilla: list[dict] = []
     native_collections: list[dict] = []
+    native_content_providers: list[dict] = []
     failures: list[str] = []
     for path, source in sorted(capture.items()):
         if not path.endswith(".xaml"):
@@ -145,12 +161,18 @@ def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
             continue
         vanilla.extend(sites["dispatches"])
         native_collections.extend(sites["collections"])
+        native_content_providers.extend(sites["contentProviders"])
     try:
         cam = extract_native_action_sites(runtime, "CAM/Lib_Controller.xaml")
     except ET.ParseError as exc:
         failures.append(f"could not parse CAM XAML: {exc}")
-        cam = {"dispatches": [], "collections": []}
+        cam = {"dispatches": [], "collections": [], "contentProviders": []}
     cam_parameters = {site["commandParameter"] for site in cam["dispatches"]}
+    cam_content_sources = {site["content"] for site in cam["contentProviders"]}
+    unmirrored_content = [
+        site for site in native_content_providers
+        if site["content"] not in cam_content_sources
+    ]
     not_identical = [
         site for site in vanilla
         if not site["commandParameter"]
@@ -163,6 +185,9 @@ def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
         "camUseSlotCallSites": cam["dispatches"],
         "nativeCollectionBindings": native_collections,
         "camCollectionBindings": cam["collections"],
+        "nativeContentProviders": native_content_providers,
+        "camContentProviders": cam["contentProviders"],
+        "nativeContentProvidersWithoutSameCamBinding": unmirrored_content,
         "nativeCallSitesWithoutIdenticalCamParameter": not_identical,
         "warning": (
             "A different parameter expression is NOT proof of a gameplay omission; "
@@ -356,6 +381,29 @@ def main() -> int:
         )
         if len(parameterless["nativeCallSitesWithoutIdenticalCamParameter"]) != 1:
             report["errors"].append("self-test failed: missing native parameter was treated as proven")
+        source_ownership = (
+            '<Root><ContentControl Name="SummonHotBar" '
+            'Content="{Binding SummonHotBar}" '
+            'ContentTemplate="{StaticResource HotBarTemplate}" '
+            'Visibility="{Binding SummonHotBar.SlotList.Count}"/>'
+            '<ContentControl Name="CustomHotBar" '
+            'Content="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.CustomHotBar}" '
+            'ContentTemplate="{StaticResource HotBarTemplate}"/></Root>'
+        )
+        producer_report = compare_native_action_sites(
+            {"synthetic/HotBar.xaml": source_ownership},
+            '<Root><LSListBox ItemsSource="{Binding KeyboardHotBars}"/></Root>',
+        )
+        if (len(producer_report["nativeContentProviders"]) != 2
+                or len(producer_report["nativeContentProvidersWithoutSameCamBinding"]) != 2):
+            report["errors"].append("self-test failed: independent native HotBar content providers were missed")
+        matching_source_report = compare_native_action_sites(
+            {"synthetic/HotBar.xaml": source_ownership},
+            '<Root><ContentControl Content="{Binding SummonHotBar}" '
+            'ContentTemplate="{StaticResource HotBarTemplate}"/></Root>',
+        )
+        if len(matching_source_report["nativeContentProvidersWithoutSameCamBinding"]) != 1:
+            report["errors"].append("self-test failed: identical native VMHotBar source recognition")
         malformed = compare_native_action_sites(
             {"synthetic/Bad.xaml": "<Root><Unclosed></Root>"},
             '<Root/>',
