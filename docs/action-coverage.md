@@ -88,6 +88,34 @@ The source-backed restoration is guarded by structural CI tests, but actual
 repeatable gamepad hold behavior remains a single **milestone runtime check**,
 alongside the rest of the menu, not a reason to request a separate build test.
 
+## Nested Throw — return from item selection to world targeting
+
+The installed **Xbox App BG3 1.8.910.0** controller
+`Public/Game/GUI/Library/PreloadedActionRadials_c.xaml:1825`
+provides the native `ToWorldButton`:
+`BoundEvent="UIDelete"`, the game-owned `CurrentPlayer.UIData.InputEvents`
+hint and `Command="{Binding CustomEvent}"` with
+`CommandParameter="CloseRadials"`. The button is normally collapsed;
+original `PreloadedActionRadials_c.xaml:2138–2146` reveals it when
+`IsShowingItemsToThrow=True`. This is an executable **nested Throw
+workflow exit**, not an editable-radial action.
+
+CAM renders native Throw candidates from `SingleHotBar.SlotList` while
+`IsShowingItemsToThrow` is active. It must retain the original
+`UIDelete/CloseRadials` button alongside the existing grid and
+`UICancel` nested return, without making players configure a radial
+slot or implementing its own item-to-world targeting. Place the
+button in CAM's existing controller hint area rather than copying the
+radial's absolute `Margin="0,1300,0,0"`, which is specific to the
+removed wheel layout.
+
+Runtime proof: with a selected throw action and its native item picker
+open, the `UIDelete` controller hint returns to BG3's world targeting
+without invoking a selected item, consuming the ordinary A/B actions,
+or shifting CAM's resource tabs. The static test only proves the
+original event, binding, visibility and absence of a second custom
+input transport; it cannot certify game runtime behavior.
+
 ## Identity boundary
 
 Coverage is about executable BG3 objects, not names or icons.
