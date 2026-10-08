@@ -48,6 +48,7 @@
     <System:String x:Key="CAM_CantripsModeToken">CAM_CantripsMode</System:String>
     <System:String x:Key="CAM_ItemsModeToken">CAM_ItemsMode</System:String>
     <System:String x:Key="CAM_AllModeToken">CAM_AllMode</System:String>
+    <System:String x:Key="CAM_OriginalRadialsModeToken">CAM_OriginalRadialsMode</System:String>
     <System:String x:Key="CAM_MetamagicModeToken">CAM_MetamagicMode</System:String>
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
     <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
@@ -282,9 +283,7 @@
                                 <b:ComparisonCondition LeftOperand="{Binding SlotList.Count}"
                                                        Operator="GreaterThan"
                                                        RightOperand="0"/>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
-                                                       Operator="Equal"
-                                                       RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                <!-- Selected native hotbar groups only exist in grouped All/Original providers. -->
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
@@ -308,9 +307,7 @@
                                 <b:ComparisonCondition LeftOperand="{Binding SlotList.Count}"
                                                        Operator="GreaterThan"
                                                        RightOperand="0"/>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
-                                                       Operator="Equal"
-                                                       RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                <!-- Selected native hotbar groups only exist in grouped All/Original providers. -->
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
@@ -844,6 +841,10 @@
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_OriginalRadialsModeToken}">
+                                <Setter Property="Command" Value="{x:Null}"/>
+                                <Setter Property="CommandParameter" Value="{x:Null}"/>
+                            </DataTrigger>
                             <!-- Metamagic is a parallel sidebar in 0.0.99, not a direct
                                  replacement for HotBarList. In this mode the spell grid
                                  still needs the default FilterActionResourceCommand after
@@ -1042,6 +1043,22 @@
                             <b:ConditionalExpression>
                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
+                                                       RightOperand="{StaticResource CAM_OriginalRadialsModeToken}"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <!-- Recreate the selected outer VMHotBar group. Its template then hands
+                         focus to the first concrete VMHotBarSlot through the existing reset token. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Value="{StaticResource CAM_NestedRestoringToken}">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
+                                                       Operator="Equal"
                                                        RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
@@ -1090,12 +1107,46 @@
                                      VerticalAlignment="Center"
                                      Margin="0,0,12,0">
                             <b:Interaction.Triggers>
-                                <!-- All -> Passives. -->
+                                <!-- All -> original controller radials, when available. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <!-- Block follow-on provider transitions during the same shoulder Click. -->
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_OriginalRadialsTab}" Operator="Equal" RightOperand="Visible"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_OriginalRadialsModeToken}"/>
+                                </b:EventTrigger>
+<!-- All -> Passives when original radials are unavailable. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_OriginalRadialsTab}" Operator="Equal" RightOperand="Collapsed"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_PassivesModeToken}"/>
+                                </b:EventTrigger>
+<!-- Original controller radials -> Passives. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_OriginalRadialsModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -1326,12 +1377,46 @@
                                     <b:InvokeCommandAction Command="{Binding FilterActionResourceCommand}" CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                 </b:EventTrigger>
 
-                                <!-- Passives -> All fallback. -->
+                                <!-- Passives -> original controller radials when available. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <!-- Block follow-on provider transitions during the same shoulder Click. -->
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_OriginalRadialsTab}" Operator="Equal" RightOperand="Visible"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_OriginalRadialsModeToken}"/>
+                                </b:EventTrigger>
+<!-- Passives -> All when original radials are unavailable. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_OriginalRadialsTab}" Operator="Equal" RightOperand="Collapsed"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_AllModeToken}"/>
+                                </b:EventTrigger>
+<!-- Original controller radials -> All. -->
+                                <b:EventTrigger EventName="Click">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_OriginalRadialsModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -1888,6 +1973,57 @@
                                 </Grid>
                             </Grid>
                         </Grid>
+                        <!-- Optional original BG3 radial slots: native VMHotBar.SlotList only, not radial editor. -->
+                        <Grid x:Name="CAM_OriginalRadialsTab"
+                              Width="80"
+                              Height="72"
+                              Margin="-4,0,-4,0"
+                              VerticalAlignment="Bottom"
+                              Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                            <Grid Margin="4,-10,4,10"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Bottom">
+                                <Grid Width="72">
+                                    <Image Source="{StaticResource CAM_BoxResourceBg}"/>
+                                    <Image VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResource}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_OriginalRadialsModeToken}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Image VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Source="{StaticResource CAM_BoxResourceH}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_OriginalRadialsModeToken}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="R" FontSize="38" FontWeight="Bold"
+                                               Foreground="White"
+                                               IsHitTestVisible="False"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
                         <Grid x:Name="CAM_AllTab"
                               Width="80"
                               Height="72"
@@ -2170,6 +2306,22 @@
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars}"/>
+                                            <Setter Property="ItemContainerStyle"
+                                                    Value="{StaticResource CAM_AllGroupContainerStyle}"/>
+                                            <Setter Property="ItemTemplate"
+                                                    Value="{StaticResource CAM_AllGroupTemplate}"/>
+                                            <Setter Property="ItemsPanel"
+                                                    Value="{StaticResource CAM_AllGroupsPanel}"/>
+                                        </MultiDataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_OriginalRadialsModeToken}"/>
+                                                <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                                                <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
+                                                <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="ItemsSource"
+                                                    Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars}"/>
                                             <Setter Property="ItemContainerStyle"
                                                     Value="{StaticResource CAM_AllGroupContainerStyle}"/>
                                             <Setter Property="ItemTemplate"

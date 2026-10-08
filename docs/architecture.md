@@ -316,6 +316,33 @@ and selected concrete cell handoff remain. Any lack of a
 real `LocalFocus` after that needs separate engine proof,
 not a fake tooltip or unconditional UseSlot dispatch.
 
+## Original native controller radial fallback (issue #138)
+
+The runtime can keep **all previously configured original radial
+slots** accessible without reimplementing gameplay, by displaying
+`PlayerCharacterProperties.ControllerHotBars[*].SlotList` through
+the same grouped `VMHotBar -> VMHotBarSlot` rendering already used
+for `KeyboardHotBars` in the All fallback. Every action still
+executes by native `ActionRadials.Tag -> UseSlotCommand`.
+The original provider is read-only and its top-level special tab
+is omitted when `ControllerHotBars.Count=0`.
+
+LB/RB inserts **one** extra native source tab between All and
+Passives, with two-way availability guards. The resource filter,
+keyboard All mode, controller metamagic sidebar and nested choice
+transports are unchanged. `CAM_AllGroupTemplate` no longer guards
+the keyboard-only mode token because it is instantiated exclusively
+by the two native grouped source types; its selected VMHotBar's
+child still owns `VMHotBarSlot` focus.
+
+This source route is stronger than raw radial candidate inspection
+because it exposes game-owned **executable slot VMs**, but it does
+not prove 100% parity with dynamically available raw assignment
+actions or global weapon/light shortcuts. Static CI is necessary
+but cannot prove Noesis grouped controller focus at runtime.
+One combined game milestone remains required; no shortcut guesses
+or mandatory Script Extender are introduced.
+
 ## Controller scrolling
 
 The action grid follows the same current Patch 8 controller scroll transport as the

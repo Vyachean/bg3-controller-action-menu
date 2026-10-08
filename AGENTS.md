@@ -189,6 +189,26 @@ manually compare radial tiles. The next gate is a validated
 native executable identity adapter and missing-function
 remediation, not more static keyword checks.
 
+## Original controller radial action safety fallback (#138)
+
+Use BG3-owned
+`CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`
+as a read-only grouped native `VMHotBar.SlotList` source to
+preserve all *currently present* original radial `VMHotBarSlot`
+actions. Its separate optional special tab is allowed in the
+existing **one-level** LB/RB row; it is not a nested tab tree or
+radial layout editor. Reuse `CAM_AllGroupTemplate` with no raw
+radial candidate -> slot conversion, no extra executable focus
+list and no new button bindings.
+
+Both shoulder directions must serialize exactly one transition,
+skipping Original when the native collection is empty, and
+nested variant/upcast/throw must restore the active grouped
+provider. The original All keyboard fallback and every native
+resource glyph remain. Do not claim that preconfigured controller
+radials encompass all `SpellsAndActions` or inventory actions:
+those catalogs still need runtime parity evidence.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:

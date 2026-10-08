@@ -29,6 +29,7 @@ REQUIRED_ROUTES = {
     "cantrips": ("FilterCantripsCommand", "SingleHotBar.SlotList"),
     "inventory-deck": ("SetCurrentShownDeckCommand", "ItemHotBar", "CurrentShownDeck.SlotList"),
     "metamagic-sidebar": ("CAM_FixedSideBarList", "FixedSideBar.SlotList", "UseSlotCommand"),
+    "original-radial-fallback": ("CAM_OriginalRadialsModeToken", "ControllerHotBars", "CAM_AllGroupTemplate", "UseSlotCommand"),
     "passives": ("CAM_PassivesModeToken", "PassivesHotBar.SlotList"),
     "keyboard-fallback": ("CAM_AllModeToken", "KeyboardHotBars", "CAM_AllGroupSlots"),
     "native-nested": (
