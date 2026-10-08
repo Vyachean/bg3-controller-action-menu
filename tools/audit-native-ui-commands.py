@@ -87,7 +87,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
         if identifier in runtime:
             errors.append(f"configured-radial fallback is forbidden in CAM runtime: {identifier}")
 
-    route_status = {
+    route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
         absent = [name for name in needles if name not in runtime]
         route_status[route] = {"nativeSourceSeamsPresent": not absent, "missing": absent, "runtimeParityProven": False}
