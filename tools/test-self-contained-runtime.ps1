@@ -703,6 +703,35 @@ if (-not $resourceTabsPanel.Success -or
     throw "Resource previews must remain a single horizontal row."
 }
 
+# The captured native HotBar resource row is consistently bottom-anchored:
+# ActionResourcesContainer, HotbarBodyResourcesBg, ActionResources and ActionResourcesList.
+# CAM previously used centered alignment against a fixed-height 84-unit row,
+# moving glyphs/frames away from the original baseline.
+foreach ($expectation in @(
+    '<Grid x:Name="CAM_ResourceStrip"',
+    '<ls:LSNineSliceImage x:Name="CAM_HotbarBodyResourcesBg"',
+    '<StackPanel x:Name="CAM_TopTabs"',
+    '<ls:LSListBox x:Name="CAM_ResourceTabs"'
+)) {
+    $start = $text.IndexOf($expectation)
+    if ($start -lt 0) { throw "Missing native resource baseline element: $expectation" }
+    $end = $text.IndexOf('>', $start)
+    $opening = $text.Substring($start, $end - $start + 1)
+    if (-not $opening.Contains('VerticalAlignment="Bottom"')) {
+        throw "Resource baseline must be bottom-anchored like the captured HotBar: $expectation"
+    }
+}
+if (-not $resourceTabsPanel.Value.Contains('VerticalAlignment="Bottom"')) {
+    throw "The resource items panel must use the same bottom baseline as native ActionResources."
+}
+foreach ($provider in @("Cantrips", "Items", "Metamagic", "Passives", "All")) {
+    $pattern = '<Grid x:Name="CAM_' + $provider + 'Tab"[\s\S]*?>\s*<Grid Margin="4,-10,4,10"[\s\S]*?>'
+    $match = [regex]::Match($text, $pattern)
+    if (-not $match.Success -or [regex]::Matches($match.Value, 'VerticalAlignment="Bottom"').Count -ne 2) {
+        throw "Special provider $provider must share the same bottom resource baseline."
+    }
+}
+
 if (-not $text.Contains('<RowDefinition Height="84"/>') -or
     -not $text.Contains('<RowDefinition Height="850"/>') -or
     -not $text.Contains('x:Name="CAM_ActionViewport"') -or

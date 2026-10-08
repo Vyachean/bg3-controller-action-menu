@@ -1259,3 +1259,10 @@ Reported runtime: LB/RB tab switching works in 0.0.88, but resource tab content 
 The current correction declares that missing key with its exact native value and maps selected `ListBoxItem` in resource-provider mode to the same `BoxResourceH` visibility used by original `IsMouseOver`. It does **not** import the entire keyboard HotBar page, replace controller state, add synthetic resource data, or change working LB/RB transitions.
 
 CI must now require zero undeclared CAM local resources, the original zero resource-box margin, a mode-gated controller highlight trigger in the copied native resource template, and precedence of exhausted resource visuals. One combined in-game inspection must still verify actual glyph alignment and highlight for both normal and special tabs; screenshot evidence is useful if further pixel correction is needed.
+
+
+### 2026-10-08 — 0.0.90 bottom baseline parity
+
+After successful 0.0.89 LB/RB operation, the user still reports visually crooked resource-tab indicators. Static comparison with the already captured original `HotBar.xaml` reveals that four native resource-strip elements are bottom-aligned while CAM has centered their counterparts within an 84-unit row. The five special provider frames were also centered. This correction pins `VerticalAlignment=Bottom` on the corresponding CAM elements, preserving every VM slot/filter/input binding and image resource.
+
+Regression checks assert bottom anchoring of the resource strip, nine-slice chrome, resource StackPanel, resource list/panel, and all five special providers. Resource art and point-size values stay unchanged because the existing screenshot predates the 0.0.89 correction and cannot justify arbitrary scaling. The next in-game screenshot should compare the new 0.0.90 geometry against the native HotBar before selecting any additional image-size changes.
