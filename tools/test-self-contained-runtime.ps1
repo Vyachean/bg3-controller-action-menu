@@ -725,7 +725,7 @@ if (-not $resourceTabsPanel.Value.Contains('VerticalAlignment="Bottom"')) {
     throw "The resource items panel must use the same bottom baseline as native ActionResources."
 }
 foreach ($provider in @("Cantrips", "Items", "Metamagic", "Passives", "All")) {
-    $pattern = '<Grid x:Name="CAM_' + $provider + 'Tab"[\\s\\S]*?>\\s*<Grid Margin="4,-10,4,10"[\\s\\S]*?>'
+    $pattern = '<Grid x:Name="CAM_' + $provider + 'Tab"[\s\S]*?>\s*<Grid Margin="4,-10,4,10"[\s\S]*?>'
     $match = [regex]::Match($text, $pattern)
     if (-not $match.Success -or [regex]::Matches($match.Value, 'VerticalAlignment="Bottom"').Count -ne 2) {
         throw "Special provider $provider must share the same bottom resource baseline."
