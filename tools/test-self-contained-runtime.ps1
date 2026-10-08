@@ -372,14 +372,10 @@ $required = @(
     'SmallActionPointSize="24"',
     'ActionPointGroupSize="56"',
     'Style="{StaticResource ActionResourcesTemplateSelector}"',
-    'x:Key="CAM_KeyboardHotBarPointGroup"',
-    'ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"',
-    'x:Key="CAM_KeyboardHotBarPointGlyph"',
-    'x:Name="ResourceGlyph"',
-    'Stretch="Uniform"',
-    'Width="24"',
-    'Height="24"',
-    'ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"',
+    'x:Key="ActionResources.ActionGroup.ActionPointGroup"',
+    'x:Key="ActionResources.ActionGroup.DefaultActionPointGroup"',
+    'x:Key="ActionResources.ActionGroup.SpellSlot"',
+    'ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"',
     '<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>',
     '<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>',
     '<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>',
@@ -926,7 +922,9 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>') -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>') -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>') -or
-    -not $resourceTabTemplate.Value.Contains('ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Key="ActionResources.ActionGroup.ActionPointGroup"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Key="ActionResources.ActionGroup.SpellSlot"') -or
+    $resourceTabTemplate.Value.Contains('ActionPointTemplate="{StaticResource CAM_') -or
     -not $resourceTabTemplate.Value.Contains('SmallActionPointSize="24"') -or
     -not $resourceTabTemplate.Value.Contains('ActionPointGroupSize="56"') -or
     -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
@@ -946,35 +944,34 @@ if (-not $resourceTabTemplate.Success -or
     throw "Native resource contents must be owned by the literal Patch 8 ActionResourcesList item template."
 }
 
-# 0.0.94 screenshot proves a directly constrained converter image renders
-# smaller than the clipped native point. Apply that image constraint to
-# each point inside LSActionPointResources, preserving group/count/state.
-$keyboardPointGroup = [regex]::Match(
-    $text,
-    '(?s)<ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup"[^>]*>.*?</ControlTemplate>'
+# The original installed keyboard DataTemplates_k.xaml exports 24 point-
+# group templates. They must be placed under the resource item root,
+# not declared globally or selected through a CAM-specific point override.
+# Python validate.py additionally checks the exact 6186-byte source
+# against the captured keyboard template block's SHA-256 digest.
+$keyboardGroupKeys = @(
+    "ActionPointGroup", "DefaultActionPointGroup", "BonusActionPointGroup",
+    "ReactionActionPointGroup", "SorceryPointGroup", "KiActionGroup",
+    "LayOnHandsChargeActionGroup", "RageActionGroup", "DivinityActionGroup",
+    "OathActionGroup", "SuperiorityDieActionGroup", "ArcaneRecoveryActionGroup",
+    "InspirationActionGroup", "SpellSlot", "WarlockSpellSlot",
+    "RitualPointActionGroup", "NaturalRecoveryPointActionGroup",
+    "WildShapeActionGroup", "TidesOfChaosActionGroup",
+    "WarPriestActionPointGroup", "FungalInfestationChargeGroup",
+    "LuckPointGroup", "ShadowSpellSlotGroup", "ArcaneShotGroup"
 )
-if (-not $keyboardPointGroup.Success -or
-    -not $keyboardPointGroup.Value.Contains('ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"')) {
-    throw "Per-point native group must use CAM's bounded icon renderer."
+foreach ($suffix in $keyboardGroupKeys) {
+    $key = 'x:Key="ActionResources.ActionGroup.' + $suffix + '"'
+    if ($resourceTabTemplate.Value.Split([string[]]@($key), [System.StringSplitOptions]::None).Count -ne 2) {
+        throw "Native keyboard resource group must exist exactly once inside CAM resource item: $key"
+    }
 }
-$boundedPoint = [regex]::Match(
-    $text,
-    '(?s)<DataTemplate x:Key="CAM_KeyboardHotBarPointGlyph">.*?</DataTemplate>'
-)
-if (-not $boundedPoint.Success -or
-    -not $boundedPoint.Value.Contains('x:Name="ResourceGlyph"') -or
-    -not $boundedPoint.Value.Contains('Width="24"') -or
-    -not $boundedPoint.Value.Contains('Height="24"') -or
-    -not $boundedPoint.Value.Contains('Stretch="Uniform"') -or
-    -not $boundedPoint.Value.Contains('Converter="{StaticResource IconIdToSourceConverter}"') -or
-    -not $boundedPoint.Value.Contains('ActionResourcePointIconsPath') -or
-    -not $boundedPoint.Value.Contains('ActionResourcePointHighlightIconsPath') -or
-    -not $boundedPoint.Value.Contains('ActionResourcePointUsedIconsPath') -or
-    -not $boundedPoint.Value.Contains('ActionResourcePointMissingIconsPath') -or
-    -not $boundedPoint.Value.Contains('ActionPointState') -or
+if ($text.Contains('CAM_KeyboardHotBarPointGlyph') -or
+    $text.Contains('CAM_KeyboardHotBarPointGroup') -or
     $text.Contains('CAM_DiagnosticDirectPointFrame') -or
-    $text.Contains('CAM_DiagnosticTemplateFingerprint')) {
-    throw "Point glyph must remain source-driven, bounded, and state-aware without diagnostic overlay."
+    $text.Contains('CAM_DiagnosticTemplateFingerprint') -or
+    $resourceTabTemplate.Value.Contains('ActionPointTemplate="{StaticResource CAM_')) {
+    throw "No CAM-improvised per-point glyph/forced template may replace native keyboard resource grouping."
 }
 
 $resourceTabsItemTemplate = [regex]::Match(
