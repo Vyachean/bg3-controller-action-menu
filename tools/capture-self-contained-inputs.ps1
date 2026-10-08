@@ -17,7 +17,10 @@ $TargetExpressions = @(
     "*PreloadedActionRadials*.xaml",
     "*ActionRadials*.xaml",
     "*HotBar*.xaml",
-    "*DataTemplates.xaml",
+    # Keyboard HotBar renderer plus the controller-mode override which CAM currently
+    # inherits. The previous expression omitted DataTemplates_c.xaml entirely.
+    "*DataTemplates*.xaml",
+    "*ActionResourceTemplates_c.xaml",
     "*FocusableControls*.xaml",
     "*Tooltips*.xaml",
     "*SpellBook*.xaml",
@@ -539,7 +542,9 @@ try {
         ActionRadials = @($manifest | Where-Object { $_.PackagedPath -like "*ActionRadials.xaml" -and $_.PackagedPath -notlike "*Preloaded*" })
         HotBar = @($manifest | Where-Object { $_.PackagedPath -like "*HotBar*.xaml" })
         HotBarPage = @($manifest | Where-Object { $_.PackagedPath -eq "Mods/MainUI/GUI/Pages/HotBar.xaml" })
-        DataTemplates = @($manifest | Where-Object { $_.PackagedPath -like "*DataTemplates.xaml" })
+        DataTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates.xaml" })
+        ControllerDataTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates_c.xaml" })
+        ControllerActionResources = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/ActionResourceTemplates_c.xaml" })
         Controller = @($manifest | Where-Object { $_.PackagedPath -like "*Controller.xaml" })
     }
 
