@@ -41,3 +41,23 @@ Raw captured Larian XAML is not shipped/committed here.
 Static/package CI can prove bindings, source hashes, native template identifiers, XML validity, provider unchanged and no SE/installer regression. Whether native Noesis focuses the added list correctly, whether filtered spell VMs update their `IsModified` status and whether command effects/costs stay correct requires **one combined sorcerer in-game proof**, not a speculative series of graphical test builds.
 
 Do not close #125 or claim gameplay parity before operator verification.
+
+## Operator runtime observation on v0.0.100
+
+The operator confirmed in BG3: entering the metamagic tab via LB/RB
+fails, tab cycle resets to its first item, the parallel sidebar always
+shows focus and mirrors main-grid focus, and metamagic cannot be
+executed. This is a **runtime rejection** of the two-independent-focus
+composition from 0.0.99/0.0.100, despite green CI.
+
+Static source audit found that passive
+`CAM_FixedSideBarList.LocalFocusChanged` wrote
+`CAM_ProviderModeMarker.Tag`, mutating the top-level tab state, while
+both selectors simply tracked list visibility instead of active focus
+ownership. The corrected candidate keeps the sidebar visible but
+disabled outside its explicit Metamagic mode, disables the main grid
+while that mode owns input (except native nested actions), and gates
+both tooltip/dispatch and selector visibility by actual owner. All
+provider transitions are controlled by LB/RB, not events from the
+background list. These are source-verified corrections, **not yet
+proven in-game**.
