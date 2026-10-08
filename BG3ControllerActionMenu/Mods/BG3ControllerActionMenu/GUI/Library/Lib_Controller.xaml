@@ -6,6 +6,10 @@
     xmlns:System="clr-namespace:System;assembly=mscorlib"
     xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions">
 
+    <!-- Literal value from Patch 8 HotBar.xaml: <Thickness x:Key="ResourceBackgroundMargin">0</Thickness>.
+         The CAM alias is local because the keyboard page's ResourceDictionary is not
+         the controller library's resource scope. Do not reference an undeclared alias. -->
+    <Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>
     <!-- CAM owns composition only. Each focused/executed action remains a native VMHotBarSlot. -->
     <System:Double x:Key="CAM_ActionGridCellSize">120</System:Double>
     <!-- Exact Patch 8 keyboard HotBar Action Resources presentation, captured from
@@ -442,6 +446,20 @@
                 <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
                 <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
             </Trigger>
+            <!-- Controller adaptation of the exact native HotBar hover chrome.
+                 LB/RB selects a resource ListBoxItem rather than moving the mouse.
+                 When a special provider is active the remembered resource item
+                 must NOT stay highlighted. The zero-resource disabled trigger below
+                 retains precedence over controller selection. -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>
+                    <Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="BgHL" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="BgDisabled" Property="Visibility" Value="Collapsed"/>
+            </MultiDataTrigger>
             <DataTrigger Binding="{Binding ActionResource.Value}" Value="0">
                 <Setter TargetName="Bg" Property="Visibility" Value="Collapsed"/>
                 <Setter TargetName="BgHL" Property="Visibility" Value="Collapsed"/>

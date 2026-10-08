@@ -846,6 +846,24 @@ if ([regex]::Matches($resourceTabStyle.Value, 'Binding="{Binding ActionResource.
     throw "Null/MaxValue=0 resource previews must remain collapsed and disabled at the outer container."
 }
 
+# Native Patch 8 HotBar declares the resource-box image margin locally:
+# <Thickness x:Key="ResourceBackgroundMargin">0</Thickness>.
+# The controller library has a different scope and must declare its own
+# literal alias rather than hoping the keyboard page's dictionary is loaded.
+if (-not $text.Contains('<Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>')) {
+    throw "Controller resource-box content references an undeclared or non-native margin."
+}
+$localKeys = @{}
+foreach ($match in [regex]::Matches($text, 'x:Key="(CAM_[A-Za-z0-9_.]+)"')) {
+    $localKeys[$match.Groups[1].Value] = $true
+}
+foreach ($match in [regex]::Matches($text, '\{(?:StaticResource|DynamicResource) (CAM_[A-Za-z0-9_.]+)\}')) {
+    $key = $match.Groups[1].Value
+    if (-not $localKeys.ContainsKey($key)) {
+        throw "CAM template refers to an undefined local visual resource: $key"
+    }
+}
+
 $resourceTabTemplate = [regex]::Match(
     $text,
     '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
@@ -877,7 +895,6 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">') -or
     -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.Value}" Value="0"') -or
     -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration"') -or
-    $resourceTabTemplate.Value.Contains('Binding="{Binding IsSelected') -or
     $resourceTabTemplate.Value.Contains('CAM_ResourceTabs.Tag') -or
     $resourceTabTemplate.Value.Contains('CAM_FilterButtonBackground') -or
     $resourceTabTemplate.Value.Contains('btn_pil_') -or
@@ -902,6 +919,23 @@ if ($text.Contains('Binding="{Binding Tag, ElementName=CAM_ResourceTabs}"') -or
 }
 if (-not $text.Contains('Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}"')) {
     throw "Provider mode consumers must bind to CAM_ProviderModeMarker.Tag."
+}
+
+# Native keyboard HotBar highlights a resource with box_resource_h on
+# IsMouseOver. Controller LB/RB changes ListBoxItem.IsSelected instead;
+# require the *same* two image layers for that state and preserve the
+# explicit zero-resource disabled trigger after it.
+$resourceNativePreview = $resourceTabTemplate.Value
+$selectedHighlight = '<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>'
+$normalMode = '<Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>'
+$posSelected = $resourceNativePreview.IndexOf($selectedHighlight)
+$posDisabled = $resourceNativePreview.IndexOf('<DataTrigger Binding="{Binding ActionResource.Value}" Value="0">')
+if ($posSelected -lt 0 -or
+    -not $resourceNativePreview.Contains($normalMode) -or
+    $posDisabled -le $posSelected -or
+    -not $resourceNativePreview.Contains('Source="{StaticResource CAM_BoxResourceH}"') -or
+    -not $resourceNativePreview.Contains('Margin="{StaticResource CAM_ResourceBackgroundMargin}"')) {
+    throw "Native HotBar resource body must retain its original chrome, with controller selection mapped to native hover and exhausted resource state taking precedence."
 }
 
 $cantripTab = [regex]::Match(

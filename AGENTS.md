@@ -758,3 +758,14 @@ The combined in-game milestone reported that LB/RB no longer switched tabs and t
 LB has nine and RB has seven mutually exclusive `Click` transitions (sixteen total). Every transition now guards `CAM_TabCycleMarker.Tag == null` and marks its turn before changing provider mode. Do not let a later Click trigger act on an already changed provider during the same input event. Preserve delayed first-cell focus, resource selection, native `UseSlotCommand` and `TargetPositionChanged` scrolling; do not add another input binding or timer.
 
 Special provider frames reuse exactly the native `CAM_ResourceBackgroundMargin` used by original Patch 8 resource chrome. Cantrips uses the native 72x72 `IconMiniCantrip` presentation. Items/Passives/All use consistently sized icons. These extra groups are CAM-only and cannot be claimed to have a literal equivalent in vanilla ActionResourcesList. This is a static correction; only a future single combined game test can establish controller runtime behavior.
+
+
+## Native HotBar visual reuse — 0.0.89
+
+The resource-strip renderer is based on the captured Patch 8 inline `HotBar.xaml` `ActionResourcesList.ItemsControl.ItemTemplate` for `VMActionResourceCostPreview`. This is a **page-local inline template**, not a globally importable controller dictionary resource, so a shared `StaticResource` reference to that inline node is impossible without changing game files. CAM instead hosts the equivalent captured visual subtree in the controller library and adapts only the resource-controller selection transport. Do not independently draw resource symbols or recompute BG3 action/resource overlays.
+
+The capture contains `<Thickness x:Key="ResourceBackgroundMargin">0</Thickness>`. Prior CAM releases referenced `CAM_ResourceBackgroundMargin` without defining it, including in all five special provider tabs. 0.0.89 declares the exact original value locally. Static tests must reject any CAM_* resource reference lacking a corresponding local `x:Key`.
+
+The native resource preview uses `IsMouseOver=True` to show the `box_resource_h` chrome; moving LB/RB does not generate mouse hover. To preserve native appearance under the controller, the resource `DataTemplate` additionally maps *selected ListBoxItem AND no special provider mode* to the same `Bg/BgHL/BgDisabled` visibility setters, with `ActionResource.Value=0` still enforcing disabled chrome. When special tabs are active, the remembered resource selection must not appear highlighted. Never make controller selection a native action-model property.
+
+Actual resources reuse the native `LSActionPointResources`/RomanNumeralLevelImage selectors. Special tabs are CAM-only and cannot be imported as native `VMActionResourceCostPreview` objects; they reuse the same native background assets and geometry while their content icons remain provider-specific. Static/CI parity cannot prove in-game Noesis visual evaluation.

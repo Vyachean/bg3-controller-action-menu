@@ -518,6 +518,20 @@
         "commitEvent": "TargetPositionChanged",
         "commitAction": "HorizontalScrollOffset = TargetPosition",
         "adaptation": "CAM uses selected concrete resource ListBoxItem as ScrollToElement target; provider tabs remain fixed outside the resource viewport."
+      },
+      "hotbarResourceTemplateReuse": {
+        "sourceFile": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+        "sourceSha256": "9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728",
+        "template": "ActionResourcesList.ItemsControl.ItemTemplate: VMActionResourceCostPreview",
+        "reusedVisuals": "LSActionPointResources, ActionResourcesTemplateSelector, RomanNumeralLevelImage, native resource boxes",
+        "originalMarginKey": "ResourceBackgroundMargin",
+        "originalMarginDeclaration": "<Thickness x:Key=\"ResourceBackgroundMargin\">0</Thickness>",
+        "controllerMarginDeclaration": "<Thickness x:Key=\"CAM_ResourceBackgroundMargin\">0</Thickness>",
+        "originalHoverTrigger": "IsMouseOver=True -> Bg Collapsed; BgHL Visible; BgDisabled Collapsed",
+        "controllerInputAdaptation": "selected ListBoxItem and no active special provider -> same native hover visuals",
+        "disabledPrecedence": "ActionResource.Value=0 -> BgDisabled Visible",
+        "keyboardPageIsolation": "keyboard HotBar inline ItemTemplate cannot be referenced as an already-loaded controller resource",
+        "runtimeProof": "static-template-parity-only; game highlight and pixel alignment unverified"
       }
     },
     "cancelBehavior": {

@@ -536,6 +536,42 @@ def validate_semantics() -> list[str]:
                     f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: {side} must serialize all expected mode transitions against the dedicated provider marker"
                 )
 
+        # HotBar.xaml defines ResourceBackgroundMargin as zero in its own page
+        # dictionary; CAM has a separate controller resource scope. Require a
+        # local literal alias, and prohibit all undeclared CAM_* resource refs.
+        if '<Thickness x:Key="CAM_ResourceBackgroundMargin">0</Thickness>' not in runtime_text:
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: native HotBar resource-box margin must be locally declared with value 0"
+            )
+        local_cam_keys = set(re.findall(r'x:Key="(CAM_[\w.]+)"', runtime_text))
+        used_cam_keys = set(
+            re.findall(r'\{(?:StaticResource|DynamicResource) (CAM_[\w.]+)\}', runtime_text)
+        )
+        missing_cam_keys = used_cam_keys - local_cam_keys
+        if missing_cam_keys:
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: undefined CAM visual resources: {sorted(missing_cam_keys)}"
+            )
+
+        preview = re.search(
+            r'<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
+            runtime_text,
+        )
+        preview_text = preview.group() if preview else ""
+        active_resource = '<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>'
+        normal_mode = '<Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>'
+        disabled_resource = '<DataTrigger Binding="{Binding ActionResource.Value}" Value="0">'
+        if (
+            active_resource not in preview_text
+            or normal_mode not in preview_text
+            or disabled_resource not in preview_text
+            or preview_text.index(active_resource) >= preview_text.index(disabled_resource)
+            or 'Source="{StaticResource CAM_BoxResourceH}"' not in preview_text
+        ):
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: controller resource selection must use native HotBar hover chrome, preserving disabled state"
+            )
+
         if (
             "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars" not in runtime_text
             or 'x:Key="CAM_AllGroupTemplate"' not in runtime_text
