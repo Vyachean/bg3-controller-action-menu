@@ -75,6 +75,40 @@ Seven absent **direct gameplay/utility-related bindings** requiring equivalence 
 
 The readback explicitly states that the 22 extracted XAML files have already been examined; repeating that unchanged capture cannot reveal compiled ViewModel producer logic. Inspect those producer implementations **offline from available game binaries** if legally and technically accessible, and preserve a hard evidence blocker if not.
 
+## Executable call-site audit of existing offline native capture
+
+`tools/audit-native-ui-commands.py --capture <previously-extracted-capture.zip> --json`
+now scans **every** original `.xaml` file under the archive's `files/`
+directory (not only the two pinned command-inventory inputs). It parses
+the actual XML elements and reports:
+
+- `nativeExecutableSourceSites.nativeUseSlotCallSites`: every native
+  `UseSlotCommand` invocation and its `CommandParameter`, event, enablement,
+  visibility, element identity and inherited collection sources;
+- `nativeCollectionBindings`: independent `ItemsSource` binding expressions
+  across all captured game-XAML files, including providers not present in the
+  manually curated 25-group matrix;
+- `camUseSlotCallSites` and `camCollectionBindings`: corresponding actual CAM
+  XAML expressions;
+- `nativeCallSitesWithoutIdenticalCamParameter`: **investigation candidates**,
+  not automatically missing gameplay. `ActionRadials.Tag` may transport the
+  same native VM object by a different expression, so literal inequality is not
+  semantic proof; literal equality also does not prove the game-origin object
+  is available in CAM.
+
+The original game's `HotBar.xaml` and `PreloadedActionRadials_c.xaml`
+still receive the pre-existing pinned SHA-256 and command-inventory checks.
+A malformed or duplicate captured file fails closed. CI covers the extractor
+with artificial `CallAllies`/summon-slot provenance fixtures: it must not
+mistake a shared `UseSlotCommand` for proof of equal action coverage.
+**No native file is committed, no game is launched, and no synthetic
+`VMHotBarSlot` is added to CAM.**
+
+This extends source provenance, not full game-code access: proprietary compiled
+producer logic behind `SpellsAndActions`, `Inventory.Slots` and
+`KeyboardHotBars` still needs independent offline evidence. An archive
+not accessible to this review cannot be treated as if it were inspected.
+
 ## Required next source-inspection steps (still no game launch)
 
 1. **Original input:** inspect the entire previously captured native Patch 8 XAML archive (the repository currently holds hashes/derived findings, not complete source), not merely the 36 command-name manifest. For every gameplay-relevant original element, record its actual command parameter, binding data owner, relevant `DataTrigger` conditions, `BoundEvent` and provider scope; compare with the complete CAM template and game-owned page/state logic.
