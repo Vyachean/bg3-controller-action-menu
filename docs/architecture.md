@@ -223,6 +223,30 @@ CAM therefore distinguishes:
 
 If native Action/Bonus filters are broader than product policy, CAM may refine them only using a current BG3 property/predicate over executable native slots. No class/spell-name tables or heuristics are permitted.
 
+## Action viewport scroll-boundary clipping (issue #130)
+
+CAM renders the focus indicator with BG3's native
+`LSListBox.LocalFocusSelector -> SelectorTemplate`. This selector is a
+**sibling** of the list's scrollable content and therefore cannot
+inherit the inner `LSScrollViewer` clipping. The fixed-height
+`CAM_ActionViewport` and `CAM_FixedSideBarRegion`, both located
+in row 1 under the resource-tab header, must set
+`ClipToBounds=True`. This locally prevents native selector chrome
+from painting over the resource tabs without changing controller
+focus identity, `LSGrid` columns, selected indexes or tab mode.
+
+Operator observation (2026-10-08): in long Items lists, visible
+focus sometimes appears to skip a row near the scrolling boundary,
+and at the top it paints over tabs. Clipping **only proves a
+render-boundary correction**; it does not prove whether a row was
+skipped logically. The `LSScrollViewer.ScrollToElement` transport
+still follows `ActionRadials.FocusedElement` with
+`VerticalScrollOffsetMargin=120`. That margin is historic native
+evidence, not a measured cause of this user's reported row skip.
+Do not change it speculatively. Runtime acceptance requires
+disambiguating logical `LocalFocus.DataContext` from visible
+selector position across one scroll transition.
+
 ## Controller scrolling
 
 The action grid follows the same current Patch 8 controller scroll transport as the
