@@ -869,6 +869,43 @@
                                            FocusElement="{Binding ElementName=HotBarList}"
                                            DeferFocusAction="True"/>
                 </b:DataTrigger>
+                <!-- Returning from a vanished native summon source also invalidates
+                     the old slot. Never retain its ActionRadials.Tag after the
+                     game replaces the source collection with the prior tab. -->
+                <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="True"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=HotBarList}"
+                                           DeferFocusAction="True"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
+                    <b:Interaction.Behaviors>
+                        <b:ConditionBehavior>
+                            <b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="True"/>
+                            </b:ConditionalExpression>
+                        </b:ConditionBehavior>
+                    </b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
+                </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
