@@ -138,6 +138,47 @@ Independent sidebar focus, native tooltip and B/nested transitions
 are **not** game-verified merely because the XAML and package pass CI;
 #125 remains open for a combined sorcerer acceptance run.
 
+## v0.0.100 runtime rejection: exclusive focus ownership
+
+The operator tested `0.0.100`: the Metamagic tab could not be entered,
+LB/RB ordering/reset failed, and the sidebar had a permanent selector which
+moved in parallel with the action grid. The cause is visible in the XAML:
+
+- `CAM_FixedSideBarList.LocalFocusChanged` wrote
+  `CAM_ProviderModeMarker.Tag=CAM_MetamagicModeToken` without a shoulder
+  transition, overriding the tab-cycle state.
+- `CAM_MainSelector` and `CAM_FixedSideBarSelector` were visible whenever
+  their respective lists were visible, irrespective of ownership.
+- Both lists remained enabled and could update `ActionRadials.Tag` and
+  native tooltips through independent focus events.
+
+**Corrected presentation contract**: `FixedSideBar.SlotList` stays
+visible beside the main grid, but is controller-enabled only when
+`CAM_ProviderModeMarker.Tag==CAM_MetamagicModeToken` **and none of BG3's
+nested flags is active**. `HotBarList` is controller-disabled during
+that state, but its spells remain visible. During a native nested
+variant/upcast/throw selection, main-list focus temporarily returns to
+BG3, and afterwards the existing nested-restore contract reselects
+the sidebar.
+
+Only explicit LB/RB resource/provider transitions may write
+`CAM_ProviderModeMarker.Tag`. `LocalFocusChanged` is strictly a
+presentation/command-identity event, guarded by the list's enabled
+state and its non-null `VMHotBarSlot`. Each native `SelectorTemplate`
+is visible only while its list owns controller focus; selectors may
+not simply track `LSListBox.Visibility`.
+
+This isolates the two visual regions without depending on unproven
+cross-`LSListBox` D-pad focus transport. Physical spatial crossing
+is deferred until it has its own current-game proof. The current
+Metamagic selector is entered/exited via the existing LB/RB provider
+row. No gameplay costs, compatibility or metamagic state are
+reimplemented.
+
+Static CI can reject the old feedback path but **cannot validate**
+Noesis focus activation/timing or actual spell compatibility. Treat
+this as a new candidate; #125 remains open pending operator game proof.
+
 ## Resource-first navigation
 
 LB/RB traverses one cost/source row. Resource entries invoke `FilterActionResourceCommand`; proven special providers use Cantrips, ItemHotBar, FixedSideBar, PassivesHotBar, and finally a grouped native `KeyboardHotBars` fallback. The executable identity remains `VMHotBarSlot` in every case.

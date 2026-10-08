@@ -111,6 +111,7 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrip
     $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList" -or
     $evidence.runtimeContract.organization.parallelSidebarSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
     $evidence.runtimeContract.organization.parallelSidebarFocus -ne "CAM_FixedSideBarList.LocalFocus.DataContext -> ActionRadials.Tag -> UseSlotCommand" -or
+    $evidence.runtimeContract.organization.focusOwnership -ne "exclusive: LB/RB provider marker enables metamagic side rail vs HotBarList; native nested temporarily enables HotBarList; passive LocalFocusChanged cannot write provider mode" -or
     $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
     $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
@@ -567,8 +568,12 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('ActionNextEvent="UIDown"') -or
     -not $sidebar.Value.Contains('ActionPrevEvent="UIUp"') -or
     -not $sidebar.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}"') -or
-    -not $sidebar.Value.Contains('Spatial navigation into the side rail') -or
-    -not $sidebar.Value.Contains('CAM_ProviderModeMarker') -or
+    -not $sidebar.Value.Contains('<Setter Property="IsEnabled" Value="False"/>') -or
+    -not $sidebar.Value.Contains('<Setter Property="IsEnabled" Value="True"/>') -or
+    -not $sidebar.Value.Contains('KeyboardNavigation.DirectionalNavigation="Contained"') -or
+    -not $sidebar.Value.Contains('CAM_MetamagicModeToken') -or
+    $sidebar.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"') -or
+    $mainList.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"') -or
     -not $sidebar.Value.Contains('EventName="LocalFocusChanged"') -or
     -not $sidebar.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"')) {
     throw "The fixed sidebar must remain a native, independently focused executable VMHotBarSlot list."
@@ -1297,21 +1302,19 @@ if (-not $metamagicRestore -or
     $metamagicRestore.Value.Contains('TargetName="HotBarList"')) {
     throw "Metamagic nested exit must refocus the native fixed sidebar, never the main spell list."
 }
-$mainFocusHandoff = @(
-    [regex]::Matches(
-        $mainList.Value,
-        '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
-    ) | Where-Object { $_.Value.Contains('CAM_FixedSideBarList') }
-) | Select-Object -First 1
-$missingNestedGuards = if ($mainFocusHandoff) {
-    @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow') |
-        Where-Object { -not $mainFocusHandoff.Value.Contains($_) }
-} else { @('No valid main-list focus handoff') }
-if (-not $mainFocusHandoff -or
-    -not $mainFocusHandoff.Value.Contains('CAM_MetamagicModeToken') -or
-    @($missingNestedGuards).Count -gt 0) {
-    throw "Nested focus movement must not be mistaken for ordinary side-rail exit."
+# Regression in 0.0.99/0.0.100: passive LocalFocusChanged handlers wrote
+# CAM_ProviderModeMarker.Tag, which raced with LB/RB and caused tab wrap.
+# Mode changes now belong only to explicit shoulder/resource-tab handlers.
+if ($sidebar.Value.Contains('PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"') -or
+    $mainList.Value.Contains('PropertyName="Tag" Value="{x:Null}"') -and
+    $mainList.Value.Contains('TargetName="CAM_ProviderModeMarker"')) {
+    throw "Background LocalFocusChanged must not mutate the active provider mode."
+}
+foreach ($region in @($sidebar.Value, $mainList.Value)) {
+    if ($region -notmatch 'IsEnabled, ElementName=(?:CAM_FixedSideBarList|HotBarList)' -or
+        $region -notmatch 'NullToBoolFalseConverter') {
+        throw "Only the currently enabled list may own A/tooltip/focus presentation."
+    }
 }
 
 $nestedMarker = [regex]::Match(
@@ -1359,15 +1362,38 @@ if ($text.Contains('CAM_LogicalFocusAnchor') -or
 
 $mainSelector = [regex]::Match(
     $text,
-    '<Control\b[^>]*x:Name="CAM_MainSelector"[\s\S]*?/>',
+    '<Control\b[^>]*x:Name="CAM_MainSelector"[\s\S]*?</Control>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $mainSelector.Success -or
     -not $mainSelector.Value.Contains('Template="{StaticResource SelectorTemplate}"') -or
-    -not $mainSelector.Value.Contains('Visibility="{Binding Visibility, ElementName=HotBarList}"') -or
+    -not $mainSelector.Value.Contains('<Setter Property="Visibility" Value="Visible"/>') -or
+    -not $mainSelector.Value.Contains('<Setter Property="Visibility" Value="Collapsed"/>') -or
+    -not $mainSelector.Value.Contains('CAM_MetamagicModeToken') -or
     -not $mainSelector.Value.Contains('Focusable="False"') -or
     -not $hotBarList.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}"')) {
     throw "HotBarList must use the 0.0.29-proven visible native SelectorTemplate in the same action viewport."
+}
+
+# Both selectors are bound to one mutually exclusive visual ownership state.
+# Visibility of the list is not evidence that the list has controller focus.
+$sideSelector = [regex]::Match(
+    $text,
+    '<Control\b[^>]*x:Name="CAM_FixedSideBarSelector"[\s\S]*?</Control>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sideSelector.Success -or
+    -not $sideSelector.Value.Contains('<Setter Property="Visibility" Value="Collapsed"/>') -or
+    -not $sideSelector.Value.Contains('<Setter Property="Visibility" Value="Visible"/>') -or
+    -not $sideSelector.Value.Contains('CAM_MetamagicModeToken') -or
+    -not $sideSelector.Value.Contains('LocalFocus.DataContext, ElementName=CAM_FixedSideBarList') -or
+    $sideSelector.Value.Contains('Visibility="{Binding Visibility, ElementName=CAM_FixedSideBarList}"') -or
+    -not $mainList.Value.Contains('<Setter Property="IsEnabled" Value="False"/>') -or
+    -not $mainList.Value.Contains('CAM_MetamagicModeToken') -or
+    -not $mainList.Value.Contains('IsShowingAContainerWithVariants') -or
+    -not $mainList.Value.Contains('IsSelectingUpcastedSpell') -or
+    -not $mainList.Value.Contains('IsShowingItemsToThrow')) {
+    throw "The resource grid and sidebar must have mutually exclusive visible native focus selectors, except during BG3 nested state."
 }
 
 if ($hotBarList.Value.Contains('<b:PropertyChangedTrigger Binding="{Binding LocalFocus.DataContext, ElementName=HotBarList}">')) {

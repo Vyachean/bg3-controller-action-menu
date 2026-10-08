@@ -56,6 +56,28 @@ controller grid's 104×104 item geometry.
 Focus handoff and live casting are pending one combined runtime
 sorcerer proof; static success does **not** close #125.
 
+## Metamagic v0.0.100 runtime failure and exclusive owner recovery
+
+The operator rejected v0.0.100 in-game: shoulder navigation to
+Metamagic failed, tab selection wrapped/reset unexpectedly, and the
+separate visible metamagic column displayed a constantly moving
+duplicate selector. Investigation proved the source-level feedback
+loop: `CAM_FixedSideBarList.LocalFocusChanged` was changing
+`CAM_ProviderModeMarker.Tag`, while both lists and their selectors
+remained simultaneously interactive. The earlier v0.0.99/v0.0.100
+CI did not assert exclusive focus ownership.
+
+All provider mode transitions must be driven by explicit LB/RB/tab
+handlers **only**, never passive LocalFocusChanged. Keep the native
+FixedSideBar visually present at all times its collection is nonempty,
+but enable its list and focus selector only when its Metamagic provider
+mode owns the input, excluding BG3-owned nested states. Conversely,
+disable central HotBarList input while Metamagic owns the slot, except
+when BG3's nested flags are active. Both focus/tooltip/tag paths must
+be gated by their own active list. Avoid claiming cross-list spatial
+navigation without actual engine proof. Do not alter the accepted
+0.0.98 glyph paths or the native VMHotBarSlot execution command.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:
