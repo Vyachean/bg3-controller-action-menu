@@ -553,7 +553,7 @@ if (-not $mainList.Success -or
 # spell deck; this must be a separate, controller-focusable VMHotBarSlot list.
 $sidebar = [regex]::Match(
     $text,
-    '<ls:LSListBox\\b[^>]*x:Name="CAM_FixedSideBarList"[\\s\\S]*?</ls:LSListBox>',
+    '<ls:LSListBox\b[^>]*x:Name="CAM_FixedSideBarList"[\s\S]*?</ls:LSListBox>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $sidebar.Success -or
@@ -570,7 +570,7 @@ if (-not $sidebar.Success -or
 }
 $gridTemplate = [regex]::Match(
     $text,
-    '<DataTemplate x:Key="CAM_ActionGridSlotTemplate">[\\s\\S]*?</DataTemplate>',
+    '<DataTemplate x:Key="CAM_ActionGridSlotTemplate">[\s\S]*?</DataTemplate>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $gridTemplate.Success -or
