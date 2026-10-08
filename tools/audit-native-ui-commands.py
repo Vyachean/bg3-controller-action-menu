@@ -297,6 +297,7 @@ def validate_summon_source_route(runtime: str) -> list[str]:
     reset_triggers = [
         t for t in root.iter()
         if local(t) == "DataTrigger"
+        and _attribute(t.attrib, "Value") == "True"
         and "SummonHotBar.SlotList.Count" in (_attribute(t.attrib, "Binding") or "")
         and any(local(action) == "SetMoveFocusAction" and
                 _attribute(action.attrib, "TargetName") == "ActionRadials"
@@ -313,6 +314,34 @@ def validate_summon_source_route(runtime: str) -> list[str]:
         )
     ):
         errors.append("Native summon population must clear stale tooltip/tag and restore first-slot focus")
+
+    exit_triggers = [
+        t for t in root.iter()
+        if local(t) == "DataTrigger"
+        and _attribute(t.attrib, "Value") == "False"
+        and "SummonHotBar.SlotList.Count" in (_attribute(t.attrib, "Binding") or "")
+    ]
+    cleanup = [
+        t for t in exit_triggers
+        if all(any(_attribute(a.attrib, "TargetName") == target
+                   and _attribute(a.attrib, "PropertyName") == prop
+                   for a in t)
+               for target, prop in (
+                   ("ActionRadials", "Tag"),
+                   ("CAM_ActionTooltip", "Content"),
+                   ("HotBarList", "SelectedIndex"),
+               ))
+    ]
+    fallback_focus = [
+        a for t in exit_triggers for a in t.iter()
+        if local(a) == "SetMoveFocusAction"
+    ]
+    if len(cleanup) != 1 or not all(
+        any(_attribute(a.attrib, "FocusElement") == f"{{Binding ElementName={owner}}}"
+            for a in fallback_focus)
+        for owner in ("HotBarList", "CAM_FixedSideBarList")
+    ):
+        errors.append("Native summon exit must clear stale dispatch and restore the prior grid or sidebar focus")
     return errors
 
 
