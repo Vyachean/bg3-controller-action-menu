@@ -103,8 +103,44 @@ exists but equality with the reference catalog cannot be established statically;
 | temporary actions | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
 | recasts | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback + native nested behavior | keyboard source covered / radial parity runtime-unverified |
 | mod-added actions/resources | native dynamic models | covered only when BG3 exposes a resource preview / proven slot source | runtime-proof |
+| summoned creature action hotbar | native `SummonHotBar.SlotList` | **not directly present**; source equivalence unresolved | **missing-source** |
+| conditional Call Allies action | original `ActionRadials.xaml` page Loaded/Metadata action | native page+state-machine route retained outside CAM template | page-level source preserved / effect unverified |
+| custom keyboard deck | native `CustomHotBar` | no direct provider; editing excluded, unique playable actions require independent coverage | unresolved |
 
 This table is deliberately conservative. Absence of a known bug is not proof of parity.
+
+## Additional native producers proved by actual 1.8.910.0 XAML archive
+
+The actual `bg3-controller-action-menu-inputs-20261008-132651.zip`
+was parsed offline, all 45 XAML files intact. Two independent sources
+previously absent from the checklist are native **`HotBarTemplate`
+content providers**, not ordinary `ItemsSource` list bindings:
+
+- `SummonHotBar` (current original `HotBar.xaml:1759`, visibility
+  by `SummonHotBar.SlotList.Count`) is **not directly bound in CAM**.
+  An executable native VMHotBar route for these slots must be proven or
+  implemented before full parity can be accepted. It is not acceptable
+  to assume `KeyboardHotBars` or `SingleHotBar` already contains them.
+- `PlayerCharacterProperties.CustomHotBar` (current original
+  `HotBar.xaml:1752–1754`) is a configured native deck not directly
+  bound in CAM. This **does not** justify bringing back configurable
+  radials, but any unique playable ability from it must be available
+  through an automatic game-owned executable source.
+- `PlayerCharacterProperties.CallAllies` is used directly with
+  `UseSlotCommand` in keyboard `HotBar.xaml:4519–4532`, but original
+  *controller* `ActionRadials.xaml:31–39` independently invokes native
+  `CallAllies` when `Metadata=CallAllies`; the native state machine
+  supplies that metadata (`Controller.xaml:676–678`). CAM replaces
+  the controller **template**, not that page/state. Source composition
+  preserves this page-level route; runtime effects are not proven.
+
+The exact SHA-256-backed extraction evidence is in
+[`patch8-independent-gameplay-producers-2026-10-08.json`](evidence/patch8-independent-gameplay-producers-2026-10-08.json)
+and [the source audit](research/source-only-capability-parity-2026-10-08.md).
+
+**No completeness claim** follows merely from shared `UseSlotCommand`
+names. The independent native `SummonHotBar` requires a concrete
+CAM-reachable implementation or equivalent producer proof.
 
 ## Metamagic is a parallel native provider
 
