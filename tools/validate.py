@@ -103,6 +103,43 @@ def validate_semantics() -> list[str]:
                     "Keyboard resource group XAML differs from the exact installed "
                     f"BG3 Patch 8 DataTemplates_k.xaml group block: {digest}"
                 )
+        # The controller library loads DefaultTheme_c.Styles.xaml. A
+        # verbatim keyboard group without the *keyboard point DataTemplate*
+        # still resolves the controller's image-path StaticResources.
+        # Both the exact native point XAML and its four keyboard path values
+        # must be present inside CAM_ResourceTabTemplate.Grid.Resources.
+        keyboard_paths = {
+            "ActionResourcePointIconsPath": "Assets/Shared/Resources/",
+            "ActionResourcePointHighlightIconsPath": "Assets/Shared/Resources/Highlight/",
+            "ActionResourcePointMissingIconsPath": "Assets/Shared/Resources/Missing/",
+            "ActionResourcePointUsedIconsPath": "Assets/Shared/Resources/Used/",
+        }
+        for key, value in keyboard_paths.items():
+            pair = f'<System:String x:Key="{key}">{value}</System:String>'
+            if runtime.count(pair) != 1:
+                errors.append(f"CAM must declare exactly one local original keyboard resource path: {key}")
+
+        point_key = '    <DataTemplate x:Key="ActionResources.ActionGroup.ActionPoint">'
+        point_start = runtime.find(point_key)
+        point_end_marker = '    </DataTemplate>\\n\\n'
+        point_end = runtime.find(point_end_marker, point_start) if point_start >= 0 else -1
+        if point_start < 0 or point_end < 0 or (group_start >= 0 and point_start >= group_start):
+            errors.append("Original keyboard resource glyph DataTemplate must precede local group templates.")
+        else:
+            point_end += len(point_end_marker)
+            point = runtime[point_start:point_end]
+            point_sha = hashlib.sha256(point.encode("utf-8")).hexdigest()
+            expected_point_sha = "eee27b44205de8d3fbacac302c9427b8c33f785fea0f39b9b4dfda51cba22d84"
+            if point_sha != expected_point_sha:
+                errors.append(
+                    "Original BG3 1.8.910.0 point DataTemplate differs from captured source: "
+                    f"{point_sha}"
+                )
+        if group_start >= 0:
+            root_resources_start = runtime.rfind("<Grid.Resources>", 0, point_start)
+            if point_start < 0 or root_resources_start < 0 or root_resources_start > group_start:
+                errors.append("Keyboard icon paths and point template must be scoped to the resource item.")
+
         if 'CAM_KeyboardHotBarPointGlyph' in runtime or 'ActionPointTemplate="{StaticResource CAM_' in runtime:
             errors.append("CAM must let the native resource selector choose exact keyboard group templates.")
 
