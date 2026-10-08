@@ -655,12 +655,21 @@ There are two distinct native HotBar surfaces:
 
 Do not make another visual runtime candidate from historical/public HotBar markup or from reconstructed assets. Before changing the tab presentation again, capture the exact installed Xbox App 1.8.910.0 `Mods/MainUI/GUI/Pages/HotBar.xaml` with the existing read-only self-contained capture tool and derive the resource-filter presentation from that file.
 
-The next development release is capture-only:
-- the permanent operator VBS remains unchanged;
-- release-controlled `dev-entry.ps1` runs `capture-self-contained-inputs.ps1`;
-- no BG3 files, saves, profiles or mods are modified by the capture;
-- no gameplay/XAML presentation change is made in this milestone;
-- after the capture is inspected, restore the normal install task and implement one evidence-based visual correction.
+Historical 0.0.80–0.0.86 development releases were capture-only:
+- the permanent operator VBS stayed unchanged;
+- release-controlled `dev-entry.ps1` ran `capture-self-contained-inputs.ps1`;
+- captures read `Game.pak` without modifying BG3 files.
+
+The 2026-10-08 schema-v3 capture is now fully inspected in
+`docs/research/schema-v3-capture-2026-10-08.md`. Beginning with 0.0.87,
+the **current** development task is normal self-contained PAK installation:
+- the same VBS downloads the new `dev-entry.ps1`;
+- it delegates to the proven `install-latest.ps1` helper with the exact release metadata and portable launcher root;
+- child exceptions, install status, and version equality are validated fail-closed;
+- read-only capture remains published as an optional tool, not the current VBS task;
+- there is no XAML/runtime/gameplay behavior change in this milestone.
+The next operator game run is one combined runtime proof of focus, scroll,
+category cycling and action coverage, not a repeated capture.
 
 Already confirmed runtime behavior must remain untouched: native VMItem quantity rendering, LocalFocus authority, tooltip behavior, resource-first filtering, Passives serialization, nested return and native action dispatch.
 
