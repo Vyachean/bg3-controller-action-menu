@@ -400,6 +400,76 @@ def validate_controller_refusal_feedback(runtime: str) -> list[str]:
     return []
 
 
+
+def validate_native_weapon_switch(runtime: str) -> list[str]:
+    """Preserve the original Patch 8 controller hold-button contract.
+
+    Previous custom input bindings caused ordinary grid-left presses to
+    switch weapons or stopped firing after the first hold. Do not allow
+    those regressions back into the shipping template.
+    """
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"cannot inspect weapon-set control in invalid XAML: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    buttons = [
+        node for node in root.iter()
+        if local(node) == "LSButton"
+        and _attribute(node.attrib, "Name") == "ToggleWeaponSet"
+    ]
+    if len(buttons) != 1:
+        return ["native weapon-set switch button missing or duplicated"]
+    button = buttons[0]
+    expected = {
+        "Style": "{StaticResource ControllerHoldButtonStyle}",
+        "Command": "{Binding SwitchWeaponSetCommand}",
+        "Content": "{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}",
+        "EatInput": "False",
+    }
+    errors: list[str] = []
+    if any(_attribute(button.attrib, key) != value
+           for key, value in expected.items()):
+        errors.append("native weapon-set switch must use original hold-button style and command")
+    if _attribute(button.attrib, "BoundEvent") is not None:
+        errors.append("native weapon-set switch button must not bind a direct input event")
+
+    bad_input_bindings = [
+        node for node in root.iter()
+        if local(node) == "LSInputBinding"
+        and (
+            "SwitchWeaponSetCommand" in (_attribute(node.attrib, "Command") or "")
+            or _attribute(node.attrib, "BoundEvent") in ("UISelectionLeft", "ToggleWeaponSet")
+        )
+    ]
+    if bad_input_bindings:
+        errors.append("native weapon-set switch must not add an input shortcut binding")
+
+    ranged_triggers = [
+        trigger for trigger in root.iter()
+        if local(trigger) == "DataTrigger"
+        and _attribute(trigger.attrib, "Binding")
+            == "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}"
+        and _attribute(trigger.attrib, "Value") == "False"
+        and any(local(setter) == "Setter"
+                and _attribute(setter.attrib, "TargetName") == "ToggleWeaponSet"
+                and _attribute(setter.attrib, "Property") == "Visibility"
+                and _attribute(setter.attrib, "Value") == "Collapsed"
+                for setter in trigger)
+    ]
+    if len(ranged_triggers) != 1:
+        errors.append("native weapon-set switch must hide when HasRangedAttack is False")
+
+    if not any(local(node) == "LSGrid"
+               and _attribute(node.attrib, "ActionLeftEvent") == "UILeft"
+               for node in root.iter()):
+        errors.append("native weapon-set shortcut must not replace grid-left navigation")
+    return errors
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -436,6 +506,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
 
     errors.extend(validate_summon_source_route(runtime))
     errors.extend(validate_controller_refusal_feedback(runtime))
+    errors.extend(validate_native_weapon_switch(runtime))
 
     route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
@@ -550,6 +621,30 @@ def main() -> int:
         if not any("conditional on native CanUse" in error
                    for error in validate_controller_refusal_feedback(disabled_denial_guard)):
             report["errors"].append("self-test failed: reversed original denial guard not rejected")
+        removed_switch = runtime.replace(
+            'Command="{Binding SwitchWeaponSetCommand}"',
+            'Command="{Binding MissingWeaponSetCommand}"',
+            1,
+        )
+        if not any("original hold-button style and command" in err
+                   for err in validate_native_weapon_switch(removed_switch)):
+            report["errors"].append("self-test failed: weapon-set command loss undetected")
+        added_shortcut = runtime.replace(
+            'x:Name="ToggleWeaponSet"',
+            'x:Name="ToggleWeaponSet" BoundEvent="UISelectionLeft"',
+            1,
+        )
+        if not any("must not bind a direct input event" in err
+                   for err in validate_native_weapon_switch(added_shortcut)):
+            report["errors"].append("self-test failed: unsafe weapon button input not rejected")
+        removed_ranged_guard = runtime.replace(
+            'Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="False"',
+            'Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="True"',
+            1,
+        )
+        if not any("hide when HasRangedAttack" in err
+                   for err in validate_native_weapon_switch(removed_ranged_guard)):
+            report["errors"].append("self-test failed: weapon-set visibility guard loss undetected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
