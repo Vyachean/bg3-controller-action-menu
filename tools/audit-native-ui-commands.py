@@ -470,6 +470,54 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
     return errors
 
 
+
+def validate_native_throw_world_exit(runtime: str) -> list[str]:
+    """Keep the original Throw item-picker world exit, not a radial editor."""
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"invalid CAM XAML for native Throw world exit: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    matches = [
+        node for node in root.iter()
+        if local(node) == "LSButton"
+        and _attribute(node.attrib, "Name") == "ToWorldButton"
+    ]
+    if len(matches) != 1:
+        return ["native Throw to-world button missing or duplicated"]
+    button = matches[0]
+    expected = {
+        "BoundEvent": "UIDelete",
+        "Command": "{Binding CustomEvent}",
+        "CommandParameter": "CloseRadials",
+        "ContentTemplate": "{StaticResource ControllerButtonHint}",
+        "Content": "{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UIDelete, Converter={StaticResource FindInputEventConverter}}",
+        "Visibility": "Collapsed",
+    }
+    errors: list[str] = []
+    if any(_attribute(button.attrib, k) != v for k, v in expected.items()):
+        errors.append("native Throw to-world button must preserve UIDelete and CloseRadials")
+    if any(local(node) == "EventTrigger" for node in button.iter()):
+        errors.append("native Throw to-world button cannot invent a secondary input handler")
+    visible_triggers = [
+        trigger for trigger in root.iter()
+        if local(trigger) == "DataTrigger"
+        and _attribute(trigger.attrib, "Binding") == "{Binding IsShowingItemsToThrow}"
+        and _attribute(trigger.attrib, "Value") == "True"
+        and any(local(setter) == "Setter"
+                and _attribute(setter.attrib, "TargetName") == "ToWorldButton"
+                and _attribute(setter.attrib, "Property") == "Visibility"
+                and _attribute(setter.attrib, "Value") == "Visible"
+                for setter in trigger)
+    ]
+    if len(visible_triggers) != 1:
+        errors.append("native Throw to-world hint must appear only in the item picker")
+    return errors
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -507,6 +555,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     errors.extend(validate_summon_source_route(runtime))
     errors.extend(validate_controller_refusal_feedback(runtime))
     errors.extend(validate_native_weapon_switch(runtime))
+    errors.extend(validate_native_throw_world_exit(runtime))
 
     route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
@@ -645,6 +694,22 @@ def main() -> int:
         if not any("hide when HasRangedAttack" in err
                    for err in validate_native_weapon_switch(removed_ranged_guard)):
             report["errors"].append("self-test failed: weapon-set visibility guard loss undetected")
+        throw_bad_command = runtime.replace(
+            'CommandParameter="CloseRadials"',
+            'CommandParameter="OpenRadialEditor"',
+            1,
+        )
+        if not any("preserve UIDelete and CloseRadials" in err
+                   for err in validate_native_throw_world_exit(throw_bad_command)):
+            report["errors"].append("self-test failed: wrong Throw world exit not rejected")
+        throw_bad_visibility = runtime.replace(
+            '<Setter TargetName="ToWorldButton" Property="Visibility" Value="Visible"/>',
+            '<Setter TargetName="ToWorldButton" Property="Visibility" Value="Collapsed"/>',
+            1,
+        )
+        if not any("appear only in the item picker" in err
+                   for err in validate_native_throw_world_exit(throw_bad_visibility)):
+            report["errors"].append("self-test failed: missing Throw world hint not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
