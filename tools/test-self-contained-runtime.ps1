@@ -1303,10 +1303,12 @@ $mainFocusHandoff = @(
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     ) | Where-Object { $_.Value.Contains('CAM_FixedSideBarList') }
 ) | Select-Object -First 1
+$missingNestedGuards = @(
+    'IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow'
+) | Where-Object { -not $mainFocusHandoff.Value.Contains($_) }
 if (-not $mainFocusHandoff -or
     -not $mainFocusHandoff.Value.Contains('CAM_MetamagicModeToken') -or
-    @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow') |
-        Where-Object { -not $mainFocusHandoff.Value.Contains($_) }) {
+    @($missingNestedGuards).Count -gt 0) {
     throw "Nested focus movement must not be mistaken for ordinary side-rail exit."
 }
 
