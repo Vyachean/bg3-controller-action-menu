@@ -976,3 +976,17 @@ VMHotBarSlot execution, tooltip, item quantities, and B return remain
 native. Do not merge `DataTemplates_k.xaml` globally or mutate
 controller UI resource dictionaries. The literal keyboard mapping
 removes the failed 0.0.91 hand-authored glyph template.
+
+
+## 0.0.94 point-image diagnostic boundary
+
+Do not infer visual acceptance from matching XAML or passing tests.
+Temporary runtime probe in `CAM_ResourceTabTemplate` draws a second
+direct icon through the **same** game's `IconIdToSourceConverter` and
+`ActionResourcePointIconsPath` but without `LSActionPointResources`
+and its internal point/group renderer. A per-resource `94` mark proves
+the new resource item template itself is active. Both are
+`IsHitTestVisible=False` and leave the gameplay renderer and
+selection/focus/tooltip unchanged. A screenshot determines whether
+the source image or its point-control presentation is responsible;
+the diagnostic markup must then be removed.
