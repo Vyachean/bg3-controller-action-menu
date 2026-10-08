@@ -592,6 +592,30 @@ if (-not $gridTemplate.Success -or
     -not $gridTemplate.Value.Contains('CanUse')) {
     throw "Controller cells must consume original game-owned active/modified metamagic state and retain CanUse."
 }
+# The installed 1.8.910.0 controller radial dims unmodified spells when
+# BG3-owned MetamagicActive is true. The 0.0.101 overlay-only UI omitted
+# that negative-compatibility signal, so even an active metamagic selection
+# left all main spell cells at similar intensity.
+$nativeIncompatibleSpell = [regex]::Match(
+    $gridTemplate.Value,
+    '<MultiDataTrigger>\s*<MultiDataTrigger.Conditions>\s*<Condition Binding="\{Binding SlotType\}" Value="Spell"/>\s*<Condition Binding="\{Binding Content.IsModified\}" Value="False"/>\s*<Condition Binding="\{Binding DataContext.CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive, RelativeSource=\{RelativeSource AncestorType=\{x:Type ls:UIWidget\}\}\}" Value="True"/>\s*</MultiDataTrigger.Conditions>\s*<Setter TargetName="CAM_MetamagicIncompatibleOverlay" Property="Visibility" Value="Visible"/>\s*<Setter TargetName="GenericIcon" Property="Opacity" Value="0.7"/>\s*</MultiDataTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $nativeIncompatibleSpell.Success -or
+    -not $gridTemplate.Value.Contains('x:Name="CAM_MetamagicIncompatibleOverlay"') -or
+    -not $gridTemplate.Value.Contains('Opacity="0.2"') -or
+    -not $gridTemplate.Value.Contains('Visibility="Collapsed"') -or
+    -not $gridTemplate.Value.Contains('Content.IsModified') -or
+    -not $gridTemplate.Value.Contains('HotbarSlotGlow')) {
+    throw "Metamagic must distinguish nonmodified native Spell slots only while BG3 MetamagicActive is true, preserving native modified-slot glow."
+}
+if ($gridTemplate.Value.Contains('PropertyName="IsActive"') -or
+    $gridTemplate.Value.Contains('PropertyName="MetamagicActive"') -or
+    $gridTemplate.Value.Contains('Command="{Binding ToggleMetamagic') -or
+    $gridTemplate.Value.Contains('MetamagicCompatibilityConverter')) {
+    throw "CAM must not mutate game-owned metamagic toggles or invent compatibility classification."
+}
+
 if ([regex]::Matches($text, 'Meta shoulder entry focuses its parallel native-slot region').Count -ne 2 -or
     [regex]::Matches($text, 'CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"').Count -lt 3) {
     throw "Both LB/RB transitions to metamagic must preserve a resource-filtered spell grid while focusing the parallel sidebar."
