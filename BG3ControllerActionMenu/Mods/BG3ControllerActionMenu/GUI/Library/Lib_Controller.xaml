@@ -354,6 +354,137 @@
                     <System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>
                     <System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>
 
+
+                    <!-- The original keyboard DefaultTheme.Styles.xaml declares
+                         these strings; controller DefaultTheme_c.Styles.xaml instead
+                         points to Assets/ActionResources_c/Icons/Resources/.
+                         Keep this scope within the CAM resource-item Grid. -->
+                    <System:String x:Key="ActionResourcePointIconsPath">Assets/Shared/Resources/</System:String>
+                    <System:String x:Key="ActionResourcePointHighlightIconsPath">Assets/Shared/Resources/Highlight/</System:String>
+                    <System:String x:Key="ActionResourcePointMissingIconsPath">Assets/Shared/Resources/Missing/</System:String>
+                    <System:String x:Key="ActionResourcePointUsedIconsPath">Assets/Shared/Resources/Used/</System:String>
+
+                    <!-- Installed 1.8.910.0 DataTemplates.xaml native point
+                         DataTemplate, unchanged. It must be locally declared
+                         after the four keyboard paths: the globally-defined
+                         template resolves controller StaticResource paths. -->
+    <DataTemplate x:Key="ActionResources.ActionGroup.ActionPoint">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Image x:Name="image" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image.Source>
+                    <MultiBinding Converter="{StaticResource IconIdToSourceConverter}" FallbackValue="{StaticResource TypeIdToSourceFallback}">
+                        <Binding Source="{StaticResource ActionResourcePointIconsPath}"/>
+                        <Binding Path="DataContext.TypeId" RelativeSource="{RelativeSource AncestorType=ls:LSActionPointResources}"/>
+                    </MultiBinding>
+                </Image.Source>
+                <Image.RenderTransform>
+                    <TransformGroup>
+                        <SkewTransform/>
+                        <ScaleTransform CenterX="22" CenterY="32"/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </Image.RenderTransform>
+            </Image>
+            <Image x:Name="imageExplosion" Stretch="None" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image.Source>
+                    <MultiBinding Converter="{StaticResource IconIdToSourceConverter}" FallbackValue="{StaticResource TypeIdToSourceFallback}">
+                        <Binding Source="{StaticResource ActionResourcePointHighlightIconsPath}"/>
+                        <Binding Path="DataContext.TypeId" RelativeSource="{RelativeSource AncestorType=ls:LSActionPointResources}"/>
+                    </MultiBinding>
+                </Image.Source>
+                <Image.RenderTransform>
+                    <TransformGroup>
+                        <SkewTransform/>
+                        <ScaleTransform CenterX="22" CenterY="32"/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </Image.RenderTransform>
+            </Image>
+        </Grid>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Path=ActionPointState, RelativeSource={RelativeSource AncestorType=ls:LSActionPoint}}" Value="Highlight">
+                <Setter TargetName="image" Property="Source">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}" FallbackValue="{StaticResource DefaultHighlightTypeIdFallback}">
+                            <Binding Source="{StaticResource ActionResourcePointHighlightIconsPath}"/>
+                            <Binding Path="DataContext.TypeId" RelativeSource="{RelativeSource AncestorType=ls:LSActionPointResources}"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Path=ActionPointState, RelativeSource={RelativeSource AncestorType=ls:LSActionPoint}}" Value="Missing">
+                <Setter TargetName="image" Property="Source">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}" FallbackValue="{StaticResource DefaultMissingTypeIdFallback}">
+                            <Binding Source="{StaticResource ActionResourcePointMissingIconsPath}"/>
+                            <Binding Path="DataContext.TypeId" RelativeSource="{RelativeSource AncestorType=ls:LSActionPointResources}"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Path=ActionPointState, RelativeSource={RelativeSource AncestorType=ls:LSActionPoint}}" Value="Used">
+                <Setter TargetName="image" Property="Source">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}" FallbackValue="{StaticResource DefaultUsedTypeIdFallback}">
+                            <Binding Source="{StaticResource ActionResourcePointUsedIconsPath}"/>
+                            <Binding Path="DataContext.TypeId" RelativeSource="{RelativeSource AncestorType=ls:LSActionPointResources}"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding (ls:AttachedProperties.InheritedTag), RelativeSource={RelativeSource Mode=Self}}" Value="NoAnimation">
+                <Setter TargetName="imageExplosion" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Path=ActionPointState, RelativeSource={RelativeSource AncestorType=ls:LSActionPoint}}" Value="Used"/>
+                    <Condition Binding="{Binding Path=IsActionPointSpent, RelativeSource={RelativeSource AncestorType=ls:LSActionPoint}}" Value="True"/>
+                    <Condition Binding="{Binding Path=Visibility, ElementName=imageExplosion}" Value="Visible"/>
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.EnterActions>
+                    <BeginStoryboard x:Name="explodeAnim">
+                        <Storyboard RepeatBehavior="1x">
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="imageExplosion" Storyboard.TargetProperty="(Image.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)">
+                                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1.6"/>
+                                <DiscreteDoubleKeyFrame Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="imageExplosion" Storyboard.TargetProperty="(Image.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleY)">
+                                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1.6"/>
+                                <DiscreteDoubleKeyFrame Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="imageExplosion" Storyboard.TargetProperty="(Image.Opacity)">
+                                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="0"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiDataTrigger.EnterActions>
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Path=ActionPointState, RelativeSource={RelativeSource AncestorType=ls:LSActionPoint}}" Value="Highlight"/>
+                    <Condition Binding="{Binding Path=DataContext.PreviewState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPointResources}}}" Value="Hover"/>
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.EnterActions>
+                    <BeginStoryboard x:Name="previewAnim" Storyboard="{StaticResource ActionResources.ActionGroup.ActionPoint.PreviewAnimation}" Storyboard.TargetName="image"/>
+                </MultiDataTrigger.EnterActions>
+                <MultiDataTrigger.ExitActions>
+                    <StopStoryboard BeginStoryboardName="previewAnim"/>
+                </MultiDataTrigger.ExitActions>
+            </MultiDataTrigger>
+
+            <DataTrigger Binding="{Binding Path=DataContext.PreviewState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPointResources}}}" Value="Inactive">
+                <Setter Property="Opacity" Value="0.5"/>
+            </DataTrigger>
+
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
     <ControlTemplate x:Key="ActionResources.ActionGroup.ActionPointGroup">
         <ContentPresenter ContentTemplate="{DynamicResource ActionResources.ActionGroup.ActionPoint}"/>
     </ControlTemplate>    
