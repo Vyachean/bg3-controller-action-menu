@@ -949,3 +949,32 @@ keyboard and controller `DefaultTheme_*.Styles.xaml` and
 No mod/XAML runtime correction in this milestone. Resolve the
 image-source provenance before another fix; no artistic guessing,
 hardcoded TypeId mapping, or repeated ineffective install tests.
+
+
+## 0.0.98 fix: source-exact keyboard point DataTemplate and theme paths
+
+The failed 0.0.97 capture ZIP contains the decisive theme evidence:
+keyboard theme style file is `DefaultTheme.Styles.xaml`, **not**
+the nonexistent `DefaultTheme_k.Styles.xaml`; controller uses
+`DefaultTheme_c.Styles.xaml`. Their
+`ActionResourcePoint[Highlight|Missing|Used]IconsPath` values
+point to fundamentally different asset folders:
+keyboard `Assets/Shared/Resources/`, controller
+`Assets/ActionResources_c/Icons/Resources/`.
+
+The source-exact, shared `ActionResources.ActionGroup.ActionPoint`
+DataTemplate uses `StaticResource` to bind these directory keys;
+previous source-identical group templates retained controller image
+path resolution. v0.0.98 provides four original keyboard path
+strings, followed by the unchanged 8,143-character point DataTemplate
+(SHA-256 `eee27b44205de8d3fbacac302c9427b8c33f785fea0f39b9b4dfda51cba22d84`)
+and all 24 unchanged original keyboard group templates
+(SHA-256 `9e017778ec41ef2e03f192392ca944640f7d8ad3c227f69d9742aefbdaff4651`)
+in the CAM resource-item local Grid.Resources.
+No controller global resource mutation, 24x24 manually authored icon,
+hardcoded TypeId tables, or new game input modifications.
+
+Capture's required keyboard theme path is fixed to
+`DefaultTheme.Styles.xaml` and the permanent universal VBS
+returns to the normal install task. #119 remains open until the
+operator sees genuine native HotBar glyph parity in BG3.
