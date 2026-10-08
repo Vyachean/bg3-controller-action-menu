@@ -28,9 +28,9 @@
     {
       "id": "switch-weapon-sets",
       "source": "SwitchWeaponSetCommand; WeaponSetSwitchStyle; ToggleWeaponSet input",
-      "route": "no proven CAM-safe direct controller transport; older hold-input implementations failed",
-      "status": "blocked",
-      "gate": "repeatable switching with ordinary short UILeft unaffected"
+      "route": "Patch 8 original ActionRadials ToggleWeaponSet LSButton restored with ControllerHoldButtonStyle, SwitchWeaponSetCommand, EatInput=False and no BoundEvent",
+      "status": "unverified",
+      "gate": "in-game repeated hold cycles switch melee/ranged; ordinary short grid-left movement remains unaffected"
     },
     {
       "id": "swap-light-source",
