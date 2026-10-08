@@ -89,7 +89,7 @@ The universal VBS downloads a fresh copy on every invocation.
 
 That script is intentionally allowed to change between releases. It is the control plane for the current development operation.
 
-For development milestone `0.0.80-hotbar-coverage-capture-fix` the task is one read-only native evidence capture:
+In milestones 0.0.80–0.0.86, the task was one read-only native evidence capture:
 
 ```text
 VBS
@@ -99,7 +99,7 @@ VBS
   -> write bg3-controller-action-menu-inputs-....zip beside the VBS
 ```
 
-This milestone does not install/update CAM. A later release can switch `dev-entry.ps1` back to the normal install path without changing the operator's VBS.
+Those capture-only milestones did not install/update CAM. Version 0.0.87 now switches `dev-entry.ps1` back to the normal install path **without changing the operator's VBS**.
 
 ## Capture boundary
 
@@ -141,3 +141,20 @@ universal development shortcut
 ```
 
 This keeps the operator workflow universal while preserving a genuinely self-contained shipping mod.
+
+
+## Current release task — 0.0.87 installation milestone
+
+The same VBS resolves the newest published release and runs its `dev-entry.ps1`. The entry now downloads the release's `install-latest.ps1` and invokes it in-process with the same release metadata and portable launcher root. The existing helper downloads the ready PAK and `install-xbox-dev.ps1` and applies the PAK; no Game.pak extraction or packaging occurs at install time.
+
+```text
+same VBS
+  -> published 0.0.87 dev-entry.ps1
+  -> published install-latest.ps1
+  -> published self-contained PAK + install-xbox-dev.ps1
+  -> Xbox App mod install/update
+  -> installer-work/install-status.txt + install-latest.log + xbox-dev-environment.json
+  -> installer-work/dev-status.txt + dev-report.json + dev-task.log
+```
+
+The entry checks a successful install status **and exact release version** rather than relying on the native process `LASTEXITCODE` value. A helper failure results in generic `ERROR` status and a discoverable log. Its automated fixture also covers an intentionally failed child install. The read-only capture helper remains available as a release asset but is no longer automatically invoked.
