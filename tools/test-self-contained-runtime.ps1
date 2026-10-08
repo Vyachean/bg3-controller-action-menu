@@ -900,11 +900,38 @@ foreach ($match in [regex]::Matches($text, '\{(?:StaticResource|DynamicResource)
     }
 }
 
-$resourceTabTemplate = [regex]::Match(
+# A native point DataTemplate is now nested inside CAM_ResourceTabTemplate.
+# Match the complete outer DataTemplate, not its first inner closing tag.
+$resourceTabHeader = [regex]::Match(
     $text,
-    '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
+    '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
+$resourceTabTemplate = [pscustomobject]@{ Success = $false; Value = "" }
+if ($resourceTabHeader.Success) {
+    $resourceTabEndOffset = $resourceTabHeader.Index + $resourceTabHeader.Length
+    $resourceTabTail = $text.Substring($resourceTabEndOffset)
+    $templateDepth = 1
+    foreach ($tag in [regex]::Matches($resourceTabTail, '</?DataTemplate\b[^>]*>')) {
+        if ($tag.Value.StartsWith('</DataTemplate')) {
+            $templateDepth--
+        } elseif (-not $tag.Value.EndsWith('/>')) {
+            $templateDepth++
+        }
+        if ($templateDepth -eq 0) {
+            $resourceTabTemplate = [pscustomobject]@{
+                Success = $true
+                Value = $text.Substring(
+                    $resourceTabHeader.Index,
+                    $resourceTabHeader.Length + $tag.Index + $tag.Length
+                )
+            }
+            break
+        }
+    }
+}
+
+
 if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<ls:LSButton Padding="0"') -or
     -not $resourceTabTemplate.Value.Contains('Margin="4,-10,4,10"') -or
