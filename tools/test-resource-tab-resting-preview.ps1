@@ -9,11 +9,40 @@ if (-not (Test-Path -LiteralPath $Runtime -PathType Leaf)) {
 
 $text = Get-Content -Raw -LiteralPath $Runtime
 
-$resourceTabTemplate = [regex]::Match(
+# Source-exact keyboard glyph presentation nests a DataTemplate inside the
+# outer CAM_ResourceTabTemplate. Count nested closing tags instead of taking
+# the first </DataTemplate>, so quantity and selected-state assertions run
+# against the entire original HotBar item.
+$resourceTabHeader = [regex]::Match(
     $text,
-    '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
+    '<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[^>]*>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
+$resourceTabTemplate = [pscustomobject]@{ Success = $false; Value = "" }
+if ($resourceTabHeader.Success) {
+    $startOffset = $resourceTabHeader.Index + $resourceTabHeader.Length
+    $tail = $text.Substring($startOffset)
+    $depth = 1
+    foreach ($tag in [regex]::Matches($tail, '</?DataTemplate\b[^>]*>')) {
+        if ($tag.Value.StartsWith('</DataTemplate')) {
+            $depth--
+        } elseif (-not $tag.Value.EndsWith('/>')) {
+            $depth++
+        }
+        if ($depth -eq 0) {
+            $resourceTabTemplate = [pscustomobject]@{
+                Success = $true
+                Value = $text.Substring(
+                    $resourceTabHeader.Index,
+                    $resourceTabHeader.Length + $tag.Index + $tag.Length
+                )
+            }
+            break
+        }
+    }
+}
+
+
 if (-not $resourceTabTemplate.Success) {
     throw "CAM_ResourceTabTemplate was not found."
 }
