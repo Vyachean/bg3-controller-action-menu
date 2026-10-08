@@ -72,13 +72,15 @@ if the older Ext.UI/Noesis API still works there. It cannot be
 treated as the implementation strategy for #135 on Xbox.
 
 The main restoration path must use a **native no-SE PAK** with
-BG3-owned executable providers. Issue
-[#138](https://github.com/Vyachean/bg3-controller-action-menu/issues/138)
-investigates exposing original `ControllerHotBars[*].SlotList` as
-an optional, controller-focusable native fallback for actions
-missing from the resource/keyboard providers. This does not
-cover global weapon/light commands by itself. No repeated game
-tests or operator actions are requested here.
+BG3-owned executable providers. The player explicitly rejected
+an **Original Radials** tab or reliance on the manually populated
+`ControllerHotBars[*].SlotList` collection; #138 was closed as
+not planned. This collection may still be recorded as independent
+reference evidence, but cannot be the runtime action-discovery
+provider. #134 and #135 must prove actions and global
+weapon/light controls through game-owned executable sources or
+native commands. No repeated speculative game tests or manual
+action-by-action verification should be requested.
 
 ## Analysis
 

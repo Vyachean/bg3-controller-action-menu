@@ -6,6 +6,10 @@ Keep manual Baldur's Gate 3 testing infrequent and high-value.
 
 The project distinguishes three proof levels.
 
+## Rejected configured-radial provider regression
+
+Static checks must reject the #140 `CAM_OriginalRadialsModeToken` and `ControllerHotBars` runtime provider, without deleting native execution, focus or resource routing. This enforces product policy only; it is **not** evidence that every gameplay action is accessible. The functional-parity gate remains separately open in #134 and #135.
+
 ## Level 1 — static proof
 
 Runs on every change.
@@ -1300,20 +1304,3 @@ No real runtime inventory is available in CI or the existing static
 capture, so the checker reports `awaiting-runtime-proof`. Its
 successful synthetic fixture check does not close gameplay parity,
 and the user must **not** be asked to enumerate all actions manually.
-
-## 2026-10-08 — source-backed original radial slot fallback (#138)
-
-A native `ControllerHotBars[*].SlotList` group is already a
-`VMHotBarSlot` source. To avoid losing originally configured
-radial actions that are missing from CAM resource/keyboard
-providers, a read-only Original Radials tab is added as one
-optional LB/RB mode, without new input shortcuts.
-
-Structural CI verifies presence, native slot owner,
-both directions of the availability guard, root focus/dispatch
-and nested restoration. It cannot prove runtime that the
-grouped original bars select/execute and restore B correctly;
-this belongs in the next combined game milestone with metamagic
-and resource filter tests. Global weapon-set/light-source
-buttons remain separately blocked and are **not** claimed
-restored by this fallback.

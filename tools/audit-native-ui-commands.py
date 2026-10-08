@@ -29,7 +29,6 @@ REQUIRED_ROUTES = {
     "cantrips": ("FilterCantripsCommand", "SingleHotBar.SlotList"),
     "inventory-deck": ("SetCurrentShownDeckCommand", "ItemHotBar", "CurrentShownDeck.SlotList"),
     "metamagic-sidebar": ("CAM_FixedSideBarList", "FixedSideBar.SlotList", "UseSlotCommand"),
-    "original-radial-fallback": ("CAM_OriginalRadialsModeToken", "ControllerHotBars", "CAM_AllGroupTemplate", "UseSlotCommand"),
     "passives": ("CAM_PassivesModeToken", "PassivesHotBar.SlotList"),
     "keyboard-fallback": ("CAM_AllModeToken", "KeyboardHotBars", "CAM_AllGroupSlots"),
     "native-nested": (
@@ -40,6 +39,9 @@ REQUIRED_ROUTES = {
     ),
     "native-A-dispatch": ('BoundEvent="UIAccept"', "UseSlotCommand", "ActionRadials"),
 }
+# Configured vanilla radial slots are comparison evidence, not a CAM provider.
+# Reject accidental reintroduction of the canceled #140 Original Radials UI.
+FORBIDDEN_RADIAL_FALLBACK = ("CAM_OriginalRadialsModeToken", "CAM_OriginalRadialsTab", "ControllerHotBars")
 REQUIRED_NATIVE_REFERENCE = {
     "keyboard": ("KeyboardHotBars", "FixedSideBar", "FilterCantripsCommand", "FilterActionResourceCommand"),
     "controller": ("SpellsAndActions", "Inventory.Slots", "TogglableMetaMagicPassivePredicate", "UseSlotCommand"),
@@ -80,6 +82,10 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     for command in groups.get("missingGameplayOrUtilityTransport", []):
         if commands_present.get(command, False):
             errors.append(f"new UI transport {command} requires explicit reclassification/review")
+
+    for identifier in FORBIDDEN_RADIAL_FALLBACK:
+        if identifier in runtime:
+            errors.append(f"configured-radial fallback is forbidden in CAM runtime: {identifier}")
 
     route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
@@ -163,6 +169,10 @@ def main() -> int:
         failed = evaluate(manifest, changed, None, pinned)["errors"]
         if not any("UseSlotCommand" in error for error in failed):
             report["errors"].append("self-test failed: missing UseSlotCommand was not rejected")
+        injected = runtime + '\n<!-- CAM_OriginalRadialsModeToken -->\n'
+        rejected = evaluate(manifest, injected, None, pinned)["errors"]
+        if not any("configured-radial fallback is forbidden" in error for error in rejected):
+            report["errors"].append("self-test failed: configured original radial tab not rejected")
         if extract_commands('<ls:LSButton Command="{Binding UseSlotCommand}"/>') != {"UseSlotCommand"}:
             report["errors"].append("self-test failed: native exact command binding was not recognized")
 

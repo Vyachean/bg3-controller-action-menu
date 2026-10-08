@@ -422,11 +422,9 @@ def validate_semantics() -> list[str]:
                 '"allSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars[*].SlotList"',
                 '"allModeToken": "CAM_AllModeToken"',
                 '"providerRestoreDispatcher": "CAM_ProviderRestoreCommand"',
-                '"rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_OriginalRadialsModeToken if available, else CAM_AllModeToken"',
-                '"rightFromOriginalRadials": "CAM_TabEnterSpecialToken -> CAM_AllModeToken"',
+                '"rightFromPassives": "CAM_TabEnterSpecialToken -> CAM_AllModeToken"',
                 '"rightFromAll": "CAM_TabReturnFirstToken -> FilterActionResourceCommand(selected resource)"',
-                '"leftFromAll": "CAM_TabEnterSpecialToken -> CAM_OriginalRadialsModeToken if available, else CAM_PassivesModeToken"',
-                '"leftFromOriginalRadials": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken"',
+                '"leftFromAll": "CAM_TabEnterSpecialToken -> CAM_PassivesModeToken"',
                 '"leftFromPassivesWhenMetamagicAvailable": "CAM_TabEnterSpecialToken -> CAM_MetamagicModeToken"',
                 '"leftFromPassivesWhenMetamagicUnavailable": "CAM_TabEnterSpecialToken -> CAM_ItemsModeToken -> SetCurrentShownDeckCommand(ItemHotBar)"',
                 '"resourceReturnMilliseconds": 70',
@@ -538,6 +536,7 @@ def validate_semantics() -> list[str]:
             'x:Name="singleBarHolder"',
             'x:Name="CAM_SingleSelector"',
             'x:Name="CAM_SingleActionTooltip"',
+            "PlayerCharacterProperties.ControllerHotBars",
             "PlayerCharacterProperties.SpellsAndActions",
             "CurrentPlayer.SelectedCharacter.Inventory.Slots",
             "CurrentPlayer.SelectedCharacter.Stats.Passives",
@@ -599,7 +598,7 @@ def validate_semantics() -> list[str]:
                 f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: provider conditions must read CAM_ProviderModeMarker, not the resource UIElement scroll target"
             )
         guard = '<b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>'
-        for side, expected in (("CAM_TabLeft", 11), ("CAM_TabRight", 9)):
+        for side, expected in (("CAM_TabLeft", 9), ("CAM_TabRight", 7)):
             button = re.search(
                 r'<ls:LSButton\b[^>]*x:Name="' + side + r'"[\s\S]*?</ls:LSButton>',
                 runtime_text,
@@ -615,24 +614,6 @@ def validate_semantics() -> list[str]:
                 errors.append(
                     f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: {side} must serialize all expected mode transitions against the dedicated provider marker"
                 )
-
-        # Original native controller-bar fallback is a strictly scoped read-only
-        # VMHotBar grouping, not a raw radial SpellsAndActions execution source.
-        # Protect exactly the native collection/count binding and nothing else:
-        # new uses of the collection require explicit review, not a blanket
-        # removal of the prior unsafe-source ban.
-        original_source = "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars"
-        if (runtime_text.count("PlayerCharacterProperties.ControllerHotBars") != 2
-                or f'Visibility="{{Binding {original_source}.Count, Converter={{StaticResource CountToVisibilityConverter}}}}"' not in runtime_text
-                or f'Value="{{Binding {original_source}}}"' not in runtime_text
-                or 'x:Name="CAM_OriginalRadialsTab"' not in runtime_text
-                or 'Value="{StaticResource CAM_AllGroupTemplate}"' not in runtime_text
-                or 'Value="{StaticResource CAM_AllGroupContainerStyle}"' not in runtime_text
-                or 'Value="{StaticResource CAM_AllGroupsPanel}"' not in runtime_text
-                or 'x:Key="CAM_OriginalRadialsModeToken"' not in runtime_text):
-            errors.append(
-                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: original ControllerHotBars may be read only as a guarded grouped VMHotBarSlot source"
-            )
 
         # HotBar.xaml defines ResourceBackgroundMargin as zero in its own page
         # dictionary; CAM has a separate controller resource scope. Require a

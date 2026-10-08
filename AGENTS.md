@@ -32,6 +32,12 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## Functional parity is not original radial layout parity (2026-10-08)
+
+The operator requires full gameplay-capability parity with BG3, not preservation of the player-configured original radial layout. An **Original Radials** tab or runtime dependence on manually configured `ControllerHotBars` is rejected. Inspect `ControllerHotBars` as independent reference evidence only. CAM must discover available actions automatically from verified BG3-owned executable slot providers and retain native global controller functions, rather than relying on assigned original radial slots.
+
+Keep a single resource/special-category tab row. Native resource variants may legitimately appear in several tabs. Never compute gameplay costs, create synthetic actions from raw catalogs, or replace `VMHotBarSlot -> UseSlotCommand`. A missing capability is a blocker for #135, not justification for a configured-radial fallback. #134 and #135 require executable identity proof; source command audits alone cannot close them.
+
 ## Metamagic functional parity — source-gated 0.0.99 candidate
 
 The operator confirmed that 0.0.98 finally matches the original
@@ -188,26 +194,6 @@ Do not ask the operator to enumerate dozens of spells or
 manually compare radial tiles. The next gate is a validated
 native executable identity adapter and missing-function
 remediation, not more static keyword checks.
-
-## Original controller radial action safety fallback (#138)
-
-Use BG3-owned
-`CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.ControllerHotBars`
-as a read-only grouped native `VMHotBar.SlotList` source to
-preserve all *currently present* original radial `VMHotBarSlot`
-actions. Its separate optional special tab is allowed in the
-existing **one-level** LB/RB row; it is not a nested tab tree or
-radial layout editor. Reuse `CAM_AllGroupTemplate` with no raw
-radial candidate -> slot conversion, no extra executable focus
-list and no new button bindings.
-
-Both shoulder directions must serialize exactly one transition,
-skipping Original when the native collection is empty, and
-nested variant/upcast/throw must restore the active grouped
-provider. The original All keyboard fallback and every native
-resource glyph remain. Do not claim that preconfigured controller
-radials encompass all `SpellsAndActions` or inventory actions:
-those catalogs still need runtime parity evidence.
 
 ## Current evidence boundary
 
