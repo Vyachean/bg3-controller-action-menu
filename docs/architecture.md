@@ -1005,3 +1005,41 @@ and each game's resource `TypeId`, constrained to the keyboard native
 small-point size (24), with `Stretch=Uniform`. No hard-coded classes,
 icons or resource mapping, no changes to controller navigation.
 The ephemeral `94` and `B` diagnostic items are removed.
+
+
+## 0.0.96 — literal keyboard HotBar group resources, not reimplementation
+
+The visual failure in v0.0.95 is evidence that constraining individual
+resource-point Images to `24×24` does not reproduce the keyboard HotBar.
+The keyboard's actual Patch 8 resource group templates are defined in
+`Public/Game/GUI/Library/DataTemplates_k.xaml`, while controller GUI
+loads `DataTemplates_c.xaml`. The global shared style
+`ActionResourcesTemplateSelector` uses `DynamicResource` to select
+the group by `ActionResource.TypeId`; supplying one hand-written
+`ActionPointTemplate` is not sufficient, because style triggers
+override it for many resource types.
+
+The self-contained CAM `VMActionResourceCostPreview` item therefore
+locally declares **all 24** original keyboard `ActionResources.ActionGroup.*`
+ControlTemplates, copied byte-for-byte from the installed Xbox App
+v1.8.910.0 `DataTemplates_k.xaml`, along with the exact original
+`56/48/24` group, point and small-point sizes. The copied templates
+refer to the game's unmodified shared `ActionResources.ActionGroup.ActionPoint`
+DataTemplate, including its original image source, per-state triggers,
+animations, scale and grouping. This dictionary is intentionally
+scoped **only to the resource item Grid** to avoid overriding the
+controller UI outside CAM. No new TypeId table or duplicated textures.
+
+Deleted the CAM-authored uniform-scaled point renderer introduced in
+v0.0.95 and the explicit per-control `ActionPointTemplate` override:
+they are not part of the original keyboard UI. Keep the
+`LSActionPointResources` bindings (Value, MaxValue, Cost,
+MaxActionPointGroups) and the native `ActionResourcesTemplateSelector`
+style exactly as in the pinned `HotBar.xaml` page.
+
+`tools/validate.py` pins the exact copied keyboard template block
+using SHA-256 `9e017778ec41ef2e03f192392ca944640f7d8ad3c227f69d9742aefbdaff4651`;
+`tools/test-self-contained-runtime.ps1` checks all 24 distinct keys and
+rejects CAM-owned glyph overrides. These are **static proof** of exact
+source composition, not proof of Noesis runtime dynamic resource
+resolution. One real in-game screenshot must still establish parity.
