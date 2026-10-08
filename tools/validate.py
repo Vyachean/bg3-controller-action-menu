@@ -1017,6 +1017,7 @@ def validate_semantics() -> list[str]:
                 '*DefaultTheme*.xaml',
                 '*DefaultShared*.xaml',
                 'KeyboardThemeStyles',
+                'Public/Game/GUI/Theme/DefaultTheme.Styles.xaml',
                 'ControllerThemeStyles',
                 'SharedThemeStyles',
                 'KeyboardPointTemplates',
