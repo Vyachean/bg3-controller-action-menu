@@ -244,35 +244,56 @@ CAM therefore distinguishes:
 
 If native Action/Bonus filters are broader than product policy, CAM may refine them only using a current BG3 property/predicate over executable native slots. No class/spell-name tables or heuristics are permitted.
 
-## Action viewport scroll-boundary clipping (issue #130)
+## Selector chrome and row-boundary clipping (issue #130)
 
-CAM renders the focus indicator with BG3's native
-`LSListBox.LocalFocusSelector -> SelectorTemplate`. This selector is a
-**sibling** of the list's scrollable content and therefore cannot
-inherit the inner `LSScrollViewer` clipping. The fixed-height
-`CAM_ActionViewport` and `CAM_FixedSideBarRegion`, both located
-in row 1 under the resource-tab header, must set
-`ClipToBounds=True`. This locally prevents native selector chrome
-from painting over the resource tabs without changing controller
-focus identity, `LSGrid` columns, selected indexes or tab mode.
+The runtime test of 0.0.103 confirmed that per-viewport
+`ClipToBounds=True` **stopped visual focus-frame jumping during
+scrolling**, without any change to the logically focused item.
+However, the built-in `SelectorTemplate` is wider than its
+104×104 slot icon and was then cut off where the two independent
+viewport clips met, as well as at their edges.
 
-Operator observation (2026-10-08): in long Items lists, visible
-focus sometimes appears to skip a row near the scrolling boundary,
-and at the top it paints over tabs. Operator clarification: **the
-actual selected action and tooltip do not skip**; only native selector
-chrome jumps visually as the list scrolls. Consequently, the
-`LSGrid` input, selected slot, column count, scrolling transport
-and 120px vertical margin remain untouched. This local clipping
-prevents the external selector from painting over tabs. It is not
-proof of smooth selector animation during scrolling. Clipping **only proves a
-render-boundary correction**; it does not prove whether a row was
-skipped logically. The `LSScrollViewer.ScrollToElement` transport
-still follows `ActionRadials.FocusedElement` with
-`VerticalScrollOffsetMargin=120`. That margin is historic native
-evidence, not a measured cause of this user's reported row skip.
-Do not change it speculatively. Runtime acceptance requires
-disambiguating logical `LocalFocus.DataContext` from visible
-selector position across one scroll transition.
+The 0.0.104 candidate retains the same 84px tab header and 850px
+action row but makes **one shared row-level clip surface**
+(`CAM_ActionRowClip`, `Grid.Row=1`, `Grid.ColumnSpan=2`) for
+both the native FixedSideBar and main action grid. The individual
+selector/list regions no longer clip independently at their
+shared column boundary. Each 104-in-120 LSGrid has 16px of
+vertical clearance within the same fixed row: the list and viewport
+are 818px tall with 16px insets top and bottom. BG3's
+`LocalFocusSelector -> SelectorTemplate` stays in the same
+coordinate root as its owning list. Native scroll transport
+`ActionRadials.FocusedElement -> LSScrollViewer.ScrollToElement`,
+120px focus-follow margin, `LSGrid` columns and live
+`VMHotBarSlot` identity remain unchanged.
+
+The inset is derived from the **120px cell versus 104px icon
+size**, not from an inspected native selector border geometry.
+Consequently static tests prove shared clipping and clearance
+structure but cannot guarantee the complete ring is visible on all
+edges. A combined game check remains necessary, including first
+and last visible cells; never claim a perfect visual fix from CI.
+
+## Metamagic entry wake uses native LocalFocus (issue #125)
+
+Runtime v0.0.103 showed a native sidebar focus frame after LB/RB,
+but no tooltip and no executable A target. A visible selector only
+means `LocalFocus` can be rendered; it does not prove
+`ActionRadials.Tag` was refreshed. The main `HotBarList`
+already has a **proven** 70ms `SelectionChanged` wake after
+programmatic selection, to publish `LocalFocus.DataContext`
+into the native tooltip lifecycle and `ActionRadials.Tag`
+even when `LocalFocusChanged` did not fire.
+
+`CAM_FixedSideBarList` lacked that wake. It now mirrors
+the same native `SelectionChanged` transition, guarded by
+active Metamagic provider mode, enabled sidebar and a
+non-null `LocalFocus.DataContext`. It publishes the exact
+BG3 `VMHotBarSlot` rather than fabricating a slot from
+`SelectedItem`. The explicit LB/RB `SetMoveFocusAction`
+and selected concrete cell handoff remain. Any lack of a
+real `LocalFocus` after that needs separate engine proof,
+not a fake tooltip or unconditional UseSlot dispatch.
 
 ## Controller scrolling
 
