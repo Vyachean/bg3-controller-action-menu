@@ -174,9 +174,16 @@ a `VMCharacterAction` is an executable `VMHotBarSlot`.
 It never emits a 'complete action parity' claim based on a
 display name, icon, or one spell ID; spell resource/upcast
 variants require a verified shared native identity.
-The old Script Extender API and Windows Xbox App support
-are runtime hypotheses, so this tool must NOT be installed
-with the shipping PAK or imposed on normal users.
+Official [Norbyte/bg3se #593](https://github.com/Norbyte/bg3se/issues/593)
+remains **open for Xbox Play Anywhere / Microsoft Store BG3**.
+The unofficial SE compatibility build targeting Microsoft package
+`1.8.907.0` is not evidence it supports our Xbox App `1.8.910.0`.
+The optional Script Extender Noesis inventory **cannot be treated
+as the primary Xbox App execution path** and must NOT be installed
+with the shipping PAK, recommended as a prerequisite or imposed
+on normal users. Issue #138 pursues BG3-owned ControllerHotBars
+native slot fallback without SE; it is not yet implemented.
+Do not claim playable parity from an optional dev-only probe.
 Do not ask the operator to enumerate dozens of spells or
 manually compare radial tiles. The next gate is a validated
 native executable identity adapter and missing-function
