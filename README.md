@@ -158,3 +158,15 @@ and adapts the native controller resource preview to the exact
 installed keyboard HotBar point-group template and local sizes.
 The operator does **not** need another capture. In-game visual
 parity remains to be confirmed; the 0.0.91 glyph workaround is retired.
+
+
+### 0.0.94 temporary visual diagnostic
+
+The successful v0.0.93 installation did not fix controller resource
+icons. Version 0.0.94 is intentionally a diagnostic package **not** a
+finished UI release. The same VBS installs it normally. Every native
+resource tab temporarily displays a yellow `94` and a magenta `B`
+reference icon while preserving the original point symbols. A single
+in-game screenshot of the resource tab strip establishes which renderer
+or image source is actually active. Remove this overlay in the next
+evidence-based fix.
