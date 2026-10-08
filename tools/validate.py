@@ -519,7 +519,7 @@ def validate_semantics() -> list[str]:
                 f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: provider conditions must read CAM_ProviderModeMarker, not the resource UIElement scroll target"
             )
         guard = '<b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>'
-        for side in ("CAM_TabLeft", "CAM_TabRight"):
+        for side, expected in (("CAM_TabLeft", 9), ("CAM_TabRight", 7)):
             button = re.search(
                 r'<ls:LSButton\b[^>]*x:Name="' + side + r'"[\s\S]*?</ls:LSButton>',
                 runtime_text,
@@ -528,12 +528,12 @@ def validate_semantics() -> list[str]:
                 re.findall(r'<b:EventTrigger EventName="Click">[\s\S]*?</b:EventTrigger>', button.group())
                 if button else []
             )
-            if len(clicks) != 8 or any(
+            if len(clicks) != expected or any(
                 guard not in click or "{Binding Tag, ElementName=CAM_ProviderModeMarker}" not in click
                 for click in clicks
             ):
                 errors.append(
-                    f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: {side} must serialize all eight mode transitions against the dedicated provider marker"
+                    f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: {side} must serialize all expected mode transitions against the dedicated provider marker"
                 )
 
         if (
