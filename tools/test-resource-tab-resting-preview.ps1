@@ -25,9 +25,18 @@ if (-not $resourceTabTemplate.Value.Contains('<ls:LSButton Padding="0"') -or
     -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
     -not $resourceTabTemplate.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
     -not $resourceTabTemplate.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
-    -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">') -or
-    $resourceTabTemplate.Value.Contains('IsSelected')) {
-    throw "Resource tabs must use the literal captured HotBar quantity renderer without controller-selected visual state."
+    -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">')) {
+    throw "Resource tabs must retain the literal captured HotBar quantity renderer."
+}
+# Container selection changes only the *image chrome*. It must not supply or
+# mutate the action preview's ActionResource/Cost or the FocusedTooltip data.
+$selectedChrome = '<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>'
+$specialGuard = '<Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>'
+if (-not $resourceTabTemplate.Value.Contains($selectedChrome) -or
+    -not $resourceTabTemplate.Value.Contains($specialGuard) -or
+    $resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding IsSelected') -or
+    $resourceTabTemplate.Value.Contains('DataContext="{Binding IsSelected')) {
+    throw "Controller selection may affect native Bg/BgHL chrome only, never the quantity preview or action identity."
 }
 
 $hotBarList = [regex]::Match(
