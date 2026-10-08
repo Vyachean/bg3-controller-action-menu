@@ -1091,6 +1091,12 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <!-- Restore a native resource-filtered spell grid alongside
+                                         metamagic, even when arriving from Items/Passives. -->
+                                    <b:InvokeCommandAction
+                                        IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                        Command="{Binding FilterActionResourceCommand}"
+                                        CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
                                 </b:EventTrigger>
 
@@ -1218,10 +1224,22 @@
                                 <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+                                <!-- Meta shoulder entry focuses its parallel native-slot region. -->
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
 
@@ -1316,6 +1334,12 @@
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                    <!-- Restore a native resource-filtered spell grid alongside
+                                         metamagic, even when arriving from Items/Passives. -->
+                                    <b:InvokeCommandAction
+                                        IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                        Command="{Binding FilterActionResourceCommand}"
+                                        CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
                                 </b:EventTrigger>
 
@@ -1369,10 +1393,22 @@
                                 <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:TimerTrigger>
+                                <!-- Meta shoulder entry focuses its parallel native-slot region. -->
+                                <b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
 
@@ -1989,10 +2025,8 @@
                                             <Setter Property="ItemsPanel"
                                                     Value="{StaticResource CAM_AllGroupsPanel}"/>
                                         </MultiDataTrigger>
-                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
-                                            <Setter Property="ItemsSource"
-                                                    Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"/>
-                                        </DataTrigger>
+                                        <!-- Native FixedSideBar is rendered independently.
+                                             Entering its provider mode must not replace spells. -->
                                         <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList}"/>
