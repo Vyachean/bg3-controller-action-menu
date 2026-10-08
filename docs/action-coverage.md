@@ -117,10 +117,10 @@ previously absent from the checklist are native **`HotBarTemplate`
 content providers**, not ordinary `ItemsSource` list bindings:
 
 - `SummonHotBar` (current original `HotBar.xaml:1759`, visibility
-  by `SummonHotBar.SlotList.Count`) is **not directly bound in CAM**.
-  An executable native VMHotBar route for these slots must be proven or
-  implemented before full parity can be accepted. It is not acceptable
-  to assume `KeyboardHotBars` or `SingleHotBar` already contains them.
+  by `SummonHotBar.SlotList.Count`) was absent before #146. CAM now binds
+  `SummonHotBar.SlotList` as a native executable override and keeps
+  `SingleHotBar` above it when nested. Gameplay behavior remains
+  unverified; do not assume the other providers contain its slots.
 - `PlayerCharacterProperties.CustomHotBar` (current original
   `HotBar.xaml:1752–1754`) is a configured native deck not directly
   bound in CAM. This **does not** justify bringing back configurable
