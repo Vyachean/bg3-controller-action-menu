@@ -945,7 +945,7 @@ if (-not $resourceTabTemplate.Success -or
 # glyph template, not reproduce a smaller controller icon/fallback by hand.
 $keyboardPointGroup = [regex]::Match(
     $text,
-    '(?s)<ControlTemplate\\s+x:Key="CAM_KeyboardHotBarPointGroup"[^>]*>.*?</ControlTemplate>'
+    '(?s)<ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup"[^>]*>.*?</ControlTemplate>'
 )
 if (-not $keyboardPointGroup.Success -or
     -not $keyboardPointGroup.Value.Contains('ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"') -or
