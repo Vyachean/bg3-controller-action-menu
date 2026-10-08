@@ -749,3 +749,12 @@ Passives remains the sole synthetic CAM entry. Item quantities, action-grid focu
 Older 0.0.66–0.0.67 resource-strip attempts proved that assigning `LSScrollViewer.ScrollToElement` alone did not move the non-focused shoulder strip. Fresh Patch 8 capture exposes the missing native commit step in `PreloadedActionRadials_c.xaml`: after `ScrollToElement` computes `TargetPosition`, `TargetPositionChanged` explicitly writes that value to `HorizontalScrollOffset`.
 
 0.0.85 may therefore retry concrete-UIElement scrolling only as this full native lifecycle. Provider mode must be separated into `CAM_ProviderModeMarker.Tag`; `CAM_ResourceTabs.Tag` stores only the selected concrete resource container. The dynamic resource viewport is bounded while Cantrips / Items / Metamagic / Passives / All remain fixed and visible. This is not equivalent to the previously rejected ScrollToElement-only, AutoScrollBehavior, index/item-target, or wrapped-row experiments.
+
+
+## Runtime correction — 0.0.87 -> 0.0.88 tab controls
+
+The combined in-game milestone reported that LB/RB no longer switched tabs and the resource strip looked less aligned than native HotBar. Static readback found a concrete 0.0.85 regression: 22 XAML mode checks still used `{Binding Tag, ElementName=CAM_ResourceTabs}` **after** that list's `Tag` changed to a concrete selected `ListBoxItem` scroll target. Comparisons against `CAM_*ModeToken` or `{x:Null}` are then invalid. Every mode reader in the main runtime must bind `CAM_ProviderModeMarker.Tag`, while `CAM_ResourceTabs.Tag` must be used ONLY for scrolling.
+
+LB has nine and RB has seven mutually exclusive `Click` transitions (sixteen total). Every transition now guards `CAM_TabCycleMarker.Tag == null` and marks its turn before changing provider mode. Do not let a later Click trigger act on an already changed provider during the same input event. Preserve delayed first-cell focus, resource selection, native `UseSlotCommand` and `TargetPositionChanged` scrolling; do not add another input binding or timer.
+
+Special provider frames reuse exactly the native `CAM_ResourceBackgroundMargin` used by original Patch 8 resource chrome. Cantrips uses the native 72x72 `IconMiniCantrip` presentation. Items/Passives/All use consistently sized icons. These extra groups are CAM-only and cannot be claimed to have a literal equivalent in vanilla ActionResourcesList. This is a static correction; only a future single combined game test can establish controller runtime behavior.

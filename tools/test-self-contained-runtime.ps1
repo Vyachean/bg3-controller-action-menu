@@ -747,6 +747,51 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
     throw "LB/RB must form one resource-plus-Cantrips-plus-Items-plus-Metamagic-plus-Passives-plus-All cycle without ForceSelect."
 }
 
+# Regression 0.0.85: CAM_ResourceTabs.Tag was repurposed for the selected
+# concrete UIElement scroll target, but numerous shoulder/nested mode checks
+# still compared that UIElement with string mode tokens. That disables LB/RB.
+if ([regex]::IsMatch($text, '\{Binding Tag,\s*ElementName=CAM_ResourceTabs\}')) {
+    throw "Resource list Tag is the scroll target, never the provider mode; all mode readers must bind CAM_ProviderModeMarker."
+}
+$modeRead = '{Binding Tag, ElementName=CAM_ProviderModeMarker}'
+$clickGuard = '<b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>'
+foreach ($shoulderCase in @(
+    @{ Name = "LB"; Button = $tabLeft; Expected = 9 },
+    @{ Name = "RB"; Button = $tabRight; Expected = 7 }
+)) {
+    $shoulder = $shoulderCase.Button
+    $clicks = @([regex]::Matches($shoulder.Value, '<b:EventTrigger EventName="Click">[\s\S]*?</b:EventTrigger>', [System.Text.RegularExpressions.RegexOptions]::Singleline))
+    if ($clicks.Count -ne $shoulderCase.Expected) {
+        throw "$($shoulderCase.Name) must have $($shoulderCase.Expected) guarded transitions; got $($clicks.Count)."
+    }
+    foreach ($click in $clicks) {
+        if (-not $click.Value.Contains($modeRead) -or
+            -not $click.Value.Contains($clickGuard) -or
+            -not $click.Value.Contains('CAM_TabCycleMarker')) {
+            throw "Each shoulder transition must read the provider marker and consume one Click before a later handler evaluates."
+        }
+    }
+}
+if ($text.Contains('TargetName="CAM_ResourceTabs" PropertyName="Tag" Value="{StaticResource CAM_') -or
+    -not $text.Contains('ls:LSScrollViewer.ScrollToElement="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"')) {
+    throw "Provider-mode refactor must leave concrete selected ListBoxItem scrolling intact."
+}
+
+# Special providers have no native VMActionResourceCostPreview; their frames
+# must still use the *same* captured HotBar resource-box chrome and margins.
+$specialStart = $text.IndexOf('<Grid x:Name="CAM_CantripsTab"')
+$specialEnd = if ($specialStart -ge 0) { $text.IndexOf('</StackPanel>', $specialStart) } else { -1 }
+if ($specialStart -lt 0 -or $specialEnd -le $specialStart) {
+    throw "Cannot find the special-provider strip."
+}
+$specialTabs = $text.Substring($specialStart, $specialEnd - $specialStart)
+if ([regex]::Matches($specialTabs, 'Margin="\{StaticResource CAM_ResourceBackgroundMargin\}"').Count -ne 10 -or
+    [regex]::Matches($specialTabs, 'Width="72"').Count -lt 5 -or
+    -not $specialTabs.Contains('Source="{StaticResource IconMiniCantrip}"') -or
+    -not [regex]::IsMatch($specialTabs, 'Source="\{StaticResource IconMiniCantrip\}"\s+Width="72"\s+Height="72"')) {
+    throw "Special resource-box tabs must align chrome with the captured HotBar and preserve the native Cantrips glyph scale."
+}
+
 if ([regex]::Matches($resourceTabs.Value, '<b:EventTrigger EventName="SelectionChanged">').Count -ne 5 -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleRightToken') -or
     -not $resourceTabs.Value.Contains('CAM_TabCycleLeftToken') -or

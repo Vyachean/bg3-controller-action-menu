@@ -231,7 +231,7 @@
                                 <b:ComparisonCondition LeftOperand="{Binding SlotList.Count}"
                                                        Operator="GreaterThan"
                                                        RightOperand="0"/>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_AllModeToken}"/>
                             </b:ConditionalExpression>
@@ -257,7 +257,7 @@
                                 <b:ComparisonCondition LeftOperand="{Binding SlotList.Count}"
                                                        Operator="GreaterThan"
                                                        RightOperand="0"/>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_AllModeToken}"/>
                             </b:ConditionalExpression>
@@ -660,7 +660,7 @@
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                             </b:ConditionalExpression>
@@ -674,7 +674,7 @@
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_ItemsModeToken}"/>
                             </b:ConditionalExpression>
@@ -688,7 +688,7 @@
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_AllModeToken}"/>
                             </b:ConditionalExpression>
@@ -704,7 +704,7 @@
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}"
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                             </b:ConditionalExpression>
@@ -750,7 +750,9 @@
                                 <!-- All -> Passives. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -765,7 +767,9 @@
                                 <!-- Passives -> Metamagic when the native FixedSideBar exists. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_MetamagicTab}" Operator="Equal" RightOperand="Visible"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -781,7 +785,9 @@
                                 <!-- Passives -> Items when Metamagic is absent. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_MetamagicTab}" Operator="Equal" RightOperand="Collapsed"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -798,7 +804,9 @@
                                 <!-- Metamagic -> Items. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -814,7 +822,9 @@
                                 <!-- Items -> Cantrips when available. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -831,7 +841,9 @@
                                 <!-- Items -> last native resource when Cantrips is unavailable. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips}" Operator="Equal" RightOperand="{StaticResource FalseValue}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -847,7 +859,9 @@
                                 <!-- Cantrips -> last native resource. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_CantripsModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_CantripsModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -862,7 +876,9 @@
                                 <!-- First native resource -> All fallback. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="0"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -878,7 +894,9 @@
                                 <!-- Ordinary previous native resource. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding SelectedIndex, ElementName=CAM_ResourceTabs}" Operator="GreaterThan" RightOperand="0"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleLeftToken}"/>
@@ -922,7 +940,9 @@
                                 <!-- All -> first native resource. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_AllModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding SelectedItem, ElementName=CAM_ResourceTabs}" Operator="NotEqual" RightOperand="{x:Null}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -938,7 +958,9 @@
                                 <!-- Passives -> All fallback. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_PassivesModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -953,7 +975,9 @@
                                 <!-- Metamagic -> Passives. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -968,7 +992,9 @@
                                 <!-- Items -> Metamagic when the native FixedSideBar exists. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_MetamagicTab}" Operator="Equal" RightOperand="Visible"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -984,7 +1010,9 @@
                                 <!-- Items -> Passives when Metamagic is absent. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_ItemsModeToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Visibility, ElementName=CAM_MetamagicTab}" Operator="Equal" RightOperand="Collapsed"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -1000,7 +1028,9 @@
                                 <!-- Cantrips -> Items. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{StaticResource CAM_CantripsModeToken}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_CantripsModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
@@ -1016,7 +1046,9 @@
                                 <!-- Resource -> next resource; wrap is handled by CAM_ResourceTabs.SelectionChanged. -->
                                 <b:EventTrigger EventName="Click">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ResourceTabs}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <!-- Block follow-on provider transitions during the same shoulder Click. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{x:Null}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{StaticResource CAM_TabCycleRightToken}"/>
                                     <ls:SelectNextListBoxItem TargetObject="{Binding ElementName=CAM_ResourceTabs}" ForceMode="Cycle"/>
@@ -1264,7 +1296,8 @@
                                     <Image Source="{StaticResource CAM_BoxResourceBg}"/>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResource}">
+                                           Source="{StaticResource CAM_BoxResource}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
@@ -1278,7 +1311,8 @@
                                     </Image>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResourceH}">
+                                           Source="{StaticResource CAM_BoxResourceH}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -1291,8 +1325,8 @@
                                         </Image.Style>
                                     </Image>
                                     <Image Source="{StaticResource IconMiniCantrip}"
-                                           Width="52"
-                                           Height="52"
+                                           Width="72"
+                                           Height="72"
                                            Stretch="None"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
@@ -1312,7 +1346,8 @@
                                     <Image Source="{StaticResource CAM_BoxResourceBg}"/>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResource}">
+                                           Source="{StaticResource CAM_BoxResource}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
@@ -1326,7 +1361,8 @@
                                     </Image>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResourceH}">
+                                           Source="{StaticResource CAM_BoxResourceH}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -1339,8 +1375,8 @@
                                         </Image.Style>
                                     </Image>
                                     <Image Source="{StaticResource CAM_ItemsProviderIcon}"
-                                           Width="40"
-                                           Height="40"
+                                           Width="52"
+                                           Height="52"
                                            Stretch="Uniform"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
@@ -1361,7 +1397,8 @@
                                     <Image Source="{StaticResource CAM_BoxResourceBg}"/>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResource}">
+                                           Source="{StaticResource CAM_BoxResource}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
@@ -1375,7 +1412,8 @@
                                     </Image>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResourceH}">
+                                           Source="{StaticResource CAM_BoxResourceH}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -1409,7 +1447,8 @@
                                     <Image Source="{StaticResource CAM_BoxResourceBg}"/>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResource}">
+                                           Source="{StaticResource CAM_BoxResource}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
@@ -1423,7 +1462,8 @@
                                     </Image>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResourceH}">
+                                           Source="{StaticResource CAM_BoxResourceH}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -1436,8 +1476,8 @@
                                         </Image.Style>
                                     </Image>
                                     <Image Source="pack://application:,,,/GustavNoesisGUI;component/Assets/Tooltips/Icons/PassiveFeature_Generic.png"
-                                           Width="40"
-                                           Height="40"
+                                           Width="52"
+                                           Height="52"
                                            Stretch="Uniform"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
@@ -1456,7 +1496,8 @@
                                     <Image Source="{StaticResource CAM_BoxResourceBg}"/>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResource}">
+                                           Source="{StaticResource CAM_BoxResource}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Visible"/>
@@ -1470,7 +1511,8 @@
                                     </Image>
                                     <Image VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           Source="{StaticResource CAM_BoxResourceH}">
+                                           Source="{StaticResource CAM_BoxResourceH}"
+                                           Margin="{StaticResource CAM_ResourceBackgroundMargin}">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -1483,8 +1525,8 @@
                                         </Image.Style>
                                     </Image>
                                     <Image Source="{StaticResource CAM_AllProviderIcon}"
-                                           Width="40"
-                                           Height="40"
+                                           Width="52"
+                                           Height="52"
                                            Stretch="Uniform"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
