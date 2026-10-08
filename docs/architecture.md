@@ -133,6 +133,16 @@ Metamagic so it does not steal focus from the side rail. While a nested
 choice is active, a main-list focus change must not be confused with
 D-pad navigation out of the side rail.
 
+The native controller radial supplies **two** spell feedback signals:
+`Content.IsModified=True` makes the positive modified-spell glow,
+while `PlayerCharacterProperties.MetamagicActive=True` dims other
+native `SlotType=Spell` cells for which `Content.IsModified=False`.
+The resource-filtered main grid now consumes both BG3 properties,
+without inventing a compatibility classifier or changing action
+execution. `VMHotBarSlot.IsActive` may remain true after reopening
+CAM if the game still considers the passive active; the UI must not
+force-clear BG3-owned metamagic activation on close.
+
 The research source audit is [here](research/metamagic-parity-2026-10-08.md).
 Independent sidebar focus, native tooltip and B/nested transitions
 are **not** game-verified merely because the XAML and package pass CI;
