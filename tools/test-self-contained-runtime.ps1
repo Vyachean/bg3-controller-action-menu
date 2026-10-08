@@ -108,7 +108,9 @@ if ($evidence.runtimeContract.organization.mode -ne "resource-first-plus-cantrip
     $evidence.runtimeContract.organization.topLevelDimensions -ne 1 -or
     $evidence.runtimeContract.organization.primaryTabSource -ne "CurrentPlayer.UIData.ActionResourcesCostPreview" -or
     $evidence.runtimeContract.organization.primarySelectionCommand -ne "FilterActionResourceCommand" -or
-    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | FixedSideBar.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList" -or
+    $evidence.runtimeContract.organization.primaryGridSource -ne "SingleHotBar.SlotList | CurrentShownDeck.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList" -or
+    $evidence.runtimeContract.organization.parallelSidebarSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList" -or
+    $evidence.runtimeContract.organization.parallelSidebarFocus -ne "CAM_FixedSideBarList.LocalFocus.DataContext -> ActionRadials.Tag -> UseSlotCommand" -or
     $evidence.runtimeContract.organization.cantripsTabAllowed -ne $true -or
     $evidence.runtimeContract.organization.cantripsVisibility -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasCantrips" -or
     $evidence.runtimeContract.organization.cantripsCommand -ne "FilterCantripsCommand" -or
@@ -291,10 +293,10 @@ if ($sourceSwitch.modeStorage -ne "CAM_ProviderModeMarker.Tag" -or
     $sourceSwitch.directProviderNestedOverride -ne "nested flags -> SingleHotBar.SlotList" -or
     $sourceSwitch.passivesSource -ne "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.PassivesHotBar.SlotList" -or
     $sourceSwitch.providerRestoreDispatcher -ne "CAM_ProviderRestoreCommand" -or
-    $sourceSwitch.executableList -ne "HotBarList" -or
+    $sourceSwitch.executableList -ne "HotBarList + CAM_FixedSideBarList" -or
     $sourceSwitch.duplicateExecutableLists -ne $false -or
     $sourceSwitch.unprovenGameplayModeCommandsAllowed -ne $false) {
-    throw "The sole HotBarList must switch only among proven native providers and restore nested state through CAM_ProviderRestoreCommand."
+    throw "Native executable slot providers and the parallel FixedSideBar must preserve the BG3 focus/execution contract."
 }
 
 $passiveReturn = $evidence.runtimeContract.assignmentNavigation.passivesReturn
