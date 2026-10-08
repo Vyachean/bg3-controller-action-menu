@@ -17,7 +17,12 @@ $TargetExpressions = @(
     "*PreloadedActionRadials*.xaml",
     "*ActionRadials*.xaml",
     "*HotBar*.xaml",
-    "*DataTemplates.xaml",
+    # Keyboard/controller dictionaries were missing from schema-v3 (0.0.91) proof.
+    # Capture both mode-specific styles and the resource template dictionary.
+    "*DataTemplates*.xaml",
+    "*ActionResourceTemplates*.xaml",
+    "*Libs_*.xaml",
+    "*Resource*.xaml",
     "*FocusableControls*.xaml",
     "*Tooltips*.xaml",
     "*SpellBook*.xaml",
@@ -539,7 +544,11 @@ try {
         ActionRadials = @($manifest | Where-Object { $_.PackagedPath -like "*ActionRadials.xaml" -and $_.PackagedPath -notlike "*Preloaded*" })
         HotBar = @($manifest | Where-Object { $_.PackagedPath -like "*HotBar*.xaml" })
         HotBarPage = @($manifest | Where-Object { $_.PackagedPath -eq "Mods/MainUI/GUI/Pages/HotBar.xaml" })
-        DataTemplates = @($manifest | Where-Object { $_.PackagedPath -like "*DataTemplates.xaml" })
+        DataTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates.xaml" })
+        KeyboardPointTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates_k.xaml" })
+        ControllerPointTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/DataTemplates_c.xaml" })
+        ControllerActionResourceTemplates = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/ActionResourceTemplates_c.xaml" })
+        ControllerResourceImports = @($manifest | Where-Object { $_.PackagedPath -eq "Public/Game/GUI/Library/Libs_Controller.xaml" })
         Controller = @($manifest | Where-Object { $_.PackagedPath -like "*Controller.xaml" })
     }
 
