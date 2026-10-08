@@ -127,6 +127,16 @@
                        Height="104"
                        Fill="#88000000"
                        Visibility="Collapsed"/>
+            <!-- Native controller radial dims incompatible spells while the
+                 character has active metamagic. This is purely presentation:
+                 BG3 owns MetamagicActive and Content.IsModified. -->
+            <Rectangle x:Name="CAM_MetamagicIncompatibleOverlay"
+                       Width="104"
+                       Height="104"
+                       Fill="#88000000"
+                       Opacity="0.2"
+                       Visibility="Collapsed"
+                       IsHitTestVisible="False"/>
             <Image x:Name="SubSelectIndicator"
                    Source="{StaticResource IcoPlusImg}"
                    Stretch="None"
@@ -167,6 +177,19 @@
             <DataTrigger Binding="{Binding Content.IsModified}" Value="True">
                 <Setter TargetName="CAM_ModifiedSpellGlow" Property="Visibility" Value="Visible"/>
             </DataTrigger>
+            <!-- The current installed Patch 8 radial uses the native
+                 MetamagicActive + !IsModified condition to dim incompatible
+                 spell slots. Never infer compatibility from action names or
+                 resources, and do not dim item/passive slots. -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding SlotType}" Value="Spell"/>
+                    <Condition Binding="{Binding Content.IsModified}" Value="False"/>
+                    <Condition Binding="{Binding DataContext.CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="CAM_MetamagicIncompatibleOverlay" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="GenericIcon" Property="Opacity" Value="0.7"/>
+            </MultiDataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding Content.IsMetaMagic}" Value="True"/>
