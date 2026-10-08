@@ -2016,10 +2016,9 @@
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
-                                                <Condition Binding="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Value="{x:Null}"/>
+                                                <Condition Binding="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"/>
                                             </MultiDataTrigger.Conditions>
-                                            <!-- Default remains Collapsed until the sidebar owns
-                                                 a concrete VMHotBarSlot, handled below. -->
+                                            <Setter Property="Visibility" Value="Visible"/>
                                         </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -2058,6 +2057,19 @@
                                     <Setter Property="ItemTemplate" Value="{StaticResource CAM_ActionGridSlotTemplate}"/>
                                     <Setter Property="ItemsPanel" Value="{StaticResource CAM_ActionGridPanel}"/>
                                     <Style.Triggers>
+                                        <!-- Keep spells visible beside the sidebar, but never
+                                             let both VMHotBarSlot lists own controller focus.
+                                             BG3 nested variants/upcast/throw temporarily
+                                             reactivate the central list. -->
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                                                <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                                                <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
+                                                <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </MultiDataTrigger>
                                         <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}">
                                             <Setter Property="ItemsSource"
                                                     Value="{Binding CurrentShownDeck.SlotList}"/>
@@ -2118,24 +2130,12 @@
                             </ls:LSListBox.Template>
 
                             <b:Interaction.Triggers>
-                                <!-- Spatial navigation back from the fixed sidebar restores
-                                     the normal resource/provider focus authority. -->
+                                <!-- Only LB/RB may change provider state. Main-list
+                                     LocalFocusChanged must not reset the Metamagic tab. -->
                                 <b:EventTrigger EventName="LocalFocusChanged">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}" Operator="NotEqual" RightOperand="{x:Null}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
-                                        <!-- A real nested choice temporarily focuses the
-                                             central list; that is not D-pad navigation
-                                             away from the metamagic sidebar. -->
-                                        <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="False"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="False"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
-                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
-                                </b:EventTrigger>
-                                <b:EventTrigger EventName="LocalFocusChanged">
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                                             PropertyName="Content"
                                                             Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
@@ -2157,6 +2157,10 @@
                                 </b:EventTrigger>
 
                                 <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
@@ -2179,6 +2183,7 @@
                                                 <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
                                                                        Operator="NotEqual"
                                                                        RightOperand="{x:Null}"/>
+                                                <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
                                             </b:ConditionalExpression>
                                         </b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
@@ -2209,8 +2214,24 @@
                                  Panel.ZIndex="2"
                                  HorizontalAlignment="Left"
                                  VerticalAlignment="Top"
-                                 Template="{StaticResource SelectorTemplate}"
-                                 Visibility="{Binding Visibility, ElementName=HotBarList}"/>
+                                 Template="{StaticResource SelectorTemplate}">
+                            <Control.Style>
+                                <Style TargetType="Control">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                                                <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                                                <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
+                                                <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Control.Style>
+                        </Control>
                     </Grid>
                 </Grid>
             </Grid>
