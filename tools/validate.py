@@ -664,7 +664,7 @@ def validate_semantics() -> list[str]:
                 '$token = $env:GITHUB_TOKEN',
                 '$headers["Authorization"] = "Bearer $token"',
                 'Task = "install"',
-                "This milestone restores normal self-contained PAK install/update",
+                "0.0.93 restores the tested self-contained PAK install/update entry",
                 'Get-Asset -Release $release -Name "install-latest.ps1"',
                 '& $installer @installArgs',
                 'ReadOnly = $false',
