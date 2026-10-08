@@ -82,7 +82,19 @@ navigation without actual engine proof. Do not alter the accepted
 
 The operator observed a row seeming to be skipped at the action
 grid scroll edge, with the native external selector rendering above
-the grid into resource tabs. `CAM_MainSelector` is a sibling of
+the grid into resource tabs. The operator clarified that the **logical
+focus always reaches the correct action/tooltip**, and it is only the
+native selector frame that appears to skip at the scroll boundary.
+Thus no LSGrid navigation/SelectedIndex correction is justified.
+
+Separately the operator reported that entering the Metamagic tab leaves
+no initial selected controller focus on the side rail. The old LB/RB
+entry handler selected slot zero but did not explicitly move focus
+into the sidebar list. It must use native `ls:SetMoveFocusAction` to
+`CAM_FixedSideBarList` after selecting the Metamagic provider mode
+and before the existing index -1→0 concrete slot handoff, on
+**both** LB/RB directions. Do not let LocalFocusChanged set the
+provider mode again or reintroduce dual focus. `CAM_MainSelector` is a sibling of
 `HotBarList` and is outside its inner `LSScrollViewer` clip.
 The action and fixed sidebar row containers must have
 `ClipToBounds=True`. This source-backed clipping change cannot
