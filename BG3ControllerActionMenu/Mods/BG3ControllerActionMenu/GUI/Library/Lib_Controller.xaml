@@ -1939,6 +1939,20 @@
                                               ls:TooltipExtender.Context="Hotbar"/>
                             </ls:LSListBox.ToolTip>
                             <b:Interaction.Triggers>
+                                <!-- Spatial navigation into the side rail must also work
+                                     without first selecting the Metamagic shoulder tab. -->
+                                <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="NotEqual" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
+                                                           Command="{Binding FilterActionResourceCommand}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                                </b:EventTrigger>
                                 <b:EventTrigger EventName="LocalFocusChanged">
                                     <!-- The same ActionRadials.Tag -> UseSlotCommand route
                                          used by the main grid must own the side selection. -->
@@ -2071,6 +2085,17 @@
                             </ls:LSListBox.Template>
 
                             <b:Interaction.Triggers>
+                                <!-- Spatial navigation back from the fixed sidebar restores
+                                     the normal resource/provider focus authority. -->
+                                <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}" Operator="NotEqual" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
+                                </b:EventTrigger>
                                 <b:EventTrigger EventName="LocalFocusChanged">
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                                             PropertyName="Content"
