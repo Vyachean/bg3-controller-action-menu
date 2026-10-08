@@ -171,6 +171,10 @@ local function snapshot(reason)
         SelectedCharacterPresent = character ~= nil,
         NativeSourceCollections = {},
         CamVisibleLists = {},
+        CamModeMarker = tostring(prop(attempt("provider-mode", function()
+            return page:Find("CAM_ProviderModeMarker")
+        end), "Tag") or ""),
+        ActionRadialsSlotTag = describe(prop(page, "Tag")),
         NestedFlags = {
             IsShowingAContainerWithVariants = prop(dc, "IsShowingAContainerWithVariants"),
             IsSelectingUpcastedSpell = prop(dc, "IsSelectingUpcastedSpell"),
