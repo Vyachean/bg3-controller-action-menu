@@ -281,12 +281,70 @@
         </ls:LSListBox>
     </DataTemplate>
 
-    <!-- Exact keyboard DataTemplates_k.xaml point-group mapping from the installed
-         BG3 1.8.910.0 Game.pak. Use the native shared DataTemplates.xaml glyph
-         (including state transitions) instead of controller-sized templates.
-         Controller LB/RB selection remains on the outer LSListBox. -->
-    <ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup">
-        <ContentPresenter ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"/>
+    <!-- 0.0.94 proved that independently size-constrained converter icons render
+         even while native LSActionPointResources clips oversized point images.
+         Keep every native resource group/state, but bound each point bitmap in
+         its own image layout as in diagnostic B, not Stretch=None. -->
+    <DataTemplate x:Key="CAM_KeyboardHotBarPointGlyph">
+        <Image x:Name="ResourceGlyph"
+               Width="24"
+               Height="24"
+               Stretch="Uniform"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center">
+            <Image.Source>
+                <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
+                              FallbackValue="{StaticResource TypeIdToSourceFallback}">
+                    <Binding Source="{StaticResource ActionResourcePointIconsPath}"/>
+                    <Binding Path="DataContext.TypeId"
+                             RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
+                </MultiBinding>
+            </Image.Source>
+        </Image>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
+                         Value="Highlight">
+                <Setter TargetName="ResourceGlyph" Property="Source">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
+                                      FallbackValue="{StaticResource DefaultHighlightTypeIdFallback}">
+                            <Binding Source="{StaticResource ActionResourcePointHighlightIconsPath}"/>
+                            <Binding Path="DataContext.TypeId"
+                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
+                         Value="Used">
+                <Setter TargetName="ResourceGlyph" Property="Source">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
+                                      FallbackValue="{StaticResource DefaultUsedTypeIdFallback}">
+                            <Binding Source="{StaticResource ActionResourcePointUsedIconsPath}"/>
+                            <Binding Path="DataContext.TypeId"
+                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ActionPointState, RelativeSource={RelativeSource AncestorType={x:Type ls:LSActionPoint}}}"
+                         Value="Missing">
+                <Setter TargetName="ResourceGlyph" Property="Source">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
+                                      FallbackValue="{StaticResource DefaultMissingTypeIdFallback}">
+                            <Binding Source="{StaticResource ActionResourcePointMissingIconsPath}"/>
+                            <Binding Path="DataContext.TypeId"
+                                     RelativeSource="{RelativeSource AncestorType={x:Type ls:LSActionPointResources}}"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    <ControlTemplate x:Key="CAM_KeyboardHotBarPointGroup" TargetType="{x:Type ls:LSActionPoint}">
+        <ContentPresenter ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"/>
     </ControlTemplate>
 
     <!-- Controller selection is transport only. Native resource content is the current Patch 8
@@ -439,51 +497,6 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <!-- TEMPORARY 0.0.94 DIAGNOSTIC. B = direct icon-source probe;
-                     native LSActionPointResources at the center is A.
-                     Both receive the same native VMActionResourceCostPreview,
-                     but B bypasses LSActionPointResources, ActionPointTemplate,
-                     controller point grouping and resource point measurements. -->
-                <Border x:Name="CAM_DiagnosticDirectPointFrame"
-                        Width="26"
-                        Height="30"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Background="#DD202030"
-                        Panel.ZIndex="50"
-                        IsHitTestVisible="False">
-                    <Grid>
-                        <Image x:Name="CAM_DiagnosticDirectPointGlyph"
-                               Width="20"
-                               Height="20"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Top"
-                               Stretch="Uniform">
-                            <Image.Source>
-                                <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
-                                              FallbackValue="{StaticResource TypeIdToSourceFallback}">
-                                    <Binding Source="{StaticResource ActionResourcePointIconsPath}"/>
-                                    <Binding Path="ActionResource.TypeId"/>
-                                </MultiBinding>
-                            </Image.Source>
-                        </Image>
-                        <TextBlock Text="B"
-                                   FontSize="10"
-                                   FontWeight="Bold"
-                                   Foreground="#FFFF00FF"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Bottom"/>
-                    </Grid>
-                </Border>
-                <TextBlock x:Name="CAM_DiagnosticTemplateFingerprint"
-                           Text="94"
-                           FontSize="11"
-                           FontWeight="Bold"
-                           Foreground="#FFFFFF00"
-                           HorizontalAlignment="Left"
-                           VerticalAlignment="Top"
-                           Panel.ZIndex="51"
-                           IsHitTestVisible="False"/>
             </Grid>
         </ls:LSButton>
 
