@@ -518,6 +518,123 @@ def validate_native_throw_world_exit(runtime: str) -> list[str]:
     return errors
 
 
+
+def validate_native_toggle_notifications(runtime: str) -> list[str]:
+    """Protect exact original game-owned state notifications, never CAM input.
+
+    Source: installed 1.8.910.0 PreloadedActionRadials_c.xaml:22,32-53,
+    1830-1886. The animation and UI layer remain controller-only visuals.
+    """
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"native controller state notification XAML invalid: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    def named(name: str) -> list[ET.Element]:
+        return [node for node in root.iter() if _attribute(node.attrib, "Name") == name]
+
+    notices = named("CAM_ControlNotifications")
+    if len(notices) != 1 or local(notices[0]) != "LSNineSliceImage":
+        return ["native controller toggle notification overlay missing or duplicated"]
+    notice = notices[0]
+    props = {
+        "IsHitTestVisible": "False",
+        "Focusable": "False",
+        "Visibility": "Collapsed",
+        "Opacity": "0",
+        "Style": "{StaticResource CAM_NotificationBG9Slice}",
+    }
+    if any(_attribute(notice.attrib, key) != value for key, value in props.items()):
+        return ["native toggle notification must be noninteractive and hidden at rest"]
+
+    style = [node for node in root if local(node) == "Style"
+             and _attribute(node.attrib, "Key") == "CAM_NotificationBG9Slice"]
+    image = [node for node in root if local(node) == "ImageSource"
+             and _attribute(node.attrib, "Key") == "CAM_NotificationBg"]
+    if len(style) != 1 or len(image) != 1 or not (
+        image[0].text and "Core;component/Assets/Notification/smallNotice_bg.png" in image[0].text
+    ):
+        return ["native toggle notification must reuse BG3's original background asset"]
+
+    animations = [node for node in root if local(node) == "Storyboard"
+                  and _attribute(node.attrib, "Key") == "CAM_FadeInNotification"]
+    if len(animations) != 1:
+        return ["native toggle notification must retain original fade storyboard"]
+    sequence = [
+        (_attribute(frame.attrib, "KeyTime"), _attribute(frame.attrib, "Value"))
+        for frame in animations[0].iter()
+        if local(frame) == "LinearDoubleKeyFrame"
+    ]
+    if sequence != [("0:0:0.0", "0"), ("0:0:0.3", "1"),
+                    ("0:0:1.2", "1"), ("0:0:1.5", "0")]:
+        return ["native toggle notification fade-in/out timing must match BG3"]
+
+    all_triggers = [node for node in notice.iter()
+                    if local(node) == "PropertyChangedTrigger"]
+    if len(all_triggers) != 4:
+        return ["native controller toggle feedback requires exactly four state transitions"]
+
+    expected = {
+        ("HasRangedSetActive", "ToggleWeaponSet", "HasRangedSetActive", "True"):
+            "h6e99c201gc607g4da9gba50gb83f93d8a6e6",
+        ("HasRangedSetActive", "ToggleWeaponSet", "HasMeleeSetActive", "True"):
+            "hfaac6c41gc244g45d5g952agb45eb21ee282",
+        ("IsDualWieldingToggledOn", "ToggleDualWield", "IsDualWieldingToggledOn", "True"):
+            "hee8cf049gc819g4cd4g8b3ag7a0acc1f2f1b",
+        ("IsDualWieldingToggledOn", "ToggleDualWield", "IsDualWieldingToggledOn", "False"):
+            "h69107c78gd9efg4fd2ga137g427cc0280604",
+    }
+    errors: list[str] = []
+    seen = {}
+    for trigger in all_triggers:
+        bound = _attribute(trigger.attrib, "Binding") or ""
+        watched = next((part for part in
+                        ("HasRangedSetActive", "IsDualWieldingToggledOn")
+                        if bound == "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties." + part + "}"), None)
+        clauses = [node for node in trigger.iter()
+                   if local(node) == "ComparisonCondition"]
+        if len(clauses) != 2:
+            errors.append("native toggle notification predicates must retain press and game state")
+            continue
+        presses = [
+            (_attribute(n.attrib, "LeftOperand"), _attribute(n.attrib, "Operator"),
+             _attribute(n.attrib, "RightOperand"))
+            for n in clauses
+        ]
+        pressed = next((p for p in ("ToggleWeaponSet", "ToggleDualWield")
+                        if ("{Binding ElementName=" + p + ", Path=IsPressed}", "Equal", "True") in presses), None)
+        state = next(((prop, value)
+                      for prop in ("HasRangedSetActive", "HasMeleeSetActive", "IsDualWieldingToggledOn")
+                      for value in ("True", "False")
+                      if ("{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties." + prop + "}",
+                          "Equal", value) in presses), None)
+        if watched is None or pressed is None or state is None:
+            errors.append("native toggle notification lost native pressed/state predicate")
+            continue
+        key = (watched, pressed, state[0], state[1])
+        changed = [node for node in trigger.iter()
+                   if local(node) == "ChangePropertyAction"
+                   and _attribute(node.attrib, "TargetName") == "CAM_NotificationText"
+                   and _attribute(node.attrib, "PropertyName") == "Text"]
+        storyboard = [node for node in trigger.iter()
+                      if local(node) == "ControlStoryboardAction"
+                      and _attribute(node.attrib, "Storyboard") == "{StaticResource CAM_FadeInNotification}"]
+        if len(changed) != 1 or len(storyboard) != 1:
+            errors.append("native toggle notification must update text and play BG3 fade")
+            continue
+        seen[key] = _attribute(changed[0].attrib, "Value")
+
+    if set(seen) != set(expected) or any(
+        seen.get(k) != ("{Binding Source='" + val + "', Converter={StaticResource TranslatedStringConverter}}")
+        for k, val in expected.items()
+    ):
+        errors.append("native controller toggle feedback source states/labels changed")
+    return errors
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -556,6 +673,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     errors.extend(validate_controller_refusal_feedback(runtime))
     errors.extend(validate_native_weapon_switch(runtime))
     errors.extend(validate_native_throw_world_exit(runtime))
+    errors.extend(validate_native_toggle_notifications(runtime))
 
     route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
@@ -710,6 +828,31 @@ def main() -> int:
         if not any("appear only in the item picker" in err
                    for err in validate_native_throw_world_exit(throw_bad_visibility)):
             report["errors"].append("self-test failed: missing Throw world hint not rejected")
+        suppressed_feedback = runtime.replace(
+            'x:Name="CAM_ControlNotifications"\n                                 Opacity="0"',
+            'x:Name="CAM_ControlNotifications"\n                                 Opacity="1"',
+            1,
+        )
+        if not any("noninteractive and hidden at rest" in err
+                   for err in validate_native_toggle_notifications(suppressed_feedback)):
+            report["errors"].append("self-test failed: always-visible toggle feedback not rejected")
+        wrong_weapon_feedback = runtime.replace(
+            "Source='h6e99c201gc607g4da9gba50gb83f93d8a6e6'",
+            "Source='hINVALIDranged'",
+            1,
+        )
+        if not any("source states/labels changed" in err
+                   for err in validate_native_toggle_notifications(wrong_weapon_feedback)):
+            report["errors"].append("self-test failed: incorrect ranged-set label not rejected")
+        missing_press_guard = runtime.replace(
+            'LeftOperand="{Binding ElementName=ToggleWeaponSet, Path=IsPressed}" Operator="Equal" RightOperand="True"/>',
+            'LeftOperand="{Binding ElementName=ToggleWeaponSet, Path=IsPressed}" Operator="Equal" RightOperand="False"/>',
+            1,
+        )
+        if not any("source states/labels changed" in err
+                   or "lost native pressed/state predicate" in err
+                   for err in validate_native_toggle_notifications(missing_press_guard)):
+            report["errors"].append("self-test failed: unguarded weapon change notification not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
