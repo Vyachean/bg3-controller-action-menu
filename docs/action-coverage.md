@@ -103,7 +103,7 @@ exists but equality with the reference catalog cannot be established statically;
 | temporary actions | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback | keyboard source covered / radial parity runtime-unverified |
 | recasts | Common/Class/radial | grouped `KeyboardHotBars[*].SlotList` fallback + native nested behavior | keyboard source covered / radial parity runtime-unverified |
 | mod-added actions/resources | native dynamic models | covered only when BG3 exposes a resource preview / proven slot source | runtime-proof |
-| summoned creature action hotbar | native `SummonHotBar.SlotList` | **not directly present**; source equivalence unresolved | **missing-source** |
+| summoned creature action hotbar | native `SummonHotBar.SlotList` | automatic native-list override of main grid while nonempty; nested `SingleHotBar` stays higher priority | source wired / game behavior unverified |
 | conditional Call Allies action | original `ActionRadials.xaml` page Loaded/Metadata action | native page+state-machine route retained outside CAM template | page-level source preserved / effect unverified |
 | custom keyboard deck | native `CustomHotBar` | no direct provider; editing excluded, unique playable actions require independent coverage | unresolved |
 
@@ -141,6 +141,51 @@ and [the source audit](research/source-only-capability-parity-2026-10-08.md).
 **No completeness claim** follows merely from shared `UseSlotCommand`
 names. The independent native `SummonHotBar` requires a concrete
 CAM-reachable implementation or equivalent producer proof.
+
+## Native summon overlay (source-backed implementation #146)
+
+Original installed 1.8.910.0 `HotBar.xaml:1–11` and `ActionRadials.xaml:1–15`
+both declare the same `ls:UIWidget.ContextName="HotBar"` and
+`DCHotBar` design context. Therefore the original `{Binding SummonHotBar}`
+provider is directly available to CAM's **same** game-owned view model
+without an adapter, script extender, or synthesized actions.
+
+Original `HotBar.xaml:1759` renders `SummonHotBar` through
+`HotBarTemplate` (native `VMHotBar.SlotList`) whenever
+`SummonHotBar.SlotList.Count` is nonzero. Original
+`HotBar.xaml:4897–4900` hides ordinary `KeyboardHotBars` while this
+summon provider is visible. Original `HotBar.xaml:4903–4910` lets
+`SingleHotBar` overlay the summon provider during native nested selection.
+
+CAM follows that owner/source order:
+
+1. Nonempty `SummonHotBar.SlotList` overrides the ordinary resource,
+   item, passive and grouped All **main grid ItemsSource** with the original
+   executable `VMHotBarSlot` list. No new tab is introduced; summoned
+   action mode takes priority automatically, as in original HotBar.
+2. When any native `IsShowingAContainerWithVariants`,
+   `IsSelectingUpcastedSpell` or `IsShowingItemsToThrow` is true, the
+   existing **later-priority** `SingleHotBar.SlotList` returns to the
+   same main grid. It uses the original `UseSlotCommand` dispatch.
+3. The main-grid slot item styles, tooltip/focus and action dispatch
+   must remain `VMHotBarSlot`-based even if the stored CAM provider
+   selection had been grouped All or Metamagic.
+4. Nonempty summon source disables the otherwise Metamagic-owned
+   `CAM_FixedSideBarList` **input**, enabling the main grid only; keep
+   native sidebar visuals. This avoids two independent controller
+   selectors/dispatch authorities.
+5. Reaching the new summon source resets stale main focus, `ActionRadials.Tag`
+   and tooltip and moves focus to the first native summon `VMHotBarSlot`.
+   Normal resource/other mode selection returns when the native summon
+   source becomes empty. The existing selected resource token need not be
+   modified.
+
+The resource tab row is unchanged while this temporary native overlay is
+active. Availability/level/cost/validity are solely owned by BG3. The
+installed-game source proves this direct `DCHotBar` binding and
+`VMHotBarSlot` identity path; behavior after real summon switching
+remains a **separate runtime acceptance gate**, not something CI can assert
+from XAML. All other cross-catalog parity blockers (#134/#135) remain open.
 
 ## Metamagic is a parallel native provider
 
