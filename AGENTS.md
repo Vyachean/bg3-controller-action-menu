@@ -796,3 +796,20 @@ not create hard-coded icons, class mappings, or gameplay filters.
 Do not change controller navigation, resource tab selection, provider modes,
 grid focus, tooltip, A/B, nested return or item quantities together with
 this visual fix. It remains static-proof-only until verified in game.
+
+
+## 0.0.91 rejected runtime visual proof / 0.0.92 read-only capture
+
+Operator reported **no visual improvement** from 0.0.91 resource point
+template override. Do not consider that change accepted or guess new scale,
+image resources or layouts.
+
+The prior Xbox 1.8.910.0 capture omitted `DataTemplates_c.xaml` and
+`ActionResourceTemplates_c.xaml`, while `Libs_Controller.xaml` confirms
+that controller mode loads them. Only their exact installed-game versions
+can close this diagnostic gap; public historical mirrors are not substitutes.
+
+The universal VBS's temporary 0.0.92 task is read-only capture, with
+both controller templates mandatory and manifest SHA256 evidence. There is
+no runtime XAML change in 0.0.92. Restore normal install mode after the
+next evidence-backed runtime fix.
