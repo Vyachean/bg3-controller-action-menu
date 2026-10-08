@@ -7,6 +7,8 @@ param(
     [string]$StatusPath,
     [string]$ReportPath,
     [string]$LauncherRoot,
+    [ValidateSet("install", "capture")]
+    [string]$TaskMode = "capture",
     [switch]$ResolveOnly
 )
 
@@ -117,9 +119,79 @@ if ($ResolveOnly) {
     [pscustomobject]@{
         Tag = $tag
         Version = $version
-        Task = "install"
+        Task = $TaskMode
     } | ConvertTo-Json
     exit 0
+}
+
+# The visual proof capture is a separate read-only release task. The operator
+# keeps the same universal VBS; capture never mutates the installed .pak, saves,
+# or modsettings. The install workflow below stays tested for future releases.
+if ($TaskMode -eq "capture") {
+    $captureStatus = Join-Path $LauncherRoot "capture-status.txt"
+    $captureLog = Join-Path $LauncherRoot "capture.log"
+    $captureArchive = $null
+    try {
+        if (-not $LauncherRoot) {
+            throw "Capture mode requires the reusable launcher folder."
+        }
+        $releaseDir = Join-Path $CacheRoot $tag
+        New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+        $captureAsset = Get-Asset -Release $release -Name "capture-self-contained-inputs.ps1"
+        $capture = Join-Path $releaseDir "capture-self-contained-inputs.ps1"
+        Save-Asset -Asset $captureAsset -Destination $capture
+
+        Remove-Item -LiteralPath $captureStatus -Force -ErrorAction SilentlyContinue
+        & $capture -PortableRoot $LauncherRoot
+
+        if (-not (Test-Path -LiteralPath $captureStatus -PathType Leaf)) {
+            throw "Read-only capture did not write capture-status.txt."
+        }
+        $captureLines = @(Get-Content -LiteralPath $captureStatus -Encoding Unicode)
+        if ($captureLines.Count -lt 3 -or $captureLines[0] -ne "SUCCESS") {
+            throw "Read-only capture did not report success."
+        }
+        $captureArchive = [string]$captureLines[2]
+        if (-not $captureArchive -or -not (Test-Path -LiteralPath $captureArchive -PathType Leaf)) {
+            throw "Read-only capture reported a missing ZIP archive."
+        }
+        # Trust the portable root, not stale helper state or an external path.
+        $expectedRoot = [System.IO.Path]::GetFullPath($LauncherRoot).TrimEnd([char[]]@('\', '/')) + [System.IO.Path]::DirectorySeparatorChar
+        if (-not [System.IO.Path]::GetFullPath($captureArchive).StartsWith($expectedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Capture archive path is outside the operator launcher folder."
+        }
+
+        if (Test-Path -LiteralPath $captureLog -PathType Leaf) {
+            Copy-Item -LiteralPath $captureLog -Destination $LogPath -Force
+        }
+        [ordered]@{
+            Task = "capture"
+            Release = $version
+            State = "SUCCESS"
+            ReadOnly = $true
+            Archive = $captureArchive
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+        @("SUCCESS", $version, "Read-only resource-template capture completed. ZIP: $captureArchive") |
+            Set-Content -LiteralPath $StatusPath -Encoding Unicode
+        $global:LASTEXITCODE = 0
+        Write-Host "Read-only native resource template capture: $captureArchive"
+        exit 0
+    } catch {
+        $failure = $_.Exception.Message
+        if (Test-Path -LiteralPath $captureLog -PathType Leaf) {
+            Copy-Item -LiteralPath $captureLog -Destination $LogPath -Force -ErrorAction SilentlyContinue
+        }
+        [ordered]@{
+            Task = "capture"
+            Release = $version
+            State = "ERROR"
+            ReadOnly = $true
+            Message = $failure
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
+        @("ERROR", $version, $failure) | Set-Content -LiteralPath $StatusPath -Encoding Unicode
+        "Capture entry failed: $failure" | Add-Content -LiteralPath $LogPath -Encoding UTF8
+        throw
+    }
 }
 
 # This milestone restores normal self-contained PAK install/update after the
