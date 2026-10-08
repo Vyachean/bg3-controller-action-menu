@@ -230,12 +230,17 @@ function Probe.Register()
     -- This is development-only; no input is consumed or remapped.
     attempt("register-controller-observer", function()
         Ext.Events.ControllerButtonInput:Subscribe(function(event)
-            if prop(event, "Pressed") ~= true or autoRequests >= MAX_SNAPSHOTS then return end
+            if prop(event, "Pressed") ~= true or
+               autoRequests >= MAX_SNAPSHOTS or pending >= 1 then return end
+            -- Do not waste the small automatic budget on unrelated movement
+            -- before the action radial exists in the Noesis UI tree.
+            if not findPage() then return end
             autoRequests = autoRequests + 1
+            local requestId = autoRequests
             pending = pending + 1
             Ext.Timer.WaitForRealtime(350, function()
                 pending = pending - 1
-                snapshot("controller-observation-" .. tostring(autoRequests))
+                snapshot("controller-observation-" .. tostring(requestId))
             end)
         end)
     end)
