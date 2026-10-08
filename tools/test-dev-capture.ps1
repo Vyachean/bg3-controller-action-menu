@@ -42,7 +42,7 @@ foreach ($required in @(
     'Public/Game/GUI/Library/ActionResourceTemplates_c.xaml',
     '*DefaultTheme*.xaml',
     '*DefaultShared*.xaml',
-    'Public/Game/GUI/Theme/DefaultTheme_k.Styles.xaml',
+    'Public/Game/GUI/Theme/DefaultTheme.Styles.xaml',
     'Public/Game/GUI/Theme/DefaultTheme_c.Styles.xaml',
     '*FocusableControls*.xaml',
     '*Tooltips*.xaml',
