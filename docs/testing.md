@@ -1250,3 +1250,12 @@ User runtime: resource/special tabs look misaligned compared to native HotBar an
 Code readback identified the exact 0.0.85 break: 22 mode-condition reads still queried `CAM_ResourceTabs.Tag` after the resource-tab scroller repurposed it as a selected concrete UIElement. The correction routes those reads to `CAM_ProviderModeMarker.Tag`. Each of the sixteen LB/RB Click handlers now rejects an input already being processed through `CAM_TabCycleMarker.Tag`, preventing chained mode transitions within a single press.
 
 CI must parse the exact XAML, assert no `{Binding Tag, ElementName=CAM_ResourceTabs}` provider-mode readers remain, verify nine guarded LB transitions and seven guarded RB transitions, preserve the element-based horizontal scroller, and require identical `CAM_ResourceBackgroundMargin` alignment on all five special provider normal/hover frames. The native resource `VMActionResourceCostPreview` template is not modified. Run full installer/runtime/package/capture CI before release. Do not mistake a passing static check for a game-runtime pass.
+
+
+### 2026-10-08 — 0.0.89 native resource visuals and selection
+
+Reported runtime: LB/RB tab switching works in 0.0.88, but resource tab content is misaligned and no controller selection highlight matches keyboard HotBar. Full original capture inspection found an objective missing key: `HotBar.xaml` has `<Thickness x:Key="ResourceBackgroundMargin">0</Thickness>`, while CAM referenced its own `CAM_ResourceBackgroundMargin` thirteen times without defining it. This also affected the special-tab frame alignment added in 0.0.88.
+
+The current correction declares that missing key with its exact native value and maps selected `ListBoxItem` in resource-provider mode to the same `BoxResourceH` visibility used by original `IsMouseOver`. It does **not** import the entire keyboard HotBar page, replace controller state, add synthetic resource data, or change working LB/RB transitions.
+
+CI must now require zero undeclared CAM local resources, the original zero resource-box margin, a mode-gated controller highlight trigger in the copied native resource template, and precedence of exhausted resource visuals. One combined in-game inspection must still verify actual glyph alignment and highlight for both normal and special tabs; screenshot evidence is useful if further pixel correction is needed.
