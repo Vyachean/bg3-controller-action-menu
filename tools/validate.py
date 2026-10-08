@@ -1133,6 +1133,34 @@ def main() -> int:
     else:
         print(runtime_parity.stdout, end="")
 
+    provider_probe = subprocess.run(
+        [sys.executable, str(ROOT / "tools/analyze-gameplay-inventory.py"), "--self-test"],
+        cwd=ROOT, text=True, capture_output=True, check=False,
+    )
+    if provider_probe.returncode != 0:
+        errors.append("Development-only provider inventory analyzer fixture failed:\n"
+                      + provider_probe.stdout + provider_probe.stderr)
+    else:
+        print(provider_probe.stdout, end="")
+
+    # No action parity diagnostic code may be added to the shipping PAK.
+    dev_probe = ROOT / "dev/script-extender/Lua/Client/GameplayInventoryProbe.lua"
+    dev_bootstrap = ROOT / "dev/script-extender/Lua/BootstrapClient.lua"
+    if not dev_probe.is_file() or not dev_bootstrap.is_file():
+        errors.append("read-only developer action inventory probe or bootstrap is missing")
+    else:
+        p = dev_probe.read_text(encoding="utf-8")
+        if ('MAX_ENTRIES_PER_COLLECTION = 512' not in p
+                or 'MAX_ENTRIES_PER_SNAPSHOT = 2600' not in p
+                or 'MAX_SNAPSHOTS = 8' not in p
+                or 'ReadyForExecutableIdentityComparison = false' not in p
+                or 'RequiresNativeExecutableIdentityAdapter = true' not in p
+                or 'Ext.UI.GetRoot()' not in p
+                or 'Ext.IO.SaveFile(OUT, json)' not in p
+                or 'Ext.Require("Client/GameplayInventoryProbe.lua")' not in dev_bootstrap.read_text(encoding="utf-8")
+                or re.search(r'(?i):Execute\s*\(|\bExt\.(?:Entity|Osiris)\.|\bExt\.IO\.LoadFile\s*\(', p)):
+            errors.append("developer probe lost bounded read-only Noesis contract or falsely claims game parity")
+
     if errors:
         print("Static validation failed:")
         for error in errors:
