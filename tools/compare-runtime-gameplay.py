@@ -74,7 +74,7 @@ def compare(observation: dict, matrix: dict) -> dict:
                     problems.append(f"{sid}: {label} has a slot without stable native identity")
                     continue
                 capability = item.get("capability")
-                if capability not in capabilities:
+                if not isinstance(capability, str) or capability not in capabilities:
                     problems.append(f"{sid}: {label} action {ident} has no known capability")
                     continue
                 if label == "native" and item.get("editingOnly") is True:
@@ -117,11 +117,15 @@ def compare(observation: dict, matrix: dict) -> dict:
             problems.append(f"{sid}: missing native/global controller capability evidence")
             continue
         for capability in observed + verified:
-            if capability not in capabilities:
+            if not isinstance(capability, str) or capability not in capabilities:
                 problems.append(f"{sid}: unknown global controller capability {capability}")
-        for capability in set(observed):
-            if capability in capabilities and capability not in verified:
+        seen_global: set[str] = set()
+        for capability in observed:
+            if not isinstance(capability, str) or capability not in capabilities:
+                continue
+            if capability not in seen_global and capability not in verified:
                 missing.append({"state": sid, "capability": capability, "nativeGlobal": True})
+            seen_global.add(capability)
     if missing:
         problems.append(f"{len(missing)} native gameplay action/global capability identities unreachable")
     return {
@@ -145,7 +149,7 @@ def self_test(matrix: dict) -> list[str]:
                 {"identity": "BG3-native/radial:layout", "capability": "free-no-resource", "editingOnly": True}
             ],
             "camExecutable": [
-                {"identity": "BG3-native/spell:damage:slot2", "capability": "spell-level-upcast"}
+                {"identity": "BG3-native/spell:damage:slot2", "capability": "spell-level-upcast", "executable": True}
             ],
             "nativeGlobalCapabilities": ["switch-weapon-sets"],
             "preservedGlobalCapabilities": ["switch-weapon-sets"]
@@ -169,6 +173,50 @@ def self_test(matrix: dict) -> list[str]:
     duplicate["states"][0]["nativeExecutable"].append(duplicate["states"][0]["nativeExecutable"][0])
     if compare(duplicate, matrix)["problems"]:
         fails.append("two native providers with one executable identity were incorrectly rejected")
+    # An identity cannot silently change gameplay meaning across the two
+    # lists, even when its string value happens to match.
+    wrong_capability = json.loads(json.dumps(good))
+    wrong_capability["states"][0]["camExecutable"][0]["capability"] = "action-attack-melee"
+    mismatch = compare(wrong_capability, matrix)
+    if not mismatch["missing"] or not any("capability mismatch" in p for p in mismatch["problems"]):
+        fails.append("identical string with wrong CAM gameplay capability was accepted")
+
+    # Merely finding a matching identifier in a non-executable CAM source
+    # is not evidence of a VMHotBarSlot that UseSlotCommand can execute.
+    nonexecutable_cam = json.loads(json.dumps(good))
+    nonexecutable_cam["states"][0]["camExecutable"][0]["executable"] = False
+    if not any("cam action" in p and "unverified executable" in p
+               for p in compare(nonexecutable_cam, matrix)["problems"]):
+        fails.append("non-executable CAM identity was silently accepted")
+
+    empty_native = json.loads(json.dumps(good))
+    empty_native["states"][0]["nativeExecutable"] = []
+    empty_native["states"][0]["camExecutable"] = []
+    if not any("no playable native reference" in p
+               for p in compare(empty_native, matrix)["problems"]):
+        fails.append("empty complete observation was falsely reported as parity")
+
+    contradictory_native = json.loads(json.dumps(good))
+    contradictory_native["states"][0]["nativeExecutable"].append({
+        "identity": "BG3-native/spell:damage:slot2",
+        "capability": "action-attack-melee", "executable": True,
+    })
+    if not any("contradicts another" in p
+               for p in compare(contradictory_native, matrix)["problems"]):
+        fails.append("contradictory identity in two native providers was accepted")
+
+    non_object = json.loads(json.dumps(good))
+    non_object["states"][0]["camExecutable"].append("not-a-slot")
+    if not any("non-object action" in p
+               for p in compare(non_object, matrix)["problems"]):
+        fails.append("malformed action did not fail closed")
+
+    malformed_global = json.loads(json.dumps(good))
+    malformed_global["states"][0]["nativeGlobalCapabilities"] = [{"not": "a capability"}]
+    if not any("unknown global controller capability" in p
+               for p in compare(malformed_global, matrix)["problems"]):
+        fails.append("malformed native global capability did not fail closed")
+
     return fails
 
 
