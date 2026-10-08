@@ -1184,7 +1184,7 @@ if (-not $providerRestore.Success -or
     -not $providerRestore.Value.Contains('CAM_CantripFilterParameter') -or
     -not $providerRestore.Value.Contains('CAM_ItemsModeToken') -or
     -not $providerRestore.Value.Contains('CAM_AllModeToken') -or
-    -not $providerRestore.Value.Contains('CAM_MetamagicModeToken') -or
+    $providerRestore.Value.Contains('CAM_MetamagicModeToken') -or
     -not $providerRestore.Value.Contains('CAM_PassivesModeToken')) {
     throw "Nested return must restore the active native provider through one provider dispatcher."
 }
@@ -1276,6 +1276,40 @@ if ([regex]::Matches($text, '<b:DataTrigger Binding="\{Binding Tag, ElementName=
     throw "Direct/deck/grouped providers must restore concrete focus when native nested state returns."
 }
 
+# FixedSideBar is a parallel executable list, not the main grid's
+# ItemsSource. The former direct-provider metamagic restore and no-op
+# filter command must never return: nested states require a BG3 resource
+# refilter plus an independent side-rail focus restoration.
+$metamagicRestore = @(
+    [regex]::Matches(
+        $text,
+        '<b:DataTrigger Binding="\{Binding Tag, ElementName=CAM_NestedReturnMarker\}" Value="\{StaticResource CAM_NestedRestoringToken\}">[\s\S]*?</b:DataTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object { $_.Value.Contains('RightOperand="{StaticResource CAM_MetamagicModeToken}"') }
+) | Select-Object -First 1
+if (-not $metamagicRestore -or
+    -not $metamagicRestore.Value.Contains('TargetName="CAM_FixedSideBarList"') -or
+    -not $metamagicRestore.Value.Contains('PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
+    -not $metamagicRestore.Value.Contains('PropertyName="SelectedIndex" Value="-1"') -or
+    -not $metamagicRestore.Value.Contains('PropertyName="SelectedIndex" Value="0"') -or
+    -not $metamagicRestore.Value.Contains('TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"') -or
+    $metamagicRestore.Value.Contains('TargetName="HotBarList"')) {
+    throw "Metamagic nested exit must refocus the native fixed sidebar, never the main spell list."
+}
+$mainFocusHandoff = @(
+    [regex]::Matches(
+        $mainList.Value,
+        '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object { $_.Value.Contains('CAM_FixedSideBarList') }
+) | Select-Object -First 1
+if (-not $mainFocusHandoff -or
+    -not $mainFocusHandoff.Value.Contains('CAM_MetamagicModeToken') -or
+    @('IsShowingAContainerWithVariants','IsSelectingUpcastedSpell','IsShowingItemsToThrow') |
+        Where-Object { -not $mainFocusHandoff.Value.Contains($_) }) {
+    throw "Nested focus movement must not be mistaken for ordinary side-rail exit."
+}
+
 $nestedMarker = [regex]::Match(
     $text,
     '<Control\b[^>]*x:Name="CAM_NestedReturnMarker"[\s\S]*?/>',
@@ -1304,6 +1338,8 @@ $nestedRepopulation = [regex]::Match(
 if (-not $nestedRepopulation.Success -or
     -not $nestedRepopulation.Value.Contains('CAM_NestedRestoringToken') -or
     -not $nestedRepopulation.Value.Contains('Operator="GreaterThan"') -or
+    -not $nestedRepopulation.Value.Contains('RightOperand="{StaticResource CAM_MetamagicModeToken}"') -or
+    -not $nestedRepopulation.Value.Contains('Operator="NotEqual"') -or
     -not $nestedRepopulation.Value.Contains('Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
     -not $nestedRepopulation.Value.Contains('PropertyName="SelectedIndex"') -or
     -not $nestedRepopulation.Value.Contains('Value="0"')) {
