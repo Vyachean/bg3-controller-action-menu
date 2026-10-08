@@ -345,6 +345,61 @@ def validate_summon_source_route(runtime: str) -> list[str]:
     return errors
 
 
+
+def validate_controller_refusal_feedback(runtime: str) -> list[str]:
+    """Keep the original ActionRadials UIAccept denial feedback.
+
+    Native execution still belongs to UseSlotBinding. This auxiliary
+    UIAccept hint only plays the BG3 error sound when the original
+    Tag.CanUse + nonempty Tag.ThothError conditions both hold.
+    """
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"cannot inspect controller refusal feedback in invalid CAM XAML: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    buttons = [
+        node for node in root.iter()
+        if local(node) == "LSButton"
+        and _attribute(node.attrib, "Name") == "SelectButtonVisual"
+    ]
+    if len(buttons) != 1:
+        return ["original controller refusal hint SelectButtonVisual missing or duplicated"]
+
+    select = buttons[0]
+    if (_attribute(select.attrib, "BoundEvent") != "UIAccept"
+            or _attribute(select.attrib, "EatInput") != "False"):
+        return ["original controller refusal hint must not consume or remap UIAccept"]
+
+    feedback_triggers = []
+    for trigger in select.iter():
+        if local(trigger) != "EventTrigger" or _attribute(trigger.attrib, "EventName") != "Click":
+            continue
+        if any(local(child) == "LSPlaySound"
+               and _attribute(child.attrib, "Sound") == "UI_Shared_Error"
+               for child in trigger):
+            feedback_triggers.append(trigger)
+    if len(feedback_triggers) != 1:
+        return ["original controller refused-action error sound missing or duplicated"]
+
+    conditions = [
+        (_attribute(c.attrib, "LeftOperand"), _attribute(c.attrib, "Operator"),
+         _attribute(c.attrib, "RightOperand"))
+        for c in feedback_triggers[0].iter()
+        if local(c) == "ComparisonCondition"
+    ]
+    required = {
+        ("{Binding Tag.CanUse, ElementName=ActionRadials}", "Equal", "False"),
+        ("{Binding Tag.ThothError, ElementName=ActionRadials, Converter={StaticResource NullToBoolFalseConverter}, ConverterParameter='EmptyString'}", "Equal", "True"),
+    }
+    if set(conditions) != required:
+        return ["original controller refusal feedback must be conditional on native CanUse and ThothError"]
+    return []
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -380,6 +435,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
             errors.append(f"configured-radial fallback is forbidden in CAM runtime: {identifier}")
 
     errors.extend(validate_summon_source_route(runtime))
+    errors.extend(validate_controller_refusal_feedback(runtime))
 
     route_status = {}
     for route, needles in REQUIRED_ROUTES.items():
@@ -482,6 +538,18 @@ def main() -> int:
             report["errors"].append("self-test failed: configured original radial tab not rejected")
         if extract_commands('<ls:LSButton Command="{Binding UseSlotCommand}"/>') != {"UseSlotCommand"}:
             report["errors"].append("self-test failed: native exact command binding was not recognized")
+        removed_denial_sound = runtime.replace('Sound="UI_Shared_Error"', 'Sound="UI_ErrorRegression"')
+        if not any("refused-action error sound" in error
+                   for error in validate_controller_refusal_feedback(removed_denial_sound)):
+            report["errors"].append("self-test failed: removal of native refusal sound not rejected")
+        disabled_denial_guard = runtime.replace(
+            'LeftOperand="{Binding Tag.CanUse, ElementName=ActionRadials}" Operator="Equal" RightOperand="False"/>',
+            'LeftOperand="{Binding Tag.CanUse, ElementName=ActionRadials}" Operator="Equal" RightOperand="True"/>',
+            1,
+        )
+        if not any("conditional on native CanUse" in error
+                   for error in validate_controller_refusal_feedback(disabled_denial_guard)):
+            report["errors"].append("self-test failed: reversed original denial guard not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
