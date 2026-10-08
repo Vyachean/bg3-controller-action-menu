@@ -879,6 +879,35 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
     throw "LB/RB must form one resource-plus-Cantrips-plus-Items-plus-Metamagic-plus-Passives-plus-All cycle without ForceSelect."
 }
 
+# Runtime report: Metamagic LB/RB showed its provider but had no initial
+# concrete focus. SelectedIndex is not controller focus for a second list.
+# Require the game-native SetMoveFocusAction before selecting slot zero.
+foreach ($shoulder in @(
+    @{Name='UITabPrev'; Text=$tabLeft.Value},
+    @{Name='UITabNext'; Text=$tabRight.Value}
+)) {
+    $metamagicEntry = @(
+        [regex]::Matches(
+            $shoulder.Text,
+            '<b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline
+        ) | Where-Object {
+            $_.Value.Contains('RightOperand="{StaticResource CAM_MetamagicModeToken}"') -and
+            $_.Value.Contains('CAM_ResetFirstFocusToken')
+        }
+    ) | Select-Object -First 1
+    if (-not $metamagicEntry -or
+        -not $metamagicEntry.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="ActionRadials"') -or
+        -not $metamagicEntry.Value.Contains('DeferFocusAction="True"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
+        $metamagicEntry.Value.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
+        $metamagicEntry.Value.IndexOf('PropertyName="SelectedIndex" Value="0"')) {
+        throw "Metamagic shoulder $($shoulder.Name) must transfer native focus to the enabled sidebar before selecting its first concrete VMHotBarSlot."
+    }
+}
+
 # Regression 0.0.85: CAM_ResourceTabs.Tag was repurposed for the selected
 # concrete UIElement scroll target, but numerous shoulder/nested mode checks
 # still compared that UIElement with string mode tokens. That disables LB/RB.
