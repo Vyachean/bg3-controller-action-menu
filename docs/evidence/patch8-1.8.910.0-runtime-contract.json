@@ -152,6 +152,7 @@
         "cantripsParameter": "h7d02199dg44ecg4a1egbcacg9cc1cec197b3",
         "providerRestoreDispatcher": "CAM_ProviderRestoreCommand",
         "metamagicSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList",
+        "metamagicNestedRestore": "FilterActionResourceCommand(selected resource) + CAM_NestedRestoringToken -> first CAM_FixedSideBarList VMHotBarSlot",
         "directProviderNestedOverride": "nested flags -> SingleHotBar.SlotList",
         "directProviderRestore": "CAM_NestedRestoringToken -> focus first direct-provider slot",
         "itemsSource": "SetCurrentShownDeckCommand(ItemHotBar) -> CurrentShownDeck.SlotList",
