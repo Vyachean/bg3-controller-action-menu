@@ -896,3 +896,8 @@ The final two steps are copied from the current Patch 8 controller radial horizo
 ## Controller shortcut evidence boundary
 
 Weapon-set switching is outside the action-catalog architecture and remains disabled until native input transport is proven. The grid keeps ordinary `UILeft` navigation. The read-only developer capture owns discovery: schema-v3 `hotbar-coverage-contract.json` records all XAML tags containing the weapon-set command/event/style/input symbols and their relevant transport attributes. CAM runtime must not add a shortcut merely because a command or visual hint exists; the evidence must show a repeatable ActionRadials-compatible transport that does not steal short grid-left input.
+
+
+## 0.0.87 — development entry back to install
+
+After complete schema-v3 readback (see `docs/research/schema-v3-capture-2026-10-08.md`), no gameplay/XAML change is made by the installer milestone. The fixed VBS downloads release-controlled `dev-entry.ps1`, which now delegates to proven `install-latest.ps1`, validates its explicit `install-status.txt` and version, and surfaces `dev-status.txt`/log/report. This is not a second installer implementation or a local source-build seam. Read-only capture stays an optional asset and remains outside normal installation.

@@ -1232,3 +1232,12 @@ The portable capture now emits schema-v3 `hotbar-coverage-contract.json` with `I
 Each matching tag records source file, element/name, `BoundEvent`, `EventName`, command/parameter, style/content, hold/tap thresholds, `EatInput`, setter property/value and raw tag. Missing symbols are recorded in `MissingInputTransportSymbols` and do not fail capture.
 
 The next operator capture should therefore answer the weapon-set transport question together with the remaining HotBar/radial parity questions; do not ask for a separate weapon-set-only test.
+
+
+### 2026-10-08 — 0.0.87 return to combined gameplay proof
+
+Readback of `bg3-controller-action-menu-inputs-20261008-093541.zip` is recorded in `docs/research/schema-v3-capture-2026-10-08.md`. All 22 game-XAML payloads match the previous archive byte-for-byte. No new ActionRadials-safe weapon-set shortcut transport or runtime parity proof was discovered. Do not request another capture of the same Patch 8 files.
+
+The universal VBS now returns to `install`, using the existing self-contained PAK helper. Static release acceptance must prove: exact release version, existing installer delegated in-process, stale LASTEXITCODE ignored, child exception fails closed, status/log/report produced, and no capture/Game.pak scan in normal install. The existing installer fixture remains responsible for PAK application semantics.
+
+Only after published release proof, the operator may use the unchanged VBS **once** to install this milestone. Then perform one combined in-game observation covering tab overflow/cycling, first-cell LocalFocus/tooltip/A, grid scrolling, nested upcast/container/B return, item quantities, native action-category parity and unsupported weapon-set status. This is the first test of combined changes since the capture-only phase, not a claim of runtime verification by CI.

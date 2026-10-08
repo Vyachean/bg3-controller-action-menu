@@ -75,7 +75,7 @@ same VBS
       install/update | capture | diagnostics | ...
 ```
 
-For development milestone `0.0.80-hotbar-coverage-capture-fix`, `dev-entry.ps1` temporarily collects one read-only HotBar/radial evidence archive instead of installing the PAK. Coverage discovery is fail-soft: missing investigated commands are recorded in the report rather than aborting capture. The same VBS remains the operator entry point.
+Milestones 0.0.80–0.0.86 used this entry for read-only native HotBar/radial capture. That capture has now been inspected (see [schema-v3 readback](docs/research/schema-v3-capture-2026-10-08.md)). Starting in 0.0.87, the same VBS returns to the normal self-contained PAK **install/update** task. It downloads the release-controlled `install-latest.ps1` and installs through the existing Xbox helper; no manual launcher replacement is necessary. Capturing native evidence remains an optional developer operation.
 
 For maintainers, a CI artifact is **not** a release. A development task becomes operator-visible only after the Release workflow publishes the corresponding `dev-entry.ps1` and assets. See [Release process](docs/release-process.md).
 
