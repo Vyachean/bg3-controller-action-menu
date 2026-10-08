@@ -9,6 +9,7 @@ import json
 import re
 import sys
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +54,118 @@ def extract_commands(source: str) -> set[str]:
     return set(COMMAND_BINDING.findall(re.sub(r"<!--.*?-->", "", source, flags=re.S)))
 
 
+
+def _attribute(attributes: dict[str, str], name: str) -> str | None:
+    """Resolve plain or XML-namespace-qualified XAML attribute names."""
+    if name in attributes:
+        return attributes[name]
+    for key, value in attributes.items():
+        if key.endswith("}" + name):
+            return value
+    return None
+
+
+def extract_native_action_sites(source: str, source_path: str) -> dict:
+    """Inventory native UseSlotCommand call sites and collection bindings.
+
+    This is *source provenance*, not a conversion from radial candidates into
+    executable VMHotBarSlot instances. Inspect full XML elements so command
+    parameters outside the small manually curated command-name table count.
+    """
+    root = ET.fromstring(source)
+    dispatches: list[dict] = []
+    collections: list[dict] = []
+
+    def visit(node: ET.Element, owners: tuple[str, ...]) -> None:
+        tag = node.tag.rsplit("}", 1)[-1]
+        attributes = node.attrib
+        name = _attribute(attributes, "Name") or _attribute(attributes, "Key")
+        description = tag + (f"#{name}" if name else "")
+        path = owners + (description,)
+        items_source = _attribute(attributes, "ItemsSource")
+        if items_source:
+            collections.append({
+                "source": source_path,
+                "element": "/".join(path),
+                "itemsSource": items_source,
+                "dataType": _attribute(attributes, "DataType"),
+            })
+        command = _attribute(attributes, "Command")
+        # Exact command binding token; never treat styling text, notes, or
+        # other command names as executable call sites.
+        if command and re.search(r"\bUseSlotCommand\b", command):
+            dispatches.append({
+                "source": source_path,
+                "element": "/".join(path),
+                "command": command,
+                "commandParameter": _attribute(attributes, "CommandParameter"),
+                "boundEvent": _attribute(attributes, "BoundEvent"),
+                "isEnabled": _attribute(attributes, "IsEnabled"),
+                "visibility": _attribute(attributes, "Visibility"),
+                "ancestorItemSources": [
+                    source for source in (
+                        _attribute(ancestor.attrib, "ItemsSource")
+                        for ancestor in ancestor_nodes[-8:]
+                    ) if source
+                ],
+            })
+        ancestor_nodes.append(node)
+        for child in node:
+            visit(child, path)
+        ancestor_nodes.pop()
+
+    ancestor_nodes: list[ET.Element] = []
+    visit(root, ())
+    return {"dispatches": dispatches, "collections": collections}
+
+
+def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
+    """Enumerate ALL captured UI executable sites without an allowlist.
+
+    Generic CAM ActionRadials.Tag dispatch is not considered proof that a
+    separately bound vanilla keyboard/controller action is reachable. The
+    report is intentionally incomplete until each source chain is proven.
+    """
+    vanilla: list[dict] = []
+    native_collections: list[dict] = []
+    failures: list[str] = []
+    for path, source in sorted(capture.items()):
+        if not path.endswith(".xaml"):
+            continue
+        try:
+            sites = extract_native_action_sites(source, path)
+        except ET.ParseError as exc:
+            failures.append(f"could not parse captured native {path}: {exc}")
+            continue
+        vanilla.extend(sites["dispatches"])
+        native_collections.extend(sites["collections"])
+    try:
+        cam = extract_native_action_sites(runtime, "CAM/Lib_Controller.xaml")
+    except ET.ParseError as exc:
+        failures.append(f"could not parse CAM XAML: {exc}")
+        cam = {"dispatches": [], "collections": []}
+    cam_parameters = {site["commandParameter"] for site in cam["dispatches"]}
+    not_identical = [
+        site for site in vanilla if site["commandParameter"] not in cam_parameters
+    ]
+    return {
+        "scope": "all XAML in provided archive; native engine ViewModel implementations not included",
+        "staticFullParityProven": False,
+        "nativeUseSlotCallSites": vanilla,
+        "camUseSlotCallSites": cam["dispatches"],
+        "nativeCollectionBindings": native_collections,
+        "camCollectionBindings": cam["collections"],
+        "nativeCallSitesWithoutIdenticalCamParameter": not_identical,
+        "warning": (
+            "A different parameter expression is NOT proof of a gameplay omission; "
+            "matching UseSlotCommand names or params are NOT proof of provider "
+            "identity equivalence. Trace every native producer to an executable "
+            "CAM route; configured ControllerHotBars are not a valid fallback."
+        ),
+        "errors": failures,
+    }
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -95,7 +208,10 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
             errors.append(f"CAM provider route regressed: {route}: {', '.join(absent)}")
 
     captured = None
+    native_action_sites = None
     if capture is not None:
+        native_action_sites = compare_native_action_sites(capture, runtime)
+        errors.extend(native_action_sites["errors"])
         captured = {"sourceHashes": {}, "commandDifferences": {}, "nativeReferenceSeams": {}}
         for surface, path in manifest["sources"].items():
             raw = capture.get(path)
@@ -134,21 +250,31 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
         "commandClassification": {g: groups.get(g, []) for g in GROUPS},
         "unresolvedActionClasses": manifest.get("runtimeParityUnresolved", []),
         "capturedNative": captured,
+        "nativeExecutableSourceSites": native_action_sites,
         "errors": errors,
     }
 
 
 def load_capture(path: Path, manifest: dict) -> dict[str, str]:
+    """Load every already captured original XAML, not just two command files."""
     sources: dict[str, str] = {}
     with zipfile.ZipFile(path) as archive:
-        for native_path in manifest["sources"].values():
-            matches = [
-                filename for filename in archive.namelist()
-                if filename.replace("\\", "/").endswith("files/" + native_path)
-            ]
-            if len(matches) != 1:
-                raise ValueError(f"expected one captured {native_path}, found {len(matches)}")
-            sources[native_path] = archive.read(matches[0]).decode("utf-8-sig")
+        for filename in archive.namelist():
+            normalized = filename.replace("\\", "/")
+            if "/files/" in normalized:
+                native_path = normalized.split("/files/", 1)[1]
+            elif normalized.startswith("files/"):
+                native_path = normalized[len("files/"):]
+            else:
+                continue
+            if not native_path.endswith(".xaml"):
+                continue
+            if native_path in sources:
+                raise ValueError(f"duplicate captured native source: {native_path}")
+            sources[native_path] = archive.read(filename).decode("utf-8-sig")
+    for required_path in manifest["sources"].values():
+        if required_path not in sources:
+            raise ValueError(f"required captured game XAML missing: {required_path}")
     return sources
 
 
@@ -175,6 +301,45 @@ def main() -> int:
             report["errors"].append("self-test failed: configured original radial tab not rejected")
         if extract_commands('<ls:LSButton Command="{Binding UseSlotCommand}"/>') != {"UseSlotCommand"}:
             report["errors"].append("self-test failed: native exact command binding was not recognized")
+        # An additional native direct parameter must not be hidden merely
+        # because both widgets invoke a command named UseSlotCommand.
+        fixture = (
+            '<Root xmlns:ls="clr-namespace:ls;assembly=SharedGUI" '
+            'xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">'
+            '<!-- <ls:LSButton Command="{Binding UseSlotCommand}" '
+            'CommandParameter="{Binding FakeCommentSlot}"/> -->'
+            '<ls:LSButton x:Name="CallAlliesBtn" Command="{Binding UseSlotCommand}" '
+            'CommandParameter="{Binding CurrentPlayer.SelectedCharacter.CallAllies}"/>'
+            '<ls:LSListBox ItemsSource="{Binding SummonHotBar.SlotList}">'
+            '<ls:LSButton Command="{Binding UseSlotCommand}" '
+            'CommandParameter="{Binding NativeSlot}" BoundEvent="UIAccept"/>'
+            '</ls:LSListBox></Root>'
+        )
+        sites = extract_native_action_sites(fixture, "synthetic/HotBar.xaml")
+        if (len(sites["dispatches"]) != 2
+                or len(sites["collections"]) != 1
+                or "SummonHotBar.SlotList" not in sites["collections"][0]["itemsSource"]
+                or "CallAllies" not in sites["dispatches"][0]["commandParameter"]
+                or sites["dispatches"][1]["ancestorItemSources"] != [
+                    "{Binding SummonHotBar.SlotList}"
+                ]):
+            report["errors"].append("self-test failed: missed direct action or native collection provenance")
+        comparison = compare_native_action_sites(
+            {"synthetic/HotBar.xaml": fixture},
+            '<Root><LSButton Command="{Binding UseSlotCommand}" '
+            'CommandParameter="{Binding Tag, ElementName=ActionRadials}"/></Root>',
+        )
+        if (len(comparison["nativeCallSitesWithoutIdenticalCamParameter"]) != 2
+                or comparison["staticFullParityProven"] is not False
+                or comparison["errors"]):
+            report["errors"].append("self-test failed: generic CAM dispatch masked native sources")
+        malformed = compare_native_action_sites(
+            {"synthetic/Bad.xaml": "<Root><Unclosed></Root>"},
+            '<Root/>',
+        )
+        if not any("could not parse" in e for e in malformed["errors"]):
+            report["errors"].append("self-test failed: malformed native XAML did not fail closed")
+
 
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))
