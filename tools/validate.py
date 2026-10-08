@@ -621,11 +621,31 @@ def validate_semantics() -> list[str]:
                 f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: undefined CAM visual resources: {sorted(missing_cam_keys)}"
             )
 
-        preview = re.search(
-            r'<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[\s\S]*?</DataTemplate>',
+        # The native ActionPoint DataTemplate is nested inside CAM's item
+        # template; stopping on the first </DataTemplate> truncates the
+        # outer item's selected/highlight/disabled native triggers.
+        preview_head = re.search(
+            r'<DataTemplate\b[^>]*x:Key="CAM_ResourceTabTemplate"[^>]*>',
             runtime_text,
         )
-        preview_text = preview.group() if preview else ""
+        preview_text = ""
+        if preview_head:
+            nesting = 1
+            template_tokens = re.finditer(
+                r'</?DataTemplate\b[^>]*>',
+                runtime_text[preview_head.end():],
+            )
+            for token in template_tokens:
+                if token.group().startswith("</DataTemplate"):
+                    nesting -= 1
+                elif not token.group().endswith("/>"):
+                    nesting += 1
+                if nesting == 0:
+                    preview_text = runtime_text[
+                        preview_head.start():preview_head.end() + token.end()
+                    ]
+                    break
+
         active_resource = '<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>'
         normal_mode = '<Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>'
         disabled_resource = '<DataTrigger Binding="{Binding ActionResource.Value}" Value="0">'
