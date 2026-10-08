@@ -2406,6 +2406,20 @@
                                    Width="1000"
                                    FlowDirection="RightToLeft"
                                    Margin="26,0,26,56">
+                <!-- Original Patch 8 ActionRadials: while choosing a thrown item,
+                     UIDelete returns directly to world targeting. This is
+                     native nested gameplay, not radial layout editing. -->
+                <ls:LSButton x:Name="ToWorldButton"
+                             Tag="{Binding Source='hf6830bd6g4b21g4a7aga963g30da537e64b7', Converter={StaticResource TranslatedStringConverter}}"
+                             ContentTemplate="{StaticResource ControllerButtonHint}"
+                             BoundEvent="UIDelete"
+                             Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UIDelete, Converter={StaticResource FindInputEventConverter}}"
+                             HorizontalAlignment="Left"
+                             Width="1000"
+                             Visibility="Collapsed"
+                             Command="{Binding CustomEvent}"
+                             CommandParameter="CloseRadials"/>
+
                 <ls:LSButton x:Name="SelectButtonVisual"
                              BoundEvent="UIAccept"
                              EatInput="False"
@@ -2515,6 +2529,9 @@
         </Grid>
 
         <ControlTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
+                <Setter TargetName="ToWorldButton" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
             <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="False">
                 <Setter TargetName="ToggleWeaponSet" Property="Visibility" Value="Collapsed"/>
             </DataTrigger>
