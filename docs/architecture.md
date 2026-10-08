@@ -917,3 +917,34 @@ The original keyboard `HotBar.xaml` defines the `ActionResourcesList` visual in 
 The captured keyboard page defines `ResourceBackgroundMargin=0` in its **own** resources. The former CAM alias `CAM_ResourceBackgroundMargin` was not declared at all; the controller now defines it locally with exactly that zero value. The original highlighted image `BoxResourceH` is selected on `IsMouseOver`. CAM maps selected `ListBoxItem` (only when provider mode is null) to the very same image visibility, rather than attempting to generate fake highlighted resource indicators. The exhausted-resource trigger takes precedence. The same local margin now resolves in all special-provider chrome images.
 
 The top-level special providers are not entries in vanilla `ActionResourcesCostPreview`; their content must remain distinct even though their container uses native resource-box art. Further UI parity depends on runtime appearance proof rather than speculative image resizing.
+
+
+## 0.0.91 — keyboard HotBar resource glyph boundary
+
+The 2026-10-08 comparison at equal screenshot scale shows a real image-source
+mismatch, **not only misplaced tabs**: the keyboard HotBar renders stars,
+clovers, a flame and groups of squares, whereas CAM rendered enlarged basic
+bars and rectangles for the corresponding resources. The 0.0.90 baseline
+alignment fix did not address this.
+
+CAM is hosted by the controller library, so reuse of
+`ActionResourcesTemplateSelector` alone has not established visual parity
+with the keyboard-mode HotBar. Patch 8 `DataTemplates.xaml` defines
+resource-point image selection using
+`IconIdToSourceConverter(ActionResourcePoint*IconsPath, TypeId)`.
+The controller resource template now explicitly uses this native icon-source
+mechanism for point **normal / highlight / used / missing** states. It sets
+a local `ActionPointTemplate` on the existing `LSActionPointResources`;
+the existing style still owns counts, resource grouping, costs and sizing.
+There are no hard-coded resource TypeIds, icon assets or alternative filters.
+
+This is an isolated *rendering* change. LB/RB, resource selection,
+`FilterActionResourceCommand`, action grid focus, tooltip, A/B,
+Passives, item quantity and nested lifecycle must remain unchanged.
+
+**Proof boundary:** static validation and package CI can check bindings and
+XAML structure but cannot prove Noesis image resolution or in-game visual
+parity. If runtime still renders geometric fallback glyphs, inspect the
+current installed 1.8.910.0 `DataTemplates.xaml` icon path resources and
+controller dictionary lookup before another presentation change. Do not
+guess scale factors or implement a CAM-specific resource-name/icon map.
