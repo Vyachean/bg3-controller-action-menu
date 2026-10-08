@@ -227,6 +227,51 @@ This keeps the proprietary XAML out of the repository while making source moveme
 renaming and absence machine-reviewable instead of turning an outdated assumption into
 an operator-facing failure.
 
+## All-gameplay-capability preservation gate (#135)
+
+Preserving all BG3 gameplay **capabilities** is a hard requirement, not
+merely preserving the 36 native UI command names. Source-only equality
+with keyboard `KeyboardHotBars[*].SlotList` does **not** imply
+controller radial gameplay parity, because `SpellsAndActions`,
+`Inventory.Slots`, passives, dynamic equipment, temporary actions,
+recasts, mod-added resources and global gamepad controls form
+independent reference sources.
+
+The [machine-readable capability matrix](evidence/native-gameplay-capabilities.json)
+lists **25 gameplay capability groups**, each with native source,
+current CAM route, known status and acceptance gate. Statuses
+`blocked`, `unverified` and `source-present` deliberately do not
+mean `gameplay-verified`. In particular, the failed weapon-set hold
+transport remains blocked. Mouse resize and user-requested removal
+of radial layout editing are not gameplay omissions; essential B
+cancellation/targeting nonetheless remains a capability group.
+
+`tools/compare-runtime-gameplay.py` provides an **executable
+identity-set** comparison, rather than a command-name comparison.
+It consumes one read-only observation containing native keyboard +
+controller playable slot identities, CAM identities and native
+global controller capabilities for each captured game state.
+It reports any native executable action absent from CAM, any
+lost native global controller capability, incomplete observations,
+unknown capability groups and game-version drift. Distinct
+resources/upcast variants must have distinct native identities.
+Duplicated appearances of the *same executable identity* in
+multiple native providers are valid.
+
+Run `python tools/compare-runtime-gameplay.py --self-test` without
+game access to check that synthetic missing actions and global
+controls **fail**. When a suitable dev-only, read-only runtime
+probe is available, run
+`python tools/compare-runtime-gameplay.py --observation <path> --json`
+for its output. No such real observation is present today.
+This checker does not introduce a Script Extender requirement
+in the shipping PAK and cannot, on its own, capture game state.
+
+**Full gameplay compatibility is not accepted** until actual native
+runtime inventories can be compared across representative game
+states and all blocked capabilities have proven BG3-backed routes.
+See [issue #135](https://github.com/Vyachean/bg3-controller-action-menu/issues/135).
+
 ## Runtime milestone gate
 
 No game run is needed for each source hypothesis.
