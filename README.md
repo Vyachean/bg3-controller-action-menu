@@ -75,7 +75,7 @@ same VBS
       install/update | capture | diagnostics | ...
 ```
 
-Milestones 0.0.80–0.0.86 used this entry for read-only native HotBar/radial capture. That capture has now been inspected (see [schema-v3 readback](docs/research/schema-v3-capture-2026-10-08.md)). Starting in 0.0.87, the same VBS returns to the normal self-contained PAK **install/update** task. It downloads the release-controlled `install-latest.ps1` and installs through the existing Xbox helper; no manual launcher replacement is necessary. Capturing native evidence remains an optional developer operation.
+Milestones 0.0.80–0.0.86 used this entry for read-only native HotBar/radial capture. That capture has now been inspected (see [schema-v3 readback](docs/research/schema-v3-capture-2026-10-08.md)). Starting in 0.0.87, the same VBS returns to the normal self-contained PAK **install/update** task. In **0.0.92**, the release-controlled task temporarily switches back to a **read-only resource-dictionary capture** because 0.0.91 did not correct the keyboard vs controller resource glyphs. Running the existing VBS for this milestone creates a new ZIP beside the launcher; it does **not** install a new gameplay mod package. It downloads the release-controlled `install-latest.ps1` and installs through the existing Xbox helper; no manual launcher replacement is necessary. Capturing native evidence remains an optional developer operation.
 
 For maintainers, a CI artifact is **not** a release. A development task becomes operator-visible only after the Release workflow publishes the corresponding `dev-entry.ps1` and assets. See [Release process](docs/release-process.md).
 
@@ -143,3 +143,8 @@ See:
 There is no second permanent capture VBS.
 
 If fresh native UI evidence is needed, the next development release can make the same universal `Install-BG3ControllerActionMenu.vbs` run `capture-self-contained-inputs.ps1` through `dev-entry.ps1`. Capture may inspect `Game.pak` read-only and produce the evidence ZIP beside the launcher, but it remains development tooling and is never a dependency of the shipping PAK or normal install path.
+
+
+### Current operator task (0.0.92)
+
+Run the **same existing VBS once** to collect the keyboard/controller resource style dictionaries missing from the previous archive. It reads Game.pak only, does not launch BG3 and does not install/update the PAK. Upload the resulting `bg3-controller-action-menu-inputs-*.zip`; the required new members are `DataTemplates_k.xaml`, `DataTemplates_c.xaml` and `ActionResourceTemplates_c.xaml`. Do not test CAM icons in game for this capture-only version.
