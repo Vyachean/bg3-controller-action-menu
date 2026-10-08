@@ -1969,6 +1969,10 @@
                                 <!-- Focus events must never change CAM_ProviderModeMarker:
                                      LB/RB is the sole source of provider transitions. -->
                                 <b:EventTrigger EventName="LocalFocusChanged">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <!-- The same ActionRadials.Tag -> UseSlotCommand route
                                          used by the main grid must own the side selection. -->
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -1989,6 +1993,8 @@
                                         <b:ConditionBehavior><b:ConditionalExpression>
                                             <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                                    Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                            <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                            <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
                                         </b:ConditionalExpression></b:ConditionBehavior>
                                     </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="ActionRadials"
