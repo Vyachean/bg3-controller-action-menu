@@ -230,6 +230,8 @@ def validate_semantics() -> list[str]:
                 'x:Key="CAM_FixedSideBarPanel"',
                 'Content.IsModified',
                 'HotbarSlotGlow',
+                'CAM_MetamagicIncompatibleOverlay',
+                'PlayerCharacterProperties.MetamagicActive',
                 'HotBarActiveSlotIndicatorMetamagic',
                 'x:Key="CAM_MetamagicModeToken"',
                 'PlayerCharacterProperties.FixedSideBar.SlotList',
