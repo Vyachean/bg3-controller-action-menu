@@ -944,6 +944,44 @@ if (-not $resourceTabTemplate.Success -or
     throw "Native resource contents must be owned by the literal Patch 8 ActionResourcesList item template."
 }
 
+
+# Keyboard group templates alone still resolve controller StaticResource
+# icon paths in the globally defined ActionPoint DataTemplate. Capture
+# v0.0.97 proved keyboard DefaultTheme.Styles.xaml uses Shared/Resources,
+# whereas controller DefaultTheme_c.Styles.xaml uses ActionResources_c.
+$keyboardPointPaths = @(
+    @("ActionResourcePointIconsPath", "Assets/Shared/Resources/"),
+    @("ActionResourcePointHighlightIconsPath", "Assets/Shared/Resources/Highlight/"),
+    @("ActionResourcePointMissingIconsPath", "Assets/Shared/Resources/Missing/"),
+    @("ActionResourcePointUsedIconsPath", "Assets/Shared/Resources/Used/")
+)
+foreach ($pair in $keyboardPointPaths) {
+    $resourceDefinition = '<System:String x:Key="' + $pair[0] + '">' + $pair[1] + '</System:String>'
+    if ($resourceTabTemplate.Value.Split([string[]]@($resourceDefinition), [System.StringSplitOptions]::None).Count -ne 2) {
+        throw "The keyboard resource item must define its own source path: $($pair[0])"
+    }
+}
+$keyboardPointTemplate = [regex]::Match(
+    $resourceTabTemplate.Value,
+    '(?s)<DataTemplate x:Key="ActionResources.ActionGroup.ActionPoint">.*?</DataTemplate>'
+)
+if (-not $keyboardPointTemplate.Success) {
+    throw "Keyboard point artwork must reuse the exact native ActionPoint DataTemplate."
+}
+foreach ($pair in $keyboardPointPaths) {
+    $sourceBinding = '<Binding Source="{StaticResource ' + $pair[0] + '}"/>'
+    if (-not $keyboardPointTemplate.Value.Contains($sourceBinding)) {
+        throw "Native point artwork must resolve the local keyboard source: $($pair[0])"
+    }
+}
+if ($resourceTabTemplate.Value.IndexOf('x:Key="ActionResourcePointIconsPath"') -gt
+    $resourceTabTemplate.Value.IndexOf('x:Key="ActionResources.ActionGroup.ActionPoint"') -or
+    $resourceTabTemplate.Value.IndexOf('x:Key="ActionResources.ActionGroup.ActionPoint"') -gt
+    $resourceTabTemplate.Value.IndexOf('x:Key="ActionResources.ActionGroup.ActionPointGroup"') -or
+    $resourceTabTemplate.Value.Contains('Assets/ActionResources_c/Icons/Resources/')) {
+    throw "Keyboard point image resolution must precede group templates without controller art."
+}
+
 # The original installed keyboard DataTemplates_k.xaml exports 24 point-
 # group templates. They must be placed under the resource item root,
 # not declared globally or selected through a CAM-specific point override.
