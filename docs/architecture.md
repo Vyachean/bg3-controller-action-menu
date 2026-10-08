@@ -244,6 +244,27 @@ CAM therefore distinguishes:
 
 If native Action/Bonus filters are broader than product policy, CAM may refine them only using a current BG3 property/predicate over executable native slots. No class/spell-name tables or heuristics are permitted.
 
+## Selector paint gutter from installed BG3 (issue #130)
+
+The installed Patch 8 `DataTemplates.xaml` defines
+`SelectorTemplate` with `LSNineSliceImage Margin="-12"`.
+A 104px icon in a 120px cell has only 8px inset, so the
+leftmost native selector can paint 4px past the sidebar's outer
+left boundary. Moving only the selector would break the
+0.0.29-proven shared coordinate root with `CAM_FixedSideBarList`.
+
+CAM therefore uses a **12px left inset** on the complete
+`CAM_FixedSideBarRegion` inside the shared clipped
+`CAM_ActionRowClip`. This repositions the list and its native
+sibling selector together, keeping the source-defined border
+within the row clip without changing the selector template,
+slot sizes, controller navigation or 120px focus-scroll margin.
+The extra 12px uses horizontal space from the adaptive main grid
+and may alter its column count at narrow sizes; that risk is
+explicitly retained for runtime verification.
+
+Reference: `docs/research/native-ui-command-parity-2026-10-08.md`.
+
 ## Selector chrome and row-boundary clipping (issue #130)
 
 The runtime test of 0.0.103 confirmed that per-viewport
