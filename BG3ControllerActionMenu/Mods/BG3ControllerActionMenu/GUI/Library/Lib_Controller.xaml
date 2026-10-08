@@ -52,6 +52,33 @@
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
     <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
 
+    <!-- Original PreloadedActionRadials_c.xaml:22,32-53.
+         Namespaced to CAM because this is an independent controller library. -->
+    <ImageSource x:Key="CAM_NotificationBg">pack://application:,,,/Core;component/Assets/Notification/smallNotice_bg.png</ImageSource>
+    <Storyboard x:Key="CAM_FadeInNotification" FillBehavior="Stop">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Storyboard.TargetName="CAM_ControlNotifications">
+            <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:0.3" Value="1"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:1.2" Value="1"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:1.5" Value="0"/>
+        </DoubleAnimationUsingKeyFrames>
+        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CAM_ControlNotifications" Storyboard.TargetProperty="Visibility">
+            <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{x:Static Visibility.Visible}"/>
+            <DiscreteObjectKeyFrame KeyTime="0:0:1.5" Value="{x:Static Visibility.Collapsed}"/>
+        </ObjectAnimationUsingKeyFrames>
+    </Storyboard>
+    <Style x:Key="CAM_NotificationBG9Slice"
+           TargetType="ls:LSNineSliceImage"
+           BasedOn="{StaticResource {x:Type ls:LSNineSliceImage}}">
+        <Setter Property="ImageSource" Value="{StaticResource CAM_NotificationBg}"/>
+        <Setter Property="Slices" Value="24"/>
+        <Setter Property="MinWidth" Value="152"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Padding" Value="20,12,20,12"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Focusable" Value="False"/>
+    </Style>
+
     <Style x:Key="CAM_ActionGridSlotContainer"
            TargetType="{x:Type ListBoxItem}"
            BasedOn="{StaticResource {x:Type ListBoxItem}}">
@@ -2398,6 +2425,78 @@
             </Grid>
 
             <Control x:Name="SlotAssignHolder" Visibility="Collapsed" IsEnabled="False" Focusable="False"/>
+
+            <!-- Native controller feedback from PreloadedActionRadials_c.xaml:1830-1886.
+                 This visual overlay owns no input/focus. It follows BG3's
+                 actual state changes, never CAM's selected resource tabs. -->
+            <ls:LSNineSliceImage x:Name="CAM_ControlNotifications"
+                                 Opacity="0"
+                                 Visibility="Collapsed"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Bottom"
+                                 Margin="0,0,0,170"
+                                 Panel.ZIndex="100"
+                                 IsHitTestVisible="False"
+                                 Focusable="False"
+                                 Style="{StaticResource CAM_NotificationBG9Slice}">
+                <TextBlock x:Name="CAM_NotificationText"
+                           Text="{Binding Source='hfaac6c41gc244g45d5g952agb45eb21ee282', Converter={StaticResource TranslatedStringConverter}}"
+                           Foreground="{StaticResource LS_PrimaryColor}"
+                           FontSize="{StaticResource ScaledDefaultFontSize}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Margin="36,20"/>
+                <b:Interaction.Triggers>
+                    <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedSetActive}">
+                        <b:Interaction.Behaviors>
+                            <b:ConditionBehavior>
+                                <b:ConditionalExpression>
+                                    <b:ComparisonCondition LeftOperand="{Binding ElementName=ToggleWeaponSet, Path=IsPressed}" Operator="Equal" RightOperand="True"/>
+                                    <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedSetActive}" Operator="Equal" RightOperand="True"/>
+                                </b:ConditionalExpression>
+                            </b:ConditionBehavior>
+                        </b:Interaction.Behaviors>
+                        <b:ChangePropertyAction TargetName="CAM_NotificationText" PropertyName="Text" Value="{Binding Source='h6e99c201gc607g4da9gba50gb83f93d8a6e6', Converter={StaticResource TranslatedStringConverter}}"/>
+                        <b:ControlStoryboardAction Storyboard="{StaticResource CAM_FadeInNotification}"/>
+                    </b:PropertyChangedTrigger>
+                    <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedSetActive}">
+                        <b:Interaction.Behaviors>
+                            <b:ConditionBehavior>
+                                <b:ConditionalExpression>
+                                    <b:ComparisonCondition LeftOperand="{Binding ElementName=ToggleWeaponSet, Path=IsPressed}" Operator="Equal" RightOperand="True"/>
+                                    <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasMeleeSetActive}" Operator="Equal" RightOperand="True"/>
+                                </b:ConditionalExpression>
+                            </b:ConditionBehavior>
+                        </b:Interaction.Behaviors>
+                        <b:ChangePropertyAction TargetName="CAM_NotificationText" PropertyName="Text" Value="{Binding Source='hfaac6c41gc244g45d5g952agb45eb21ee282', Converter={StaticResource TranslatedStringConverter}}"/>
+                        <b:ControlStoryboardAction Storyboard="{StaticResource CAM_FadeInNotification}"/>
+                    </b:PropertyChangedTrigger>
+                    <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.IsDualWieldingToggledOn}">
+                        <b:Interaction.Behaviors>
+                            <b:ConditionBehavior>
+                                <b:ConditionalExpression>
+                                    <b:ComparisonCondition LeftOperand="{Binding ElementName=ToggleDualWield, Path=IsPressed}" Operator="Equal" RightOperand="True"/>
+                                    <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.IsDualWieldingToggledOn}" Operator="Equal" RightOperand="True"/>
+                                </b:ConditionalExpression>
+                            </b:ConditionBehavior>
+                        </b:Interaction.Behaviors>
+                        <b:ChangePropertyAction TargetName="CAM_NotificationText" PropertyName="Text" Value="{Binding Source='hee8cf049gc819g4cd4g8b3ag7a0acc1f2f1b', Converter={StaticResource TranslatedStringConverter}}"/>
+                        <b:ControlStoryboardAction Storyboard="{StaticResource CAM_FadeInNotification}"/>
+                    </b:PropertyChangedTrigger>
+                    <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.IsDualWieldingToggledOn}">
+                        <b:Interaction.Behaviors>
+                            <b:ConditionBehavior>
+                                <b:ConditionalExpression>
+                                    <b:ComparisonCondition LeftOperand="{Binding ElementName=ToggleDualWield, Path=IsPressed}" Operator="Equal" RightOperand="True"/>
+                                    <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.IsDualWieldingToggledOn}" Operator="Equal" RightOperand="False"/>
+                                </b:ConditionalExpression>
+                            </b:ConditionBehavior>
+                        </b:Interaction.Behaviors>
+                        <b:ChangePropertyAction TargetName="CAM_NotificationText" PropertyName="Text" Value="{Binding Source='h69107c78gd9efg4fd2ga137g427cc0280604', Converter={StaticResource TranslatedStringConverter}}"/>
+                        <b:ControlStoryboardAction Storyboard="{StaticResource CAM_FadeInNotification}"/>
+                    </b:PropertyChangedTrigger>
+                </b:Interaction.Triggers>
+            </ls:LSNineSliceImage>
 
             <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
                                    Style="{StaticResource ButtonHint.Container.CenterWrap}"

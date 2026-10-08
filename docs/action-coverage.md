@@ -116,6 +116,32 @@ or shifting CAM's resource tabs. The static test only proves the
 original event, binding, visibility and absence of a second custom
 input transport; it cannot certify game runtime behavior.
 
+## Original controller weapon/dual-wield state-change notifications
+
+The installed Xbox App 1.8.910.0
+`Public/Game/GUI/Library/PreloadedActionRadials_c.xaml:32–53,1830–1892`
+defines `FadeInNotification` and `NotificationBG9Slice` and displays a
+brief, localized notification when the native `ToggleWeaponSet` or
+`ToggleDualWield` hold button changes the relevant **game-owned** state.
+Its four source conditions are:
+
+- `ToggleWeaponSet.IsPressed` + `HasRangedSetActive=True`: ranged-set label;
+- `ToggleWeaponSet.IsPressed` + `HasMeleeSetActive=True`: melee-set label;
+- `ToggleDualWield.IsPressed` + `IsDualWieldingToggledOn=True`: dual-wield on;
+- `ToggleDualWield.IsPressed` + `IsDualWieldingToggledOn=False`: dual-wield off.
+
+CAM already preserves both native control commands, but did not have the
+original notification overlay. Restore the original animation, original
+localized string IDs and these **native state-change conditions** as a
+separate non-focusable visual element over the existing menu. Only adapt
+dictionary key names and placement for the grid; never change native input,
+the action catalog, focus dispatch, or `UseSlotCommand`.
+
+A source test proves the exact four game-owned state predicates, localized
+messages and noninteractive overlay; it does not imply that button holds
+fire repeatedly in the Xbox App runtime. Verify feedback and repeatability
+during the next combined gameplay milestone, not as a standalone user test.
+
 ## Identity boundary
 
 Coverage is about executable BG3 objects, not names or icons.
