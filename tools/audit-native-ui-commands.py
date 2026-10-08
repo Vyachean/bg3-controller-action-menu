@@ -95,7 +95,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
             if raw is None:
                 errors.append(f"capture missing required native XAML: {path}")
                 continue
-            digest = hashlib.sha256(raw.encode("utf-8-sig")).hexdigest()
+            digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
             captured["sourceHashes"][path] = digest
             # Hashes are evidence that the captured game is the pinned Patch 8 build.
             expected_hash = pinned.get("sourceHashes", {}).get(path)
