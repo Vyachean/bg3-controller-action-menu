@@ -438,6 +438,52 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
+
+                <!-- TEMPORARY 0.0.94 DIAGNOSTIC. B = direct icon-source probe;
+                     native LSActionPointResources at the center is A.
+                     Both receive the same native VMActionResourceCostPreview,
+                     but B bypasses LSActionPointResources, ActionPointTemplate,
+                     controller point grouping and resource point measurements. -->
+                <Border x:Name="CAM_DiagnosticDirectPointFrame"
+                        Width="26"
+                        Height="30"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Background="#DD202030"
+                        Panel.ZIndex="50"
+                        IsHitTestVisible="False">
+                    <Grid>
+                        <Image x:Name="CAM_DiagnosticDirectPointGlyph"
+                               Width="20"
+                               Height="20"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top"
+                               Stretch="Uniform">
+                            <Image.Source>
+                                <MultiBinding Converter="{StaticResource IconIdToSourceConverter}"
+                                              FallbackValue="{StaticResource TypeIdToSourceFallback}">
+                                    <Binding Source="{StaticResource ActionResourcePointIconsPath}"/>
+                                    <Binding Path="ActionResource.TypeId"/>
+                                </MultiBinding>
+                            </Image.Source>
+                        </Image>
+                        <TextBlock Text="B"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#FFFF00FF"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Bottom"/>
+                    </Grid>
+                </Border>
+                <TextBlock x:Name="CAM_DiagnosticTemplateFingerprint"
+                           Text="94"
+                           FontSize="11"
+                           FontWeight="Bold"
+                           Foreground="#FFFFFF00"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top"
+                           Panel.ZIndex="51"
+                           IsHitTestVisible="False"/>
             </Grid>
         </ls:LSButton>
 

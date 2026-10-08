@@ -116,3 +116,38 @@ Noesis binding resolution and actual visual pixel parity remain
 runtime-unverified until one game observation. If there is still no
 visual improvement after 0.0.93, investigate dynamic resource
 lookup/visual-tree resolution rather than creating new scale variants.
+
+
+## 0.0.94 — fail-closed runtime diagnostic (not a visual fix)
+
+Operator explicitly reports no tab-icon improvement after installed
+v0.0.93. The version-specific 56/48/24 XAML values were partly already
+set on native point control in earlier versions, and 0.0.93's locally
+named `ActionPointTemplate` did not prove which image actually wins.
+The previous visual hypothesis is rejected.
+
+This diagnostic places two independently rendered representations
+inside the **same native VMActionResourceCostPreview item** without
+changing its commands, selection, spell overlays, resource counts or
+source collections:
+
+1. A = existing `LSActionPointResources` and all its native styles;
+2. B = 20x20 `Image` with explicit `IconIdToSourceConverter`, using
+   `ActionResourcePointIconsPath` and the item's
+   `ActionResource.TypeId`, not the `LSActionPointResources` point
+   template, grouping or point-state logic;
+3. `94` = visible yellow per-item fingerprint proving active CAM
+   resource-item template, independent of which VBS or PAK was installed.
+
+Read the screenshot as follows:
+
+| Observed | Conclusion | Next step |
+| --- | --- | --- |
+| `94` absent | The new CAM resource template is not active or visible. | Prove package/load conflict; do not alter icon sizes. |
+| `94` present, B correct shape, A malformed | Point control/style/group presentation differs. | Repair effective renderer, not icon path. |
+| `94` present, B malformed like A | Effective native point-path/icon/fallback is suspect. | Capture actual named asset(s) and create a resource path with proven keyboard bitmap. |
+| `94` present, B blank | Direct TypeId/source converter binding failed. | Inspect binding scope; cannot conclude bitmap mismatch. |
+
+The B icon is deliberately uniform-scaled, so **compare shape**, not
+relative size. The overlay is temporary and must be removed after
+one discriminating observation. This does not complete issue #119.

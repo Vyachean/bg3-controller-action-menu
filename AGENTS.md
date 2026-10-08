@@ -847,3 +847,33 @@ in-game proof is limited to visible HotBar resource glyph/spacing
 parity, with a quick check of LB/RB and tooltip; do not ask for
 separate repeated experiments. If unchanged, return to the specific
 resource-lookup reason, not speculative new image or scale overrides.
+
+
+## 0.0.94 isolated resource-glyph runtime proof
+
+Operator has rejected 0.0.91 and 0.0.93 visual changes as ineffective.
+The green build, successful v0.0.93 install and captured keyboard/controller
+resource dictionaries do NOT prove the effective in-game point image.
+
+0.0.94 is an intentionally temporary **diagnostic** release, not a
+visual correction or user acceptance. Inside the existing
+`CAM_ResourceTabTemplate`, show:
+
+- yellow `94` on each resource: proves this exact resource-item template is
+  loaded and displayed, independent of the successful installer log;
+- a magenta-labelled `B` image, directly resolved via
+  `IconIdToSourceConverter(ActionResourcePointIconsPath, ActionResource.TypeId)`,
+  bypassing `LSActionPointResources` grouping and point-template selection;
+- native point renderer `LSActionPointResources` unchanged at tile center
+  (the `A` visual baseline).
+
+One **combined in-game screenshot** with at least ActionPoint,
+BonusActionPoint and SpellSlot tabs has discriminating outcomes:
+missing `94` => installed runtime XAML/template not active;
+present `94` and correct B glyph => point/group renderer path to fix;
+present `94` with equally wrong B glyph => shared image path/asset/fallback;
+present `94`, empty B => direct binding/path not resolving.
+No inference of confirmed pixel parity without this proof.
+
+Keep all gameplay/provider/tooltip/focus/LB/RB logic untouched; remove
+diagnostic overlays after the decision. Do not promote 0.0.94 as fixed.
