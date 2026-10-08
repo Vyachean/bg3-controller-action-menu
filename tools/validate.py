@@ -511,6 +511,31 @@ def validate_semantics() -> list[str]:
                 f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: resource scrolling must use concrete ListBoxItem target + TargetPosition commit, while provider mode stays on CAM_ProviderModeMarker"
             )
 
+        # 0.0.85 moved provider-mode state away from CAM_ResourceTabs.Tag
+        # (which now holds a concrete scroll UIElement). Reject every stale
+        # Tag reader, including conditions inside shoulder/nested handlers.
+        if re.search(r"\{Binding Tag,\s*ElementName=CAM_ResourceTabs\}", runtime_text):
+            errors.append(
+                f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: provider conditions must read CAM_ProviderModeMarker, not the resource UIElement scroll target"
+            )
+        guard = '<b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>'
+        for side in ("CAM_TabLeft", "CAM_TabRight"):
+            button = re.search(
+                r'<ls:LSButton\b[^>]*x:Name="' + side + r'"[\s\S]*?</ls:LSButton>',
+                runtime_text,
+            )
+            clicks = (
+                re.findall(r'<b:EventTrigger EventName="Click">[\s\S]*?</b:EventTrigger>', button.group())
+                if button else []
+            )
+            if len(clicks) != 8 or any(
+                guard not in click or "{Binding Tag, ElementName=CAM_ProviderModeMarker}" not in click
+                for click in clicks
+            ):
+                errors.append(
+                    f"{SELF_CONTAINED_RUNTIME.relative_to(ROOT)}: {side} must serialize all eight mode transitions against the dedicated provider marker"
+                )
+
         if (
             "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.KeyboardHotBars" not in runtime_text
             or 'x:Key="CAM_AllGroupTemplate"' not in runtime_text
