@@ -1241,3 +1241,12 @@ Readback of `bg3-controller-action-menu-inputs-20261008-093541.zip` is recorded 
 The universal VBS now returns to `install`, using the existing self-contained PAK helper. Static release acceptance must prove: exact release version, existing installer delegated in-process, stale LASTEXITCODE ignored, child exception fails closed, status/log/report produced, and no capture/Game.pak scan in normal install. The existing installer fixture remains responsible for PAK application semantics.
 
 Only after published release proof, the operator may use the unchanged VBS **once** to install this milestone. Then perform one combined in-game observation covering tab overflow/cycling, first-cell LocalFocus/tooltip/A, grid scrolling, nested upcast/container/B return, item quantities, native action-category parity and unsupported weapon-set status. This is the first test of combined changes since the capture-only phase, not a claim of runtime verification by CI.
+
+
+### 2026-10-08 — 0.0.88 resource-tab mode and chrome regression fix
+
+User runtime: resource/special tabs look misaligned compared to native HotBar and LB/RB does not switch tabs.
+
+Code readback identified the exact 0.0.85 break: 22 mode-condition reads still queried `CAM_ResourceTabs.Tag` after the resource-tab scroller repurposed it as a selected concrete UIElement. The correction routes those reads to `CAM_ProviderModeMarker.Tag`. Each of the sixteen LB/RB Click handlers now rejects an input already being processed through `CAM_TabCycleMarker.Tag`, preventing chained mode transitions within a single press.
+
+CI must parse the exact XAML, assert no `{Binding Tag, ElementName=CAM_ResourceTabs}` provider-mode readers remain, verify eight guarded transitions per shoulder, preserve the element-based horizontal scroller, and require identical `CAM_ResourceBackgroundMargin` alignment on all five special provider normal/hover frames. The native resource `VMActionResourceCostPreview` template is not modified. Run full installer/runtime/package/capture CI before release. Do not mistake a passing static check for a game-runtime pass.
