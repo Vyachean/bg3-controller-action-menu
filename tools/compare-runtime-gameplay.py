@@ -44,10 +44,10 @@ def compare(observation: dict, matrix: dict) -> dict:
                 if not isinstance(ident, str) or not ident.strip():
                     problems.append(f"{sid}: {label} has a slot without stable native identity")
                     continue
-                if ident in seen:
-                    # Duplicate *source locations* can be harmless; exact execution
-                    # identity must not be silently deduplicated by the comparison.
-                    problems.append(f"{sid}: duplicate {label} action identity {ident}")
+                # Native reference catalogs may contain the *same executable
+                # action* in multiple keyboard/radial providers. Union membership
+                # deliberately accepts that duplication; identity must already
+                # include the action resource/variant when it changes execution.
                 seen.add(ident)
                 if a.get("capability") not in capabilities:
                     problems.append(f"{sid}: {label} action {ident} has no known capability")
@@ -113,9 +113,9 @@ def self_test(matrix: dict) -> list[str]:
     if not compare(incomplete, matrix)["problems"]:
         fails.append("incomplete capture was silently accepted")
     duplicate = json.loads(json.dumps(good))
-    duplicate["states"][0]["camExecutable"].append(duplicate["states"][0]["camExecutable"][0])
-    if not any("duplicate" in p for p in compare(duplicate, matrix)["problems"]):
-        fails.append("duplicate action identity silently deduplicated")
+    duplicate["states"][0]["nativeExecutable"].append(duplicate["states"][0]["nativeExecutable"][0])
+    if compare(duplicate, matrix)["problems"]:
+        fails.append("two native providers with one executable identity were incorrectly rejected")
     return fails
 
 
