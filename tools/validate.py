@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import subprocess
 import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -1106,6 +1107,18 @@ def main() -> int:
             errors.extend(validate_xml(path))
 
     errors.extend(validate_semantics())
+
+    # Native UI parity is not equivalent to having a keyword somewhere in
+    # XAML. Fail on missing native transport seams and keep unresolved classes
+    # visible in the source-only audit, with no need for a running BG3.
+    audit = subprocess.run(
+        [sys.executable, str(ROOT / "tools/audit-native-ui-commands.py"), "--self-test"],
+        cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    if audit.returncode != 0:
+        errors.append("Native UI command/coverage audit failed:\n" + audit.stdout + audit.stderr)
+    else:
+        print(audit.stdout, end="")
 
     if errors:
         print("Static validation failed:")

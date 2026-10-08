@@ -733,7 +733,8 @@ if (-not $rowClip.Success -or
     -not $fixedSidebarRegion.Success -or
     -not $fixedSidebarRegion.Value.Contains('Grid.Row="0"') -or
     -not $fixedSidebarRegion.Value.Contains('Height="818"') -or
-    -not $fixedSidebarRegion.Value.Contains('Margin="0,16,0,16"') -or
+    -not $fixedSidebarRegion.Value.Contains('Margin="12,16,0,16"') -or
+    -not $text.Contains('Patch 8 SelectorTemplate uses Margin=-12') -or
     $fixedSidebarRegion.Value.Contains('ClipToBounds="True"')) {
     throw "One clipped catalog row with native focus gutters must protect the tabs without cropping selectors between lists."
 }

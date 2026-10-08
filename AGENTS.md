@@ -105,6 +105,31 @@ VMHotBarSlot**, not from `SelectedItem` or handcrafted data.
 Only LB/RB handlers change provider mode. Static checks cannot
 substitute for runtime proof of actual controller focus and A.
 
+## Controller command parity and source-derived selector geometry
+
+Current captured `Public/Game/GUI/Library/DataTemplates.xaml` has
+`SelectorTemplate` native `LSNineSliceImage Margin="-12"`. A
+104px square slot in a 120px cell gives 8px side inset; the source
+therefore proves why a flush-left FixedSideBar selector is clipped
+even after the 0.0.104 shared 850px row clip. Shift the
+**entire FixedSideBar region (list + sibling selector)** inward by
+12px within `CAM_ActionRowClip`. Do not add separate selector
+offsets, change cell geometry, remove the row clip, or alter
+focus/scroll. Treat adaptive-grid column change at narrow viewport
+widths as a potential runtime consequence.
+
+The user cannot test every BG3 class/inventory/status/mod combination.
+The normal Validate workflow must run
+`tools/audit-native-ui-commands.py`, pin the two installed Patch 8
+native UI command inventories, flag deleted real CAM command/provider
+routes, and keep missing native UI transports / unresolved action
+catalog categories explicit. The audit is **source-only**, not
+proof of dynamic VMHotBarSlot reachability or execution. The full
+command-risk inventory is documented in
+`docs/research/native-ui-command-parity-2026-10-08.md`.
+Do not close action coverage merely because all captured native
+command *names* are classified; they are not action instances.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:

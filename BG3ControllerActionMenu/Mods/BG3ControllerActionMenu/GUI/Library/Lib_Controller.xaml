@@ -1957,12 +1957,18 @@
                         </Grid.ColumnDefinitions>
                     <!-- Keyboard HotBar.xaml shows FixedSideBar alongside the main deck.
                          Preserve native VMHotBarSlot values, source order and count. -->
+                    <!-- Patch 8 SelectorTemplate uses Margin=-12; the cell's
+                         104px icon inset is 8px within a 120px cell. The
+                         12px sidebar left gutter keeps the complete native
+                         ring within CAM_ActionRowClip and moves both native
+                         list and selector together, preserving their shared
+                         coordinate root. -->
                     <Grid x:Name="CAM_FixedSideBarRegion"
                           Grid.Row="0"
                           Grid.Column="0"
                           Width="128"
                           Height="818"
-                          Margin="0,16,0,16"
+                          Margin="12,16,0,16"
                           HorizontalAlignment="Left"
                           VerticalAlignment="Top"
                           Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">

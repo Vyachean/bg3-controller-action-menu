@@ -182,6 +182,27 @@ LSScrollViewer.ScrollToElement
 CAM should reuse that seam for the action grid rather than relying on the ordinary
 ScrollViewer to infer controller focus.
 
+## Automated native UI command audit (2026-10-08)
+
+The installed Patch 8 keyboard and controller XAML contain 36 distinct command
+names. These are independently inventoried and classified in
+[the complete source audit](research/native-ui-command-parity-2026-10-08.md).
+The corresponding manifest is
+`docs/evidence/native-ui-command-audit-1.8.910.0.json`, checked on each
+Validate CI run by `tools/audit-native-ui-commands.py`.
+
+The auditor checks all available native provider/dispatch source seams, the
+classification of every observed command, and—when supplied with an existing
+read-only capture ZIP—checks both the pinned BG3 source hash and the exact
+source command inventory. It **does not infer character-specific action
+reachability** from a command name.
+
+An additional eight native keyboard/gameplay UI commands are absent from CAM's
+XAML (including switch weapon set, light source, melee/ranged selection and
+default attack). These are known missing **direct UI transports**, not proof
+that every gameplay effect is unavailable through native slots/global controls.
+Treat actual missing actions as a separate runtime parity task.
+
 ## Capture diagnostics
 
 The portable read-only capture emits a derived HotBar coverage report in addition to the
