@@ -668,16 +668,11 @@ def validate_semantics() -> list[str]:
                 '$token = $env:GH_TOKEN',
                 '$token = $env:GITHUB_TOKEN',
                 '$headers["Authorization"] = "Bearer $token"',
-                'Task = "install"',
-                "This milestone restores normal self-contained PAK install/update",
-                'Get-Asset -Release $release -Name "install-latest.ps1"',
-                '& $installer @installArgs',
-                'ReadOnly = $false',
-                'The install helper did not report success.',
-                'InstallStatus = $installStatus',
-                'InstallLog = $installLog',
-                'EnvironmentReport = $installReport',
-                "Self-contained CAM PAK installed:",
+                'Task = "capture"',
+                'capture-self-contained-inputs.ps1',
+                'ReadOnly = $true',
+                "Read-only keyboard/controller resource-template capture completed.",
+                '"-PortableRoot", $captureRoot',
             ],
         )
     )
@@ -686,12 +681,11 @@ def validate_semantics() -> list[str]:
         require_text(
             DEV_ENTRY_TEST,
             [
-                "Universal release-controlled install entry fixture passed.",
-                "Release-controlled install helper was not executed.",
+                "Universal release-controlled read-only capture entry fixture passed.",
+                "Release-controlled capture helper was not executed.",
                 'cmd.exe /c "exit 23"',
-                "fixture in-process install log",
-                "Fixture install rejected the package.",
-                "Failed install must report the real helper error",
+                "Capture archive must be written beside the operator VBS.",
+                "fixture read-only capture log",
             ],
         )
     )
