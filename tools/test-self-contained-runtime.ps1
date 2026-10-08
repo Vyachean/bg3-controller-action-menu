@@ -676,6 +676,30 @@ if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
 }
 
 
+# The native LocalFocusSelector controls are siblings of their ScrollViewer,
+# not children of its clipping surface. The UI's own fixed-height action
+# regions therefore need explicit clipping so scroll-boundary selection
+# cannot render into the LB/RB resource-tab header. This is a render-only
+# invariant, NOT proof of one-row-at-a-time navigation.
+$actionViewport = [regex]::Match(
+    $text,
+    '<Grid\\s+x:Name="CAM_ActionViewport"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$fixedSidebarRegion = [regex]::Match(
+    $text,
+    '<Grid\\s+x:Name="CAM_FixedSideBarRegion"[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $actionViewport.Success -or
+    -not $actionViewport.Value.Contains('ClipToBounds="True"') -or
+    -not $actionViewport.Value.Contains('Grid.Row="1"') -or
+    -not $fixedSidebarRegion.Success -or
+    -not $fixedSidebarRegion.Value.Contains('ClipToBounds="True"') -or
+    -not $fixedSidebarRegion.Value.Contains('Grid.Row="1"')) {
+    throw "Both native scroll-focus selectors must be clipped by their action-row viewports, not paint across the resource-tab header."
+}
+
 # The direct executable list is also the sole scroll owner.
 $hotBarList = [regex]::Match(
     $text,
