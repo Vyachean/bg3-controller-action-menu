@@ -566,7 +566,39 @@
           "LSInputBinding UISelectionLeft without HoldTime",
           "LSInputBinding ToggleWeaponSet",
           "LSInputBinding UISelectionLeft with HoldTimeShortcuts"
-        ]
+        ],
+        "captureProbe": {
+          "report": "hotbar-coverage-contract.json",
+          "probeGroup": "InputTransportProbes",
+          "symbols": [
+            "SwitchWeaponSetCommand",
+            "ToggleWeaponSet",
+            "UISelectionLeft",
+            "ControllerHoldButtonStyle",
+            "WeaponSetSwitchStyle",
+            "LSInputBinding",
+            "HoldTimeShortcuts"
+          ],
+          "recordedAttributes": [
+            "SourceFile",
+            "Element",
+            "ElementName",
+            "BoundEvent",
+            "EventName",
+            "Command",
+            "CommandParameter",
+            "Style",
+            "Content",
+            "HoldTime",
+            "TapTime",
+            "EatInput",
+            "Property",
+            "Value",
+            "RawTag"
+          ],
+          "policy": "record-missing-do-not-fail",
+          "purpose": "find a repeatable ActionRadials-compatible native transport before restoring the shortcut"
+        }
       }
     },
     "captureEvidence": {
@@ -632,7 +664,7 @@
           "FilterActionResourceCommand"
         ],
         "recordsCommandParameter": true,
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "searchScope": "all captured XAML",
         "missingProbePolicy": "record-missing-do-not-fail",
         "recordsSourceFile": true,
@@ -651,7 +683,18 @@
           ]
         },
         "bindingSyntax": "Command bindings may use DataContext.<Command>, RelativeSource; discovery must match the command name within the Binding expression.",
-        "hotBarTemplateSlotBinding": "VMHotBar -> SlotList"
+        "hotBarTemplateSlotBinding": "VMHotBar -> SlotList",
+        "inputTransportSymbols": [
+          "SwitchWeaponSetCommand",
+          "ToggleWeaponSet",
+          "UISelectionLeft",
+          "ControllerHoldButtonStyle",
+          "WeaponSetSwitchStyle",
+          "LSInputBinding",
+          "HoldTimeShortcuts"
+        ],
+        "recordsInputTransportAttributes": true,
+        "missingInputTransportPolicy": "record-missing-do-not-fail"
       },
       "runtimeUnverifiedShippingClasses": [
         "cantrips",
