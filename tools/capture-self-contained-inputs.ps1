@@ -165,6 +165,16 @@ function Get-XamlAttributeFromTag {
     return $null
 }
 
+function Get-XamlElementNameFromTag {
+    param([string]$Tag)
+
+    $match = [regex]::Match($Tag, '^<\s*([^\s>/]+)')
+    if ($match.Success) {
+        return $match.Groups[1].Value
+    }
+    return $null
+}
+
 function Get-HotBarCoverageReport {
     param(
         [object[]]$Documents,
@@ -268,6 +278,66 @@ function Get-HotBarCoverageReport {
         }
     )
 
+    $inputTransportSymbols = @(
+        "SwitchWeaponSetCommand",
+        "ToggleWeaponSet",
+        "UISelectionLeft",
+        "ControllerHoldButtonStyle",
+        "WeaponSetSwitchStyle",
+        "LSInputBinding",
+        "HoldTimeShortcuts"
+    )
+    $inputTransportProbes = @(
+        foreach ($symbol in $inputTransportSymbols) {
+            $matches = @(
+                foreach ($document in $loadedDocuments) {
+                    $pattern = '<[^>]*' + [regex]::Escape($symbol) + '[^>]*>'
+                    foreach ($match in [regex]::Matches(
+                        $document.Text,
+                        $pattern,
+                        [System.Text.RegularExpressions.RegexOptions]::Singleline
+                    )) {
+                        $tag = $match.Value
+                        [pscustomobject]@{
+                            SourceFile = $document.PackagedPath
+                            Element = Get-XamlElementNameFromTag -Tag $tag
+                            ElementName = @(
+                                Get-XamlAttributeFromTag -Tag $tag -AttributeName "x:Name"
+                                Get-XamlAttributeFromTag -Tag $tag -AttributeName "Name"
+                                Get-XamlAttributeFromTag -Tag $tag -AttributeName "x:Key"
+                            ) | Where-Object { $_ } | Select-Object -First 1
+                            BoundEvent = Get-XamlAttributeFromTag -Tag $tag -AttributeName "BoundEvent"
+                            EventName = Get-XamlAttributeFromTag -Tag $tag -AttributeName "EventName"
+                            Command = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Command"
+                            CommandParameter = Get-XamlAttributeFromTag -Tag $tag -AttributeName "CommandParameter"
+                            Style = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Style"
+                            Content = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Content"
+                            HoldTime = Get-XamlAttributeFromTag -Tag $tag -AttributeName "HoldTime"
+                            TapTime = Get-XamlAttributeFromTag -Tag $tag -AttributeName "TapTime"
+                            EatInput = Get-XamlAttributeFromTag -Tag $tag -AttributeName "EatInput"
+                            Property = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Property"
+                            Value = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Value"
+                            RawTag = $tag
+                        }
+                    }
+                }
+            )
+
+            [pscustomobject]@{
+                Symbol = $symbol
+                Present = ($matches.Count -gt 0)
+                MatchCount = $matches.Count
+                Matches = $matches
+            }
+        }
+    )
+
+    $missingInputTransportSymbols = @(
+        $inputTransportProbes |
+            Where-Object { -not $_.Present } |
+            ForEach-Object { $_.Symbol }
+    )
+
     $missingCommands = @(
         $commandProbes |
             Where-Object { -not $_.Present } |
@@ -275,7 +345,7 @@ function Get-HotBarCoverageReport {
     )
 
     [ordered]@{
-        SchemaVersion = 2
+        SchemaVersion = 3
         HotBarSha256 = if ($HotBarPath -and (Test-Path -LiteralPath $HotBarPath -PathType Leaf)) {
             (Get-FileHash -Algorithm SHA256 -LiteralPath $HotBarPath).Hash.ToLowerInvariant()
         } else {
@@ -284,6 +354,8 @@ function Get-HotBarCoverageReport {
         ScannedXamlCount = $loadedDocuments.Count
         CommandProbes = $commandProbes
         MissingCommands = $missingCommands
+        InputTransportProbes = $inputTransportProbes
+        MissingInputTransportSymbols = $missingInputTransportSymbols
         ExecutableCollections = $collections
         RadialAssignmentReferences = $radialCoverage
         Note = "Derived read-only discovery report. Missing research seams are evidence, not capture failures."
@@ -308,6 +380,17 @@ if ($CoverageSelfTest) {
 <Grid>
   <ItemsControl ItemsSource="{Binding PlayerCharacterProperties.SpellsAndActions}"/>
   <ItemsControl ItemsSource="{Binding Inventory.Slots}"/>
+  <ls:LSInputBinding x:Name="WeaponInput"
+                     BoundEvent="UISelectionLeft"
+                     HoldTime="{StaticResource HoldTimeShortcuts}"
+                     Command="{Binding SwitchWeaponSetCommand}"
+                     EatInput="False"/>
+  <ls:LSButton x:Name="WeaponHint"
+               Style="{StaticResource ControllerHoldButtonStyle}"
+               Content="{Binding InputEvents, ConverterParameter=UISelectionLeft}"/>
+  <Style x:Key="WeaponSetSwitchStyle">
+    <Setter Property="BoundEvent" Value="ToggleWeaponSet"/>
+  </Style>
 </Grid>
 '@ | Set-Content -LiteralPath $otherFixture -Encoding UTF8
 
@@ -332,7 +415,39 @@ if ($CoverageSelfTest) {
         if (-not $resourceFilter.Present -or $resourceFilter.MatchCount -ne 1) {
             throw "Coverage self-test did not recognize DataContext/RelativeSource command bindings."
         }
-        if ($report.SchemaVersion -ne 2 -or $report.ScannedXamlCount -ne 2) {
+        $switchCommand = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "SwitchWeaponSetCommand" })[0]
+        $toggleEvent = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "ToggleWeaponSet" })[0]
+        $selectionLeft = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "UISelectionLeft" })[0]
+        $holdTime = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "HoldTimeShortcuts" })[0]
+        $inputBinding = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "LSInputBinding" })[0]
+        $holdStyle = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "ControllerHoldButtonStyle" })[0]
+        $weaponStyle = @($report.InputTransportProbes | Where-Object { $_.Symbol -eq "WeaponSetSwitchStyle" })[0]
+
+        if (-not $switchCommand.Present -or $switchCommand.Matches[0].Command -ne "{Binding SwitchWeaponSetCommand}") {
+            throw "Coverage self-test did not preserve SwitchWeaponSetCommand binding metadata."
+        }
+        if (-not $selectionLeft.Present -or
+            @($selectionLeft.Matches | Where-Object { $_.BoundEvent -eq "UISelectionLeft" }).Count -ne 1) {
+            throw "Coverage self-test did not preserve UISelectionLeft BoundEvent metadata."
+        }
+        if (-not $holdTime.Present -or
+            @($holdTime.Matches | Where-Object { $_.HoldTime -eq "{StaticResource HoldTimeShortcuts}" }).Count -ne 1) {
+            throw "Coverage self-test did not preserve hold-threshold metadata."
+        }
+        if (-not $toggleEvent.Present -or
+            @($toggleEvent.Matches | Where-Object { $_.Property -eq "BoundEvent" -and $_.Value -eq "ToggleWeaponSet" }).Count -ne 1) {
+            throw "Coverage self-test did not preserve semantic ToggleWeaponSet setter metadata."
+        }
+        if (-not $inputBinding.Present -or
+            @($inputBinding.Matches | Where-Object { $_.Element -eq "ls:LSInputBinding" }).Count -ne 1 -or
+            -not $holdStyle.Present -or
+            -not $weaponStyle.Present) {
+            throw "Coverage self-test did not preserve input-binding/style transport structure."
+        }
+        if (@($report.MissingInputTransportSymbols).Count -ne 0) {
+            throw "Coverage self-test unexpectedly reported missing input-transport symbols."
+        }
+        if ($report.SchemaVersion -ne 3 -or $report.ScannedXamlCount -ne 2) {
             throw "Coverage self-test produced the wrong report schema."
         }
 
@@ -458,7 +573,7 @@ try {
         "Missing essential groups: $(if ($missingEssential.Count) { $missingEssential -join ', ' } else { '(none)' })"
         ""
         "This capture is read-only. No BG3 files, saves, profiles, or mods were modified."
-        "Derived HotBar coverage report: hotbar-coverage-contract.json"
+        "Derived HotBar/input transport report: hotbar-coverage-contract.json"
         "Upload the ZIP back to the development chat."
     ) | Set-Content -LiteralPath (Join-Path $outputDir "README.txt") -Encoding UTF8
 
@@ -468,8 +583,9 @@ try {
         "Game.pak: $($gamePak.FullName)"
         "Files captured: $($manifest.Count)"
         ""
-        "Derived coverage report: hotbar-coverage-contract.json"
+        "Derived coverage/input report: hotbar-coverage-contract.json"
         "Missing research commands: $(if (@($coverageReport.MissingCommands).Count) { @($coverageReport.MissingCommands) -join ', ' } else { '(none)' })"
+        "Missing input transport symbols: $(if (@($coverageReport.MissingInputTransportSymbols).Count) { @($coverageReport.MissingInputTransportSymbols) -join ', ' } else { '(none)' })"
         ""
         "=== Essential groups ==="
     )
