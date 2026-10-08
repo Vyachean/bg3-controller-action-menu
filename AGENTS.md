@@ -258,20 +258,20 @@ The resource-first runtime must use exactly one controller action list:
 This refactor is specifically intended to remove duplicate focus owners, invisible wrapper transitions, selector coordinate divergence, and scroll ownership ambiguity. Do not add a second executable action list back into the template.
 
 
-## Runtime proof — hold transport correction
+## Weapon-set shortcut proof boundary
 
-The weapon-set shortcut evidence now supersedes the 0.0.51–0.0.54 transport attempts:
+All CAM-owned weapon-set input transports tried so far are rejected by in-game proof:
 
-- direct `BoundEvent="UISelectionLeft"` on the visual hold button: one-shot / failed to re-arm;
-- raw `LSInputBinding BoundEvent="UISelectionLeft"` without a hold threshold: ordinary short press executes immediately;
-- `LSInputBinding BoundEvent="ToggleWeaponSet"`: also executes on ordinary short press in ActionRadials.
+- visual `BoundEvent="UISelectionLeft"`: fires once and does not reliably re-arm;
+- `LSInputBinding UISelectionLeft` without a hold threshold: short press fires immediately;
+- `LSInputBinding ToggleWeaponSet`: also fires on ordinary short press in ActionRadials;
+- `LSInputBinding UISelectionLeft + HoldTimeShortcuts`: still does not provide a repeatable ActionRadials-safe transport.
 
-The native BG3 input pattern proves that `LSInputBinding` itself supports `HoldTime`: the base Overlay binds one physical event to tap/hold actions with `TapTime="{StaticResource HoldTimeShortcuts}"` and `HoldTime="{StaticResource HoldTimeShortcuts}"`.
+Therefore the shortcut stays absent from shipping CAM. Grid-left remains `UILeft`, and no broken shortcut may consume that input.
 
-Therefore CAM weapon switching must use exactly:
-`WeaponSetShortcutBinding: BoundEvent="UISelectionLeft", HoldTime="{StaticResource HoldTimeShortcuts}", Command=SwitchWeaponSetCommand, EatInput=False`.
+The portable developer capture must search **all captured XAML** for the exact symbols `SwitchWeaponSetCommand`, `ToggleWeaponSet`, `UISelectionLeft`, `ControllerHoldButtonStyle`, `WeaponSetSwitchStyle`, `LSInputBinding`, and `HoldTimeShortcuts`. For every matching tag it records source file, element/name, BoundEvent/EventName, Command/CommandParameter, Style/Content, HoldTime/TapTime, EatInput, Setter Property/Value, and the raw tag. Missing symbols are evidence and must not fail capture.
 
-The visible `ToggleWeaponSet` remains the captured vanilla `ControllerHoldButtonStyle` hint with no BoundEvent. Grid-left remains `UILeft`. Do not use `ToggleWeaponSet` semantic binding in ActionRadials unless a future current-game capture proves different behavior.
+Do not restore weapon switching until that evidence proves a **different, repeatable ActionRadials-compatible native transport**.
 
 
 ## Historical post-single-list viewport correction (superseded by selectorless grid)

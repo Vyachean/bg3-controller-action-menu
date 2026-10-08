@@ -891,3 +891,8 @@ CAM_ResourceTabs.Tag
 ```
 
 The final two steps are copied from the current Patch 8 controller radial horizontal scroller. They are the material difference from the rejected 0.0.66–0.0.67 resource-strip experiments, which supplied a scroll target but did not commit the computed `TargetPosition`. `AutoScrollBehavior`, explicit SelectedIndex/SelectedItem targets, wrapped resource rows and hand-maintained numeric offsets remain rejected.
+
+
+## Controller shortcut evidence boundary
+
+Weapon-set switching is outside the action-catalog architecture and remains disabled until native input transport is proven. The grid keeps ordinary `UILeft` navigation. The read-only developer capture owns discovery: schema-v3 `hotbar-coverage-contract.json` records all XAML tags containing the weapon-set command/event/style/input symbols and their relevant transport attributes. CAM runtime must not add a shortcut merely because a command or visual hint exists; the evidence must show a repeatable ActionRadials-compatible transport that does not steal short grid-left input.

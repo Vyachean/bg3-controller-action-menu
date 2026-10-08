@@ -1213,3 +1213,22 @@ Automatic proof must require:
 8. action-grid focus/tooltip/A/nested contracts are byte-semantically unchanged except for provider-mode marker references.
 
 No standalone game run is requested for this correction. It belongs in the next combined milestone test with provider parity and focus/tooltip verification.
+
+
+### 2026-10-08 — weapon-set input transport capture contract
+
+The weapon-set shortcut remains intentionally absent. Runtime releases 0.0.51–0.0.54 already reject all known CAM-owned transports, including the hold-threshold variant. No fifth input guess is allowed.
+
+The portable capture now emits schema-v3 `hotbar-coverage-contract.json` with `InputTransportProbes`. In one read-only capture it must search all captured XAML for:
+
+- `SwitchWeaponSetCommand`;
+- `ToggleWeaponSet`;
+- `UISelectionLeft`;
+- `ControllerHoldButtonStyle`;
+- `WeaponSetSwitchStyle`;
+- `LSInputBinding`;
+- `HoldTimeShortcuts`.
+
+Each matching tag records source file, element/name, `BoundEvent`, `EventName`, command/parameter, style/content, hold/tap thresholds, `EatInput`, setter property/value and raw tag. Missing symbols are recorded in `MissingInputTransportSymbols` and do not fail capture.
+
+The next operator capture should therefore answer the weapon-set transport question together with the remaining HotBar/radial parity questions; do not ask for a separate weapon-set-only test.

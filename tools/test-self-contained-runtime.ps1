@@ -35,12 +35,44 @@ if ($evidence.runtimeContract.coverageContract.status -ne "incomplete-until-nati
     $evidence.runtimeContract.coverageContract.dispatchType -ne "VMHotBarSlot" -or
     $evidence.runtimeContract.coverageContract.documentation -ne "docs/action-coverage.md" -or
     $evidence.runtimeContract.coverageContract.captureDiagnostics.report -ne "hotbar-coverage-contract.json" -or
-    $evidence.runtimeContract.coverageContract.captureDiagnostics.schemaVersion -ne 2 -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.schemaVersion -ne 3 -or
     $evidence.runtimeContract.coverageContract.captureDiagnostics.searchScope -ne "all captured XAML" -or
     $evidence.runtimeContract.coverageContract.captureDiagnostics.missingProbePolicy -ne "record-missing-do-not-fail" -or
-    $evidence.runtimeContract.coverageContract.captureDiagnostics.recordsSourceFile -ne $true) {
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.recordsSourceFile -ne $true -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.recordsInputTransportAttributes -ne $true -or
+    $evidence.runtimeContract.coverageContract.captureDiagnostics.missingInputTransportPolicy -ne "record-missing-do-not-fail") {
     throw "Runtime evidence must carry the controller HotBar parity contract."
 }
+$weaponCapture = $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.captureProbe
+$requiredWeaponSymbols = @(
+    "SwitchWeaponSetCommand",
+    "ToggleWeaponSet",
+    "UISelectionLeft",
+    "ControllerHoldButtonStyle",
+    "WeaponSetSwitchStyle",
+    "LSInputBinding",
+    "HoldTimeShortcuts"
+)
+if ($evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.status -ne "removed-pending-proven-actionradials-transport" -or
+    $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.camBinding -ne $false -or
+    $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.camHint -ne $false -or
+    $weaponCapture.report -ne "hotbar-coverage-contract.json" -or
+    $weaponCapture.probeGroup -ne "InputTransportProbes" -or
+    $weaponCapture.policy -ne "record-missing-do-not-fail") {
+    throw "Weapon-set shortcut must remain absent while structured native input transport evidence is collected."
+}
+foreach ($symbol in $requiredWeaponSymbols) {
+    if (@($weaponCapture.symbols) -notcontains $symbol -or
+        @($evidence.runtimeContract.coverageContract.captureDiagnostics.inputTransportSymbols) -notcontains $symbol) {
+        throw "Weapon input capture evidence is missing required symbol: $symbol"
+    }
+}
+foreach ($attribute in @("SourceFile","Element","ElementName","BoundEvent","Command","HoldTime","TapTime","EatInput","Property","Value","RawTag")) {
+    if (@($weaponCapture.recordedAttributes) -notcontains $attribute) {
+        throw "Weapon input capture evidence is missing required attribute: $attribute"
+    }
+}
+
 if (@($evidence.runtimeContract.coverageContract.knownMissingSourceClasses).Count -ne 0) {
     throw "Native keyboard-HotBar source coverage should no longer carry known missing-source classes once KeyboardHotBars fallback ships."
 }

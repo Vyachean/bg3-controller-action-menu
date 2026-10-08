@@ -213,4 +213,4 @@ CAM therefore keeps native resource filtering and removes the old **visible** `C
 
 Resource-tab presentation follows current HotBar evidence rather than a text-only approximation. Generic resources show their native names without a CAM-imposed maximum width and fall back to `ActionResource.TypeId` for null/empty names. SpellSlot/WarlockSpellSlot use an `Image` with `RomanNumeralLevelImage` over `ActionResource`, matching the native resource bar.
 
-The custom weapon-set shortcut is deliberately absent until a repeatable ActionRadials-native input transport is proven. It must not compete with primary grid navigation.
+The custom weapon-set shortcut is deliberately absent until a repeatable ActionRadials-native input transport is proven. All four previously tried transports are runtime-rejected. The portable capture now records structured occurrences of the native command/event/style/input symbols so the next decision is evidence-driven rather than another transport guess. It must not compete with primary grid navigation.
