@@ -16,58 +16,111 @@ MATRIX = ROOT / "docs/evidence/native-gameplay-capabilities.json"
 
 
 def compare(observation: dict, matrix: dict) -> dict:
+    """Check native action and capability parity for *observed* states only.
+
+    Identity creation remains an unproven, external, BG3-owned runtime-adapter
+    contract. This comparator must not accept empty/contradictory inventories
+    as evidence of playable parity.
+    """
     problems: list[str] = []
     missing: list[dict] = []
     capabilities = {c["id"] for c in matrix["capabilities"]}
+    if not isinstance(observation, dict):
+        return {
+            "result": "incomplete-or-failed",
+            "scope": "observed runtime states only; never implies universal BG3/mod parity",
+            "missing": [],
+            "problems": ["observation is not an object"],
+        }
     if observation.get("schemaVersion") != 1:
         problems.append("unsupported observation schema")
     if observation.get("gamePackageVersion") != matrix.get("gamePackageVersion"):
         problems.append("game version mismatch: regenerate native and CAM inventories")
-    if not observation.get("states"):
+
+    states = observation.get("states")
+    if not isinstance(states, list) or not states:
         problems.append("no captured game states")
-    for state in observation.get("states", []):
-        sid = state.get("id", "<unnamed>")
+        states = []
+    for index, state in enumerate(states):
+        if not isinstance(state, dict):
+            problems.append(f"state {index}: not a state object")
+            continue
+        sid = state.get("id")
+        if not isinstance(sid, str) or not sid.strip():
+            problems.append(f"state {index}: missing state identity")
+            sid = f"<unnamed-{index}>"
         if state.get("complete") is not True:
             problems.append(f"{sid}: native/CAM inventories were not collected completely")
         for key in ("nativeExecutable", "camExecutable"):
             if not isinstance(state.get(key), list):
                 problems.append(f"{sid}: missing {key} action array")
-        native = state.get("nativeExecutable", [])
-        cam = state.get("camExecutable", [])
+        native = state.get("nativeExecutable")
+        cam = state.get("camExecutable")
         if not isinstance(native, list) or not isinstance(cam, list):
             continue
-        seen_native: set[str] = set()
-        seen_cam: set[str] = set()
-        for label, items, seen in (("native", native, seen_native), ("cam", cam, seen_cam)):
-            for a in items:
-                ident = a.get("identity") if isinstance(a, dict) else None
+
+        native_by_identity: dict[str, str] = {}
+        cam_by_identity: dict[str, str] = {}
+        for label, items, identities in (
+            ("native", native, native_by_identity),
+            ("cam", cam, cam_by_identity),
+        ):
+            for item in items:
+                if not isinstance(item, dict):
+                    problems.append(f"{sid}: {label} has a non-object action")
+                    continue
+                ident = item.get("identity")
                 if not isinstance(ident, str) or not ident.strip():
                     problems.append(f"{sid}: {label} has a slot without stable native identity")
                     continue
-                # Native reference catalogs may contain the *same executable
-                # action* in multiple keyboard/radial providers. Union membership
-                # deliberately accepts that duplication; identity must already
-                # include the action resource/variant when it changes execution.
-                seen.add(ident)
-                if a.get("capability") not in capabilities:
+                capability = item.get("capability")
+                if capability not in capabilities:
                     problems.append(f"{sid}: {label} action {ident} has no known capability")
-                if label == "native" and a.get("editingOnly") is not True and a.get("executable") is not True:
-                    problems.append(f"{sid}: native action {ident} has unverified executable status")
-        for a in native:
-            if not isinstance(a, dict) or a.get("editingOnly") is True:
-                continue
-            ident = a.get("identity")
-            if isinstance(ident, str) and ident not in seen_cam:
-                missing.append({"state": sid, "identity": ident, "capability": a.get("capability")})
+                    continue
+                if label == "native" and item.get("editingOnly") is True:
+                    # Deliberately excluded radial-layout operations may be
+                    # present in the independent reference inventory.
+                    continue
+                if label == "cam" and item.get("editingOnly") is True:
+                    problems.append(f"{sid}: CAM action {ident} is editing-only")
+                    continue
+                if item.get("executable") is not True:
+                    problems.append(f"{sid}: {label} action {ident} has unverified executable status")
+                if ident in identities and identities[ident] != capability:
+                    problems.append(
+                        f"{sid}: {label} identity {ident} contradicts another "
+                        f"record's capability ({identities[ident]} vs {capability})"
+                    )
+                else:
+                    # Multiple *consistent* native records are legitimate
+                    # when the same executable action appears in several
+                    # game-owned keyboard/radial sources.
+                    identities[ident] = capability
+
+        if not native_by_identity:
+            problems.append(f"{sid}: no playable native reference identities captured")
+        for ident, capability in native_by_identity.items():
+            if ident not in cam_by_identity:
+                missing.append({"state": sid, "identity": ident, "capability": capability})
+            elif cam_by_identity[ident] != capability:
+                # Equal textual identity alone cannot establish that the
+                # CAM slot has the same gameplay capability.
+                missing.append({
+                    "state": sid, "identity": ident, "capability": capability,
+                    "camCapability": cam_by_identity[ident],
+                })
+                problems.append(f"{sid}: native/CAM capability mismatch for identity {ident}")
+
         observed = state.get("nativeGlobalCapabilities")
         verified = state.get("preservedGlobalCapabilities")
         if not isinstance(observed, list) or not isinstance(verified, list):
             problems.append(f"{sid}: missing native/global controller capability evidence")
             continue
-        for capability in observed:
+        for capability in observed + verified:
             if capability not in capabilities:
                 problems.append(f"{sid}: unknown global controller capability {capability}")
-            elif capability not in verified:
+        for capability in set(observed):
+            if capability in capabilities and capability not in verified:
                 missing.append({"state": sid, "capability": capability, "nativeGlobal": True})
     if missing:
         problems.append(f"{len(missing)} native gameplay action/global capability identities unreachable")
