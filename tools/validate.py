@@ -114,7 +114,7 @@ def validate_semantics() -> list[str]:
                 '<ls:LSActionPointResources x:Name="ResourcePoints"',
                 'Style="{StaticResource ActionResourcesTemplateSelector}"',
                 'x:Key="CAM_KeyboardHotBarPointGroup"',
-                'ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"',
+                'ContentTemplate="{StaticResource CAM_KeyboardHotBarPointGlyph}"',
                 'ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"',
                 'x:Key="CAM_KeyboardHotBarPointGlyph"',
                 'x:Name="ResourceGlyph"',
