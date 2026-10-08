@@ -922,6 +922,12 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>') -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>') -or
     -not $resourceTabTemplate.Value.Contains('ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="CAM_DiagnosticDirectPointFrame"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="CAM_DiagnosticDirectPointGlyph"') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="CAM_DiagnosticTemplateFingerprint"') -or
+    -not $resourceTabTemplate.Value.Contains('Text="94"') -or
+    -not $resourceTabTemplate.Value.Contains('<Binding Path="ActionResource.TypeId"/>') -or
+    -not $resourceTabTemplate.Value.Contains('<Binding Source="{StaticResource ActionResourcePointIconsPath}"/>') -or
     -not $resourceTabTemplate.Value.Contains('SmallActionPointSize="24"') -or
     -not $resourceTabTemplate.Value.Contains('ActionPointGroupSize="56"') -or
     -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
@@ -951,6 +957,22 @@ if (-not $keyboardPointGroup.Success -or
     -not $keyboardPointGroup.Value.Contains('ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"') -or
     $text.Contains('CAM_KeyboardHotBarPointGlyph')) {
     throw "Keyboard resource-point presentation must select the native shared HotBar template."
+}
+
+# Diagnostic version is intentionally recognizable and probes source
+# selection independently of LSActionPointResources. The probe is visual
+# only and must not replace the original native point / cost preview.
+$directPointProbe = [regex]::Match(
+    $resourceTabTemplate.Value,
+    '(?s)<Image x:Name="CAM_DiagnosticDirectPointGlyph".*?</Image>'
+)
+if (-not $directPointProbe.Success -or
+    -not $directPointProbe.Value.Contains('Converter="{StaticResource IconIdToSourceConverter}"') -or
+    -not $directPointProbe.Value.Contains('<Binding Source="{StaticResource ActionResourcePointIconsPath}"/>') -or
+    -not $directPointProbe.Value.Contains('<Binding Path="ActionResource.TypeId"/>') -or
+    -not $resourceTabTemplate.Value.Contains('x:Name="ResourcePoints"') -or
+    -not $resourceTabTemplate.Value.Contains('MaxActionPoints="{Binding MaxValue}"')) {
+    throw "0.0.94 direct icon probe must bypass native point grouping without replacing it."
 }
 
 $resourceTabsItemTemplate = [regex]::Match(
