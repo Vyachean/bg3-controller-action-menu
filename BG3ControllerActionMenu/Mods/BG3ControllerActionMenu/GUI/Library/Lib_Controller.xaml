@@ -821,10 +821,10 @@
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
-                                <Setter Property="Command" Value="{x:Null}"/>
-                                <Setter Property="CommandParameter" Value="{x:Null}"/>
-                            </DataTrigger>
+                            <!-- Metamagic is a parallel sidebar in 0.0.99, not a direct
+                                 replacement for HotBarList. In this mode the spell grid
+                                 still needs the default FilterActionResourceCommand after
+                                 a native nested/upcast/throw selection is dismissed. -->
                             <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
                                 <Setter Property="Command" Value="{x:Null}"/>
                                 <Setter Property="CommandParameter" Value="{x:Null}"/>
@@ -949,6 +949,11 @@
                                 <b:ComparisonCondition LeftOperand="{Binding SingleHotBar.SlotList.Count}"
                                                        Operator="GreaterThan"
                                                        RightOperand="0"/>
+                                <!-- Metamagic restores focus to the parallel sidebar,
+                                     never the central spell grid. -->
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
+                                                       Operator="NotEqual"
+                                                       RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
@@ -1018,8 +1023,11 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <!-- Native variant selection temporarily uses HotBarList, but the
+                         owning top-level Metamagic tab is CAM_FixedSideBarList. -->
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
 
@@ -2091,6 +2099,12 @@
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}" Operator="NotEqual" RightOperand="{x:Null}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                        <!-- A real nested choice temporarily focuses the
+                                             central list; that is not D-pad navigation
+                                             away from the metamagic sidebar. -->
+                                        <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="False"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="False"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
