@@ -122,6 +122,30 @@ correctly remain in-game acceptance gates for #125.
 
 See [exact installed-source audit](research/metamagic-parity-2026-10-08.md).
 
+## Native ControllerHotBars fallback (#138 candidate)
+
+For any action the game already placed in its original controller
+radials, the native read-only `ControllerHotBars[*].SlotList` contains
+current executable `VMHotBarSlot` values. A separate optional
+top-level **Original Radials** tab now reuses the existing All-group
+native `VMHotBar` selector/dispatch template but reads
+`PlayerCharacterProperties.ControllerHotBars`, not keyboard bars
+and not raw `SpellsAndActions` / `Inventory.Slots`.
+
+This makes the original configured radial slots available as a
+**safety source** without player customization, a Script Extender,
+new key bindings or synthetic action objects. It appears only when
+the game has original controller bars and stays in the same LB/RB
+tab level as resource, Items, Cantrips, Passives, Metamagic and All.
+It must not replace All, resource filters, or the existing grouped
+keyboard fallback.
+
+**Limit:** this source preserves **existing original radial slots**,
+not all possible assignment candidates, and it does not itself
+expose native global weapons/light commands. Actual controller
+focus, A execution, nested B return and option visibility still
+require in-game acceptance. Issues #134/#135 remain open.
+
 ## Provider architecture
 
 The final controller HotBar keeps one top-level cost/source row and one executable grid,
