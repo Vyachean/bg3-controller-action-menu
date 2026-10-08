@@ -2456,6 +2456,22 @@
                              Margin="10,0,20,0"
                              Width="1000"/>
 
+                <!-- Native Patch 8 Controller ActionRadials weapon-set shortcut.
+                     Deliberately no BoundEvent: the original hold-button style
+                     owns its input. Previous extra input bindings consumed
+                     ordinary grid-left presses or failed to re-arm. -->
+                <ls:LSButton x:Name="ToggleWeaponSet"
+                             Style="{StaticResource ControllerHoldButtonStyle}"
+                             Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"
+                             Command="{Binding SwitchWeaponSetCommand}"
+                             Tag="{Binding Source='h7f2d9806g87bdg42a3g934ag9d051a036638', Converter={StaticResource TranslatedStringConverter}}"
+                             HorizontalContentAlignment="Left"
+                             VerticalAlignment="Center"
+                             EatInput="False"
+                             HorizontalAlignment="Left"
+                             Margin="10,0,20,0"
+                             Width="1000"/>
+
                 <ls:LSButton x:Name="ToggleDualWield"
                              BoundEvent="UISelectionRight"
                              Style="{StaticResource ControllerHoldButtonStyle}"
@@ -2499,6 +2515,9 @@
         </Grid>
 
         <ControlTemplate.Triggers>
+            <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="False">
+                <Setter TargetName="ToggleWeaponSet" Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
             <DataTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.IsDualWieldingAllowed}" Value="False">
                 <Setter TargetName="ToggleDualWield" Property="Visibility" Value="Collapsed"/>
             </DataTrigger>

@@ -64,6 +64,7 @@
       "ReleaseConcentrationCommand",
       "SetCurrentShownDeckCommand",
       "ShowTooltipOnUIElementCommand",
+      "SwitchWeaponSetCommand",
       "ToggleDualWieldingCommand",
       "UseSlotCommand"
     ],
@@ -75,7 +76,6 @@
       "LaunchDefaultActionCommand",
       "SetCursorCommand",
       "SwapLightSourceCommand",
-      "SwitchWeaponSetCommand",
       "TargetGameobjectCommand",
       "UseMeleeWeaponCommand",
       "UseRangedWeaponCommand"

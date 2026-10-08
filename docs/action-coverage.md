@@ -62,6 +62,32 @@ The player must never configure or browse **Original Radials** to make actions a
 
 Static provider/command checks are not proof of real action reachability. Separate runtime identity and execution coverage are required under #134 and #135.
 
+## Controller weapon-set switch — preserve the original hold control
+
+The original installed Xbox App BG3 1.8.910.0 `Public/Game/GUI/Library/PreloadedActionRadials_c.xaml:1925–1928` renders `ToggleWeaponSet` as an `ls:LSButton` with:
+
+- `Style="{StaticResource ControllerHoldButtonStyle}"`;
+- a visual hint for `UISelectionLeft` through `FindInputEventConverter`;
+- `Command="{Binding SwitchWeaponSetCommand}"`, with **no explicit `BoundEvent`** and `EatInput="False"`;
+- a native `HasRangedAttack=False` trigger that collapses the button.
+
+This is a **gameplay control**, not a configurable radial slot, and must not
+disappear in CAM merely because actions render as a grid. CAM restores the
+exact native button and visibility policy in the existing button-hints row.
+The grid's `UILeft` navigation stays untouched.
+
+**Known failed alternatives (operator-proven):** adding
+`BoundEvent="UISelectionLeft"` to the visual button fired only once;
+raw `LSInputBinding UISelectionLeft` captured short presses; rebinding
+`LSInputBinding ToggleWeaponSet` also captured short presses; a custom
+`HoldTimeShortcuts` input binding was not repeatable. Do **not** recreate
+those listeners or claim that reproducing the original XAML alone proves
+repeatable hold handling inside CAM.
+
+The source-backed restoration is guarded by structural CI tests, but actual
+repeatable gamepad hold behavior remains a single **milestone runtime check**,
+alongside the rest of the menu, not a reason to request a separate build test.
+
 ## Identity boundary
 
 Coverage is about executable BG3 objects, not names or icons.

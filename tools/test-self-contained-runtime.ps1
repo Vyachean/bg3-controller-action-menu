@@ -53,13 +53,13 @@ $requiredWeaponSymbols = @(
     "LSInputBinding",
     "HoldTimeShortcuts"
 )
-if ($evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.status -ne "removed-pending-proven-actionradials-transport" -or
-    $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.camBinding -ne $false -or
-    $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.camHint -ne $false -or
+if ($evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.status -ne "native-button-restored-runtime-hold-unverified" -or
+    $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.camBinding -ne $true -or
+    $evidence.runtimeContract.controllerShortcuts.toggleWeaponSet.camHint -ne $true -or
     $weaponCapture.report -ne "hotbar-coverage-contract.json" -or
     $weaponCapture.probeGroup -ne "InputTransportProbes" -or
     $weaponCapture.policy -ne "record-missing-do-not-fail") {
-    throw "Weapon-set shortcut must remain absent while structured native input transport evidence is collected."
+    throw "Weapon-set control evidence must record original native source restoration, with runtime hold behavior unresolved."
 }
 foreach ($symbol in $requiredWeaponSymbols) {
     if (@($weaponCapture.symbols) -notcontains $symbol -or
@@ -504,9 +504,7 @@ foreach ($forbidden in @(
     'HotKey',
     'SlotIconStyle',
     'x:Key="CAM_SelectorTemplate"',
-    'x:Name="ToggleWeaponSet"',
     'x:Name="WeaponSetShortcutBinding"',
-    'SwitchWeaponSetCommand',
     'HoldTime="{StaticResource HoldTimeShortcuts}"',
     'Columns="5"',
     'Width="632"',
@@ -689,11 +687,17 @@ if (-not $closeTrigger.Success) {
 Write-Host "Self-contained Patch 8 runtime contract passed: resource/special providers plus grouped KeyboardHotBars fallback remain native-slot-driven, nested return restores the active provider, and focus/tooltip remain LocalFocus-driven."
 
 
-# Weapon-set switching is deliberately absent from CAM after repeated runtime failures.
-foreach ($forbiddenWeaponSeam in @('x:Name="ToggleWeaponSet"','x:Name="WeaponSetShortcutBinding"','SwitchWeaponSetCommand','HoldTime="{StaticResource HoldTimeShortcuts}"')) {
+# Only the exact native Patch 8 controller hold button is allowed.
+# Older CAM-owned input listeners consumed UILeft or failed to re-arm.
+foreach ($forbiddenWeaponSeam in @('x:Name="WeaponSetShortcutBinding"','HoldTime="{StaticResource HoldTimeShortcuts}"','BoundEvent="UISelectionLeft"','BoundEvent="ToggleWeaponSet"')) {
     if ($text.Contains($forbiddenWeaponSeam)) {
         throw "Broken CAM-owned weapon-set input must remain absent: $forbiddenWeaponSeam"
     }
+}
+if ($text.Contains('x:Name="ToggleWeaponSet"') -eq $false -or
+    $text.Contains('Command="{Binding SwitchWeaponSetCommand}"') -eq $false -or
+    $text.Contains('Style="{StaticResource ControllerHoldButtonStyle}"') -eq $false) {
+    throw "Source-backed original controller weapon-set hold control missing."
 }
 if (-not $text.Contains('ActionLeftEvent="UILeft"')) {
     throw "Ordinary grid-left navigation must remain UILeft."

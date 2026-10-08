@@ -437,6 +437,37 @@ The portable developer capture must search **all captured XAML** for the exact s
 Do not restore weapon switching until that evidence proves a **different, repeatable ActionRadials-compatible native transport**.
 
 
+## Source-backed controller weapon-set button restoration (2026-10-08)
+
+**Supersedes only the earlier conclusion that the weapon shortcut must
+remain absent from CAM.** The earlier *input failures* are historical
+runtime facts and must not be discarded.
+
+The installed 1.8.910.0 controller
+`PreloadedActionRadials_c.xaml:1925–1928` has an actual
+`ToggleWeaponSet` **LSButton**, using
+`ControllerHoldButtonStyle`, game-owned
+`SwitchWeaponSetCommand`, a **visual** `UISelectionLeft` hint, and
+`EatInput=False`. Crucially the native button declares **no
+`BoundEvent`**. `HasRangedAttack=False` collapses it in the native
+template. This is a functional controller control, not a radial-editing
+UI or a manually configured ability.
+
+CAM may restore this **exact** existing native button/command and
+visibility contract. Do not introduce *any* separate input transport:
+previous explicit BoundEvent and LSInputBinding variants consumed
+ordinary D-pad left or did not re-arm. Keep the action grid
+`ActionLeftEvent=UILeft` unchanged.
+
+This restoration is source-backed, but static CI **cannot prove**
+repeatable hold handling by the game's runtime. The original
+no-BoundEvent LSButton variant still needs one combined milestone
+gameplay test. Treat command presence as source wiring, not finished
+runtime parity; #135 stays open until that proof.
+
+See `docs/action-coverage.md` and
+`docs/evidence/patch8-1.8.910.0-runtime-contract.json`.
+
 ## Historical post-single-list viewport correction (superseded by selectorless grid)
 
 Runtime proof after the single-list refactor shows four presentation defects without evidence of gameplay-state regression:

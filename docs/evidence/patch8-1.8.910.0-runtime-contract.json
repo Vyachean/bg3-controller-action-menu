@@ -602,9 +602,9 @@
     ],
     "controllerShortcuts": {
       "toggleWeaponSet": {
-        "status": "removed-pending-proven-actionradials-transport",
-        "camBinding": false,
-        "camHint": false,
+        "status": "native-button-restored-runtime-hold-unverified",
+        "camBinding": true,
+        "camHint": true,
         "shortGridLeftEvent": "UILeft",
         "rejectedTransports": [
           "visual BoundEvent=UISelectionLeft",
@@ -642,8 +642,11 @@
             "RawTag"
           ],
           "policy": "record-missing-do-not-fail",
-          "purpose": "find a repeatable ActionRadials-compatible native transport before restoring the shortcut"
-        }
+          "purpose": "verify native hold-button input at combined gameplay milestone, and preserve rejected custom binding history"
+        },
+        "nativeSource": "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml:1925-1928",
+        "nativeTransport": "ToggleWeaponSet LSButton with ControllerHoldButtonStyle, UISelectionLeft hint, SwitchWeaponSetCommand, EatInput=False; no BoundEvent",
+        "remainingProof": "repeatable hold works without consuming short D-pad left in ActionRadials when game is running"
       }
     },
     "captureEvidence": {
