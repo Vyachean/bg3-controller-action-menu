@@ -774,3 +774,25 @@ Actual resources reuse the native `LSActionPointResources`/RomanNumeralLevelImag
 ## 0.0.90 native resource baseline correction
 
 The Patch 8 keyboard `HotBar.xaml` attaches the resource-strip container, nine-slice background, horizontal `ActionResources` row, and `ActionResourcesList` to **VerticalAlignment=Bottom**. CAM previously centered the corresponding pieces inside a fixed 84-unit controller row and also centered each hand-composed special-provider frame. This is an objective geometrical difference independent of icon textures and a possible cause of the reported crooked indicator alignment. Keep the 84-unit header, functional LB/RB transitions, selected resource scroller and exact resource preview template, but align the resource row, background and all provider frames to the same bottom baseline. Never introduce a guessed per-icon scale factor to conceal this geometry issue. The completed CI proves markup shape only, not Noesis rendering parity.
+
+
+## 0.0.91 resource-point glyph isolation
+
+Screenshots of keyboard HotBar vs CAM on 2026-10-08 show a different
+**glyph source** (star/clover/flame/square groups versus enlarged
+primitive bars), not merely a coordinate or background mismatch.
+The resource preview already uses native VMActionResourceCostPreview,
+LSActionPointResources and ActionResourcesTemplateSelector; 0.0.90
+corrected the bottom alignment, but that does not select the keyboard
+resource-point image template while running in the controller library.
+
+The next *single-seam* runtime candidate sets a local, project-authored
+LSActionPointResources.ActionPointTemplate that uses the native Patch 8
+IconIdToSourceConverter and ActionResourcePoint*IconsPath with the live
+ActionResource.TypeId. It must handle normal/highlight/used/missing images,
+retain the native LSActionPointResources quantity/group/style model, and
+not create hard-coded icons, class mappings, or gameplay filters.
+
+Do not change controller navigation, resource tab selection, provider modes,
+grid focus, tooltip, A/B, nested return or item quantities together with
+this visual fix. It remains static-proof-only until verified in game.
