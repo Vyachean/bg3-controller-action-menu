@@ -372,6 +372,12 @@ $required = @(
     'SmallActionPointSize="24"',
     'ActionPointGroupSize="56"',
     'Style="{StaticResource ActionResourcesTemplateSelector}"',
+    'x:Key="CAM_KeyboardHotBarPointGroup"',
+    'ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"',
+    'ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"',
+    '<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>',
+    '<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>',
+    '<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>',
     'Style="{StaticResource RomanNumeralLevelImage}"',
     'x:Name="ResourcesNumeralDisplay"',
     'Converter="{StaticResource LessThanOrEqualMultiConverter}"',
@@ -912,6 +918,10 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
     -not $resourceTabTemplate.Value.Contains('DataContext="{Binding ActionResource}"') -or
     -not $resourceTabTemplate.Value.Contains('MaxActionPointGroups="0"') -or
+    -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>') -or
+    -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSize">48</System:Double>') -or
+    -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointSmallSize">24</System:Double>') -or
+    -not $resourceTabTemplate.Value.Contains('ActionPointTemplate="{StaticResource CAM_KeyboardHotBarPointGroup}"') -or
     -not $resourceTabTemplate.Value.Contains('SmallActionPointSize="24"') -or
     -not $resourceTabTemplate.Value.Contains('ActionPointGroupSize="56"') -or
     -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
@@ -929,6 +939,18 @@ if (-not $resourceTabTemplate.Success -or
     $resourceTabTemplate.Value.Contains('btn_pil_') -or
     $resourceTabTemplate.Value.Contains('Style="{StaticResource SectionImageStyle}"')) {
     throw "Native resource contents must be owned by the literal Patch 8 ActionResourcesList item template."
+}
+
+# Source-locked keyboard HotBar group must reference the native shared
+# glyph template, not reproduce a smaller controller icon/fallback by hand.
+$keyboardPointGroup = [regex]::Match(
+    $text,
+    '(?s)<ControlTemplate\\s+x:Key="CAM_KeyboardHotBarPointGroup"[^>]*>.*?</ControlTemplate>'
+)
+if (-not $keyboardPointGroup.Success -or
+    -not $keyboardPointGroup.Value.Contains('ContentTemplate="{StaticResource ActionResources.ActionGroup.ActionPoint}"') -or
+    $text.Contains('CAM_KeyboardHotBarPointGlyph')) {
+    throw "Keyboard resource-point presentation must select the native shared HotBar template."
 }
 
 $resourceTabsItemTemplate = [regex]::Match(
