@@ -272,6 +272,31 @@ runtime inventories can be compared across representative game
 states and all blocked capabilities have proven BG3-backed routes.
 See [issue #135](https://github.com/Vyachean/bg3-controller-action-menu/issues/135).
 
+## Developer-only native action inventory snapshot
+
+The existing early Script Extender probe previews only 10 entries from
+a collection, and cannot establish BG3 action parity for real characters.
+A new optional, **read-only** development module
+`dev/script-extender/Lua/Client/GameplayInventoryProbe.lua`
+collects the complete available sizes and a bounded, explicitly
+truncation-marked scan of nine independent native source collections
+plus CAM's live list/focus state. It never invokes BG3 action commands
+or changes the shipping PAK.
+
+`tools/analyze-gameplay-inventory.py` compares provider **counts**
+and focus under explicit CAM mode, without pretending a raw radial
+candidate is an executable `VMHotBarSlot`. CI synthetic fixtures
+fail when a displayed provider loses a native entry or a report
+incorrectly claims identity equivalence. Static CI cannot
+validate that Script Extender's old Noesis API still works in the
+user's Xbox App build, and this is not a new requirement for users.
+See [dev inventory guide](development-gameplay-inventory.md).
+
+The **full-gameplay acceptance gate remains open**: only a
+source-proven, resource-aware runtime executable identity adapter
+can feed `tools/compare-runtime-gameplay.py`. No visual,
+command-name or count-only comparison is enough.
+
 ## Runtime milestone gate
 
 No game run is needed for each source hypothesis.

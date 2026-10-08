@@ -156,6 +156,32 @@ read-only state probe. Do not put a Script Extender, native loader,
 or manual mock action identity into the shipping package. Do not
 call the mod functionally complete until this gate is satisfied.
 
+## Optional developer-only gameplay inventory: source counts first
+
+The original `dev/script-extender/Lua/Client/RadialProbe.lua`
+has `MAX_COLLECTION_PREVIEW=10` and cannot prove complete
+action coverage for any substantial character.
+`dev/script-extender/Lua/Client/GameplayInventoryProbe.lua`
+is a **separate**, bounded, read-only, dev-only Noesis snapshot
+collector: native keyboard/controller hotbars and radial
+catalogs, passives, inventory, resource/nested lists, CAM
+visible collection and actual `LocalFocus`. It is registered
+only in `dev/script-extender/Lua/BootstrapClient.lua`.
+
+`tools/analyze-gameplay-inventory.py` checks source/list counts,
+report completeness and action-ID evidence without claiming
+a `VMCharacterAction` is an executable `VMHotBarSlot`.
+It never emits a 'complete action parity' claim based on a
+display name, icon, or one spell ID; spell resource/upcast
+variants require a verified shared native identity.
+The old Script Extender API and Windows Xbox App support
+are runtime hypotheses, so this tool must NOT be installed
+with the shipping PAK or imposed on normal users.
+Do not ask the operator to enumerate dozens of spells or
+manually compare radial tiles. The next gate is a validated
+native executable identity adapter and missing-function
+remediation, not more static keyword checks.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:
