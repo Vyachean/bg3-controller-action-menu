@@ -78,36 +78,32 @@ be gated by their own active list. Avoid claiming cross-list spatial
 navigation without actual engine proof. Do not alter the accepted
 0.0.98 glyph paths or the native VMHotBarSlot execution command.
 
-## Scroll boundary regression gate (issue #130)
+## Runtime findings 0.0.103: focus chrome and native metamagic command
 
-The operator observed a row seeming to be skipped at the action
-grid scroll edge, with the native external selector rendering above
-the grid into resource tabs. The operator clarified that the **logical
-focus always reaches the correct action/tooltip**, and it is only the
-native selector frame that appears to skip at the scroll boundary.
-Thus no LSGrid navigation/SelectedIndex correction is justified.
+The operator confirmed that 0.0.103 stopped the scrolling
+selector-frame jump, and the logical Items grid focus had always
+been correct. However the oversized native focus frame is clipped
+by the two independently clipped selector/list regions. The
+updated candidate must use one shared clipped action-body row
+`CAM_ActionRowClip` spanning both columns and vertical
+16px chrome clearance (850px row; inner 818px lists/regions).
+Do not delete the row-level clip, revert to unbounded tab
+overpainting, replace the native selector with item-local
+highlight, or change `LSGrid` navigation, 120px scroll
+offset-margin or command focus identity.
 
-Separately the operator reported that entering the Metamagic tab leaves
-no initial selected controller focus on the side rail. The old LB/RB
-entry handler selected slot zero but did not explicitly move focus
-into the sidebar list. It must use native `ls:SetMoveFocusAction` to
-`CAM_FixedSideBarList` after selecting the Metamagic provider mode
-and before the existing index -1→0 concrete slot handoff, on
-**both** LB/RB directions. Do not let LocalFocusChanged set the
-provider mode again or reintroduce dual focus. `CAM_MainSelector` is a sibling of
-`HotBarList` and is outside its inner `LSScrollViewer` clip.
-The action and fixed sidebar row containers must have
-`ClipToBounds=True`. This source-backed clipping change cannot
-itself prove a logical focus-step correction.
-
-Keep `LSGrid`, `LocalFocus.DataContext`, scroll transport
-`ActionRadials.FocusedElement -> LSScrollViewer.ScrollToElement`,
-and `VerticalScrollOffsetMargin=120` unchanged until actual
-Noesis/installed-game evidence distinguishes a skipped logical
-`VMHotBarSlot` from visual selector discontinuity on scroll.
-Do not ship an arbitrary margin/timer/SelectionChanged focus fix.
-Keep #130 open until both clipping and one-row navigation are
-game-verified.
+The operator also confirmed that Metamagic's first cell shows
+the selector but has **no tooltip or actionable A command**
+after LB/RB. The main list's programmatic `SelectionChanged`
+70ms presentation wake is proven, while the side list formerly
+had only `LocalFocusChanged`. Reuse that same main-list wake
+contract for the native FixedSideBar and require a current
+`LocalFocus.DataContext`, enabled sidebar and explicit
+Metamagic mode. Set `ActionRadials.Tag`, side tooltip,
+ShowTooltip and CreateFocusedTooltipData from **this native
+VMHotBarSlot**, not from `SelectedItem` or handcrafted data.
+Only LB/RB handlers change provider mode. Static checks cannot
+substitute for runtime proof of actual controller focus and A.
 
 ## Current evidence boundary
 
