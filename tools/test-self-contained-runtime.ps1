@@ -892,7 +892,7 @@ foreach ($shoulder in @(
             '<b:TimerTrigger EventName="Click" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
             [System.Text.RegularExpressions.RegexOptions]::Singleline
         ) | Where-Object {
-            $_.Value.Contains('RightOperand="{StaticResource CAM_MetamagicModeToken}"') -and
+            $_.Value.Contains('Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"') -and
             $_.Value.Contains('CAM_ResetFirstFocusToken')
         }
     ) | Select-Object -First 1
