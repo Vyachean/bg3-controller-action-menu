@@ -78,6 +78,25 @@ be gated by their own active list. Avoid claiming cross-list spatial
 navigation without actual engine proof. Do not alter the accepted
 0.0.98 glyph paths or the native VMHotBarSlot execution command.
 
+## Scroll boundary regression gate (issue #130)
+
+The operator observed a row seeming to be skipped at the action
+grid scroll edge, with the native external selector rendering above
+the grid into resource tabs. `CAM_MainSelector` is a sibling of
+`HotBarList` and is outside its inner `LSScrollViewer` clip.
+The action and fixed sidebar row containers must have
+`ClipToBounds=True`. This source-backed clipping change cannot
+itself prove a logical focus-step correction.
+
+Keep `LSGrid`, `LocalFocus.DataContext`, scroll transport
+`ActionRadials.FocusedElement -> LSScrollViewer.ScrollToElement`,
+and `VerticalScrollOffsetMargin=120` unchanged until actual
+Noesis/installed-game evidence distinguishes a skipped logical
+`VMHotBarSlot` from visual selector discontinuity on scroll.
+Do not ship an arbitrary margin/timer/SelectionChanged focus fix.
+Keep #130 open until both clipping and one-row navigation are
+game-verified.
+
 ## Current evidence boundary
 
 Proven directly from the installed Xbox App build 1.8.910.0 plus current Patch 8 resources:
