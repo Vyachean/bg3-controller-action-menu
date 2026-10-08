@@ -755,10 +755,14 @@ if ([regex]::IsMatch($text, '\{Binding Tag,\s*ElementName=CAM_ResourceTabs\}')) 
 }
 $modeRead = '{Binding Tag, ElementName=CAM_ProviderModeMarker}'
 $clickGuard = '<b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>'
-foreach ($shoulder in @($tabLeft, $tabRight)) {
+foreach ($shoulderCase in @(
+    @{ Name = "LB"; Button = $tabLeft; Expected = 9 },
+    @{ Name = "RB"; Button = $tabRight; Expected = 7 }
+)) {
+    $shoulder = $shoulderCase.Button
     $clicks = @([regex]::Matches($shoulder.Value, '<b:EventTrigger EventName="Click">[\s\S]*?</b:EventTrigger>', [System.Text.RegularExpressions.RegexOptions]::Singleline))
-    if ($clicks.Count -ne 8) {
-        throw "Each shoulder must have exactly eight mutually exclusive provider transitions; got $($clicks.Count)."
+    if ($clicks.Count -ne $shoulderCase.Expected) {
+        throw "$($shoulderCase.Name) must have $($shoulderCase.Expected) guarded transitions; got $($clicks.Count)."
     }
     foreach ($click in $clicks) {
         if (-not $click.Value.Contains($modeRead) -or
