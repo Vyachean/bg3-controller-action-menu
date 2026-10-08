@@ -22,6 +22,12 @@ CAM reachable executable actions
 A release must not be described as a complete HotBar replacement while a known native
 action class has no proven CAM route.
 
+## Capability preservation, not radial preservation
+
+The player must never configure or browse **Original Radials** to make actions accessible in CAM. The original `ControllerHotBars` collection is useful as comparison evidence but is not a CAM provider: cleared or incomplete vanilla radial slots must not remove actions from the automatic catalogue. Preserve keyboard and controller gameplay, including native global commands, weapon/light switches, targeting, nesting, metamagic and other-mod actions. Unknown executable providers or omitted capabilities remain blocking, not reasons to expose raw radial layout.
+
+Static provider/command checks are not proof of real action reachability. Separate runtime identity and execution coverage are required under #134 and #135.
+
 ## Identity boundary
 
 Coverage is about executable BG3 objects, not names or icons.
@@ -121,30 +127,6 @@ spell states and whether two-list focus/tooltip handoff behaves
 correctly remain in-game acceptance gates for #125.
 
 See [exact installed-source audit](research/metamagic-parity-2026-10-08.md).
-
-## Native ControllerHotBars fallback (#138 candidate)
-
-For any action the game already placed in its original controller
-radials, the native read-only `ControllerHotBars[*].SlotList` contains
-current executable `VMHotBarSlot` values. A separate optional
-top-level **Original Radials** tab now reuses the existing All-group
-native `VMHotBar` selector/dispatch template but reads
-`PlayerCharacterProperties.ControllerHotBars`, not keyboard bars
-and not raw `SpellsAndActions` / `Inventory.Slots`.
-
-This makes the original configured radial slots available as a
-**safety source** without player customization, a Script Extender,
-new key bindings or synthetic action objects. It appears only when
-the game has original controller bars and stays in the same LB/RB
-tab level as resource, Items, Cantrips, Passives, Metamagic and All.
-It must not replace All, resource filters, or the existing grouped
-keyboard fallback.
-
-**Limit:** this source preserves **existing original radial slots**,
-not all possible assignment candidates, and it does not itself
-expose native global weapons/light commands. Actual controller
-focus, A execution, nested B return and option visibility still
-require in-game acceptance. Issues #134/#135 remain open.
 
 ## Provider architecture
 
