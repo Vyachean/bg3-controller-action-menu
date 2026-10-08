@@ -75,7 +75,7 @@ same VBS
       install/update | capture | diagnostics | ...
 ```
 
-Milestones 0.0.80–0.0.86 used this entry for read-only native HotBar/radial capture. That capture has now been inspected (see [schema-v3 readback](docs/research/schema-v3-capture-2026-10-08.md)). Starting in 0.0.87, the same VBS returns to the normal self-contained PAK **install/update** task. It downloads the release-controlled `install-latest.ps1` and installs through the existing Xbox helper; no manual launcher replacement is necessary. Capturing native evidence remains an optional developer operation.
+Milestones 0.0.80–0.0.86 used this entry for read-only native HotBar/radial capture. That capture has now been inspected (see [schema-v3 readback](docs/research/schema-v3-capture-2026-10-08.md)). Versions 0.0.87–0.0.91 used the same VBS for **install/update**. The 0.0.92 task temporarily switches to a **read-only capture** of controller resource templates missing from the prior capture, because the 0.0.91 visual fix produced no visible change. It downloads the release-controlled `install-latest.ps1` and installs through the existing Xbox helper; no manual launcher replacement is necessary. Capturing native evidence remains an optional developer operation.
 
 For maintainers, a CI artifact is **not** a release. A development task becomes operator-visible only after the Release workflow publishes the corresponding `dev-entry.ps1` and assets. See [Release process](docs/release-process.md).
 
