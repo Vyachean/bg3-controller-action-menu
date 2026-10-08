@@ -901,3 +901,10 @@ Weapon-set switching is outside the action-catalog architecture and remains disa
 ## 0.0.87 — development entry back to install
 
 After complete schema-v3 readback (see `docs/research/schema-v3-capture-2026-10-08.md`), no gameplay/XAML change is made by the installer milestone. The fixed VBS downloads release-controlled `dev-entry.ps1`, which now delegates to proven `install-latest.ps1`, validates its explicit `install-status.txt` and version, and surfaces `dev-status.txt`/log/report. This is not a second installer implementation or a local source-build seam. Read-only capture stays an optional asset and remains outside normal installation.
+
+
+## Provider mode versus tab-scroll state (0.0.88 regression repair)
+
+In 0.0.85 the scroll target moved to `CAM_ResourceTabs.Tag`, but 22 older mode-comparison conditions still read that property and therefore compared a concrete `ListBoxItem` against mode tokens. In 0.0.88 all provider modes are read from `CAM_ProviderModeMarker.Tag`, including LB/RB and nested state; the resource list's `Tag` remains solely the native horizontal scroll target. Shoulder Click conditions also require a null `CAM_TabCycleMarker.Tag` so only one provider transition can start for each press. These are independent invariants: mode identity, single-event transition, and concrete resource scroll target.
+
+Presentation retains the exact captured Patch 8 ActionResourcesList template for actual resource previews. The extra CAM-only providers have no corresponding native preview type; their resource-box frames now share the native background margins and consistent glyph sizing rather than claiming identical native categories.
