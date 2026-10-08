@@ -442,6 +442,7 @@
       "primaryGridSource": "SingleHotBar.SlotList | CurrentShownDeck.SlotList | PassivesHotBar.SlotList | KeyboardHotBars[*].SlotList",
       "parallelSidebarSource": "CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList",
       "parallelSidebarFocus": "CAM_FixedSideBarList.LocalFocus.DataContext -> ActionRadials.Tag -> UseSlotCommand",
+      "focusOwnership": "exclusive: LB/RB provider marker enables metamagic side rail vs HotBarList; native nested temporarily enables HotBarList; passive LocalFocusChanged cannot write provider mode",
       "typeTabsAllowed": false,
       "secondaryResourceLayerAllowed": false,
       "tabOrdering": "BG3-native resources, Cantrips when HasCantrips, Items via ItemHotBar, Metamagic when FixedSideBar.SlotList.Count > 0, Passives, then All keyboard-HotBar fallback",
