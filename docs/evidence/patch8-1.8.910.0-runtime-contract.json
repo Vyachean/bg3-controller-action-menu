@@ -265,7 +265,34 @@
         "selectedIndexScrollTargetAllowed": false,
         "selectedItemScrollTargetAllowed": false,
         "specialProviderTabsOutsideScrollOwner": true,
-        "note": "0.0.85 revives element-based resource scrolling only with the missing Patch 8 native TargetPositionChanged commit seam captured from PreloadedActionRadials_c.xaml; older CAM attempts stopped at ScrollToElement and are not equivalent."
+        "note": "0.0.85 revives element-based resource scrolling only with the missing Patch 8 native TargetPositionChanged commit seam captured from PreloadedActionRadials_c.xaml; older CAM attempts stopped at ScrollToElement and are not equivalent.",
+        "nativeVerticalBaseline": {
+          "source": "Mods/MainUI/GUI/Pages/HotBar.xaml",
+          "nativeNodes": [
+            "ActionResourcesContainer",
+            "HotbarBodyResourcesBg",
+            "ActionResources",
+            "ActionResourcesList"
+          ],
+          "alignment": "Bottom",
+          "camNodes": [
+            "CAM_ResourceStrip",
+            "CAM_HotbarBodyResourcesBg",
+            "CAM_TopTabs",
+            "CAM_ResourceTabs",
+            "CAM_ResourceTabsPanel"
+          ],
+          "camSpecialTabs": [
+            "CAM_CantripsTab",
+            "CAM_ItemsTab",
+            "CAM_MetamagicTab",
+            "CAM_PassivesTab",
+            "CAM_AllTab"
+          ],
+          "adaptation": "Retain controller 84-unit header and functional scrolling, but align image background, normal resources, and special providers on native bottom baseline.",
+          "noScaleGuesses": true,
+          "runtimeStatus": "unverified-pending-single-game-observation"
+        }
       },
       "resourceRenderer": {
         "size": 72,
