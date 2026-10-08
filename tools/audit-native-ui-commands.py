@@ -83,6 +83,10 @@ def extract_native_action_sites(source: str, source_path: str) -> dict:
         description = tag + (f"#{name}" if name else "")
         path = owners + (description,)
         items_source = _attribute(attributes, "ItemsSource")
+        # Native styles may bind via Setter Property/Value instead of
+        # direct control attributes. Do not infer style application.
+        if not items_source and tag == "Setter" and _attribute(attributes, "Property") == "ItemsSource":
+            items_source = _attribute(attributes, "Value")
         if items_source:
             collections.append({
                 "source": source_path,
@@ -91,6 +95,8 @@ def extract_native_action_sites(source: str, source_path: str) -> dict:
                 "dataType": _attribute(attributes, "DataType"),
             })
         command = _attribute(attributes, "Command")
+        if not command and tag == "Setter" and _attribute(attributes, "Property") == "Command":
+            command = _attribute(attributes, "Value")
         # Exact command binding token; never treat styling text, notes, or
         # other command names as executable call sites.
         if command and re.search(r"\bUseSlotCommand\b", command):
@@ -105,7 +111,7 @@ def extract_native_action_sites(source: str, source_path: str) -> dict:
                 "ancestorItemSources": [
                     source for source in (
                         _attribute(ancestor.attrib, "ItemsSource")
-                        for ancestor in ancestor_nodes[-8:]
+                        for ancestor in ancestor_nodes
                     ) if source
                 ],
             })
@@ -146,7 +152,9 @@ def compare_native_action_sites(capture: dict[str, str], runtime: str) -> dict:
         cam = {"dispatches": [], "collections": []}
     cam_parameters = {site["commandParameter"] for site in cam["dispatches"]}
     not_identical = [
-        site for site in vanilla if site["commandParameter"] not in cam_parameters
+        site for site in vanilla
+        if not site["commandParameter"]
+        or site["commandParameter"] not in cam_parameters
     ]
     return {
         "scope": "all XAML in provided archive; native engine ViewModel implementations not included",
@@ -333,6 +341,21 @@ def main() -> int:
                 or comparison["staticFullParityProven"] is not False
                 or comparison["errors"]):
             report["errors"].append("self-test failed: generic CAM dispatch masked native sources")
+        setter_fixture = (
+            '<Root xmlns:ls="clr-namespace:ls;assembly=SharedGUI">'
+            '<Style><Setter Property="Command" Value="{Binding UseSlotCommand}"/>'
+            '<Setter Property="ItemsSource" Value="{Binding AnotherHotBar.SlotList}"/>'
+            '</Style></Root>'
+        )
+        setters = extract_native_action_sites(setter_fixture, "synthetic/Setters.xaml")
+        if (len(setters["dispatches"]) != 1 or len(setters["collections"]) != 1):
+            report["errors"].append("self-test failed: style Setter bindings were omitted")
+        parameterless = compare_native_action_sites(
+            {"synthetic/Setters.xaml": setter_fixture},
+            setter_fixture,
+        )
+        if len(parameterless["nativeCallSitesWithoutIdenticalCamParameter"]) != 1:
+            report["errors"].append("self-test failed: missing native parameter was treated as proven")
         malformed = compare_native_action_sites(
             {"synthetic/Bad.xaml": "<Root><Unclosed></Root>"},
             '<Root/>',
