@@ -895,7 +895,6 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">') -or
     -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.Value}" Value="0"') -or
     -not $resourceTabTemplate.Value.Contains('Binding="{Binding ActionResource.TypeId}" Value="BardicInspiration"') -or
-    $resourceTabTemplate.Value.Contains('Binding="{Binding IsSelected') -or
     $resourceTabTemplate.Value.Contains('CAM_ResourceTabs.Tag') -or
     $resourceTabTemplate.Value.Contains('CAM_FilterButtonBackground') -or
     $resourceTabTemplate.Value.Contains('btn_pil_') -or
