@@ -2117,7 +2117,7 @@
                                       ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"
                                       ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
                                       ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"
-                                      KeyboardNavigation.DirectionalNavigation="Contained"
+                                      KeyboardNavigation.DirectionalNavigation="Cycle"
                                       ActionNextEvent="UIDown"
                                       ActionPrevEvent="UIUp"
                                       LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}">
