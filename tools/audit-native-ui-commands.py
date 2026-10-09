@@ -498,7 +498,7 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
     panel = panels[0]
     expected = {
         "Width": "Auto",
-        "MaxWidth": "380",
+        "MaxWidth": "600",
         "HorizontalAlignment": "Right",
         "HorizontalContentAlignment": "Right",
         "VerticalAlignment": "Bottom",
@@ -780,28 +780,13 @@ def validate_native_shoulder_entry_tabs(runtime: str) -> list[str]:
     if any(local(a) == "InvokeCommandAction" for a in last):
         return ["native LB opening must not run the first-resource filter"]
 
-    # The All provider skips the ordinary first filtered native slot.
-    # The installed native hover sound is proven for normal HotBarList
-    # LocalFocusChanged; emit it only for this initial MoveToEnd branch.
-    # Do not duplicate on normal RB open or ordinary LB/RB tab cycling.
-    def direct_hover_sounds(trigger: ET.Element) -> list[ET.Element]:
-        return [
-            x for x in trigger
-            if local(x) == "LSPlaySound"
-            and _attribute(x.attrib, "Sound") == "UI_HUD_Controller_RadialMenu_SlotHover"
-        ]
-
-    if len(direct_hover_sounds(branches["Equal"])) != 1:
-        return ["LB MoveToEnd entry must play exactly one native slot hover sound"]
-    if direct_hover_sounds(branches["NotEqual"]):
-        return ["RB normal entry must not duplicate native focus hover sound"]
-    if any(
-        local(x) == "LSPlaySound"
-        for x in tabs[0].iter()
-        if x not in list(branches["Equal"])
-        and x not in list(branches["NotEqual"])
-    ):
-        return ["native opening feedback must not leak into ordinary tab navigation"]
+    # Initial playback is already owned by the game/controller focus lifecycle.
+    # The added MoveToEnd LSPlaySound in v0.0.111 caused an audible duplicate;
+    # do not create standalone sound in either Loaded direction. This check
+    # does not claim that LB vibration is repaired.
+    for branch in (branches["Equal"], branches["NotEqual"]):
+        if any(local(node) == "LSPlaySound" for node in branch):
+            return ["native RB/LB Loaded branches must not duplicate game-owned opening sound"]
 
     timers = [n for n in tabs[0].iter()
               if local(n) == "TimerTrigger"
@@ -859,22 +844,22 @@ def validate_native_resource_name(runtime: str) -> list[str]:
     if local(caption) != "TextBlock" or caption in list(strip):
         return ["resource title must not overlay the native resource tab strip"]
 
-    if (_attribute(main.attrib, "Height") != "966"
+    if (_attribute(main.attrib, "Height") != "998"
             or _attribute(title.attrib, "Grid.Row") != "0"
-            or _attribute(title.attrib, "Height") != "32"
+            or _attribute(title.attrib, "Height") != "64"
             or _attribute(header.attrib, "Grid.Row") != "1"
             or _attribute(header.attrib, "Height") != "84"
             or _attribute(viewport.attrib, "Grid.Row") != "2"
             or _attribute(viewport.attrib, "Height") != "850"
             or _attribute(strip.attrib, "Height") != "84"):
-        return ["resource title layout must reserve 32px without resizing 84px tabs or 850px action viewport"]
+        return ["resource title layout must reserve 64px without resizing 84px tabs or 850px action viewport"]
     rowdefs = [child for x in main if local(x) == "Grid.RowDefinitions"
                for child in x if local(child) == "RowDefinition"]
-    if [_attribute(row.attrib, "Height") for row in rowdefs] != ["32", "84", "850"]:
-        return ["resource title must occupy a dedicated 32px row above native tabs"]
+    if [_attribute(row.attrib, "Height") for row in rowdefs] != ["64", "84", "850"]:
+        return ["resource title must occupy a dedicated 64px row above native tabs"]
     transforms = [child for x in main if local(x) == "Grid.RenderTransform"
                   for child in x.iter() if local(child) == "TranslateTransform"]
-    if len(transforms) != 1 or _attribute(transforms[0].attrib, "Y") != "-16":
+    if len(transforms) != 1 or _attribute(transforms[0].attrib, "Y") != "-32":
         return ["resource title must retain original screen coordinates of tabs and action grid"]
 
     if (not all(_attribute(caption.attrib, key) == value for key, value in {
@@ -1158,7 +1143,7 @@ def main() -> int:
                    for err in validate_native_compact_footer(centered_footer)):
             report["errors"].append("self-test failed: centered footer overlapping original resource HUD not rejected")
         wide_footer = runtime.replace(
-            'MaxWidth="380"\n                                   FlowDirection="RightToLeft"',
+            'MaxWidth="600"\n                                   FlowDirection="RightToLeft"',
             'MaxWidth="1320"\n                                   FlowDirection="RightToLeft"',
             1,
         )
@@ -1182,28 +1167,17 @@ def main() -> int:
         if not any("opposite metadata guards" in err
                    for err in validate_native_shoulder_entry_tabs(wrong_open_direction)):
             report["errors"].append("self-test failed: matching LB and RB entry guards not rejected")
-        missing_lb_hover_sound = runtime.replace(
-            '                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>',
-            '',
+        duplicate_lb_entry_sound = runtime.replace(
+            '                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>\n                                </b:EventTrigger>',
+            '                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>\n                                </b:EventTrigger>',
             1,
         )
-        if not any("exactly one native slot hover sound" in err
-                   for err in validate_native_shoulder_entry_tabs(missing_lb_hover_sound)):
-            report["errors"].append("self-test failed: silent LB grouped-All entry not rejected")
-        # Scope the negative mutation to the first/normal *Loaded* branch.
-        # The exact property setter also occurs in ordinary tab transitions,
-        # so a global first-occurrence replace would mutate the wrong event.
-        duplicate_rb_entry_sound = re.sub(
-            r'(<b:ComparisonCondition LeftOperand="\{Binding Metadata, ElementName=ActionRadials\}"\s+Operator="NotEqual" RightOperand="MoveToEnd"/>[\s\S]*?<b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="\{x:Null\}"/>)',
-            lambda m: m.group(1) + '\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>',
-            runtime,
-            count=1,
-        )
-        if duplicate_rb_entry_sound == runtime:
-            report["errors"].append("self-test failed: RB entry mutation did not reach its native Loaded branch")
-        if not any("must not duplicate native focus hover sound" in err
-                   for err in validate_native_shoulder_entry_tabs(duplicate_rb_entry_sound)):
-            report["errors"].append("self-test failed: duplicate RB entry sound not rejected")
+        if duplicate_lb_entry_sound == runtime or not any(
+            "must not duplicate game-owned opening sound" in err
+            for err in validate_native_shoulder_entry_tabs(duplicate_lb_entry_sound)
+        ):
+            report["errors"].append("self-test failed: duplicate LB opening sound not rejected")
+
         wrong_last_provider = runtime.replace(
             'TargetName="CAM_ProviderModeMarker" PropertyName="Tag"\n                                                            Value="{StaticResource CAM_AllModeToken}"/>',
             'TargetName="CAM_ProviderModeMarker" PropertyName="Tag"\n                                                            Value="{StaticResource CAM_ItemsModeToken}"/>',
@@ -1233,7 +1207,7 @@ def main() -> int:
             'x:Name="CAM_SelectedTabTitleArea"\n                          Grid.Row="1"',
             1,
         )
-        if not any("reserve 32px" in err for err in validate_native_resource_name(misplaced_title)):
+        if not any("reserve 64px" in err for err in validate_native_resource_name(misplaced_title)):
             report["errors"].append("self-test failed: overlapping selected title not rejected")
         missing_provider_title = runtime.replace(
             '<Setter Property="Text" Value="Cantrips"/>',
@@ -1244,7 +1218,7 @@ def main() -> int:
                    for err in validate_native_resource_name(missing_provider_title)):
             report["errors"].append("self-test failed: missing special provider title not rejected")
         title_moved_tab_strip = runtime.replace(
-            '<TranslateTransform Y="-16"/>',
+            '<TranslateTransform Y="-32"/>',
             '<TranslateTransform Y="0"/>',
             1,
         )
