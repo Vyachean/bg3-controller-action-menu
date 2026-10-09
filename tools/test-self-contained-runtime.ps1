@@ -1112,7 +1112,7 @@ if (-not $resourceTabTemplate.Success -or
     -not $resourceTabTemplate.Value.Contains('<ls:LSActionPointResources x:Name="ResourcePoints"') -or
     -not $resourceTabTemplate.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
     -not $resourceTabTemplate.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
-    -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
+    -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="0"') -or
     -not $resourceTabTemplate.Value.Contains('DataContext="{Binding ActionResource}"') -or
     -not $resourceTabTemplate.Value.Contains('MaxActionPointGroups="0"') -or
     -not $resourceTabTemplate.Value.Contains('<System:Double x:Key="ActionResources.ActionPointGroupSize">56</System:Double>') -or
