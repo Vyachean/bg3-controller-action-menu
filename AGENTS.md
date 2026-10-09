@@ -32,6 +32,10 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## Pending #166 source-level cost-feedback candidate (2026-10-09)
+
+The operator reports that CAM no longer highlights the predicted cost of the focused action in BG3's ordinary resource bar. The historical 0.0.75/0.0.76 rule below correctly rejects *permanent action-hover cost highlights in CAM's upper navigation tabs*. It must not be interpreted as permission to disable the original game's controller resource-cost feedback altogether. For this draft candidate only, CAM's upper resource navigation glyphs retain native available/max/identity artwork with `HighlightedActionPoints=0`, while the original BG3 `HighlightResourcesCommand` is delivered a proven focused `VMHotBarSlot` **after** focus stabilizes. A focus/provider transition first clears stale highlights, not the newly established one. This alters one aspect of the exact-keyboard tab renderer intentionally and requires a combined game milestone before merge/release. Do not report it as runtime proven from CI alone. See `docs/research/resting-resource-preview-2026-10-07.md` and issue #166.
+
 ## Functional parity is not original radial layout parity (2026-10-08)
 
 The operator requires full gameplay-capability parity with BG3, not preservation of the player-configured original radial layout. An **Original Radials** tab or runtime dependence on manually configured `ControllerHotBars` is rejected. Inspect `ControllerHotBars` as independent reference evidence only. CAM must discover available actions automatically from verified BG3-owned executable slot providers and retain native global controller functions, rather than relying on assigned original radial slots.
