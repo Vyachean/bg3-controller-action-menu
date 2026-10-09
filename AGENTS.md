@@ -182,34 +182,28 @@ The operator reports that CAM no longer highlights the predicted cost of the foc
 
 The reported v0.0.110-style `CAM_SelectedResourceName` inside the native 84px strip with a negative top margin overlaps tabs and hides all special-provider captions. A draft correction moves the title to an explicit 32px root row while preserving the 84px original resource artwork and 850px action viewport at their previous screen coordinates. Resource text must continue to bind the original `CAM_ResourceTabs.SelectedItem.ActionResource.Name`; never classify resources from single-letter icons. The five special modes have temporary readable English labels pending **verified native BG3 localization handles**. Do not declare these temporary strings localized or final. Do not change resource button art, filtering, LB/RB selection, slot focus or execution while fixing labels. Validation is source-only until one combined published-Release gameplay test.
 
-## 2026-10-09 footer safe-area correction (#167)
+## 2026-10-09 footer layout evidence after rejected v0.0.115 (#167)
 
-The operator's latest in-game run reproduces a historical 0.0.35 defect: horizontal **centering** of `ButtonHintsContainer` overlaps the original center-bottom action-resource HUD. This overrides the old generic instruction below to preserve the centered variant unchanged. Retain all original native controller button styles, commands, input glyphs, visibility rules and `Width=Auto` compact variant, but place the panel back in the **game-owned right-side hint lane** (`HorizontalAlignment=Right`, `HorizontalContentAlignment=Right`, `FlowDirection=RightToLeft`) with a bounded `MaxWidth`, not a giant 1000px child or centered 1320px row. The width cap is a source-level proposal, not in-game proof at all UI scales. Never rebind `UISelectionLeft`, remap D-pad, or introduce another input shortcut to fix overlapping hints. One combined game run after an actual published Release is the only runtime acceptance route. See #167.
+The operator proved two negative runtime facts: a centered controller-hint
+group overlaps the original center-bottom resource HUD, and the later
+v0.0.114/v0.0.115 two-layer candidate did **not** restore original
+horizontal alignment. That later candidate used
+`CAM_ControllerHintRightLane(MaxWidth=600, right/bottom)` around the
+captured compact `ButtonHintsContainer(Center/Center/LTR/Width=Auto)`.
+It is historical source work, **not an accepted architecture contract**.
 
-## 2026-10-09 source-backed compact hint-layout correction after v0.0.114 (#167)
+The exact installed Patch 8 source exposes at least two distinct native
+ActionRadials layouts: a wide right/right/RTL mode and a compact
+center/center/LTR mode. Neither may be partially combined and then called
+“native” without runtime proof. Source CI must therefore **not require**
+`MaxWidth=600`, a particular FlowDirection/alignment, child Width values,
+or the extra CAM outer lane. Protect only semantic controls/commands,
+hidden radial-editor policy, and safe input ownership. Footer placement,
+ordering, wrapping and HUD non-overlap are one consolidated runtime
+acceptance question.
 
-The operator again rejected horizontal controller-hint alignment in the
-published diagnostic v0.0.114. The previous design mixed **two distinct
-captured native radial variants**: the standard right/right/RTL 1000px
-container and the narrow center/center/LTR auto-width container. A
-right/right/RTL 600px compact hybrid is NOT itself a native variant.
-
-To preserve both original compact **button order** and the critical
-right-side HUD safe area, separate composition into two layers:
-`CAM_ControllerHintRightLane` is the bounded *outer* right/bottom
-placement with original `Margin=26,0,26,56`; its **direct child**
-`ButtonHintsContainer` uses the captured compact
-`Center/Center/LeftToRight/Width=Auto` semantics and a zero inner
-margin. Continue to use the original button names, native
-`ControllerHoldButtonStyle` and `SwitchWeaponSetCommand` without any
-additional BoundEvent or UISelectionLeft listener.
-
-Source CI asserts both layers and their separation. This is a
-**source-only UI composition candidate**, not proof of pixel-alignment
-or repaired weapon switching in Noesis. Do not claim #167/#154 solved
-until the next single combined **published** game milestone. The
-existing v0.0.114 diagnostic probe stays one-off, with removal
-mandatory in the next normal release.
+Do not rebind `UISelectionLeft`, remap D-pad, or add a new shortcut to
+solve layout. Do not publish a micro-release for a width/alignment guess.
 
 ## Partial native LB entry hover sound candidate (#160; 2026-10-09)
 
@@ -345,16 +339,18 @@ focus/scroll. Treat adaptive-grid column change at narrow viewport
 widths as a potential runtime consequence.
 
 The user cannot test every BG3 class/inventory/status/mod combination.
-The normal Validate workflow must run
-`tools/audit-native-ui-commands.py`, pin the two installed Patch 8
-native UI command inventories, flag deleted real CAM command/provider
-routes, and keep missing native UI transports / unresolved action
-catalog categories explicit. The audit is **source-only**, not
-proof of dynamic VMHotBarSlot reachability or execution. The full
-command-risk inventory is documented in
-`docs/research/native-ui-command-parity-2026-10-08.md`.
-Do not close action coverage merely because all captured native
-command *names* are classified; they are not action instances.
+`tools/audit-native-ui-commands.py` remains an **optional source
+diagnostic**, useful with a SHA-pinned original capture for command/provider
+inventory and investigation. It must NOT be promoted back into the normal
+Validate gameplay gate: several historical exact-XAML assertions preserved
+rejected implementations, and static command/source parity cannot execute
+Noesis or produce dynamic VMHotBarSlot identities. Normal Validate is limited
+to honest package/preflight facts plus independent parser self-tests.
+
+Keep missing native UI transports and unresolved action-catalog categories
+explicit in `docs/research/native-ui-command-parity-2026-10-08.md` and the
+capability matrix. Do not close action coverage merely because all captured
+native command *names* are classified; they are not action instances.
 
 ## Full gameplay capability parity is a blocking acceptance gate (#135)
 

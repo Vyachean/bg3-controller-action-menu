@@ -91,19 +91,29 @@ indicator are not visible inside CAM's menu. This is not permission to add a
 second command/input binding.
 
 The original 1.8.910.0 radial `PreloadedActionRadials_c.xaml:2151–2167`
-already uses an alternate narrow/left-layout mode that changes the
-`ButtonHintsContainer` and its actual gamepad hints from `Width="1000"`
-to `Width="Auto"`, with centered, left-to-right layout. The default
-radial-specific 1000-pixel-per-hint widths cause the CAM footer to stack
-full-width children, beyond the space available underneath the grid.
-CAM reuses that **original layout variant** without changing button
-styles, hints, `UISelectionLeft` content, `SwitchWeaponSetCommand`, or
-input transport. The hidden context-menu stub stays hidden.
+also contains a separate compact mode that changes the
+`ButtonHintsContainer` and its hints from the default 1000px
+right/right/RightToLeft arrangement to an auto-width
+center/center/LeftToRight arrangement. These are **two complete native
+variants**, not a menu of individually interchangeable geometry values.
 
-Source-level tests prove compact hint geometry and preserve the native
-hold style, but the actual visual progress indicator is still a
-single **combined runtime milestone** proof. No independent user test
-per change.
+v0.0.110–v0.0.115 tried several partial combinations (centered compact,
+right/RTL compact with 380/600px bounds, then a right 600px wrapper around
+the centered compact variant). The operator rejected the final v0.0.115
+milestone and reported that the hints still did not align like the original.
+Those combinations are historical evidence only.
+
+The previous schema-v3 capture preserved both final geometries but not the
+native trigger condition selecting the compact variant. Static CI therefore
+must not declare any `MaxWidth`, alignment, flow direction, outer wrapper,
+or child width to be correct. Schema-v5 read-only capture records the trigger
+context for mutations targeting `ButtonHintsContainer` and the hint controls,
+so the next source capture can recover the real native switch without a
+layout-guess release.
+
+Source-level tests preserve the semantic hint controls, hidden editor and
+input/command ownership only. Actual horizontal placement and hold progress
+remain one combined runtime milestone.
 
 ## Nested Throw — return from item selection to world targeting
 

@@ -77,12 +77,40 @@ jobs:
         shell: pwsh
         run: ./tools/build-one-click-installer.ps1
 
+      - name: Record immutable CI candidate identity (not game validation)
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          $pak = "build/BG3ControllerActionMenu-$env:VERSION.pak"
+          if (-not (Test-Path -LiteralPath $pak -PathType Leaf)) { throw "Missing built PAK: $pak" }
+          $sha = (Get-FileHash -LiteralPath $pak -Algorithm SHA256).Hash.ToLowerInvariant()
+          $checkedOut = (git rev-parse HEAD).Trim()
+          $identity = [ordered]@{
+            schemaVersion = 1
+            role = "CI package provenance only; not an installed-game or runtime pass"
+            version = $env:VERSION
+            gameTarget = "Xbox App PC Patch 8 (1.8.910.0)"
+            sourceHeadSha = $env:SOURCE_SHA
+            checkoutCommitSha = $checkedOut
+            workflowRunId = $env:WORKFLOW_RUN_ID
+            workflowEventName = $env:WORKFLOW_EVENT_NAME
+            pakFileName = (Split-Path $pak -Leaf)
+            pakSha256 = $sha
+            pakSizeBytes = (Get-Item -LiteralPath $pak).Length
+          }
+          $identity | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath "build/candidate-identity.json" -Encoding utf8
+
       - name: Upload package and installer
         uses: actions/upload-artifact@v4
         with:
-          name: BG3ControllerActionMenu-${{ steps.version.outputs.version }}
+          name: BG3ControllerActionMenu-${{ steps.version.outputs.version }}-run-${{ github.run_id }}
           path: |
             build/BG3ControllerActionMenu-${{ steps.version.outputs.version }}.pak
+            build/candidate-identity.json
             tools/install-xbox-dev.ps1
             tools/Install-BG3ControllerActionMenu.vbs
             tools/dev-entry.ps1

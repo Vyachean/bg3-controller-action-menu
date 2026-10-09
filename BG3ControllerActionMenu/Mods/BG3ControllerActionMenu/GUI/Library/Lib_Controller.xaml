@@ -896,30 +896,43 @@
                 <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="True">
                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <!-- Summon slots use CAM_ActionGridSlotContainer, whose
+                         selected-item focus action is token-gated. Without
+                         arming that token, selecting index zero only changes
+                         selection, not the actual executable LocalFocus. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                            FocusElement="{Binding ElementName=HotBarList}"
                                            DeferFocusAction="True"/>
                 </b:DataTrigger>
-                <!-- Returning from a vanished native summon source also invalidates
-                     the old slot. Never retain its ActionRadials.Tag after the
-                     game replaces the source collection with the prior tab. -->
+                <!-- A disappeared summon provider invalidates the old executable
+                     VMHotBarSlot before either of the two possible active focus
+                     owners below restores its own first real slot. -->
                 <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                <!-- Native nested spell choice inside Metamagic is
+                                     also owned by HotBarList. Provider mode alone
+                                     does not decide focus ownership. -->
                                 <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="True"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Re-arm the item-owned first-slot request on the new
+                         source. In All mode the outer group selects its own
+                         first inner slot through CAM_AllGroupSlots instead. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                            FocusElement="{Binding ElementName=HotBarList}"
                                            DeferFocusAction="True"/>
@@ -933,12 +946,14 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
-                    <!-- Target the concrete native ListBoxItem, not its non-focusable
-                         LSListBox. The item template owns deferred SetMoveFocusAction
-                         while CAM_ResetFirstFocusToken is armed. -->
-                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <!-- Focus the native LSListBox, as the tested v0.0.29
+                         LSListBox did; its own current focused item and
+                         LocalFocusChanged must identify the executable slot. -->
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
                 </b:DataTrigger>
                 <!-- Native MetamagicActive is the game-owned action result.
                      Metamagic remains in the same provider; only focus input
@@ -967,14 +982,30 @@
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:PropertyChangedTrigger>
-                <!-- Clear this presentation phase if the game ends the active
-                     metamagic or the user leaves its original top-level tab. -->
+                <!-- A native metamagic deactivation also changes the executable
+                     list owner. Clearing the phase marker alone previously disabled
+                     HotBarList while leaving its spell focused, with no sidebar
+                     focus handoff. This covers game-owned end-of-turn/cancel paths,
+                     not only the dedicated B handler below. -->
                 <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}">
                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                         <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}" Operator="Equal" RightOperand="False"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}">
                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
@@ -984,22 +1015,55 @@
                     <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:PropertyChangedTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
+                    <!-- A native nested choice replaces the executable SlotList.
+                         Invalidate the parent slot before A can dispatch it again;
+                         the first focused nested VMHotBarSlot becomes the new owner. -->
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedEnteredToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
+                    <!-- A native nested choice replaces the executable SlotList.
+                         Invalidate the parent slot before A can dispatch it again;
+                         the first focused nested VMHotBarSlot becomes the new owner. -->
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedEnteredToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
+                    <!-- A native nested choice replaces the executable SlotList.
+                         Invalidate the parent slot before A can dispatch it again;
+                         the first focused nested VMHotBarSlot becomes the new owner. -->
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedEnteredToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:DataTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding IsShowingAContainerWithVariants}">
                     <b:Interaction.Behaviors>
@@ -1128,7 +1192,14 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Invalidate stale native LocalFocus from the nested source;
+                         selection alone never publishes an executable slot. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <!-- Force a real IsSelected transition even if the previous
+                         provider already had first index selected. Otherwise the
+                         token-guarded focus request may never run. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
@@ -1142,7 +1213,14 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Invalidate stale native LocalFocus from the nested source;
+                         selection alone never publishes an executable slot. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <!-- Force a real IsSelected transition even if the previous
+                         provider already had first index selected. Otherwise the
+                         token-guarded focus request may never run. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
@@ -1177,9 +1255,11 @@
                     </b:Interaction.Behaviors>
                     <!-- Nested selection returns to sidebar only in the
                          first, metamagic-choice focus phase. -->
-                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Value="{StaticResource CAM_NestedRestoringToken}">
@@ -1470,12 +1550,13 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <!-- Force a real focus transition to the first VMHotBarSlot
-                                         ListBoxItem through CAM_ActionGridSlotContainer; the
-                                         outer sidebar itself is deliberately Focusable=False. -->
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <!-- Hand focus to the native list owner after it is enabled.
+                                         Selecting index zero alone is not focus. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                           DeferFocusAction="True"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
 
@@ -1645,12 +1726,13 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <!-- Force a real focus transition to the first VMHotBarSlot
-                                         ListBoxItem through CAM_ActionGridSlotContainer; the
-                                         outer sidebar itself is deliberately Focusable=False. -->
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <!-- Hand focus to the native list owner after it is enabled.
+                                         Selecting index zero alone is not focus. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                           DeferFocusAction="True"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
                                 </b:TimerTrigger>
 
@@ -1854,6 +1936,12 @@
                                     <b:ChangePropertyAction TargetName="HotBarList"
                                                             PropertyName="Tag"
                                                             Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <!-- Selecting index zero again can be idempotent.
+                                         Request a real deselect/reselect transition
+                                         before the item-owned deferred focus action. -->
+                                    <b:ChangePropertyAction TargetName="HotBarList"
+                                                            PropertyName="SelectedIndex"
+                                                            Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList"
                                                             PropertyName="SelectedIndex"
                                                             Value="0"/>
@@ -1897,6 +1985,7 @@
                                 <b:TimerTrigger EventName="Loaded" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                                 </b:TimerTrigger>
                             </b:Interaction.Triggers>
@@ -2193,10 +2282,11 @@
                           Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
                         <!-- Native Patch 8 radial slot grids give UIUp/UIDown
                              to the LSGrid and keep the containing LSListBox
-                             non-focusable, rather than consuming both twice.
+                             as a focusable list while its dedicated LSGrid owns D-pad input.
                              See #155; no runtime terminal-wrap claim. -->
                         <ls:LSListBox x:Name="CAM_FixedSideBarList"
-                                      Focusable="False"
+                                      Focusable="True"
+                                      ls:MoveFocus.Focusable="True"
                                       Width="120"
                                       Height="818"
                                       HorizontalAlignment="Left"
@@ -2257,21 +2347,22 @@
                                 <b:EventTrigger EventName="LocalFocusChanged">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <!-- A lost LocalFocus must immediately invalidate the
+                                         previous executable VMHotBarSlot; do not guard the
+                                         clear/tooltip lifecycle on non-null focus. -->
                                     <!-- The same ActionRadials.Tag -> UseSlotCommand route
                                          used by the main grid must own the side selection. -->
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    <!-- The native focused VMHotBarSlot owns both A and the
-                                         selected metamagic frame. -->
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedItem"
-                                                            Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                    <!-- LocalFocus.DataContext is the sole source for
+                                         selector chrome, tooltip and A. Do not change
+                                         SelectedItem from inside LocalFocusChanged:
+                                         selection is not a second focus authority. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
                                                             PropertyName="Content"
-                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
+                                                            Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -2294,37 +2385,22 @@
                                     <b:ChangePropertyAction TargetName="ActionRadials"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
-                                     <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
-                                </b:TimerTrigger>
-                                <!-- Sidebar selection is programmatic at LB/RB entry. The
-                                     selector can be visible with a stable LocalFocus,
-                                     so LocalFocusChanged alone need not fire. Mirror
-                                     the proven main-list SelectionChanged wake seam. -->
-                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
-                                                               Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}"
-                                                               Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"
-                                                               Operator="NotEqual" RightOperand="{x:Null}"/>
-                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <!-- Only the native focus-committed executable slot may
+                                         supply an actionable tooltip. Never preview a new
+                                         slot while UIAccept still has a null/old Tag. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
                                                             PropertyName="Content"
                                                             Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
-                                    <b:ChangePropertyAction TargetName="ActionRadials"
-                                                            PropertyName="Tag"
-                                                            Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                      <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                             CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                 </b:TimerTrigger>
+                                <!-- Only the real LocalFocusChanged owner may publish the
+                                     selected executable VMHotBarSlot to ActionRadials.Tag.
+                                     Selection changes alone must not dispatch. -->
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
                         <Control x:Name="CAM_FixedSideBarSelector"
@@ -2370,14 +2446,17 @@
                             </b:EventTrigger>
                         </b:Interaction.Triggers>
 
+                        <!-- CAM_ActionGridPanel already routes UIDown/UIUp through its
+                             native LSGrid. Binding the same direction events on this
+                             LSListBox gives two competing navigation owners for
+                             the exact same controller press; keep the grid as the
+                             only D-pad direction consumer, as in the sidebar. -->
                         <ls:LSListBox x:Name="HotBarList"
                                       Height="818"
                                       HorizontalAlignment="Stretch"
                                       SelectedIndex="0"
                                       Background="Transparent"
                                       KeyboardNavigation.DirectionalNavigation="Contained"
-                                      ActionNextEvent="UIDown"
-                                      ActionPrevEvent="UIUp"
                                       LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}">
                             <ls:LSListBox.Style>
                                 <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
@@ -2486,12 +2565,8 @@
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                                             PropertyName="Content"
-                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolTrueConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                            Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -2512,6 +2587,14 @@
                                     <b:ChangePropertyAction TargetName="ActionRadials"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <!-- Only the native focus-committed executable slot may
+                                         supply an actionable tooltip. Never preview a new
+                                         slot while UIAccept still has a null/old Tag. -->
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                     <b:InvokeCommandAction
@@ -2519,34 +2602,9 @@
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                 </b:TimerTrigger>
 
-                                <!-- Programmatic tab entry changes SelectedIndex first, then the selected
-                                     concrete container performs deferred SetMoveFocusAction. Wake presentation
-                                     one tick later, but only from the LocalFocus that actually won navigation. -->
-                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
-                                                                       Operator="NotEqual"
-                                                                       RightOperand="{x:Null}"/>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
-                                                            PropertyName="Content"
-                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
-                                    <b:ChangePropertyAction TargetName="ActionRadials"
-                                                            PropertyName="Tag"
-                                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction
-                                                           Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                </b:TimerTrigger>
+                                <!-- A selection event is not a focus commit. Only
+                                     LocalFocusChanged may publish ActionRadials.Tag;
+                                     if focus has not moved, UIAccept stays fail-closed. -->
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
 
@@ -2853,11 +2911,12 @@
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                             <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
-                            <!-- A deferred focus request to CAM_FixedSideBarList is invalid:
-                                 this native list container is non-focusable. Its selected
-                                 item template moves actual focus to the first VMHotBarSlot. -->
-                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                            <!-- Restore the native LSListBox owner, not a selection-triggered
+                                 request from a child template. -->
+                                 <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                                 <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                        FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                        DeferFocusAction="True"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>

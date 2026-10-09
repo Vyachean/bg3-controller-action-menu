@@ -18,3 +18,8 @@ jobs:
           python-version: "3.12"
       - name: Validate parseable package inputs only (not game behavior)
         run: python tools/validate.py
+      - name: Check optional native-source diagnostic parser (synthetic fixtures only)
+        run: python tools/trace-upcast-parity.py --self-test
+
+      - name: Check read-only gameplay inventory analyzer (synthetic fixtures only)
+        run: python tools/analyze-gameplay-inventory.py --self-test

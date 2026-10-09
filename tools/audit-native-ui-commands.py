@@ -446,16 +446,29 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
     if len(buttons) != 1:
         return ["native weapon-set switch button missing or duplicated"]
     button = buttons[0]
+    # Exact Patch 8 capture proves the native hold style/command, no
+    # direct BoundEvent, and a UISelectionLeft input-event/hint seam. The old
+    # schema-v3 aggregate did NOT preserve whether that event object was
+    # attached through DataContext or visual Content. Do not freeze the
+    # rejected CAM guess into CI while schema-v4 readback is pending.
     expected = {
         "Style": "{StaticResource ControllerHoldButtonStyle}",
         "Command": "{Binding SwitchWeaponSetCommand}",
-        "Content": "{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}",
         "EatInput": "False",
     }
     errors: list[str] = []
     if any(_attribute(button.attrib, key) != value
            for key, value in expected.items()):
         errors.append("native weapon-set switch must use original hold-button style and command")
+    event_binding = " ".join(filter(None, (
+        _attribute(button.attrib, "DataContext"),
+        _attribute(button.attrib, "Content"),
+    )))
+    if "FindInputEventConverter" not in event_binding or "UISelectionLeft" not in event_binding:
+        errors.append(
+            "weapon-set hold control must retain the proven UISelectionLeft input-event/hint seam "
+            "without assuming whether Patch 8 owns it through DataContext or Content"
+        )
     if _attribute(button.attrib, "BoundEvent") is not None:
         errors.append("native weapon-set switch button must not bind a direct input event")
 
@@ -495,15 +508,15 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
 
 
 def validate_native_compact_footer(runtime: str) -> list[str]:
-    """Guard two independent, captured Patch 8 controller-hint contracts.
+    """Protect controller-hint semantics without certifying rejected geometry.
 
-    The original controller defines a wide right/right/RTL variant and a
-    narrow center/center/LTR auto-width variant. Mixing their internal
-    geometry in one AlignableWrapPanel produced the 0.0.114 horizontal
-    alignment regression. The *outer* CAM lane stays right-aligned away
-    from the bottom resource HUD; the *inner* native compact arrangement
-    retains center/center/LTR and auto-width controls. This source
-    contract does not certify pixel alignment in Noesis at every scale.
+    Patch 8 exposes more than one native ActionRadials hint layout. The
+    v0.0.114/v0.0.115 CAM candidate combined a custom right-side outer lane
+    with the compact native center/LTR inner variant, and runtime did not
+    accept that composition. Static CI therefore must NOT freeze MaxWidth,
+    alignment, FlowDirection, child Width, or wrapper ownership as if those
+    values were gameplay proof. It only protects the required native controls
+    and the product decision to keep radial editing hidden.
     """
     try:
         root = ET.fromstring(runtime)
@@ -513,46 +526,15 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
     def local(node: ET.Element) -> str:
         return node.tag.rsplit("}", 1)[-1]
 
-    lanes = [
-        n for n in root.iter()
-        if local(n) == "Grid"
-        and _attribute(n.attrib, "Name") == "CAM_ControllerHintRightLane"
-    ]
     panels = [
         n for n in root.iter()
-        if local(n) == "AlignableWrapPanel"
-        and _attribute(n.attrib, "Name") == "ButtonHintsContainer"
+        if _attribute(n.attrib, "Name") == "ButtonHintsContainer"
     ]
-    if len(lanes) != 1 or len(panels) != 1:
-        return ["exactly one separate right-side hint lane and native compact panel required"]
-    lane, panel = lanes[0], panels[0]
-    lane_expected = {
-        "MaxWidth": "600",
-        "HorizontalAlignment": "Right",
-        "VerticalAlignment": "Bottom",
-        "Margin": "26,0,26,56",
-    }
-    compact_expected = {
-        "Width": "Auto",
-        "HorizontalAlignment": "Center",
-        "HorizontalContentAlignment": "Center",
-        "VerticalAlignment": "Bottom",
-        "FlowDirection": "LeftToRight",
-        "Margin": "0",
-        "Style": "{StaticResource ButtonHint.Container.CenterWrap}",
-    }
-    if any(_attribute(lane.attrib, key) != value
-           for key, value in lane_expected.items()):
-        return ["hint outer lane must remain bounded and right-aligned outside center resource HUD"]
-    if panel not in list(lane):
-        return ["native compact hint panel must be a direct child of the right-side lane"]
-    if any(_attribute(panel.attrib, key) != value
-           for key, value in compact_expected.items()):
-        return ["inner hint layout must preserve the original compact center/center/LTR order"]
-    if _attribute(panel.attrib, "MaxWidth") is not None:
-        return ["only the outer right lane may constrain compact native hint width"]
+    if len(panels) != 1:
+        return ["exactly one controller ButtonHintsContainer is required"]
+    panel = panels[0]
 
-    visible_hint_names = {
+    required_hint_names = {
         "SelectButtonVisual",
         "ToWorldButton",
         "CancelConcentrationButton",
@@ -560,22 +542,33 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
         "ToggleDualWield",
         "CancelButton",
     }
-    controls = {
-        _attribute(n.attrib, "Name"): n
-        for n in panel
-        if local(n) == "LSButton"
-    }
-    if any(name not in controls or _attribute(controls[name].attrib, "Width") != "Auto"
-           for name in visible_hint_names):
-        return ["all visible controller hints must use native auto width"]
+    errors: list[str] = []
+    for name in sorted(required_hint_names):
+        matches = [
+            n for n in panel.iter()
+            if local(n) == "LSButton" and _attribute(n.attrib, "Name") == name
+        ]
+        if len(matches) != 1:
+            errors.append(f"controller hint semantic control missing or duplicated: {name}")
 
-    stub = controls.get("ShowContextMenu")
-    if stub is None or _attribute(stub.attrib, "Visibility") != "Collapsed" or (
-        _attribute(stub.attrib, "Width") != "0"
-    ):
-        return ["radial context-editor hint must remain hidden in CAM"]
-    return []
+    editor = [
+        n for n in panel.iter()
+        if local(n) == "LSButton" and _attribute(n.attrib, "Name") == "ShowContextMenu"
+    ]
+    if len(editor) != 1:
+        errors.append("radial context-editor hint missing or duplicated")
+    else:
+        stub = editor[0]
+        if _attribute(stub.attrib, "Visibility") != "Collapsed":
+            errors.append("radial context-editor hint must remain hidden in CAM")
+        command_text = " ".join(filter(None, (
+            _attribute(stub.attrib, "Command"),
+            _attribute(stub.attrib, "CommandParameter"),
+        )))
+        if "OpenRadialEditor" in command_text:
+            errors.append("radial editor command must not be reintroduced through controller hints")
 
+    return errors
 
 def validate_native_throw_world_exit(runtime: str) -> list[str]:
     """Keep the original Throw item-picker world exit, not a radial editor."""
@@ -1133,6 +1126,25 @@ def main() -> int:
         if not any("must not bind a direct input event" in err
                    for err in validate_native_weapon_switch(added_shortcut)):
             report["errors"].append("self-test failed: unsafe weapon button input not rejected")
+        # Schema-v3 did not establish whether the current Patch 8 hold style
+        # consumes the UISelectionLeft event object through DataContext or
+        # visual Content. Both shapes must remain admissible until schema-v4
+        # native readback proves one; removing the seam entirely must fail.
+        content_binding = '''Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"'''
+        datacontext_binding = '''DataContext="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"'''
+        moved_to_datacontext = runtime.replace(content_binding, datacontext_binding, 1)
+        if validate_native_weapon_switch(moved_to_datacontext):
+            report["errors"].append(
+                "self-test failed: weapon hold audit still freezes unproven Content/DataContext placement"
+            )
+        removed_event_seam = runtime.replace(
+            "ConverterParameter='UISelectionLeft'",
+            "ConverterParameter='MissingWeaponHoldInput'",
+            1,
+        )
+        if not any("retain the proven UISelectionLeft" in err
+                   for err in validate_native_weapon_switch(removed_event_seam)):
+            report["errors"].append("self-test failed: weapon UISelectionLeft seam loss undetected")
         removed_ranged_guard = runtime.replace(
             'Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="False"',
             'Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="True"',
@@ -1182,39 +1194,34 @@ def main() -> int:
                    or "lost native pressed/state predicate" in err
                    for err in validate_native_toggle_notifications(missing_press_guard)):
             report["errors"].append("self-test failed: unguarded weapon change notification not rejected")
-        centered_footer = runtime.replace(
+        # Rejected v0.0.114/v0.0.115 geometry must not become a static
+        # gameplay gate. A different alignment/width can only be accepted in
+        # BG3 runtime, so the source audit deliberately ignores those values.
+        alternate_footer_geometry = runtime.replace(
             'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"',
             'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Center"',
             1,
         )
-        if not any("right-aligned" in err
-                   for err in validate_native_compact_footer(centered_footer)):
-            report["errors"].append("self-test failed: centered outer footer overlapping HUD not rejected")
-        wide_footer = runtime.replace(
-            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"\n                  VerticalAlignment="Bottom"\n                  MaxWidth="600"',
-            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"\n                  VerticalAlignment="Bottom"\n                  MaxWidth="1320"',
+        if validate_native_compact_footer(alternate_footer_geometry):
+            report["errors"].append(
+                "self-test failed: footer audit still freezes rejected placement geometry"
+            )
+        missing_footer_control = runtime.replace(
+            'x:Name="CancelConcentrationButton"',
+            'x:Name="MissingCancelConcentrationButton"',
             1,
         )
-        if not any("right-aligned" in err
-                   for err in validate_native_compact_footer(wide_footer)):
-            report["errors"].append("self-test failed: unbounded outer footer not rejected")
-        mirrored_hints = runtime.replace(
-            'FlowDirection="LeftToRight"\n                                       Margin="0"',
-            'FlowDirection="RightToLeft"\n                                       Margin="0"',
+        if not any("semantic control missing or duplicated: CancelConcentrationButton" in err
+                   for err in validate_native_compact_footer(missing_footer_control)):
+            report["errors"].append("self-test failed: missing native footer control not rejected")
+        visible_editor_hint = runtime.replace(
+            'x:Name="ShowContextMenu"\n                             Visibility="Collapsed"',
+            'x:Name="ShowContextMenu"\n                             Visibility="Visible"',
             1,
         )
-        if not any("original compact" in err
-                   for err in validate_native_compact_footer(mirrored_hints)):
-            report["errors"].append("self-test failed: RTL compact hint content not rejected")
-        wide_hold_button = re.sub(
-            r'(<ls:LSButton x:Name="ToggleWeaponSet"[\s\S]*?\bWidth=")Auto(")',
-            r'\g<1>1000\2',
-            runtime,
-            count=1,
-        )
-        if not any("visible controller hints" in err
-                   for err in validate_native_compact_footer(wide_hold_button)):
-            report["errors"].append("self-test failed: overflowed native hold hint not rejected")
+        if not any("context-editor hint must remain hidden" in err
+                   for err in validate_native_compact_footer(visible_editor_hint)):
+            report["errors"].append("self-test failed: visible radial editor hint not rejected")
         wrong_open_direction = runtime.replace(
             'Operator="Equal" RightOperand="MoveToEnd"/>',
             'Operator="NotEqual" RightOperand="MoveToEnd"/>',
