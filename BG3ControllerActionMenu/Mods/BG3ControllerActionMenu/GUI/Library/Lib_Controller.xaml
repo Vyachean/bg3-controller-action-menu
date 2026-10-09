@@ -2413,14 +2413,17 @@
                             </b:EventTrigger>
                         </b:Interaction.Triggers>
 
+                        <!-- CAM_ActionGridPanel already routes UIDown/UIUp through its
+                             native LSGrid. Binding the same direction events on this
+                             LSListBox gives two competing navigation owners for
+                             the exact same controller press; keep the grid as the
+                             only D-pad direction consumer, as in the sidebar. -->
                         <ls:LSListBox x:Name="HotBarList"
                                       Height="818"
                                       HorizontalAlignment="Stretch"
                                       SelectedIndex="0"
                                       Background="Transparent"
                                       KeyboardNavigation.DirectionalNavigation="Contained"
-                                      ActionNextEvent="UIDown"
-                                      ActionPrevEvent="UIUp"
                                       LocalFocusSelector="{Binding ElementName=CAM_MainSelector,Mode=OneWay}">
                             <ls:LSListBox.Style>
                                 <Style TargetType="{x:Type ls:LSListBox}" BasedOn="{StaticResource {x:Type ls:LSListBox}}">
