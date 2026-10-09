@@ -1194,8 +1194,8 @@ def main() -> int:
         # The exact property setter also occurs in ordinary tab transitions,
         # so a global first-occurrence replace would mutate the wrong event.
         duplicate_rb_entry_sound = re.sub(
-            r'(<b:ComparisonCondition LeftOperand="\\{Binding Metadata, ElementName=ActionRadials\\}"\\s+Operator="NotEqual" RightOperand="MoveToEnd"/>[\\s\\S]*?<b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="\\{x:Null\\}"/>)',
-            lambda m: m.group(1) + '\\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>',
+            r'(<b:ComparisonCondition LeftOperand="\{Binding Metadata, ElementName=ActionRadials\}"\s+Operator="NotEqual" RightOperand="MoveToEnd"/>[\s\S]*?<b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="\{x:Null\}"/>)',
+            lambda m: m.group(1) + '\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>',
             runtime,
             count=1,
         )
