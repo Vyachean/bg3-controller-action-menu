@@ -50,6 +50,13 @@ Current CAM instead synchronously writes
 `ActionRadials.Tag={x:Null}` on sidebar `LocalFocusChanged` and
 uses two independent 70ms republishers. The visible native selector
 requires `LocalFocus.DataContext`, not just `SelectedIndex=0`.
+**Do not misdiagnose the native delay.** The exact Xbox App 1.8.910.0
+capture-derived `docs/native-ui-reuse.md` documents immediate clear
+followed by a 70ms `LocalFocusChanged` publish as *native behavior*.
+The extra CAM `SelectionChanged` writer, `IsSelected`-driven focus
+requests and unproved cross-list exclusivity are the differences to
+audit. A static clear+delay pair cannot justify deleting the native
+timer. Source-only analysis remains insufficient to claim a runtime fix.
 Use `python tools/audit-focus-owner-drift.py` to inspect writers.
 `--require-single-owner` is an opt-in future structural gate
 expected to reject current v0.0.115; `--self-test` only validates
