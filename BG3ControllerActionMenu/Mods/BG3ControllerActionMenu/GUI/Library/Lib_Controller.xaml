@@ -920,7 +920,9 @@
                     <b:Interaction.Behaviors>
                         <b:ConditionBehavior>
                             <b:ConditionalExpression>
-                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                <!-- Native nested spell choice inside Metamagic is
+                                     also owned by HotBarList. Provider mode alone
+                                     does not decide focus ownership. -->
                                 <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="True"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
