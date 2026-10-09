@@ -908,14 +908,13 @@
                                            FocusElement="{Binding ElementName=HotBarList}"
                                            DeferFocusAction="True"/>
                 </b:DataTrigger>
-                <!-- Returning from a vanished native summon source also invalidates
-                     the old slot. Never retain its ActionRadials.Tag after the
-                     game replaces the source collection with the prior tab. -->
+                <!-- A disappeared summon provider invalidates the old executable
+                     VMHotBarSlot before either of the two possible active focus
+                     owners below restores its own first real slot. -->
                 <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="False">
                     <b:Interaction.Behaviors>
@@ -926,6 +925,12 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Re-arm the item-owned first-slot request on the new
+                         source. In All mode the outer group selects its own
+                         first inner slot through CAM_AllGroupSlots instead. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                            FocusElement="{Binding ElementName=HotBarList}"
                                            DeferFocusAction="True"/>
