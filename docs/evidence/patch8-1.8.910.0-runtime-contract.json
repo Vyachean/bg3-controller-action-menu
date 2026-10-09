@@ -339,10 +339,10 @@
         "resourceIdentity": "LSActionPointResources(ActionResourcesTemplateSelector)",
         "rejectedTextFilterChrome": "btn_pil_*",
         "camControllerFocusPolicy": {
-          "rendererBinding": "HighlightedActionPoints=Cost retained from captured HotBar",
-          "highlightTransport": "disabled for persistent HotBarList controller focus",
-          "restingState": "ClearResourceHighlightsCommand after immediate/delayed/programmatic focus presentation",
-          "reason": "HotBar activates cost preview only on MouseEnter and clears it on MouseLeave; persistent controller focus must not emulate endless hover"
+          "rendererBinding": "CAM top-tab HighlightedActionPoints=0; game-owned normal HUD retains native predicted cost",
+          "highlightTransport": "candidate: delayed native HighlightResourcesCommand(focused VMHotBarSlot), never immediate mouse hover",
+          "restingState": "ClearResourceHighlightsCommand on immediate LocalFocusChanged and provider/nested transitions, not after deferred highlights",
+          "reason": "Separate persistent controller resource navigation tabs from game-owned ordinary HUD predicted cost; source-level only, combined in-game proof required"
         },
         "presentationBoundary": "literal ActionResourcesList DataTemplate inside controller-only LSListBox container",
         "nativeItemRoot": "LSButton",
