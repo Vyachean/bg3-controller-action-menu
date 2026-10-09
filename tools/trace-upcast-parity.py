@@ -241,6 +241,16 @@ def self_test() -> None:
         assert any("duplicate original XAML" in error for error in duplicate_errors)
         _, changed_errors, _ = read_original_capture(changed, pinned)
         assert any("SHA-256 mismatch" in error for error in changed_errors)
+    # Exercise the real CAM read-only report path without asserting a specific
+    # XAML implementation shape or treating it as gameplay verification.
+    snapshot = report(
+        CAM_PATH.read_text(encoding="utf-8"),
+        json.loads(PINNED_PATH.read_text(encoding="utf-8")),
+        None,
+    )
+    assert not snapshot["errors"]
+    assert snapshot["captureSourceStatus"] == "unavailable-or-unverified"
+    assert snapshot["proof"]["spellIVRuntimeParity"] is False
     print("Self-test passed: XML-site parser, pinned ZIP hashes and duplicate rejection only; no runtime proof")
 
 
