@@ -324,6 +324,46 @@ inject a synthetic `VMUpcast`, bypass native commands or suppress
 the game's legitimate secondary selector by hiding its markup.
 A coherent console/gamepad owner must be proven before release.
 
+## First runtime-bound change following keyboard IV evidence
+
+The user's keyboard HotBar observation narrows #172 to the **identity
+of the engine-created IV variant** in the controller source and A
+dispatch. A direct no-guesswork parity correction is possible for
+tooltip/dispatch synchronization, but **not** for construction of
+the chosen IV-level VM slot without the game's model implementation.
+
+Previously in both CAM slot lists the synchronous
+`LocalFocusChanged` handler immediately set
+`CAM_ActionTooltip.Content` or `CAM_FixedSideBarTooltip.Content`
+to `LocalFocus.DataContext.Content` and showed it, then invalidated
+`ActionRadials.Tag`. Actual A used the later `Tag` updated
+on a 70ms `LocalFocusChanged` timer. This could display a **new**
+spell's level/damage/resource preview while A's committed parameter
+was **null**, and offered no invariant tying a visible tooltip to
+a committed native `VMHotBarSlot`.
+
+The candidate now clears/hides the slot tooltip immediately during
+the native focus invalidation. Only inside the same delayed
+`LocalFocusChanged` timer, and under the **same non-null current
+native focus and IsEnabled owner guards** as
+`ActionRadials.Tag = LocalFocus.DataContext`, it writes tooltip
+Content from that object's Content and calls the existing BG3
+`ShowTooltipOnUIElementCommand`. This keeps the standard
+70ms native focus transaction, tooltips and resource highlighting,
+without an independent selection publisher or extra input binding.
+It applies equally to main resource grids and metamagic sidebar.
+
+**Scope:** this removes a concrete timing/identity inconsistency.
+It does *not* establish whether `SingleHotBar.SlotList` already
+contains an executable `VMUpcast` for the chosen IV resource, nor
+does it prevent the game's nested upcast level picker. The
+correct native IV spell execution, metadata, cost and effects remain
+#172's unresolved engine parity requirement. A blank tooltip for
+70ms or failure to show on missing native `LocalFocusChanged`
+is a known behavioral trade-off, not accepted UX. This should be
+assessed only in the consolidated game milestone, not asserted
+from the PAK CI result.
+
 ## Other issues not mechanically solvable from this source
 
 The game's `ControllerHoldButtonStyle` / `ToggleWeaponSet`
