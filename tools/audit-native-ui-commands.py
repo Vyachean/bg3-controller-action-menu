@@ -332,37 +332,50 @@ def validate_summon_source_route(runtime: str) -> list[str]:
                    ("HotBarList", "SelectedIndex"),
                ))
     ]
-    # The main grid is an actual native focus receiver; the metamagic
-    # sidebar is *not* (Focusable=False). On return, the existing
-    # CAM_ActionGridSlotContainer template focuses a real selected
-    # ListBoxItem if its parent Tag holds CAM_ResetFirstFocusToken.
+    # Both CAM action collections now request focus through a native
+    # LSListBox. The sidebar was previously non-focusable and used a
+    # selected-item token as a substitute for real LocalFocus. Verify
+    # that every summon-exit metamagic branch targets its actual list.
     fallback_main_focus = any(
         local(a) == "SetMoveFocusAction"
         and _attribute(a.attrib, "FocusElement") == "{Binding ElementName=HotBarList}"
         for t in exit_triggers for a in t.iter()
     )
-    fallback_sidebar_item = any(
+    fallback_sidebar_list = any(
         all(any(
             local(a) == "ChangePropertyAction"
             and _attribute(a.attrib, "TargetName") == "CAM_FixedSideBarList"
-            and _attribute(a.attrib, "PropertyName") == prop
+            and _attribute(a.attrib, "PropertyName") == "SelectedIndex"
             and _attribute(a.attrib, "Value") == value
             for a in t.iter()
-        ) for prop, value in (
-            ("Tag", "{StaticResource CAM_ResetFirstFocusToken}"),
-            ("SelectedIndex", "-1"), ("SelectedIndex", "0")))
+        ) for value in ("-1", "0"))
+        and any(
+            local(a) == "SetMoveFocusAction"
+            and _attribute(a.attrib, "TargetName") == "ActionRadials"
+            and _attribute(a.attrib, "FocusElement") == "{Binding ElementName=CAM_FixedSideBarList}"
+            and _attribute(a.attrib, "DeferFocusAction") == "True"
+            for a in t.iter()
+        )
         for t in exit_triggers
     )
-    invalid_sidebar_focus = any(
-        local(a) == "SetMoveFocusAction"
-        and "CAM_FixedSideBarList" in (_attribute(a.attrib, "FocusElement") or "")
+    side_focusable = (
+        _attribute(side.attrib, "Focusable") == "True"
+        and any(k.endswith("}MoveFocus.Focusable") and v == "True"
+                for k, v in side.attrib.items())
+    )
+    legacy_sidebar_token = any(
+        local(a) == "ChangePropertyAction"
+        and _attribute(a.attrib, "TargetName") == "CAM_FixedSideBarList"
+        and _attribute(a.attrib, "PropertyName") == "Tag"
+        and "CAM_ResetFirstFocusToken" in (_attribute(a.attrib, "Value") or "")
         for t in exit_triggers for a in t.iter()
     )
     if (len(cleanup) != 1 or not fallback_main_focus
-            or not fallback_sidebar_item or invalid_sidebar_focus):
+            or not fallback_sidebar_list or not side_focusable
+            or legacy_sidebar_token):
         errors.append(
-            "Native summon exit must clear stale dispatch and restore native "
-            "focus through main list or concrete sidebar ListBoxItem"
+            "Native summon exit must restore executable focus through the "
+            "main grid or focusable metamagic LSListBox, not selection token"
         )
     return errors
 
