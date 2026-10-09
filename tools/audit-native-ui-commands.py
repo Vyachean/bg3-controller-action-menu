@@ -495,12 +495,15 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
 
 
 def validate_native_compact_footer(runtime: str) -> list[str]:
-    """Keep compact native hold controls inside the original right-side lane.
+    """Guard two independent, captured Patch 8 controller-hint contracts.
 
-    Centering the otherwise-correct compact footer overlaps BG3's regular
-    center-bottom resource HUD (operator confirmation and historical 0.0.35).
-    Reuse the original right/right/RTL placement, retain the game-owned
-    compact Width=Auto variant and bound maximum width. Do not touch input.
+    The original controller defines a wide right/right/RTL variant and a
+    narrow center/center/LTR auto-width variant. Mixing their internal
+    geometry in one AlignableWrapPanel produced the 0.0.114 horizontal
+    alignment regression. The *outer* CAM lane stays right-aligned away
+    from the bottom resource HUD; the *inner* native compact arrangement
+    retains center/center/LTR and auto-width controls. This source
+    contract does not certify pixel alignment in Noesis at every scale.
     """
     try:
         root = ET.fromstring(runtime)
@@ -510,26 +513,44 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
     def local(node: ET.Element) -> str:
         return node.tag.rsplit("}", 1)[-1]
 
+    lanes = [
+        n for n in root.iter()
+        if local(n) == "Grid"
+        and _attribute(n.attrib, "Name") == "CAM_ControllerHintRightLane"
+    ]
     panels = [
         n for n in root.iter()
         if local(n) == "AlignableWrapPanel"
         and _attribute(n.attrib, "Name") == "ButtonHintsContainer"
     ]
-    if len(panels) != 1:
-        return ["compact controller hint panel missing or duplicated"]
-    panel = panels[0]
-    expected = {
-        "Width": "Auto",
+    if len(lanes) != 1 or len(panels) != 1:
+        return ["exactly one separate right-side hint lane and native compact panel required"]
+    lane, panel = lanes[0], panels[0]
+    lane_expected = {
         "MaxWidth": "600",
         "HorizontalAlignment": "Right",
-        "HorizontalContentAlignment": "Right",
         "VerticalAlignment": "Bottom",
-        "FlowDirection": "RightToLeft",
         "Margin": "26,0,26,56",
+    }
+    compact_expected = {
+        "Width": "Auto",
+        "HorizontalAlignment": "Center",
+        "HorizontalContentAlignment": "Center",
+        "VerticalAlignment": "Bottom",
+        "FlowDirection": "LeftToRight",
+        "Margin": "0",
         "Style": "{StaticResource ButtonHint.Container.CenterWrap}",
     }
-    if any(_attribute(panel.attrib, k) != v for k, v in expected.items()):
-        return ["controller hints must use compact right-side lane and avoid center resource HUD"]
+    if any(_attribute(lane.attrib, key) != value
+           for key, value in lane_expected.items()):
+        return ["hint outer lane must remain bounded and right-aligned outside center resource HUD"]
+    if panel not in list(lane):
+        return ["native compact hint panel must be a direct child of the right-side lane"]
+    if any(_attribute(panel.attrib, key) != value
+           for key, value in compact_expected.items()):
+        return ["inner hint layout must preserve the original compact center/center/LTR order"]
+    if _attribute(panel.attrib, "MaxWidth") is not None:
+        return ["only the outer right lane may constrain compact native hint width"]
 
     visible_hint_names = {
         "SelectButtonVisual",
@@ -1162,21 +1183,29 @@ def main() -> int:
                    for err in validate_native_toggle_notifications(missing_press_guard)):
             report["errors"].append("self-test failed: unguarded weapon change notification not rejected")
         centered_footer = runtime.replace(
-            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Right"',
-            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Center"',
+            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"',
+            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Center"',
             1,
         )
-        if not any("avoid center resource HUD" in err
+        if not any("right-aligned" in err
                    for err in validate_native_compact_footer(centered_footer)):
-            report["errors"].append("self-test failed: centered footer overlapping original resource HUD not rejected")
+            report["errors"].append("self-test failed: centered outer footer overlapping HUD not rejected")
         wide_footer = runtime.replace(
-            'MaxWidth="600"\n                                   FlowDirection="RightToLeft"',
-            'MaxWidth="1320"\n                                   FlowDirection="RightToLeft"',
+            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"\n                  VerticalAlignment="Bottom"\n                  MaxWidth="600"',
+            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"\n                  VerticalAlignment="Bottom"\n                  MaxWidth="1320"',
             1,
         )
-        if not any("avoid center resource HUD" in err
+        if not any("right-aligned" in err
                    for err in validate_native_compact_footer(wide_footer)):
-            report["errors"].append("self-test failed: oversized footer lane not rejected")
+            report["errors"].append("self-test failed: unbounded outer footer not rejected")
+        mirrored_hints = runtime.replace(
+            'FlowDirection="LeftToRight"\n                                       Margin="0"',
+            'FlowDirection="RightToLeft"\n                                       Margin="0"',
+            1,
+        )
+        if not any("original compact" in err
+                   for err in validate_native_compact_footer(mirrored_hints)):
+            report["errors"].append("self-test failed: RTL compact hint content not rejected")
         wide_hold_button = re.sub(
             r'(<ls:LSButton x:Name="ToggleWeaponSet"[\s\S]*?\bWidth=")Auto(")',
             r'\g<1>1000\2',

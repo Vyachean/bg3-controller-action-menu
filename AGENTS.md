@@ -72,6 +72,31 @@ The reported v0.0.110-style `CAM_SelectedResourceName` inside the native 84px st
 
 The operator's latest in-game run reproduces a historical 0.0.35 defect: horizontal **centering** of `ButtonHintsContainer` overlaps the original center-bottom action-resource HUD. This overrides the old generic instruction below to preserve the centered variant unchanged. Retain all original native controller button styles, commands, input glyphs, visibility rules and `Width=Auto` compact variant, but place the panel back in the **game-owned right-side hint lane** (`HorizontalAlignment=Right`, `HorizontalContentAlignment=Right`, `FlowDirection=RightToLeft`) with a bounded `MaxWidth`, not a giant 1000px child or centered 1320px row. The width cap is a source-level proposal, not in-game proof at all UI scales. Never rebind `UISelectionLeft`, remap D-pad, or introduce another input shortcut to fix overlapping hints. One combined game run after an actual published Release is the only runtime acceptance route. See #167.
 
+## 2026-10-09 source-backed compact hint-layout correction after v0.0.114 (#167)
+
+The operator again rejected horizontal controller-hint alignment in the
+published diagnostic v0.0.114. The previous design mixed **two distinct
+captured native radial variants**: the standard right/right/RTL 1000px
+container and the narrow center/center/LTR auto-width container. A
+right/right/RTL 600px compact hybrid is NOT itself a native variant.
+
+To preserve both original compact **button order** and the critical
+right-side HUD safe area, separate composition into two layers:
+`CAM_ControllerHintRightLane` is the bounded *outer* right/bottom
+placement with original `Margin=26,0,26,56`; its **direct child**
+`ButtonHintsContainer` uses the captured compact
+`Center/Center/LeftToRight/Width=Auto` semantics and a zero inner
+margin. Continue to use the original button names, native
+`ControllerHoldButtonStyle` and `SwitchWeaponSetCommand` without any
+additional BoundEvent or UISelectionLeft listener.
+
+Source CI asserts both layers and their separation. This is a
+**source-only UI composition candidate**, not proof of pixel-alignment
+or repaired weapon switching in Noesis. Do not claim #167/#154 solved
+until the next single combined **published** game milestone. The
+existing v0.0.114 diagnostic probe stays one-off, with removal
+mandatory in the next normal release.
+
 ## Partial native LB entry hover sound candidate (#160; 2026-10-09)
 
 The `ActionRadials.Metadata=MoveToEnd` entry is the only controller-opening branch that selects grouped All instead of a direct resource filter. Runtime user report: RB entry has sound and rumble, LB entry has neither. The native `UI_HUD_Controller_RadialMenu_SlotHover` sound identifier is already proven in CAM's normal `HotBarList.LocalFocusChanged`. A source-only candidate plays it exactly once on the **existing LB/MoveToEnd Loaded branch**, not on LB/RB ordinary tab navigation, not on RB entry and not on inner group focus. It must preserve the source-owned opening direction, selected provider, 70ms slot handoff, A/tooltip identity and native input. This fixes **only the audio path in theory**. There is no proven native haptic API in the captured UI contract. Never fabricate a vibration binding, infer that sound causes rumble, or claim complete #160 acceptance from green CI. Test the sound and haptic separately in the combined published-Release milestone.

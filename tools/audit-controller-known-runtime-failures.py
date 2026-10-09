@@ -75,6 +75,18 @@ def inspect(source: str, pinned: dict) -> dict:
             and pinned.get("runtimeContract", {}).get("buttonHintsContainer", {}).get("width") == 1000
         ),
     }
+    # Reviewed source transition only: the user rejected the original
+    # mixed right/right/RTL 600px footer in v0.0.114. The new bounded
+    # *outer* right lane keeps the native compact center/center/LTR
+    # panel inside it. Source shape is audited independently below;
+    # neither candidate is accepted without a game test.
+    reviewed_footer = (
+        'x:Name="CAM_ControllerHintRightLane"' in source
+        and 'HorizontalContentAlignment="Center"' in source
+        and 'FlowDirection="LeftToRight"' in source
+        and 'MaxWidth="600"' in source
+        and pinned.get("runtimeContract", {}).get("buttonHintsContainer", {}).get("width") == 1000
+    )
     return {
         "purpose": "source observations for already rejected runtime behaviors; not acceptance",
         "gamePackageVersion": pinned.get("gamePackageVersion"),
@@ -90,6 +102,9 @@ def inspect(source: str, pinned: dict) -> dict:
                     "matches source shape of the rejected candidate"
                     if probes[identifier]
                     else "source changed; requires renewed source review AND game proof"
+                ),
+                "reviewedSourceTransition": (
+                    identifier == "native-footer-alignment" and reviewed_footer
                 ),
                 "runtimeAccepted": False,
             }
@@ -306,9 +321,10 @@ def main() -> int:
         print(json.dumps(audit_cancel_route(RUNTIME.read_text(encoding="utf-8")),
                          indent=2, ensure_ascii=False))
     if args.assert_original_shape and not all(
-        x["currentSourcePathStillDetected"] for x in data["sourceIndicators"]
+        x["currentSourcePathStillDetected"] or x["reviewedSourceTransition"]
+        for x in data["sourceIndicators"]
     ):
-        print("Baseline changed: re-audit rather than claiming semantic acceptance.", file=sys.stderr)
+        print("Baseline changed without source review: do not claim semantic acceptance.", file=sys.stderr)
         return 1
     if args.release_gate and any(
         not x["runtimeAccepted"] for x in data["sourceIndicators"]
