@@ -2198,7 +2198,12 @@
                           HorizontalAlignment="Left"
                           VerticalAlignment="Top"
                           Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                        <!-- Native Patch 8 radial slot grids give UIUp/UIDown
+                             to the LSGrid and keep the containing LSListBox
+                             non-focusable, rather than consuming both twice.
+                             See #155; no runtime terminal-wrap claim. -->
                         <ls:LSListBox x:Name="CAM_FixedSideBarList"
+                                      Focusable="False"
                                       Width="120"
                                       Height="818"
                                       HorizontalAlignment="Left"
@@ -2209,8 +2214,6 @@
                                       ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"
                                       ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"
                                       KeyboardNavigation.DirectionalNavigation="Cycle"
-                                      ActionNextEvent="UIDown"
-                                      ActionPrevEvent="UIUp"
                                       LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}">
                             <!-- FixedSideBar stays visible in all tabs, but it may only
                                  receive input while its explicit LB/RB mode owns focus.
@@ -2282,30 +2285,10 @@
                                                            CommandParameter="{x:Null}"/>
                                     <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
                                 </b:EventTrigger>
-                                <!-- BG3's one-column LSGrid can move past its last real
-                                     item even with list Cycle navigation. If native
-                                     LocalFocus loses its VMHotBarSlot, reset to the
-                                     first real slot through the same one-shot focus
-                                     handoff used on provider entry. No new input binding
-                                     and no fake/endless empty list cells. -->
-                                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{x:Null}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{x:Null}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Operator="Equal" RightOperand="{x:Null}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_FixedSideBarList}" Operator="NotEqual" RightOperand="{StaticResource CAM_ResetFirstFocusToken}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count}" Operator="GreaterThan" RightOperand="0"/>
-                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"/>
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
-                                </b:TimerTrigger>
+                                <!-- The operator rejected the v0.0.113 null-only
+                                     terminal-focus timer. A native LSGrid direction
+                                     owner replaces competing list navigation here;
+                                     actual end-of-list focus is still unproven. -->
                                 <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior><b:ConditionalExpression>
