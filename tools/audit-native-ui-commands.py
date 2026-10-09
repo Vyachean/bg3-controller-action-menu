@@ -508,15 +508,15 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
 
 
 def validate_native_compact_footer(runtime: str) -> list[str]:
-    """Guard two independent, captured Patch 8 controller-hint contracts.
+    """Protect controller-hint semantics without certifying rejected geometry.
 
-    The original controller defines a wide right/right/RTL variant and a
-    narrow center/center/LTR auto-width variant. Mixing their internal
-    geometry in one AlignableWrapPanel produced the 0.0.114 horizontal
-    alignment regression. The *outer* CAM lane stays right-aligned away
-    from the bottom resource HUD; the *inner* native compact arrangement
-    retains center/center/LTR and auto-width controls. This source
-    contract does not certify pixel alignment in Noesis at every scale.
+    Patch 8 exposes more than one native ActionRadials hint layout. The
+    v0.0.114/v0.0.115 CAM candidate combined a custom right-side outer lane
+    with the compact native center/LTR inner variant, and runtime did not
+    accept that composition. Static CI therefore must NOT freeze MaxWidth,
+    alignment, FlowDirection, child Width, or wrapper ownership as if those
+    values were gameplay proof. It only protects the required native controls
+    and the product decision to keep radial editing hidden.
     """
     try:
         root = ET.fromstring(runtime)
@@ -526,46 +526,15 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
     def local(node: ET.Element) -> str:
         return node.tag.rsplit("}", 1)[-1]
 
-    lanes = [
-        n for n in root.iter()
-        if local(n) == "Grid"
-        and _attribute(n.attrib, "Name") == "CAM_ControllerHintRightLane"
-    ]
     panels = [
         n for n in root.iter()
-        if local(n) == "AlignableWrapPanel"
-        and _attribute(n.attrib, "Name") == "ButtonHintsContainer"
+        if _attribute(n.attrib, "Name") == "ButtonHintsContainer"
     ]
-    if len(lanes) != 1 or len(panels) != 1:
-        return ["exactly one separate right-side hint lane and native compact panel required"]
-    lane, panel = lanes[0], panels[0]
-    lane_expected = {
-        "MaxWidth": "600",
-        "HorizontalAlignment": "Right",
-        "VerticalAlignment": "Bottom",
-        "Margin": "26,0,26,56",
-    }
-    compact_expected = {
-        "Width": "Auto",
-        "HorizontalAlignment": "Center",
-        "HorizontalContentAlignment": "Center",
-        "VerticalAlignment": "Bottom",
-        "FlowDirection": "LeftToRight",
-        "Margin": "0",
-        "Style": "{StaticResource ButtonHint.Container.CenterWrap}",
-    }
-    if any(_attribute(lane.attrib, key) != value
-           for key, value in lane_expected.items()):
-        return ["hint outer lane must remain bounded and right-aligned outside center resource HUD"]
-    if panel not in list(lane):
-        return ["native compact hint panel must be a direct child of the right-side lane"]
-    if any(_attribute(panel.attrib, key) != value
-           for key, value in compact_expected.items()):
-        return ["inner hint layout must preserve the original compact center/center/LTR order"]
-    if _attribute(panel.attrib, "MaxWidth") is not None:
-        return ["only the outer right lane may constrain compact native hint width"]
+    if len(panels) != 1:
+        return ["exactly one controller ButtonHintsContainer is required"]
+    panel = panels[0]
 
-    visible_hint_names = {
+    required_hint_names = {
         "SelectButtonVisual",
         "ToWorldButton",
         "CancelConcentrationButton",
@@ -573,22 +542,33 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
         "ToggleDualWield",
         "CancelButton",
     }
-    controls = {
-        _attribute(n.attrib, "Name"): n
-        for n in panel
-        if local(n) == "LSButton"
-    }
-    if any(name not in controls or _attribute(controls[name].attrib, "Width") != "Auto"
-           for name in visible_hint_names):
-        return ["all visible controller hints must use native auto width"]
+    errors: list[str] = []
+    for name in sorted(required_hint_names):
+        matches = [
+            n for n in panel.iter()
+            if local(n) == "LSButton" and _attribute(n.attrib, "Name") == name
+        ]
+        if len(matches) != 1:
+            errors.append(f"controller hint semantic control missing or duplicated: {name}")
 
-    stub = controls.get("ShowContextMenu")
-    if stub is None or _attribute(stub.attrib, "Visibility") != "Collapsed" or (
-        _attribute(stub.attrib, "Width") != "0"
-    ):
-        return ["radial context-editor hint must remain hidden in CAM"]
-    return []
+    editor = [
+        n for n in panel.iter()
+        if local(n) == "LSButton" and _attribute(n.attrib, "Name") == "ShowContextMenu"
+    ]
+    if len(editor) != 1:
+        errors.append("radial context-editor hint missing or duplicated")
+    else:
+        stub = editor[0]
+        if _attribute(stub.attrib, "Visibility") != "Collapsed":
+            errors.append("radial context-editor hint must remain hidden in CAM")
+        command_text = " ".join(filter(None, (
+            _attribute(stub.attrib, "Command"),
+            _attribute(stub.attrib, "CommandParameter"),
+        )))
+        if "OpenRadialEditor" in command_text:
+            errors.append("radial editor command must not be reintroduced through controller hints")
 
+    return errors
 
 def validate_native_throw_world_exit(runtime: str) -> list[str]:
     """Keep the original Throw item-picker world exit, not a radial editor."""
