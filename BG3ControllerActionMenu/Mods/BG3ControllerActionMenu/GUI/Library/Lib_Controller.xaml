@@ -936,11 +936,11 @@
                     <!-- Focus the native LSListBox, as the tested v0.0.29
                          LSListBox did; its own current focused item and
                          LocalFocusChanged must identify the executable slot. -->
-                                        <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                                           DeferFocusAction="True"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
                 </b:DataTrigger>
                 <!-- Native MetamagicActive is the game-owned action result.
                      Metamagic remains in the same provider; only focus input
@@ -1179,11 +1179,11 @@
                     </b:Interaction.Behaviors>
                     <!-- Nested selection returns to sidebar only in the
                          first, metamagic-choice focus phase. -->
-                                        <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                                           DeferFocusAction="True"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Value="{StaticResource CAM_NestedRestoringToken}">
@@ -1476,7 +1476,7 @@
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <!-- Hand focus to the native list owner after it is enabled.
                                          Selecting index zero alone is not focus. -->
-                                                                        <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                                            FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
@@ -1652,7 +1652,7 @@
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <!-- Hand focus to the native list owner after it is enabled.
                                          Selecting index zero alone is not focus. -->
-                                                                        <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <ls:SetMoveFocusAction TargetName="ActionRadials"
                                                            FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
@@ -2199,7 +2199,7 @@
                           Visibility="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count, Converter={StaticResource CountToVisibilityConverter}}">
                         <!-- Native Patch 8 radial slot grids give UIUp/UIDown
                              to the LSGrid and keep the containing LSListBox
-                             non-focusable, rather than consuming both twice.
+                             as a focusable list while its dedicated LSGrid owns D-pad input.
                              See #155; no runtime terminal-wrap claim. -->
                         <ls:LSListBox x:Name="CAM_FixedSideBarList"
                                       Focusable="True"
@@ -2840,9 +2840,9 @@
                             <!-- Restore the native LSListBox owner, not a selection-triggered
                                  request from a child template. -->
                                                         <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                                           DeferFocusAction="True"/>
+                                                        <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                                               FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                                               DeferFocusAction="True"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>
