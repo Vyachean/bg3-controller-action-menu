@@ -786,22 +786,27 @@ $releaseTriggers = @([regex]::Matches(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 ))
 if ($releaseTriggers.Count -ne 5) {
-    throw "Metamagic B must have four disjoint native cancel routes plus one phase-only back route."
+    throw "Metamagic B must have four original native cancel routes plus one guarded native parent cancel."
 }
 $phaseBack = @($releaseTriggers | Where-Object {
     $_.Value.Contains('CAM_MetamagicSpellPhaseToken') -and
     $_.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -and
     $_.Value.Contains('TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"')
 })
-# Preserve one guarded metamagic-parent B and its concrete item-focus
-# handoff. Do NOT freeze the rejected 0.0.114 local-only reset as a
-# permanent invariant: a separately source-proven native
-# ActionCancelCommand may eventually be included here. Static parsing
-# does not establish the compiled BG3 cancel or metamagic rollback.
+# Restored native gameplay cancellation must execute once BEFORE CAM's
+# local visual reset and concrete sidebar item focus handoff.
+# Source/CI cannot assert that compiled BG3 clears MetamagicActive.
 if ($phaseBack.Count -ne 1 -or
     $phaseBack[0].Value.Contains('CloseWidget') -or
     $phaseBack[0].Value.Contains('ClearSingleHotbarCommand')) {
     throw "Metamagic parent B must retain guarded native-slot return without closing or clearing nested gameplay."
+}
+$nativeParentCancel = '<b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>'
+$parentReset = '<b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>'
+if (@([regex]::Matches($phaseBack[0].Value, [regex]::Escape($nativeParentCancel))).Count -ne 1 -or
+    $phaseBack[0].Value.IndexOf($nativeParentCancel) -gt $phaseBack[0].Value.IndexOf($parentReset) -or
+    $phaseBack[0].Value.IndexOf($parentReset) -lt 0) {
+    throw "One native ActionCancelCommand must precede CAM metamagic parent B visual reset."
 }
 foreach ($guard in @('IsShowingAContainerWithVariants', 'IsSelectingUpcastedSpell', 'IsShowingItemsToThrow')) {
     if (-not $phaseBack[0].Value.Contains('LeftOperand="{Binding ' + $guard + '}" Operator="Equal" RightOperand="False"')) {
