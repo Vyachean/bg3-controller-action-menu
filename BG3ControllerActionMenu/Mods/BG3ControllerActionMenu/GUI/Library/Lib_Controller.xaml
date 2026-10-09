@@ -2622,71 +2622,71 @@
                                Focusable="False"/>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Provider" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="CAM phase" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="BG3 metamagic" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Resource" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="BG3 filter" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding CurrentSingleHotbarFilter}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding CurrentSingleHotbarFilter}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="BG3 upcast" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding IsSelectingUpcastedSpell}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding IsSelectingUpcastedSpell}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="BG3 variants" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding IsShowingAContainerWithVariants}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding IsShowingAContainerWithVariants}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="BG3 throw" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding IsShowingItemsToThrow}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding IsShowingItemsToThrow}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Nested slots" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding SingleHotBar.SlotList.Count}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding SingleHotBar.SlotList.Count}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Sidebar enabled" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Grid enabled" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding IsEnabled, ElementName=HotBarList}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding IsEnabled, ElementName=HotBarList}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Sidebar focus" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding LocalFocus.DataContext.SlotType, ElementName=CAM_FixedSideBarList}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding LocalFocus.DataContext.SlotType, ElementName=CAM_FixedSideBarList}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Grid focus" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding LocalFocus.DataContext.SlotType, ElementName=HotBarList}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding LocalFocus.DataContext.SlotType, ElementName=HotBarList}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Dispatch slot" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding Tag.SlotType, ElementName=ActionRadials}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding Tag.SlotType, ElementName=ActionRadials}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Slot CanUse" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding Tag.CanUse, ElementName=ActionRadials}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding Tag.CanUse, ElementName=ActionRadials}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Slot modified" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding Tag.Content.IsModified, ElementName=ActionRadials}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding Tag.Content.IsModified, ElementName=ActionRadials}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Height="18" IsHitTestVisible="False">
                             <TextBlock Text="Spell task" Width="118" Foreground="#FFC9D0D5" FontSize="13" Focusable="False"/>
-                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.CurrentSpellTask.TargetingType}" Width="174" TextTrimming="CharacterEllipsis" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
+                            <TextBlock Text="{Binding CurrentPlayer.SelectedCharacter.CurrentSpellTask.TargetingType}" Width="174" Foreground="#FFFFD99B" FontSize="13" Focusable="False"/>
                         </StackPanel>
                 </StackPanel>
             </Border>
