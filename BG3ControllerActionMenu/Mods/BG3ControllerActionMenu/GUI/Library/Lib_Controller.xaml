@@ -933,11 +933,12 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Target the concrete native ListBoxItem, not its non-focusable
+                         LSListBox. The item template owns deferred SetMoveFocusAction
+                         while CAM_ResetFirstFocusToken is armed. -->
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
-                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                           DeferFocusAction="True"/>
                 </b:DataTrigger>
                 <!-- Native MetamagicActive is the game-owned action result.
                      Metamagic remains in the same provider; only focus input
@@ -1469,14 +1470,10 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <!-- Selection and controller focus are distinct native
-                                         states. Explicitly transfer input ownership to the
-                                         enabled sidebar as the game does for HotBarList,
-                                         then select its first concrete VMHotBarSlot. -->
+                                    <!-- Force a real focus transition to the first VMHotBarSlot
+                                         ListBoxItem through CAM_ActionGridSlotContainer; the
+                                         outer sidebar itself is deliberately Focusable=False. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                                           DeferFocusAction="True"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
@@ -1648,14 +1645,10 @@
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{StaticResource CAM_TabEnterSpecialToken}"/>
                                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
-                                    <!-- Selection and controller focus are distinct native
-                                         states. Explicitly transfer input ownership to the
-                                         enabled sidebar as the game does for HotBarList,
-                                         then select its first concrete VMHotBarSlot. -->
+                                    <!-- Force a real focus transition to the first VMHotBarSlot
+                                         ListBoxItem through CAM_ActionGridSlotContainer; the
+                                         outer sidebar itself is deliberately Focusable=False. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                                    <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                                           DeferFocusAction="True"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                                     <b:ChangePropertyAction TargetName="CAM_TabCycleMarker" PropertyName="Tag" Value="{x:Null}"/>
@@ -2948,8 +2941,10 @@
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                             <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                            <!-- A deferred focus request to CAM_FixedSideBarList is invalid:
+                                 this native list container is non-focusable. Its selected
+                                 item template moves actual focus to the first VMHotBarSlot. -->
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
-                            <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"/>
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
