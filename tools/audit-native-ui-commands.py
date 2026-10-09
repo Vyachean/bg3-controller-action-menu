@@ -1190,11 +1190,17 @@ def main() -> int:
         if not any("exactly one native slot hover sound" in err
                    for err in validate_native_shoulder_entry_tabs(missing_lb_hover_sound)):
             report["errors"].append("self-test failed: silent LB grouped-All entry not rejected")
-        duplicate_rb_entry_sound = runtime.replace(
-            '                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>\n                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"',
-            '                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>\n                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"',
-            1,
+        # Scope the negative mutation to the first/normal *Loaded* branch.
+        # The exact property setter also occurs in ordinary tab transitions,
+        # so a global first-occurrence replace would mutate the wrong event.
+        duplicate_rb_entry_sound = re.sub(
+            r'(<b:ComparisonCondition LeftOperand="\\{Binding Metadata, ElementName=ActionRadials\\}"\\s+Operator="NotEqual" RightOperand="MoveToEnd"/>[\\s\\S]*?<b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="\\{x:Null\\}"/>)',
+            lambda m: m.group(1) + '\\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>',
+            runtime,
+            count=1,
         )
+        if duplicate_rb_entry_sound == runtime:
+            report["errors"].append("self-test failed: RB entry mutation did not reach its native Loaded branch")
         if not any("must not duplicate native focus hover sound" in err
                    for err in validate_native_shoulder_entry_tabs(duplicate_rb_entry_sound)):
             report["errors"].append("self-test failed: duplicate RB entry sound not rejected")
