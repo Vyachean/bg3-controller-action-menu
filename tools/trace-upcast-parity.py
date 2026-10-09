@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import json
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -89,11 +90,12 @@ def site_inventory(text: str, source: str) -> dict:
 def read_original_capture(path: Path, pinned: dict) -> tuple[dict[str, str], list[str], dict]:
     """Reject missing, duplicate, corrupt or unpinned source bytes."""
     original: dict[str, str] = {}
+    seen: set[str] = set()
     errors: list[str] = []
     provenance: dict = {"archive": path.name, "verifiedSha256": {}, "version": None}
     with zipfile.ZipFile(path) as archive:
-        for name in archive.namelist():
-            normalized = name.replace("\\", "/")
+        for member in archive.infolist():
+            normalized = member.filename.replace("\\", "/")
             if "/files/" in normalized:
                 unpacked = normalized.split("/files/", 1)[1]
             elif normalized.startswith("files/"):
@@ -102,10 +104,11 @@ def read_original_capture(path: Path, pinned: dict) -> tuple[dict[str, str], lis
                 continue
             if unpacked not in SOURCES:
                 continue
-            if unpacked in original:
+            if unpacked in seen:
                 errors.append("duplicate original XAML: " + unpacked)
                 continue
-            data = archive.read(name)
+            seen.add(unpacked)
+            data = archive.read(member)
             digest = hashlib.sha256(data).hexdigest()
             expected = pinned.get("sourceHashes", {}).get(unpacked)
             if not expected or digest != expected:
@@ -211,7 +214,34 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("malformed native source was accepted")
-    print("Self-test passed: evidence from XML attributes only; no runtime proof claimed")
+
+    # The native capture gate must reject duplicates and altered bytes,
+    # not merely the absence of a string fragment in shipping XAML.
+    sample = fixture.encode("utf-8")
+    pinned = {
+        "gamePackageVersion": "1.8.910.0",
+        "sourceHashes": {name: hashlib.sha256(sample).hexdigest() for name in SOURCES},
+    }
+    with tempfile.TemporaryDirectory() as temporary:
+        good = Path(temporary) / "good.zip"
+        duplicate = Path(temporary) / "duplicate.zip"
+        changed = Path(temporary) / "changed.zip"
+        for dest in (good, duplicate, changed):
+            with zipfile.ZipFile(dest, "w") as writer:
+                for name in SOURCES:
+                    data = sample + b" " if dest == changed and name == KEYBOARD else sample
+                    writer.writestr("snapshot/files/" + name, data)
+                if dest == duplicate:
+                    writer.writestr("another/files/" + KEYBOARD, sample)
+                writer.writestr("snapshot/manifest.json", json.dumps({"gamePackageVersion": "1.8.910.0"}))
+        source, errors, info = read_original_capture(good, pinned)
+        assert not errors and set(source) == set(SOURCES)
+        assert info["version"] == "1.8.910.0"
+        _, duplicate_errors, _ = read_original_capture(duplicate, pinned)
+        assert any("duplicate original XAML" in error for error in duplicate_errors)
+        _, changed_errors, _ = read_original_capture(changed, pinned)
+        assert any("SHA-256 mismatch" in error for error in changed_errors)
+    print("Self-test passed: XML-site parser, pinned ZIP hashes and duplicate rejection only; no runtime proof")
 
 
 def main() -> int:
