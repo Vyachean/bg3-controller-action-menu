@@ -853,7 +853,8 @@ def validate_native_resource_name(runtime: str) -> list[str]:
     if (not all(_attribute(caption.attrib, key) == value for key, value in {
             "IsHitTestVisible": "False",
             "Focusable": "False",
-            "TextTrimming": "CharacterEllipsis",
+            "TextWrapping": "NoWrap",
+            "ClipToBounds": "True",
             "HorizontalAlignment": "Center",
         }.items())
             or _attribute(caption.attrib, "Text") is not None):
