@@ -743,6 +743,71 @@ if (-not $closeTrigger.Success) {
     throw "Top-level B close trigger must be the exact three-native-nested-flags -> CloseWidget contract."
 }
 
+# #158: At the metamagic spell-choice parent, B goes *back* to the
+# native metamagic selector. Everywhere else it keeps the original BG3
+# ActionCancelCommand / nested ClearSingleHotbarCommand and top-level CloseWidget.
+$cancelTemplate = [regex]::Match(
+    $text,
+    '<ls:LSButton x:Name="CancelButton"[\s\S]*?</ls:LSButton>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $cancelTemplate.Success -or
+    -not $cancelTemplate.Value.Contains('BoundEvent="UICancel"') -or
+    -not $cancelTemplate.Value.Contains('Command="{Binding ClearSingleHotbarCommand}"') -or
+    -not $cancelTemplate.Value.Contains('EventName="LSButtonReleased"')) {
+    throw "Native CancelButton must retain its original UI input and nested cancel."
+}
+$releaseTriggers = @([regex]::Matches(
+    $cancelTemplate.Value,
+    '<b:EventTrigger EventName="LSButtonReleased">[\s\S]*?</b:EventTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+))
+if ($releaseTriggers.Count -ne 5) {
+    throw "Metamagic B must have four disjoint native cancel routes plus one phase-only back route."
+}
+$phaseBack = @($releaseTriggers | Where-Object {
+    $_.Value.Contains('CAM_MetamagicSpellPhaseToken') -and
+    $_.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -and
+    $_.Value.Contains('TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"')
+})
+if ($phaseBack.Count -ne 1 -or
+    $phaseBack[0].Value.Contains('ActionCancelCommand') -or
+    $phaseBack[0].Value.Contains('CloseWidget') -or
+    $phaseBack[0].Value.Contains('ClearSingleHotbarCommand')) {
+    throw "Metamagic parent B must only return presentation focus, not cancel or execute gameplay."
+}
+foreach ($guard in @('IsShowingAContainerWithVariants', 'IsSelectingUpcastedSpell', 'IsShowingItemsToThrow')) {
+    if (-not $phaseBack[0].Value.Contains('LeftOperand="{Binding ' + $guard + '}" Operator="Equal" RightOperand="False"')) {
+        throw "Metamagic parent B must yield to original nested controller cancel: $guard"
+    }
+}
+$normalNativeCancel = @($releaseTriggers | Where-Object {
+    $_.Value.Contains('Command="{Binding ActionCancelCommand}"') -and
+    $_.Value.Contains('FocusElement="{Binding ElementName=HotBarList}"')
+})
+if ($normalNativeCancel.Count -ne 4 -or
+    -not (@($normalNativeCancel | Where-Object {
+        $_.Value.Contains('Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"')
+    }).Count -eq 1)) {
+    throw "Original non-metamagic B and all three metamagic nested B paths must use native ActionCancelCommand."
+}
+$bPhaseCommandOverride = @(
+    [regex]::Matches(
+        $text,
+        '<MultiDataTrigger>[\s\S]*?</MultiDataTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object {
+        $_.Value.Contains('Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"') -and
+        $_.Value.Contains('<Setter TargetName="CancelButton" Property="Command" Value="{x:Null}"/>') -and
+        $_.Value.Contains('<Setter TargetName="CancelButton" Property="CommandParameter" Value="{x:Null}"/>')
+    }
+)
+if ($bPhaseCommandOverride.Count -ne 1 -or
+    -not $phaseBack[0].Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
+    -not $phaseBack[0].Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"')) {
+    throw "Top-level B close must be disabled only for metamagic spell phase and must restore native selector."
+}
+
 Write-Host "Self-contained Patch 8 runtime contract passed: resource/special providers plus grouped KeyboardHotBars fallback remain native-slot-driven, nested return restores the active provider, and focus/tooltip remain LocalFocus-driven."
 
 
