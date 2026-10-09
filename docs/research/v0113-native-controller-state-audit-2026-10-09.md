@@ -55,3 +55,56 @@ A CAM phase token is permitted only as presentation state **derived from native 
 ## Acceptance status and evidence rule
 
 Every row is **open / runtime-rejected / source-unproven**. The fact that CI Validated/Build package/Release were green in 0.0.111–0.0.113 is **mechanical delivery proof**, not semantic controller-input proof. When a row is fixed, attach the relevant source lines, deterministic test results, and the one operator gameplay observation before marking it accepted. Maintain #154, #155, #158, #160, #165, #167, #172 and parent #176 as appropriate.
+
+
+## Exact B dispatch topology — 2026-10-09 follow-up (#158)
+
+The shipping v0.0.113 XAML has one `CancelButton`, bound to `UICancel`
+with default `ClearSingleHotbarCommand`. Its five
+`LSButtonReleased` conditions resolve to:
+
+| CAM state | XAML event action | Proven game-state rollback? |
+| --- | --- | --- |
+| Not in CAM metamagic spell phase | `ActionCancelCommand` plus deferred main-list focus | **No**: command binding exists, compiled effect uninspected |
+| Native variant/container nested inside spell phase | `ActionCancelCommand` plus main-list focus | **No**: nested command exists, state semantics uninspected |
+| Native upcast nested inside spell phase | Same native cancel route | **No** |
+| Native throw nested inside spell phase | Same native cancel route | **No** |
+| Metamagic provider, spell-choice parent, no native nested flags | **No** `ActionCancelCommand`: resets CAM phase, selection and focus on sidebar | **No**: only presentation reset |
+
+At the last route a `ControlTemplate.Triggers` setter also replaces
+`CancelButton.Command` with `{x:Null}`, suppressing ordinary
+`CloseWidget`. The menu's other top-level branches dispatch
+`CustomEvent(CloseWidget)` and do not prove rollback of
+`PlayerCharacterProperties.MetamagicActive`. **A local CAM marker is
+not an engine-owned cancellation transaction.**
+
+`tools/audit-controller-known-runtime-failures.py --assert-cancel-source`
+now extracts those event/command routes from the actual CAM XML and
+runs negative mutations. Its JSON explicitly leaves runtime acceptance
+false. It deliberately passes while this *known defective* architecture
+is present; only the preservation of the documented baseline is checked,
+so a changed source must undergo semantic review rather than silently
+being called fixed.
+
+**Independent historical comparison (not current-game proof):**
+[akintos/bg3-data, ActionRadials.xaml](https://github.com/akintos/bg3-data/blob/master/Public/Game/GUI/Widgets/ActionRadials.xaml)
+shows `CancelButton` with default `ClearSingleHotbarCommand`,
+a single `LSButtonReleased` focus handoff and conditional
+`CloseWidget`, but no matching `ActionCancelCommand` on that
+historical release event. Its keyboard
+[HotBar.xaml](https://github.com/akintos/bg3-data/blob/master/Public/Game/GUI/Widgets/HotBar.xaml)
+uses `CancelTaskCommand` in an independent keyboard filter-dismiss
+path, followed by `ClearSingleHotbarCommand` after animation.
+Neither historical path proves that calling these commands cancels
+pending metamagic on the installed **1.8.910.0** controller build.
+The installed original XAML is pinned by SHA but not committed as a
+readable source file, and compiled engine/ViewModel implementations
+remain unavailable here. Do not transform a historical command name
+into a guessed current controller binding.
+
+**Next executable correction needs proof of** (1) the BG3-owned
+metamagic cancel/rollback command or transaction, (2) whether the
+current native B event dispatches an engine-level cancel itself,
+(3) the native relationship between `CurrentSpellTask` and
+`MetamagicActive`. If unavailable, remain blocked instead of
+adding another `ActionCancelCommand` call or suppressing effects.
