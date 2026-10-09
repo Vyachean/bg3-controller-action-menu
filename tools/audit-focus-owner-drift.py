@@ -197,6 +197,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_test:
         self_test()
+        return 0
     if not args.source.is_file():
         print(f"XAML does not exist: {args.source}", file=sys.stderr)
         return 1
