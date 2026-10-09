@@ -40,6 +40,26 @@ Do **not** interpret green Validate/Build package/Release as proof of gameplay s
 
 Protect confirmed working behavior: native predicted-cost highlight, metamagic-to-spell area handoff and single LB opening sound. Require a **source-proven state/cancel/provider architecture** and deterministic native-semantic tests before the next consolidated runtime milestone, or mark a feature technically unproven under the no-DLL/no-SE contract rather than masking it. Do not make the operator repeatedly test speculative micro-releases.
 
+## v0.0.114 temporary diagnostic release exception (#176)
+
+The one published diagnostic milestone may include the **read-only**,
+non-focusable, non-hit-testable `CAM_StateProbePanel` in the existing
+self-contained XAML. This exception is restricted to
+`VERSION=0.0.114-native-state-probe`, does not change native action,
+filter, cancel, upcast, input, or focus routing, and **does not** claim
+gameplay correctness from CI. It exists solely to distinguish BG3-owned
+state from CAM presentation across one combined operator run. See
+`docs/research/0.0.114-native-state-observation.md`.
+
+`tools/audit-state-probe.py` and `tools/validate.py` fail closed
+if the panel becomes interactive, acquires unverified bindings or
+survives into a different version. No game or account data is logged.
+The universal VBS and the latest published-release contract are
+unchanged; all release and live launcher verification gates apply.
+After the one game observation remove this entire panel in the
+next nondiagnostic release. Do not call this a finished fix for
+#155, #158, #172 or #176.
+
 ## Pending #166 source-level cost-feedback candidate (2026-10-09)
 
 The operator reports that CAM no longer highlights the predicted cost of the focused action in BG3's ordinary resource bar. The historical 0.0.75/0.0.76 rule below correctly rejects *permanent action-hover cost highlights in CAM's upper navigation tabs*. It must not be interpreted as permission to disable the original game's controller resource-cost feedback altogether. For this draft candidate only, CAM's upper resource navigation glyphs retain native available/max/identity artwork with `HighlightedActionPoints=0`, while the original BG3 `HighlightResourcesCommand` is delivered a proven focused `VMHotBarSlot` **after** focus stabilizes. A focus/provider transition first clears stale highlights, not the newly established one. This alters one aspect of the exact-keyboard tab renderer intentionally and requires a combined game milestone before merge/release. Do not report it as runtime proven from CI alone. See `docs/research/resting-resource-preview-2026-10-07.md` and issue #166.
