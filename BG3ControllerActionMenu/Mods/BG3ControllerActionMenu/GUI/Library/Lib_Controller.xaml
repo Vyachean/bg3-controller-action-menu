@@ -1164,14 +1164,29 @@
                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}"
                                                        Operator="Equal"
                                                        RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}"
+                                                       Operator="Equal"
+                                                       RightOperand="{x:Null}"/>
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
-                    <!-- Native variant selection temporarily uses HotBarList, but the
-                         owning top-level Metamagic tab is CAM_FixedSideBarList. -->
+                    <!-- Nested selection returns to sidebar only in the
+                         first, metamagic-choice focus phase. -->
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
+                </b:DataTrigger>
+                <b:DataTrigger Binding="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Value="{StaticResource CAM_NestedRestoringToken}">
+                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                    <!-- A nested/upcast spell level returns to the active
+                         spell-choice phase, not to the metamagic selector. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
 
