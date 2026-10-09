@@ -214,7 +214,7 @@ def validate_semantics() -> list[str]:
                 'ItemTemplate="{StaticResource CAM_ResourceTabTemplate}"',
                 '<ls:LSButton Padding="0"',
                 'Margin="4,-10,4,10"',
-                'HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"',
+                'HighlightedActionPoints="0"',
                 '<Trigger Property="IsMouseOver" Value="True">',
                 'Binding="{Binding Path=Tag, ElementName=Root}" Value="SpellSlot"',
                 'x:Name="CAM_CantripsTab"',
