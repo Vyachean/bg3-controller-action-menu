@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import subprocess
 import sys
@@ -1136,6 +1137,19 @@ def main() -> int:
                       + focus_ownership.stdout + focus_ownership.stderr)
     else:
         print(focus_ownership.stdout, end="")
+        focus_diagnostic = subprocess.run(
+            [sys.executable, str(ROOT / "tools/audit-focus-owner-drift.py")],
+            cwd=ROOT, text=True, capture_output=True, check=False,
+        )
+        if focus_diagnostic.returncode:
+            errors.append("Read-only current focus route inventory failed:\\n"
+                          + focus_diagnostic.stdout + focus_diagnostic.stderr)
+        else:
+            diagnostic = json.loads(focus_diagnostic.stdout)
+            print("Current XAML focus ownership source risks (NOT runtime findings): "
+                  + json.dumps(diagnostic["sourceRisks"]))
+            if diagnostic["runtimeAccepted"] is not False:
+                errors.append("Source-only focus inventory falsely claims game acceptance")
 
     # Native UI parity is not equivalent to having a keyword somewhere in
     # XAML. Fail on missing native transport seams and keep unresolved classes
