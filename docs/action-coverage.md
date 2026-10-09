@@ -84,9 +84,26 @@ raw `LSInputBinding UISelectionLeft` captured short presses; rebinding
 those listeners or claim that reproducing the original XAML alone proves
 repeatable hold handling inside CAM.
 
-The source-backed restoration is guarded by structural CI tests, but actual
-repeatable gamepad hold behavior remains a single **milestone runtime check**,
-alongside the rest of the menu, not a reason to request a separate build test.
+**v0.0.109 operator confirmation:** Holding the weapon-switch button does
+switch weapons even without opening Actions, and the native change notification
+appears. The remaining regression is visual: the input glyph and hold-progress
+indicator are not visible inside CAM's menu. This is not permission to add a
+second command/input binding.
+
+The original 1.8.910.0 radial `PreloadedActionRadials_c.xaml:2151–2167`
+already uses an alternate narrow/left-layout mode that changes the
+`ButtonHintsContainer` and its actual gamepad hints from `Width="1000"`
+to `Width="Auto"`, with centered, left-to-right layout. The default
+radial-specific 1000-pixel-per-hint widths cause the CAM footer to stack
+full-width children, beyond the space available underneath the grid.
+CAM reuses that **original layout variant** without changing button
+styles, hints, `UISelectionLeft` content, `SwitchWeaponSetCommand`, or
+input transport. The hidden context-menu stub stays hidden.
+
+Source-level tests prove compact hint geometry and preserve the native
+hold style, but the actual visual progress indicator is still a
+single **combined runtime milestone** proof. No independent user test
+per change.
 
 ## Nested Throw — return from item selection to world targeting
 
