@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Source-only native-direction ownership guard for #155.
 
-The captured BG3 Patch 8 radial uses non-focusable LSListBox containers
-with focusable items and LSGrid-owned directional events. This checks
-that CAM does not bind the same UIDown/UIUp a second time on the sidebar
-or revive the runtime-rejected timer. It cannot simulate LSGrid bounds
-or certify game behavior.
+BG3 Patch 8 radial assignment uses focusable items and LSGrid-owned
+directional events. This candidate gives the outer sidebar a native
+focusable LSListBox handoff, following the game-tested v0.0.29 CAM grid.
+The captured assignment control's non-focusable container is a distinct
+pattern; the transition is NOT yet runtime proven in metamagic. This
+audit prevents duplicate UIDown/UIUp and rejected terminal timers.
+It cannot simulate LSGrid bounds or certify game behavior.
 """
 from __future__ import annotations
 
@@ -49,8 +51,11 @@ def source_errors(source: str) -> list[str]:
         return ["Metamagic LSListBox / LSGrid panel must be unique"]
 
     side, panel = sides[0], panels[0]
-    if attribute(side, "Focusable") != "False":
-        errors.append("Sidebar container must be non-focusable; slot items own focus")
+    if attribute(side, "Focusable") != "True" or not any(
+        key.endswith("}MoveFocus.Focusable") and value == "True"
+        for key, value in side.attrib.items()
+    ):
+        errors.append("Sidebar list must accept native list-level MoveFocus handoff")
     if attribute(side, "ItemsSource") != (
         "{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"
     ):
@@ -74,16 +79,23 @@ def source_errors(source: str) -> list[str]:
             if attribute(grid, key) != value:
                 errors.append(f"Native LSGrid owner lost {key}={value}")
 
-    # v0.0.114 in-game repro: after B/re-entering metamagic the ring was
-    # absent until Down, which selected slot TWO. The list root is
-    # Focusable=False; passing that root to SetMoveFocusAction can never
-    # prove the native slot-item focus. Reject every such competing
-    # focus target, including in Loaded/B/LB/RB.
-    for node in root.iter():
-        if local(node.tag) == "SetMoveFocusAction" and (
-            "CAM_FixedSideBarList" in (attribute(node, "FocusElement") or "")
-        ):
-            errors.append("Do not move focus to non-focusable CAM_FixedSideBarList root")
+    # Five B/tab/provider handoffs must defer focus to the now-focusable
+    # native LSListBox, not to a stale selected-item-token owner.
+    focus_handoffs = [
+        node for node in root.iter()
+        if local(node.tag) == "SetMoveFocusAction"
+        and attribute(node, "FocusElement")
+           == "{Binding ElementName=CAM_FixedSideBarList}"
+        and attribute(node, "DeferFocusAction") == "True"
+    ]
+    if len(focus_handoffs) != 5:
+        errors.append("Exactly five sidebar list-level focus handoffs required")
+    if any(local(node.tag) == "ChangePropertyAction"
+           and attribute(node, "TargetName") == "CAM_FixedSideBarList"
+           and attribute(node, "PropertyName") == "Tag"
+           and "CAM_ResetFirstFocusToken" in (attribute(node, "Value") or "")
+           for node in root.iter()):
+        errors.append("Retired sidebar selected-item token handoff returned")
 
     containers = [node for node in root.iter() if local(node.tag) == "Style"
                   and attribute(node, "Key") == "CAM_ActionGridSlotContainer"]
@@ -128,8 +140,8 @@ def self_test(source: str) -> None:
         raise AssertionError("Current source fails the native-owner baseline")
 
     mutations = (
-        ('Focusable="False"\n                                      Width="120"',
-         'Focusable="True"\n                                      Width="120"'),
+        ('Focusable="True"\n                                      ls:MoveFocus.Focusable="True"\n                                      Width="120"',
+         'Focusable="False"\n                                      ls:MoveFocus.Focusable="True"\n                                      Width="120"'),
         ('ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"',
          'ItemsPanel="{StaticResource CAM_FixedSideBarPanel}" ActionNextEvent="UIDown"'),
         ('ActionDownEvent="UIDown"', 'ActionDownEvent="UILeft"'),
@@ -137,8 +149,8 @@ def self_test(source: str) -> None:
          'ItemsPanel="{StaticResource CAM_ActionGridPanel}"'),
         ('CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
          'CommandParameter="{Binding SelectedItem}"'),
-        ('FocusElement="{Binding ElementName=HotBarList}"',
-         'FocusElement="{Binding ElementName=CAM_FixedSideBarList}"'),
+        ('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"',
+         'FocusElement="{Binding ElementName=HotBarList}"'),
     )
     for before, after in mutations:
         if source.count(before) != 1:
@@ -151,9 +163,9 @@ def self_test(source: str) -> None:
                 if before not in original:
                     raise AssertionError("Metamagic grid direction missing")
                 changed = source[:start] + original.replace(before, after, 1) + source[end:]
-            elif before == 'FocusElement="{Binding ElementName=HotBarList}"':
-                # The ordinary grid has multiple legitimate native focus
-                # handoffs. Mutate one into the forbidden sidebar-root target.
+            elif before == 'FocusElement="{Binding ElementName=CAM_FixedSideBarList}"':
+                # Several independent return paths must target the sidebar.
+                # Mutate one and prove the five-route invariant fails.
                 changed = source.replace(before, after, 1)
             else:
                 raise AssertionError(f"Mutation anchor changed: {before}")
