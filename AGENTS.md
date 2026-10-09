@@ -62,6 +62,29 @@ Do **not** interpret green Validate/Build package/Release as proof of gameplay s
 
 Protect confirmed working behavior: native predicted-cost highlight, metamagic-to-spell area handoff and single LB opening sound. Require a **source-proven state/cancel/provider architecture** and deterministic native-semantic tests before the next consolidated runtime milestone, or mark a feature technically unproven under the no-DLL/no-SE contract rather than masking it. Do not make the operator repeatedly test speculative micro-releases.
 
+## Native metamagic parent B candidate after 0.0.114 (#158, 2026-10-09)
+
+The published game run shows CAM's local-only metamagic B returns
+presentation but leaves game-owned `MetamagicActive` selected.
+The new source-only candidate restores **one**
+`ActionCancelCommand` in the guarded metamagic spell-choice parent
+`LSButtonReleased`, BEFORE clearing CAM's presentation and restoring
+real slot-item focus. It uses the **same native HotBar command** as
+ordinary and nested BG3 routes; no `TogglePassive`, gameplay-state
+writes or additional controller input event. The other four native
+cancel routes remain unchanged.
+
+`tools/audit-controller-known-runtime-failures.py` and
+`tools/test-self-contained-runtime.ps1` now require one call and
+guard against missing/duplicate/late parent cancellation. Read
+`docs/research/v0114-native-metamagic-b-transaction-candidate-2026-10-09.md`.
+
+**This is not runtime proof:** the compiled native command's effect on
+`MetamagicActive` and any pending spell task is still UNKNOWN.
+Do not close #158, suppress the native IV picker, or ship another
+micro-release based only on source tests. Include this in the next
+single consolidated game milestone.
+
 ## v0.0.114 temporary diagnostic release exception (#176)
 
 The one published diagnostic milestone may include the **read-only**,

@@ -2925,10 +2925,13 @@
                             <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
                             <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
                         </b:EventTrigger>
-                        <!-- At the spell-choice parent level, B backs out one CAM
-                             focus phase only. Do NOT execute ActionCancelCommand
-                             or CloseWidget: BG3's active metamagic and costs
-                             are game-owned and remain unchanged. -->
+                        <!-- At the spell-choice parent level, B invokes the same
+                             BG3-owned ActionCancelCommand used by the native
+                             ordinary and nested routes, then restores CAM's
+                             presentation to the concrete metamagic slot.
+                             Removing only the CAM phase previously left
+                             game-owned MetamagicActive selected on reopen.
+                             Command effects must still be verified in game. -->
                         <b:EventTrigger EventName="LSButtonReleased">
                             <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                 <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
@@ -2937,6 +2940,8 @@
                                 <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="False"/>
                                 <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
                             </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                            <!-- Native gameplay cancellation precedes UI-only phase reset. -->
+                            <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
                             <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                             <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
                             <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
