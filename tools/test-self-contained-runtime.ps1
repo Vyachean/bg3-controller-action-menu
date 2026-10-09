@@ -577,6 +577,43 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('Height="818"')) {
     throw "The fixed sidebar must remain a native, independently focused executable VMHotBarSlot list."
 }
+# #158: native metamagic activation must transfer controller ownership
+# from its real VMHotBarSlot sidebar to its existing spell grid. Never
+# replace UseSlotCommand or introduce a new input listener.
+$metaActivePhase = [regex]::Match(
+    $text,
+    '<b:PropertyChangedTrigger Binding="\{Binding CurrentPlayer\.SelectedCharacter\.PlayerCharacterProperties\.MetamagicActive\}">[\s\S]*?CAM_MetamagicSpellPhaseToken[\s\S]*?</b:PropertyChangedTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+$metaPhaseMarker = [regex]::Match(
+    $text,
+    '<Control\s+x:Name="CAM_MetamagicSpellPhaseMarker"[\s\S]*?/>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $text.Contains('x:Key="CAM_MetamagicSpellPhaseToken"') -or
+    -not $metaPhaseMarker.Success -or
+    -not $metaPhaseMarker.Value.Contains('Tag="{x:Null}"') -or
+    -not $metaActivePhase.Success -or
+    -not $metaActivePhase.Value.Contains('RightOperand="True"') -or
+    -not $metaActivePhase.Value.Contains('CAM_MetamagicModeToken') -or
+    -not $metaActivePhase.Value.Contains('IsShowingAContainerWithVariants') -or
+    -not $metaActivePhase.Value.Contains('IsSelectingUpcastedSpell') -or
+    -not $metaActivePhase.Value.Contains('IsShowingItemsToThrow') -or
+    -not $metaActivePhase.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"') -or
+    -not $metaActivePhase.Value.Contains('TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
+    -not $metaActivePhase.Value.Contains('FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"') -or
+    -not $sidebar.Value.Contains('Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"') -or
+    -not $mainList.Value.Contains('Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"') -or
+    -not $sidebar.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedItem"') -or
+    -not $sidebar.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"')) {
+    throw "The game-owned metamagic spell phase must hand native focus to HotBarList and keep selected/visual sidebar identity coherent."
+}
+if (([regex]::Matches($text, 'TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="\{x:Null\}"')).Count -lt 2 -or
+    $text.Contains('BoundEvent="MetaSpellPhase"') -or
+    $text.Contains('x:Name="CAM_MetaSpellInputBinding"')) {
+    throw "Metamagic phase must reset on native state/provider changes with no synthetic input."
+}
+
 # Issue #155: the one-column native FixedSideBar uses LSGrid's original
 # UIDown/UIUp events and the list's ActionNext/Prev consumers. Only the
 # sidebar list may cycle at its vertical boundary; the main action grid
@@ -1445,6 +1482,28 @@ if (-not $metamagicRestore -or
     $metamagicRestore.Value.Contains('TargetName="HotBarList"')) {
     throw "Metamagic nested exit must refocus the native fixed sidebar, never the main spell list."
 }
+# The original one-way metamagic nested return must now be phase-aware:
+# back from a metamagic choice returns to sidebar; back from native
+# nested/upcast spell choice returns to the still-active central grid.
+$metaRestore = @(
+    [regex]::Matches(
+        $text,
+        '<b:DataTrigger Binding="\{Binding Tag, ElementName=CAM_NestedReturnMarker\}" Value="\{StaticResource CAM_NestedRestoringToken\}">[\s\S]*?</b:DataTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object { $_.Value.Contains('RightOperand="{StaticResource CAM_MetamagicModeToken}"') }
+)
+if ($metaRestore.Count -ne 2 -or
+    -not (@($metaRestore | Where-Object {
+        $_.Value.Contains('RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"') -and
+        $_.Value.Contains('TargetName="HotBarList"')
+    }).Count -eq 1) -or
+    -not (@($metaRestore | Where-Object {
+        $_.Value.Contains('RightOperand="{x:Null}"') -and
+        $_.Value.Contains('TargetName="CAM_FixedSideBarList"')
+    }).Count -eq 1)) {
+    throw "Metamagic nested B must restore the owning native list for its current phase."
+}
+
 # Regression in 0.0.99/0.0.100: passive LocalFocusChanged handlers wrote
 # CAM_ProviderModeMarker.Tag, which raced with LB/RB and caused tab wrap.
 # Mode changes now belong only to explicit shoulder/resource-tab handlers.
