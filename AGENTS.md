@@ -32,6 +32,33 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## 0.0.115 rejected; preserve native focus owner, not selected-index guesses
+
+The operator tested and rejected `v0.0.115-consolidated-native-input`.
+Source-only PRs #182, #183 and #186 are **NOT gameplay-accepted**.
+Read `docs/research/v0115-native-focus-owner-regression-2026-10-09.md`.
+
+A stronger historical reference is the **game-tested** `v0.0.29`:
+`tools/native-overlay.ps1` at commit
+`6dcc62c4abfb9cae6dafe54ac5bec3894c2c7fc9` copied the
+original radial `Interaction.Triggers` unchanged while replacing
+renderers and placing the list/selector in the same coordinate space.
+The historical provider was **manually configured radial slots**,
+which MUST NOT be reinstated as the automatic resource-first catalog.
+
+Current CAM instead synchronously writes
+`ActionRadials.Tag={x:Null}` on sidebar `LocalFocusChanged` and
+uses two independent 70ms republishers. The visible native selector
+requires `LocalFocus.DataContext`, not just `SelectedIndex=0`.
+Use `python tools/audit-focus-owner-drift.py` to inspect writers.
+`--require-single-owner` is an opt-in future structural gate
+expected to reject current v0.0.115; `--self-test` only validates
+the parser, not engine behavior. Do NOT change gameplay based on
+a static diagnostic alone. Next fix requires the **exact pinned
+1.8.910.0** native source, an exclusive active focus owner and a
+single truthful `VMHotBarSlot` for focus, tooltip, highlight and A.
+No install-time Game.pak extraction, DLL, SE, or micro-release.
+
 ## Public no-Script-Extender UI/Osiris capability boundary (2026-10-09)
 
 Read `docs/research/public-native-ui-osiris-metamagic-upcast-2026-10-09.md`
