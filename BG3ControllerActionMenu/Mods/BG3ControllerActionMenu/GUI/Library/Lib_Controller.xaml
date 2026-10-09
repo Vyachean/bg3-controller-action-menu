@@ -969,14 +969,30 @@
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:PropertyChangedTrigger>
-                <!-- Clear this presentation phase if the game ends the active
-                     metamagic or the user leaves its original top-level tab. -->
+                <!-- A native metamagic deactivation also changes the executable
+                     list owner. Clearing the phase marker alone previously disabled
+                     HotBarList while leaving its spell focused, with no sidebar
+                     focus handoff. This covers game-owned end-of-turn/cancel paths,
+                     not only the dedicated B handler below. -->
                 <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}">
                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                         <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}" Operator="Equal" RightOperand="False"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
                         <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                           FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                           DeferFocusAction="True"/>
                 </b:PropertyChangedTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}">
                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
