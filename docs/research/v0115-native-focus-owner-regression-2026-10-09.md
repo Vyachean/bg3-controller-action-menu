@@ -50,6 +50,43 @@ mod-compatible catalog. Rolling the old mod back wholesale would
 break the product goal. The established benefit is the **native
 focus transaction and co-located selector**, not its source list.
 
+## Correction: the native 70 ms pair is not itself a regression
+
+The existing repository's [native UI reuse contract](../native-ui-reuse.md)
+records the **captured Xbox App 1.8.910.0 native** lifecycle as
+`LocalFocusChanged` clearing stale `ActionRadials.Tag` and focused
+presentation immediately, then a **70 ms** timer publishing
+`LocalFocus.DataContext`, tooltip and resource highlight. NoesisGUI
+also documents `TimerTrigger` as a delayed event-trigger action.
+Because game-tested v0.0.29 copied the original `Interaction.Triggers`
+unchanged, **an immediate clear plus one delayed write from the same
+`LocalFocusChanged` event is not independent evidence of a CAM
+architecture bug**. The transient null is observable in source, but
+whether it ever affects UIAccept depends on BG3's input ordering.
+
+The stronger CAM-specific deviations are **additional**
+`SelectionChanged` dispatch-Tag publishing, selection-driven
+deferred focus requests, and two different list instances whose
+mutual exclusion is not established by a static audit. Those remain
+source risks, not proven causal explanations of gameplay failure.
+
+The initial version of `audit-focus-owner-drift.py` mislabeled native
+clear+delay as a source risk, and its `--native-capture` path omitted
+`TimerTrigger` while reporting original tag writers. The corrected
+analyzer inventories the delayed native route too and no longer
+counts the clear+delay **of one event** as two independent publishers.
+The `--require-single-owner` gate still rejects CAM's additional
+publishers and unproven multi-list exclusivity. Even an audit pass
+does not establish gameplay correctness or exact native equivalence.
+
+**Source provenance limitation:** the SHA-pinned original
+`PreloadedActionRadials_c.xaml` is not included in this repo and
+has not been byte-compared again during this correction. The
+native baseline here is based on the existing capture-derived
+documentation and historical generator, **not** a newly verified
+source reproduction. The original `--native-capture` SHA check must
+pass before claiming current Patch 8 byte-exact equivalence.
+
 ## Compared to source-shipping 0.0.115
 
 The current
@@ -78,7 +115,10 @@ focus-transaction structure:
   actions. Meanwhile A always sends `ActionRadials.Tag` to
   BG3-owned `UseSlotCommand`.
 - This proves an explicit **transient null parameter** and **more
-  than one source publisher** in static markup. It does **NOT** prove
+  than one source publisher** in static markup. The clear+70ms
+  focus transaction itself is **captured-native-like**; the
+  additional selection publisher and cross-list ownership are
+  the unproven CAM-specific additions. It does **NOT** prove
   which callback fired in a particular frame, or a specific engine
   misdispatch. The operator's invisible focus / unchanged
   metamagic and hint failures must remain separately logged.
@@ -115,7 +155,10 @@ python tools/audit-focus-owner-drift.py --native-capture /path/to/PreloadedActio
   original resource unless its bytes match the **exact**
   `PreloadedActionRadials_c.xaml` SHA-256 from the operator's
   pinned Xbox App 1.8.910.0 evidence. When matched, it enumerates
-  `HotBarRadial`/`SingleBar` native focus-to-tag publisher paths.
+  `HotBarRadial`/`SingleBar` native focus-to-tag publisher paths,
+  including both immediate `EventTrigger` and delayed `TimerTrigger`
+  routes. Its result is an inventory, not an automatic proof of
+  equivalence between the native radial and CAM lists.
   No original proprietary bytes are committed or shipped, and a
   mismatched public Patch 8 archive cannot silently substitute.
 - Default report and `--self-test` are **read-only** and do not
@@ -124,9 +167,10 @@ python tools/audit-focus-owner-drift.py --native-capture /path/to/PreloadedActio
   on current rejected 0.0.115 until the source structure is
   corrected. It is an **opt-in future architecture gate**,
   NOT a gate that makes current CI fail forever.
-- Fixture self-test checks rejection of immediate-null + deferred
-  write, confirms the special IsSelected focus-request contract
-  and verifies a clean synthetic example **still reports
+- Fixture self-test checks that a native-like clear+delay pair
+  alone does **not** fail source ownership; an additional
+  `SelectionChanged` writer and an `IsSelected` focus request
+  are separately reported. All synthetic examples **still report
   `runtimeAccepted=false`**. It must never be represented
   as an actual BG3 focus/input unit test.
 - Repository Validate runs the fixture; the rejected source report
@@ -143,9 +187,9 @@ python tools/audit-focus-owner-drift.py --native-capture /path/to/PreloadedActio
    The original proprietary XAML was intentionally not committed.
 2. Reconstruct the original per-list *native* focus transaction:
    the game-owned actual focus item is committed to
-   `ActionRadials.Tag` immediately from a single active focus
-   event, and the selector is co-located in the same coordinate
-   space. Compare against native selector
+   `ActionRadials.Tag` through the same original
+   `LocalFocusChanged` lifecycle (including its delayed commit),
+   and the selector is co-located in the same coordinate space. Compare against native selector
    `LocalFocusSelector`, first materialized focusable slot
    and native `LSGrid` event source.
 3. Keep the **new resource-first automatic VMHotBarSlot providers**
