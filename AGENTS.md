@@ -48,6 +48,20 @@ The operator's latest in-game run reproduces a historical 0.0.35 defect: horizon
 
 The `ActionRadials.Metadata=MoveToEnd` entry is the only controller-opening branch that selects grouped All instead of a direct resource filter. Runtime user report: RB entry has sound and rumble, LB entry has neither. The native `UI_HUD_Controller_RadialMenu_SlotHover` sound identifier is already proven in CAM's normal `HotBarList.LocalFocusChanged`. A source-only candidate plays it exactly once on the **existing LB/MoveToEnd Loaded branch**, not on LB/RB ordinary tab navigation, not on RB entry and not on inner group focus. It must preserve the source-owned opening direction, selected provider, 70ms slot handoff, A/tooltip identity and native input. This fixes **only the audio path in theory**. There is no proven native haptic API in the captured UI contract. Never fabricate a vibration binding, infer that sound causes rumble, or claim complete #160 acceptance from green CI. Test the sound and haptic separately in the combined published-Release milestone.
 
+
+
+## 2026-10-09 runtime correction after published v0.0.111
+
+Operator's actual test disproved three visual/audio assumptions in the preceding milestone:
+
+- LB/MoveToEnd **double-played** its menu opening sound and still did not vibrate. The additional `LSPlaySound(UI_HUD_Controller_RadialMenu_SlotHover)` at `CAM_ResourceTabs.Loaded` was a duplicate; remove it. Opening audio/haptics must ultimately come from a **single proven native lifecycle**. Do not claim this source rollback fixes missing LB vibration.
+- A 32px title row did **not** prevent selected resource/provider text from overlapping original tab art. New bounded visual candidate uses a **64px** reserved title lane, a top-aligned 44px clipped text box and 20px gutter. The center-offset is adjusted from -16 to -32 so native 84px tab row and 850px grid retain their prior positions. Actual scaled Noesis rendering is not proven by static geometry.
+- Right-hand hint panel `MaxWidth=380` **clipped** original controller hints. Increase the bound to **600px** while keeping right-side placement and compact `Width=Auto` children; native center HUD non-overlap must be checked in game, not asserted from maximum width alone.
+
+The same operator explicitly **confirmed resource-cost highlighting works**; preserve its native `HighlightResourcesCommand` paths, including focused metamagic slots, and do not disable them while repairing focus UI.
+
+Other uncorrected v0.0.111 issues: in-menu weapon hold/progress, metamagic focus-frame divergence, selected metamagic not handing focus to compatible spell grid, duplicated IV-level upcast choice (#172), and LB haptics. Do not advertise any of these as fixed by the local audio/layout rollback. Prepare a combined source/CI-reviewed candidate and one published-Release gameplay check, never one release per tweak.
+
 ## Functional parity is not original radial layout parity (2026-10-08)
 
 The operator requires full gameplay-capability parity with BG3, not preservation of the player-configured original radial layout. An **Original Radials** tab or runtime dependence on manually configured `ControllerHotBars` is rejected. Inspect `ControllerHotBars` as independent reference evidence only. CAM must discover available actions automatically from verified BG3-owned executable slot providers and retain native global controller functions, rather than relying on assigned original radial slots.

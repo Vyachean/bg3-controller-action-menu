@@ -1315,3 +1315,16 @@ The final `All` provider remains a separate unproved branch: its outer selection
 The original controller state machine distinguishes `OpenActionRadials` and `OpenActionRadialsEnd` by `ActionRadials.Metadata=MoveToEnd`. The first direct-resource opening already uses the native `HotBarList.LocalFocusChanged` sound `UI_HUD_Controller_RadialMenu_SlotHover`. The LB/MoveToEnd opening instead enters the grouped `KeyboardHotBars` All provider and, according to operator game testing, produces no sound or vibration. CAM now emits **one instance of the already-proven native slot-hover sound** in the existing `CAM_ResourceTabs.Loaded` branch guarded by `Metadata==MoveToEnd`. It does not emit it on ordinary LB/RB tab navigation, nor add a duplicate on the RB normal branch. The original 70ms first-slot handoff and selected All resource/provider remain unchanged.
 
 This is a strictly **sound-only source candidate**, not proof of correct runtime playback or haptics. The game-owned haptic/vibration route is not identified by current pinned Patch 8 sources, so no fabricated rumble command or new input binding is introduced. In the next combined published-Release milestone, verify RB and LB opening each produces one sound and appropriate haptics, and that repeated tab changes don't double-play sounds. If LB still lacks vibration, #160 stays open until the actual engine-level event source is proven.
+
+
+## 2026-10-09 runtime correction after published v0.0.111
+
+Operator's actual test disproved three visual/audio assumptions in the preceding milestone:
+
+- LB/MoveToEnd **double-played** its menu opening sound and still did not vibrate. The additional `LSPlaySound(UI_HUD_Controller_RadialMenu_SlotHover)` at `CAM_ResourceTabs.Loaded` was a duplicate; remove it. Opening audio/haptics must ultimately come from a **single proven native lifecycle**. Do not claim this source rollback fixes missing LB vibration.
+- A 32px title row did **not** prevent selected resource/provider text from overlapping original tab art. New bounded visual candidate uses a **64px** reserved title lane, a top-aligned 44px clipped text box and 20px gutter. The center-offset is adjusted from -16 to -32 so native 84px tab row and 850px grid retain their prior positions. Actual scaled Noesis rendering is not proven by static geometry.
+- Right-hand hint panel `MaxWidth=380` **clipped** original controller hints. Increase the bound to **600px** while keeping right-side placement and compact `Width=Auto` children; native center HUD non-overlap must be checked in game, not asserted from maximum width alone.
+
+The same operator explicitly **confirmed resource-cost highlighting works**; preserve its native `HighlightResourcesCommand` paths, including focused metamagic slots, and do not disable them while repairing focus UI.
+
+Other uncorrected v0.0.111 issues: in-menu weapon hold/progress, metamagic focus-frame divergence, selected metamagic not handing focus to compatible spell grid, duplicated IV-level upcast choice (#172), and LB haptics. Do not advertise any of these as fixed by the local audio/layout rollback. Prepare a combined source/CI-reviewed candidate and one published-Release gameplay check, never one release per tweak.
