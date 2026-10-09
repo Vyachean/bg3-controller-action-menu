@@ -2608,9 +2608,8 @@
                     BorderThickness="1"
                     Panel.ZIndex="200"
                     IsHitTestVisible="False"
-                    Focusable="False"
-                    IsEnabled="False">
-                <StackPanel Orientation="Vertical" IsHitTestVisible="False">
+                    Focusable="False">
+                <StackPanel Orientation="Vertical" IsHitTestVisible="False" Focusable="False">
                     <TextBlock Text="CAM 0.0.114 | STATE PROBE"
                                Foreground="#FFFFD99B"
                                FontSize="14"
