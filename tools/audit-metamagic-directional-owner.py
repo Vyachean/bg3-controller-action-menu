@@ -151,6 +151,10 @@ def self_test(source: str) -> None:
                 if before not in original:
                     raise AssertionError("Metamagic grid direction missing")
                 changed = source[:start] + original.replace(before, after, 1) + source[end:]
+            elif before == 'FocusElement="{Binding ElementName=HotBarList}"':
+                # The ordinary grid has multiple legitimate native focus
+                # handoffs. Mutate one into the forbidden sidebar-root target.
+                changed = source.replace(before, after, 1)
             else:
                 raise AssertionError(f"Mutation anchor changed: {before}")
         else:
