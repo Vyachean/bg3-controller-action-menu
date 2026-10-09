@@ -78,7 +78,7 @@ do not infer PASS merely because the action menu opens.
 | Stage | Exact procedure | Required observable result | Diagnoses on failure |
 | --- | --- | --- | --- |
 | 1. Controller focus and tabs | Open menu; switch two resource tabs with LB/RB; navigate to last cell and back; return to the prior tab | Visible native selector, selected item, tooltip and intended A all follow the same first/last concrete cell; no blank-grid navigation or delayed second-cell jump | #155/#176 main LSGrid vs LSListBox owner, first-cell focus and source refresh |
-| 2. Resource IV | With a character having an upcastable spell and an IV slot, use keyboard original HotBar IV filter as reference, then CAM IV tab → same spell | Same **IV-level** spell tooltip, scaling/damage/cost and engine action without selecting IV again; native targeting preserved | #172 filter-created slot vs VMUpcast identity, Tag dispatch, provider/source instance |
+| 2. Resource IV | With a character having an upcastable spell and an IV slot, use keyboard original HotBar IV filter as reference, then CAM IV tab → same spell | Same **IV-level** spell tooltip, scaling/damage/cost and engine action without selecting IV again; native targeting preserved | #172 **keyboard vs controller DCHotBar materialization**: selected resource filter state, resulting level-specific VMHotBarSlot identity/content, then Tag dispatch; do not assume a raw VMUpcast is executable |
 | 3. Metamagic nested phase | Select one metamagic option then review spell choices; choose an allowed spell, B back; repeat switch away/back | Only actually compatible executable spells can be navigated; B returns visible first-cell focus; no surviving metamagic selection after close/reopen | #158 game-owned MetamagicActive/compatibility source vs CAM presentation state |
 | 4. Nested B and cancel | Open a true nested variant/upcast/throw choice; press B; reopen and choose again | Exactly one native level of back navigation; focus, tooltip and A restored; old parent slot never dispatched after the native nested source switch | #176 nested enter/return ordering; stale Tag vs actual LocalFocus |
 | 5. Weapon switch hold | Compare native controller behavior outside CAM with the same input held inside CAM; observe on-screen hint/progress | Hold input, progress and set change match native behavior | #154 command/button owner and hold style/input scope |
@@ -88,12 +88,17 @@ do not infer PASS merely because the action menu opens.
 ## Diagnostic decision tree
 
 - Original keyboard tooltip IV, CAM tooltip **base level**: inspect
-  `FilterActionResourceCommand` output and focused
-  `VMHotBarSlot.Content` in controller context before editing A.
-- Both tooltips IV but A opens an **extra level selector**: inspect
-  the *engine-produced* executable `VMUpcast` vs
-  `ActionRadials.Tag` at UIAccept, then native nested task state.
-  Do not suppress the native state merely because it is redundant.
+  `CurrentSingleHotbarFilter`, `FilterActionResourceCommand` output and
+  focused `VMHotBarSlot.Content` in **both keyboard and controller DCHotBar
+  contexts** before editing A. Current engine evidence says the persisted
+  keyboard/controller hotbar modes are distinct.
+- Both tooltips IV but A opens an **extra level selector**: first verify the
+  outer `VMHotBarSlot` passed to `UseSlotCommand`. If the engine enters
+  `IsSelectingUpcastedSpell`, inspect the **nested VMHotBarSlot** whose
+  Content is `VMUpcast`; do not invoke raw VMUpcast content directly.
+  A `SpellSlotLevel` match alone is insufficient when resource families can
+  differ at the same level. Do not suppress the native state merely because
+  it is redundant.
 - Tooltip/focus ring diverge or A does nothing: investigate list
   `LocalFocus`, first-selection token, `IsEnabled` and 70-ms
   native commit, not spell damage or resource calculations.
