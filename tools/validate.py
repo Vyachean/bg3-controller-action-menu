@@ -1151,6 +1151,18 @@ def main() -> int:
             if diagnostic["runtimeAccepted"] is not False:
                 errors.append("Source-only focus inventory falsely claims game acceptance")
 
+    # Source-specific guard for the native sidebar ownership correction.
+    # This is deliberately NOT a Noesis runtime emulator.
+    sidebar_handoff = subprocess.run(
+        [sys.executable, str(ROOT / "tools/test-native-sidebar-focus.py")],
+        cwd=ROOT, text=True, capture_output=True, check=False,
+    )
+    if sidebar_handoff.returncode:
+        errors.append("Native sidebar focus handoff source regression failed:\n"
+                      + sidebar_handoff.stdout + sidebar_handoff.stderr)
+    else:
+        print(sidebar_handoff.stdout, end="")
+
     # Native UI parity is not equivalent to having a keyword somewhere in
     # XAML. Fail on missing native transport seams and keep unresolved classes
     # visible in the source-only audit, with no need for a running BG3.
