@@ -118,6 +118,34 @@ new `LSGrid` first-item focus route actually works in game. In
 particular, no automatic test can synthesize the engine's native
 `LocalFocusChanged` event semantics. Keep draft and do not publish.
 
+## Native deactivation changes executable focus owner
+
+A third existing control-flow omission was independently located in the
+`MetamagicActive` `PropertyChangedTrigger`. If game-owned
+`MetamagicActive` became `False` while CAM's spell-choice phase was
+active, the handler **only** cleared
+`CAM_MetamagicSpellPhaseMarker.Tag`. This re-enabled the sidebar
+`LSListBox` and disabled the central `HotBarList`, without
+invalidating its executable `ActionRadials.Tag` or requesting focus
+inside the sidebar. That is a concrete code path capable of losing
+input ownership after native metamagic deactivation, independently of
+the explicit B handler.
+
+The candidate now handles this transition analogously to the existing
+B parent return: invalidate the previous executable slot, close its
+tooltip and native highlight, clear old main/sidebar `LocalFocus`,
+reset both selections, clear the presentation phase, then request
+deferred focus to the native sidebar list. It additionally guards
+the branch on being in the Metamagic provider. **No BG3-owned game
+state is set, cleared or simulated.**
+
+If `ActionCancelCommand` synchronously toggles `MetamagicActive`,
+this native-property observer and the B event handler can both request
+the same sidebar focus in one frame. Their ownership destination
+agrees, but the exact Larian Noesis event order is not provable
+outside the game and should be observed at the combined milestone.
+This is not a claim that native B correctly cancels metamagic.
+
 ## Independent Noesis focus evidence, checked 2026-10-09
 
 NoesisGUI's [FocusManager documentation](https://www.noesisengine.com/docs/Gui.Core._FocusManager.html)
