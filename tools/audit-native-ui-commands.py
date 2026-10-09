@@ -921,10 +921,11 @@ def main() -> int:
         if not any("compact centered layout" in err
                    for err in validate_native_compact_footer(wide_footer)):
             report["errors"].append("self-test failed: radial-sized footer width not rejected")
-        wide_hold_button = runtime.replace(
-            'x:Name="ToggleWeaponSet"\n                             Style="{StaticResource ControllerHoldButtonStyle}"',
-            'x:Name="ToggleWeaponSet" Width="1000"\n                             Style="{StaticResource ControllerHoldButtonStyle}"',
-            1,
+        wide_hold_button = re.sub(
+            r'(<ls:LSButton x:Name="ToggleWeaponSet"[\\s\\S]*?\\bWidth=")Auto(")',
+            r'\\g<1>1000\\2',
+            runtime,
+            count=1,
         )
         if not any("visible controller hints" in err
                    for err in validate_native_compact_footer(wide_hold_button)):
