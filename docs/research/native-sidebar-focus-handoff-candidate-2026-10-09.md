@@ -254,6 +254,76 @@ ListBoxItem**. Therefore do not merge or release it solely because
 the package compiles. The former source-shape gate suite was retired
 in PR #192: no new gameplay-XAML-specific CI assertions are justified.
 
+## Resource-IV keyboard HotBar behavior — new operator evidence (#172)
+
+**Observed behavior, supplied by the operator on 2026-10-09:** in the
+unmodified keyboard/mouse HotBar, selecting the level-IV resource
+filter and then a spell selects the **level-IV upcasted variant**;
+its normal tooltip also describes the level-IV result. Thus a
+resource-first, level-specific action and matching preview is an
+existing BG3 gameplay/UI capability. Previous wording that implied
+the **game** had no such mechanism was too broad. The actual unknown
+is whether the **controller ActionRadials UI currently reaches the
+same native executable VMHotBarSlot**.
+
+Prior exact installed 1.8.910.0 capture-derived evidence
+[`source-only-capability-parity-2026-10-08.md`](source-only-capability-parity-2026-10-08.md)
+records that keyboard HotBar and controller ActionRadials use the
+game's `DCHotBar` context, and both expose
+`FilterActionResourceCommand`, `SingleHotBar.SlotList` and
+`UseSlotCommand`. The exact original HotBar.xaml SHA-256 is
+`9035014f47b2f47ca90a0bd7604aa9cdd32931ff8f778e10a15ab104373e2728`.
+The source archive is not committed, so this turn did **not** reopen
+that exact blob or inspect compiled `DCHotBar` implementation.
+
+Additional independent, but **NOT byte-identical to installed game**
+Patch 8 source:
+[DataTemplates.xaml, Coyote-31 archive](https://github.com/Coyote-31/bg3-advanced-character-sheet/blob/71fe9015ac3b848fa11fbba53c6286872f140e3e/Sources/BG3/Patch8/Game/Public/Game/GUI/Library/DataTemplates.xaml)
+defines `HotBarSlotStyle` with
+`Command = DataContext.UseSlotCommand` and
+`CommandParameter = {Binding}`; this binds **the current VM slot**,
+not a spell name or a resource number. Its `VMUpcast` template
+uses the native level-specific visual and its tooltip is
+`DataContext.Content`. An older published
+[keyboard HotBar.xaml derivative](https://gist.github.com/rkr87/d73c7129567846c0ed72524138585be3)
+shows `FilterActionResourceCommand` taking the entire
+`VMActionResourceCostPreview` item, and a separate
+`CurrentActiveSlot.Spell.SpellUpcast` choice region. These are
+architecture clues, not independent proof of Patch 8 casting
+semantics.
+
+Current CAM XAML:
+- LB/RB selects a real `VMActionResourceCostPreview` and invokes
+  `FilterActionResourceCommand(SelectedItem)`.
+- Normal resource-mode `HotBarList.ItemsSource` is
+  `SingleHotBar.SlotList` (real `VMHotBarSlot` objects).
+- Controller A invokes
+  `UseSlotCommand(ActionRadials.Tag)`, where `Tag` is published
+  after `HotBarList.LocalFocusChanged` (native-like 70 ms delay).
+- Tooltip uses `LocalFocus.DataContext.Content` with the native
+  tooltip command. If `Tag` and `LocalFocus.DataContext` refer
+  to different/old slots, the controller UI can disagree with
+  the keyboard UI even though both command names are the same.
+
+**New diagnosis priority:** compare the specific instance
+`HotBarList.LocalFocus.DataContext`, `ActionRadials.Tag`,
+`SingleHotBar.SlotList` item content (base `VMCharacterAction`
+vs native `VMUpcast`), and rendered tooltip with the equivalent
+keyboard resource-IV slot *before* adding any new upcast UI.
+Also check that the controller widget is actually using the same
+DCHotBar instance, not merely the same command type. This is a
+hypothesis about a transport/context mismatch, **not a proven
+root cause**.
+
+**Acceptance for #172:** the resource-IV tab shows the very same
+IV-level variant in both tooltip and execution as keyboard HotBar;
+A must not force the player to select IV a second time, and
+native `UseSlotCommand` must continue to apply all gameplay cost,
+targeting, metamagic and modified spell rules. Do not force IV,
+inject a synthetic `VMUpcast`, bypass native commands or suppress
+the game's legitimate secondary selector by hiding its markup.
+A coherent console/gamepad owner must be proven before release.
+
 ## Other issues not mechanically solvable from this source
 
 The game's `ControllerHoldButtonStyle` / `ToggleWeaponSet`
