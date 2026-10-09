@@ -30,6 +30,9 @@ SOURCES = (KEYBOARD, CONTROLLER, TEMPLATES)
 NEEDLES = {
     "resourcePreview": "ActionResourcesCostPreview",
     "resourceFilter": "FilterActionResourceCommand",
+    "activeResourceFilterName": "CurrentSingleHotbarFilter",
+    "upcastActiveTaskCost": "ActiveTask.Upcast.CostSummary",
+    "upcastSlotLevel": "SpellSlotLevel",
     "activeUpcastVariants": "CurrentActiveSlot.Spell.SpellUpcast",
     "anyUpcastVariants": "SpellUpcast",
     "nestedUpcastFlag": "IsSelectingUpcastedSpell",
@@ -185,6 +188,8 @@ def report(cam: str, pinned: dict, capture: Path | None) -> dict:
             "filtered SingleHotBar.SlotList item Content type, upcast level and CanUse",
             "HotBarList.LocalFocus.DataContext identity and ActionRadials.Tag identity at UIAccept",
             "tooltip Content identity, spell damage and resource cost",
+            "CurrentSingleHotbarFilter state and whether it matches selected IV resource",
+            "CurrentPlayer.UIData.ActiveTask.Upcast.CostSummary if an upcast task is active",
             "IsSelectingUpcastedSpell/MetamagicActive flags before/after A and B",
         ],
         "warning": "Do not synthesize VMUpcast, skip the native selector, or equate identical bindings with game behavior.",
@@ -199,12 +204,18 @@ def self_test() -> None:
       <Control x:Name="Filter" Command="{Binding FilterActionResourceCommand}"
           CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
       <Control ItemsSource="{Binding CurrentActiveSlot.Spell.SpellUpcast}"/>
+      <Control Visibility="{Binding CurrentSingleHotbarFilter}"/>
+      <Control ItemsSource="{Binding CurrentPlayer.UIData.ActiveTask.Upcast.CostSummary}"/>
+      <Control Content="{Binding CurrentActiveSlot.Spell.SpellSlotLevel}"/>
       <Control Command="{Binding UseSlotCommand}" CommandParameter="{Binding .}"/>
     </Root>"""
     x = site_inventory(fixture, "synthetic/HotBar.xaml")
     assert len(x["resourceFilter"]) == 1
     assert len(x["activeUpcastVariants"]) == 1
     assert len(x["nativeSlotDispatch"]) == 1
+    assert len(x["activeResourceFilterName"]) == 1
+    assert len(x["upcastActiveTaskCost"]) == 1
+    assert len(x["upcastSlotLevel"]) == 1
     assert x["resourceFilter"][0]["attributes"]["CommandParameter"].endswith("CAM_ResourceTabs}")
     assert all("not-real" not in str(v) for v in x.values())
     assert len(site_inventory("<Root><!-- VMUpcast --></Root>", "empty")["upcastContext"]) == 0
