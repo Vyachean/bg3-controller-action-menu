@@ -185,6 +185,33 @@ function Get-XamlElementNameFromTag {
     return $null
 }
 
+function Get-XamlNodeAttributeByLocalName {
+    param(
+        [System.Xml.XmlNode]$Node,
+        [string]$LocalName
+    )
+
+    if (-not $Node -or -not $Node.Attributes) { return $null }
+    foreach ($attribute in @($Node.Attributes)) {
+        if ($attribute.LocalName -eq $LocalName) {
+            return $attribute.Value
+        }
+    }
+    return $null
+}
+
+function Get-Utf8Sha256 {
+    param([string]$Text)
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes([string]$Text)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return -join ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") })
+    } finally {
+        $sha.Dispose()
+    }
+}
+
 function Get-HotBarCoverageReport {
     param(
         [object[]]$Documents,
@@ -201,6 +228,97 @@ function Get-HotBarCoverageReport {
                 PackagedPath = [string]$document.PackagedPath
                 CapturedPath = [string]$document.CapturedPath
                 Text = Get-Content -Raw -LiteralPath $document.CapturedPath
+            }
+        }
+    )
+
+    # Schema-v5: preserve the exact native hold style definition and the
+    # trigger-owned layout mutations that schema-v3 reduced to isolated tags.
+    # This report remains local to the read-only capture archive; CAM does not
+    # package or redistribute the captured game XAML.
+    $styleKeys = @(
+        "ControllerHoldButtonStyle",
+        "WeaponSetSwitchStyle"
+    )
+    $styleDefinitionProbes = @(
+        foreach ($document in $loadedDocuments) {
+            try {
+                [xml]$xml = $document.Text
+                foreach ($node in @($xml.SelectNodes("//*"))) {
+                    if ($node.LocalName -ne "Style") { continue }
+                    $key = Get-XamlNodeAttributeByLocalName -Node $node -LocalName "Key"
+                    if ($styleKeys -notcontains $key) { continue }
+                    $raw = $node.OuterXml
+                    [pscustomobject]@{
+                        SourceFile = $document.PackagedPath
+                        Key = $key
+                        Sha256 = Get-Utf8Sha256 -Text $raw
+                        RawStyle = $raw
+                    }
+                }
+            } catch {
+                [pscustomobject]@{
+                    SourceFile = $document.PackagedPath
+                    Key = $null
+                    Sha256 = $null
+                    RawStyle = $null
+                    ParseError = "$_"
+                }
+            }
+        }
+    )
+
+    $mutationTargets = @(
+        "ButtonHintsContainer",
+        "SelectButtonVisual",
+        "ToWorldButton",
+        "CancelConcentrationButton",
+        "ToggleWeaponSet",
+        "ToggleDualWield",
+        "CancelButton"
+    )
+    $targetedSetterProbes = @(
+        foreach ($document in $loadedDocuments) {
+            try {
+                [xml]$xml = $document.Text
+                foreach ($node in @($xml.SelectNodes("//*"))) {
+                    if ($node.LocalName -notin @("Setter", "ChangePropertyAction")) { continue }
+                    $targetName = Get-XamlNodeAttributeByLocalName -Node $node -LocalName "TargetName"
+                    if ($mutationTargets -notcontains $targetName) { continue }
+
+                    $trigger = $node.ParentNode
+                    while ($trigger -and
+                           $trigger.LocalName -notin @(
+                               "DataTrigger", "MultiDataTrigger", "Trigger",
+                               "EventTrigger", "PropertyChangedTrigger"
+                           )) {
+                        $trigger = $trigger.ParentNode
+                    }
+                    [pscustomobject]@{
+                        SourceFile = $document.PackagedPath
+                        Element = $node.LocalName
+                        TargetName = $targetName
+                        Property = Get-XamlNodeAttributeByLocalName -Node $node -LocalName "Property"
+                        Value = Get-XamlNodeAttributeByLocalName -Node $node -LocalName "Value"
+                        TriggerType = if ($trigger) { $trigger.LocalName } else { $null }
+                        TriggerSha256 = if ($trigger) { Get-Utf8Sha256 -Text $trigger.OuterXml } else { $null }
+                        TriggerXml = if ($trigger) { $trigger.OuterXml } else { $null }
+                        RawMutation = $node.OuterXml
+                    }
+                }
+            } catch {
+                [pscustomobject]@{
+                    SourceFile = $document.PackagedPath
+                    Element = $null
+                    TargetName = $null
+                    Property = $null
+                    Value = $null
+                    TriggerType = $null
+                    TriggerSha256 = $null
+                    TriggerXml = $null
+                    RawMutation = $null
+                    ParseError = "$_"
+                }
             }
         }
     )
@@ -360,7 +478,7 @@ function Get-HotBarCoverageReport {
     )
 
     [ordered]@{
-        SchemaVersion = 4
+        SchemaVersion = 5
         HotBarSha256 = if ($HotBarPath -and (Test-Path -LiteralPath $HotBarPath -PathType Leaf)) {
             (Get-FileHash -Algorithm SHA256 -LiteralPath $HotBarPath).Hash.ToLowerInvariant()
         } else {
@@ -371,6 +489,8 @@ function Get-HotBarCoverageReport {
         MissingCommands = $missingCommands
         InputTransportProbes = $inputTransportProbes
         MissingInputTransportSymbols = $missingInputTransportSymbols
+        StyleDefinitionProbes = $styleDefinitionProbes
+        TargetedSetterProbes = $targetedSetterProbes
         ExecutableCollections = $collections
         RadialAssignmentReferences = $radialCoverage
         Note = "Derived read-only discovery report. Missing research seams are evidence, not capture failures."
@@ -404,9 +524,22 @@ if ($CoverageSelfTest) {
                Style="{StaticResource ControllerHoldButtonStyle}"
                DataContext="{Binding InputEvents, ConverterParameter=UISelectionLeft}"
                Content="Visual only"/>
+  <Style x:Key="ControllerHoldButtonStyle">
+    <Setter Property="HoldTime" Value="0.45"/>
+    <Setter Property="Template" Value="{StaticResource HoldButtonTemplate}"/>
+  </Style>
   <Style x:Key="WeaponSetSwitchStyle">
     <Setter Property="BoundEvent" Value="ToggleWeaponSet"/>
   </Style>
+  <ControlTemplate x:Key="SyntheticRadial">
+    <Grid x:Name="ButtonHintsContainer" Width="1000"/>
+    <ControlTemplate.Triggers>
+      <DataTrigger Binding="{Binding CompactHints}" Value="True">
+        <Setter TargetName="ButtonHintsContainer" Property="Width" Value="Auto"/>
+        <Setter TargetName="ToggleWeaponSet" Property="Width" Value="Auto"/>
+      </DataTrigger>
+    </ControlTemplate.Triggers>
+  </ControlTemplate>
 </Grid>
 '@ | Set-Content -LiteralPath $otherFixture -Encoding UTF8
 
@@ -469,7 +602,25 @@ if ($CoverageSelfTest) {
         if (@($report.MissingInputTransportSymbols).Count -ne 0) {
             throw "Coverage self-test unexpectedly reported missing input-transport symbols."
         }
-        if ($report.SchemaVersion -ne 4 -or $report.ScannedXamlCount -ne 2) {
+        $holdStyleDefinition = @($report.StyleDefinitionProbes | Where-Object { $_.Key -eq "ControllerHoldButtonStyle" })[0]
+        if (-not $holdStyleDefinition -or
+            -not $holdStyleDefinition.RawStyle.Contains('Property="HoldTime" Value="0.45"') -or
+            -not $holdStyleDefinition.Sha256) {
+            throw "Coverage self-test did not preserve the native hold-style definition."
+        }
+        $compactMutations = @(
+            $report.TargetedSetterProbes |
+                Where-Object {
+                    $_.TargetName -in @("ButtonHintsContainer", "ToggleWeaponSet") -and
+                    $_.Property -eq "Width" -and
+                    $_.Value -eq "Auto"
+                }
+        )
+        if ($compactMutations.Count -ne 2 -or
+            @($compactMutations | Where-Object { $_.TriggerType -eq "DataTrigger" -and $_.TriggerXml -match "CompactHints" }).Count -ne 2) {
+            throw "Coverage self-test did not preserve trigger-owned footer mutations."
+        }
+        if ($report.SchemaVersion -ne 5 -or $report.ScannedXamlCount -ne 2) {
             throw "Coverage self-test produced the wrong report schema."
         }
 
