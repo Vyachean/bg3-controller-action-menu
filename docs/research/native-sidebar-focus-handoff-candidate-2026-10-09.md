@@ -430,6 +430,51 @@ ViewModel to determine those runtime values. Until it can be
 observed or extracted from an authoritative source, do not
 skip the native upcast transaction or synthesize spell costs.
 
+## Native nested-choice entry invalidation (#172, #176)
+
+The shipping source had **an asymmetric state transition**: the three
+native flags `IsShowingAContainerWithVariants`,
+`IsSelectingUpcastedSpell`, `IsShowingItemsToThrow` each set the
+`CAM_NestedEnteredToken` marker and requested list-level deferred
+focus but **never invalidated the previous executable
+`ActionRadials.Tag`**. The engine can rebind
+`SingleHotBar.SlotList` to nested choices while controller A still
+refers to the preceding parent `VMHotBarSlot`. The current
+UIAccept parameter source is `ActionRadials.Tag`, not the
+currently rendered cell's data context; a nested selection alone
+does not commit that identity.
+
+This candidate gives all three flags the same source-grounded
+handoff: immediately clear A's old Tag, main tooltip and native
+tooltip, clear resource highlights, reset old
+`HotBarList.LocalFocus` and selection; mark native nested entry;
+arm the existing concrete-slot focus token and defer focus to
+`HotBarList`, then select the first native nested slot. Only
+the list's subsequent `LocalFocusChanged` timer can publish
+a non-null new `VMHotBarSlot` to A, tooltip and highlights.
+`SingleHotBar.SlotList`, the engine's nesting flags,
+`UseSlotCommand`, B, and upcast cost/targeting logic remain
+game-owned and unchanged.
+
+**Explicit risk:** the game may set the native nested flag before
+the corresponding `SingleHotBar.SlotList` has materialized. In
+that order the new selection request can encounter an empty list
+and no focused slot; the code deliberately remains fail-closed
+rather than executing its stale parent action. Multiple native
+flags may also overlap. No source-only CI test can prove this
+Larian view-model/Noesis sequencing, so first-cell focus and
+re-entry remain unaccepted pending a consolidated runtime
+observation. Do **not** add a `SingleHotBar.Count==0` autofilter
+loop (a rejected 0.0.49 experiment), synthetic upcast objects,
+or another UIAccept receiver to mask the gap.
+
+The operator's keyboard resource-IV result remains a separate
+requirement: A must ultimately receive an engine-created **IV
+variant**, with its matching tooltip and costs, without
+reselecting IV. This nested-entry fix prevents old parent-slot
+dispatch, but **does not** prove resource-to-level variant parity
+or remove the game's duplicate upcast selector.
+
 ## Other issues not mechanically solvable from this source
 
 The game's `ControllerHoldButtonStyle` / `ToggleWeaponSet`
