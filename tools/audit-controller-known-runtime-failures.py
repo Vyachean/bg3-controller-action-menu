@@ -379,10 +379,11 @@ def assert_cancel_route_source(source: str) -> None:
         '                            <b:ChangePropertyAction TargetName="ActionRadials" '
         'PropertyName="Tag" Value="{x:Null}"/>'
     )
-    if source.count(reset_anchor) != 1:
-        raise AssertionError("Metamagic parent reset anchor changed")
-    late_cancel = source.replace(anchor, '', 1).replace(
-        reset_anchor,
+    full_parent_seam = anchor + '\n' + reset_anchor
+    if source.count(full_parent_seam) != 1:
+        raise AssertionError("Metamagic parent cancel/reset adjacent seam changed")
+    late_cancel = source.replace(
+        full_parent_seam,
         reset_anchor + '\n'
         '                            <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>',
         1,
