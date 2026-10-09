@@ -1015,22 +1015,55 @@
                     <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:PropertyChangedTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
+                    <!-- A native nested choice replaces the executable SlotList.
+                         Invalidate the parent slot before A can dispatch it again;
+                         the first focused nested VMHotBarSlot becomes the new owner. -->
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedEnteredToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsSelectingUpcastedSpell}" Value="True">
+                    <!-- A native nested choice replaces the executable SlotList.
+                         Invalidate the parent slot before A can dispatch it again;
+                         the first focused nested VMHotBarSlot becomes the new owner. -->
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedEnteredToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:DataTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingItemsToThrow}" Value="True">
+                    <!-- A native nested choice replaces the executable SlotList.
+                         Invalidate the parent slot before A can dispatch it again;
+                         the first focused nested VMHotBarSlot becomes the new owner. -->
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}" CommandParameter="{x:Null}"/>
+                    <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
                                             Value="{StaticResource CAM_NestedEnteredToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:DataTrigger>
                 <b:PropertyChangedTrigger Binding="{Binding IsShowingAContainerWithVariants}">
                     <b:Interaction.Behaviors>
