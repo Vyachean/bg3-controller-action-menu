@@ -49,6 +49,47 @@ and fault-injected negative cases (unfocusable list, misrouted transfer,
 duplicate selection dispatcher). `tools/validate.py` executes it.
 The source audit does **not** pretend to simulate or certify Noesis.
 
+## Follow-up: main-list focus and execution owner
+
+A separate, concrete ordering gap was found during the source review:
+the Passives and Items *nested-return* branches wrote
+`HotBarList.Tag=CAM_ResetFirstFocusToken` followed by
+`SelectedIndex=0`, without first deselecting the previous index.
+The same pattern occurred on the initial delayed Loaded path.
+But `CAM_ActionGridSlotContainer` requests real focus only inside
+a `b:DataTrigger(IsSelected=True)`, conditional on the parent token.
+If the container was already selected, the selection event is not
+guaranteed by these actions, so the focus request can be skipped.
+That is a direct markup-level control-flow gap; it does **not**
+constitute proof of a specific game engine event failure.
+
+The candidate now clears stale `HotBarList.LocalFocus` on those
+two direct-provider returns and explicitly cycles `SelectedIndex=-1`
+then `0` on both, plus on initial Loaded. This ensures an actual
+selection-state transition is requested for the token-gated item
+focus action, rather than merely writing its existing value.
+
+Main `HotBarList` also had two event sources publishing
+`ActionRadials.Tag`: native-like delayed `LocalFocusChanged` and
+another 70 ms delayed `SelectionChanged`. The latter was removed
+because selection is not itself a focus commit; it could re-publish
+a previous `LocalFocus` during a source switch. The main list and
+the metamagic sidebar now both write non-null dispatch identity
+only on their `LocalFocusChanged` lifecycle. The separately
+rendered lists must still be proved mutually exclusive at runtime;
+their source-level `IsEnabled` guards alone do not prove atomic
+handoff across nested states.
+
+**Regression risk:** the old `SelectionChanged` timer also served
+as a fallback for tooltip/cost presentation on programmatic
+selection. If `LocalFocusChanged` never fires after the new
+deselection / focus request, initial tooltip and A may remain
+unavailable. That is safer than dispatching the wrong slot but
+does not satisfy UX acceptance. No static test can resolve this:
+the game-owned `LSListBox` must be observed at a later consolidated
+milestone. Never claim this is runtime-fixed solely from a green
+package check.
+
 ## Independent Noesis focus evidence, checked 2026-10-09
 
 NoesisGUI's [FocusManager documentation](https://www.noesisengine.com/docs/Gui.Core._FocusManager.html)
