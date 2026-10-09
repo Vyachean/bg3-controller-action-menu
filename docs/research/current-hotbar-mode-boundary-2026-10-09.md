@@ -85,6 +85,31 @@ or matching property names **does not prove that keyboard HotBar and controller
 ActionRadials have the same DCHotBar instance, mode, or filtered-slot
 materialization**.
 
+## Patch 8 slot style rules out a separate upcast dispatch command
+
+An independent public Patch 8 `DataTemplates.xaml` copy at
+[Coyote-31 commit `71fe9015ac3b848fa11fbba53c6286872f140e3e`](https://github.com/Coyote-31/bg3-advanced-character-sheet/blob/71fe9015ac3b848fa11fbba53c6286872f140e3e/Sources/BG3/Patch8/Game/Public/Game/GUI/Library/DataTemplates.xaml)
+corroborates the execution boundary already recorded from CAM's exact installed
+capture:
+
+- `HotBarSlotStyle` defaults to
+  `UseSlotCommand` + `CommandParameter={Binding}`;
+- its visual root is explicitly designed around `VMHotBarSlot`;
+- the tooltip consumes `VMHotBarSlot.Content`;
+- `VMCharacterAction` and `VMUpcast` are **Content** templates;
+- command overrides shown by the style are for melee/ranged weapon handling and
+  disabled/active slots, not a separate “execute upcast” path.
+
+Therefore the keyboard resource-IV behavior cannot be explained by a hidden
+XAML command that CAM forgot to call. The decisive difference must be the
+**outer VMHotBarSlot produced/selected and the DCHotBar state around it** (or
+compiled command behavior conditioned on that state). A CAM fix must preserve
+the outer slot identity rather than dispatching `slot.Content`.
+
+This public file is supporting evidence, not a replacement for the SHA-pinned
+Xbox App 1.8.910.0 original; the installed capture-derived runtime contract
+remains authoritative.
+
 ## Consequence for resource-IV parity (#172)
 
 The operator's first-hand current keyboard behavior remains the product target:
