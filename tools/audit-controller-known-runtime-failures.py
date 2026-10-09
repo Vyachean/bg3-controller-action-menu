@@ -54,7 +54,10 @@ def inspect(source: str, pinned: dict) -> dict:
             and 'EventName="LSButtonReleased"' in source
         ),
         "metamagic-close-cancel": (
-            'CommandParameter="CloseWidget"' in source
+            (
+                'CommandParameter="CloseWidget"' in source
+                or 'Property="CommandParameter" Value="CloseWidget"' in source
+            )
             and 'PlayerCharacterProperties.MetamagicActive' in source
             and 'CAM_MetamagicSpellPhaseMarker' in source
         ),
