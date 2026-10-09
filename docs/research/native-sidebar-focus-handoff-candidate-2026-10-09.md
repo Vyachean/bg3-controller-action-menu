@@ -364,6 +364,72 @@ is a known behavioral trade-off, not accepted UX. This should be
 assessed only in the consolidated game milestone, not asserted
 from the PAK CI result.
 
+## Conflicting primary-grid direction event owners
+
+A separate direct XAML ownership discrepancy was observed in this
+source audit. The primary `HotBarList` was a native `ls:LSListBox`
+declaring both `ActionNextEvent=UIDown` and
+`ActionPrevEvent=UIUp`, while its child
+`CAM_ActionGridPanel` is a native `ls:LSGrid` declaring
+`ActionDownEvent=UIDown`, `ActionUpEvent=UIUp` (and left/right).
+This gives **two different native controls matching each direction
+input** for the same concrete grid. The metamagic sidebar already
+uses only the LSGrid direction controls in its nested layout.
+
+The candidate removes only the duplicated `HotBarList`
+ActionNext/ActionPrev events. It leaves the complete
+`CAM_ActionGridPanel` four-direction controller transport,
+`HotBarList.LocalFocusChanged` focus/tooltip/Tag lifecycle,
+`UIAccept/UseSlotCommand`, and LB/RB switches unchanged.
+It intentionally does **not** alter `CAM_AllGroupSlots`:
+that independently nested fallback has additional group navigation,
+so whether a list-level next/previous event is required there is
+a separate runtime/source contract.
+
+This aligns responsibility at the markup level, not proof of
+runtime skipped-input causality. The correct Noesis LSGrid
+focus transition at boundaries, first-item focus, and scroll
+commit remain unverified, and this change must not be
+promoted to a new one-off runtime test.
+
+## Historical keyboard two-step upcast has native executable objects
+
+The public [January 2024 keyboard HotBar XAML derivative](https://gist.github.com/rkr87/d73c7129567846c0ed72524138585be3)
+has an `UpcastSection` with
+`ItemsSource=CurrentActiveSlot.Spell.SpellUpcast` and an
+`ls:VMUpcast` item template whose `ls:LSButton` inherits
+`HotBarSlotStyle` and sets `CommandParameter={Binding .}`,
+`IsEnabled={Binding CanUse}`. This is significant:
+the game's **upcast variant object itself** can be a native
+`UseSlotCommand` parameter in this older keyboard UI.
+Its template also consumes native `IsUpcasted`, `SlotLevel`,
+`ResourceName`, `CanUse` and tooltip data.
+
+However the 2024 source explicitly has an independent upcast
+two-step deck. Therefore the user's directly observed
+resource-IV behavior in the current keyboard HotBar must not
+be projected backwards onto that older implementation, and
+the historical XML is not byte-identical to the pinned Xbox
+App Patch 8 `HotBar.xaml`. It proves a candidate property/command
+family but **does not** authorize using an unverified
+`CurrentActiveSlot` binding in ActionRadials or choosing
+`VMUpcast` entries by position/numeric matching.
+
+The correct #172 source probe must distinguish:
+1. The current `FilterActionResourceCommand` results and native
+   `CurrentSingleHotbarFilter` for level IV;
+2. The active `VMHotBarSlot.Content` identity passed to A and
+   `CAM_ActionTooltip` in both keyboard and controller contexts;
+3. Whether the current DCHotBar can deliver the level-IV
+   `VMUpcast` object directly in `SingleHotBar.SlotList`, or
+   requires an explicit `CurrentActiveSlot.Spell.SpellUpcast`
+   subview and a **game-owned** variant-selection command.
+
+No static tool in this repository executes the compiled native
+ViewModel to determine those runtime values. Until it can be
+observed or extracted from an authoritative source, do not
+skip the native upcast transaction or synthesize spell costs.
+
 ## Other issues not mechanically solvable from this source
 
 The game's `ControllerHoldButtonStyle` / `ToggleWeaponSet`
