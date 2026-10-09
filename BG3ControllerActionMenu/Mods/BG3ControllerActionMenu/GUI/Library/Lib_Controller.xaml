@@ -1138,16 +1138,16 @@
                       Width="{Binding ActualWidth, ElementName=ActionRadials}"
                       MaxWidth="1400"
                       MinWidth="800"
-                      Height="966"
+                      Height="998"
                       Background="Transparent">
-                    <!-- The extra 32px title row is compensated by the center
-                         alignment offset. The existing 84px tab strip and 850px
-                         action viewport keep their previous screen positions. -->
+                    <!-- Provide a separate 64px caption lane above native icon
+                         artwork. Center offset (-32) keeps the original 84px
+                         resource strip and 850px action grid in place. -->
                     <Grid.RenderTransform>
-                        <TranslateTransform Y="-16"/>
+                        <TranslateTransform Y="-32"/>
                     </Grid.RenderTransform>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="32"/>
+                        <RowDefinition Height="64"/>
                         <RowDefinition Height="84"/>
                         <RowDefinition Height="850"/>
                     </Grid.RowDefinitions>
@@ -1156,26 +1156,27 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- A reserved row ABOVE the native resource artwork, never
-                         an overlay inside the 84px tab strip. The resource name
-                         is BG3-owned; special-provider names are presentation
-                         fallback labels pending proof of localization handles. -->
+                    <!-- Caption is drawn in the upper part of a 64px reserved row.
+                         The 20px blank lower gutter separates text + shadow
+                         from native icon art, including its overflow chrome.
+                         Resource identity stays game-owned. -->
                     <Grid x:Name="CAM_SelectedTabTitleArea"
                           Grid.Row="0"
                           Grid.ColumnSpan="2"
-                          Height="32"
+                          Height="64"
                           MaxWidth="800"
                           ClipToBounds="True"
                           HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
+                          VerticalAlignment="Top"
                           IsHitTestVisible="False"
                           Focusable="False">
                         <TextBlock x:Name="CAM_SelectedResourceName"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
+                                   VerticalAlignment="Top"
                                    TextAlignment="Center"
                                    TextWrapping="NoWrap"
                                    ClipToBounds="True"
+                                   Height="44"
                                    MaxWidth="760"
                                    FontSize="{StaticResource ScaledDefaultFontSize}"
                                    Foreground="{StaticResource LS_PrimaryColor}"
@@ -1833,12 +1834,6 @@
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag"
                                                             Value="{StaticResource CAM_AllModeToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                                    <!-- On native MoveToEnd opening, the All provider is
-                                         grouped and does not establish the direct-grid
-                                         LocalFocusChanged hover sound that RB produces.
-                                         Play the existing native hover sound once at
-                                         the entry boundary; never on ordinary tab cycling. -->
-                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
                                 </b:EventTrigger>
 
                                 <!-- The same native deferred first-slot handoff applies to
@@ -2600,7 +2595,7 @@
                                    HorizontalContentAlignment="Right"
                                    VerticalAlignment="Bottom"
                                    Width="Auto"
-                                   MaxWidth="380"
+                                   MaxWidth="600"
                                    FlowDirection="RightToLeft"
                                    Margin="26,0,26,56">
                 <!-- Original Patch 8 ActionRadials: while choosing a thrown item,
