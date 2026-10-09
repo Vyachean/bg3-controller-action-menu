@@ -32,6 +32,10 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## Draft selected-tab title layout #165 (2026-10-09)
+
+The reported v0.0.110-style `CAM_SelectedResourceName` inside the native 84px strip with a negative top margin overlaps tabs and hides all special-provider captions. A draft correction moves the title to an explicit 32px root row while preserving the 84px original resource artwork and 850px action viewport at their previous screen coordinates. Resource text must continue to bind the original `CAM_ResourceTabs.SelectedItem.ActionResource.Name`; never classify resources from single-letter icons. The five special modes have temporary readable English labels pending **verified native BG3 localization handles**. Do not declare these temporary strings localized or final. Do not change resource button art, filtering, LB/RB selection, slot focus or execution while fixing labels. Validation is source-only until one combined published-Release gameplay test.
+
 ## Functional parity is not original radial layout parity (2026-10-08)
 
 The operator requires full gameplay-capability parity with BG3, not preservation of the player-configured original radial layout. An **Original Radials** tab or runtime dependence on manually configured `ControllerHotBars` is rejected. Inspect `ControllerHotBars` as independent reference evidence only. CAM must discover available actions automatically from verified BG3-owned executable slot providers and retain native global controller functions, rather than relying on assigned original radial slots.
