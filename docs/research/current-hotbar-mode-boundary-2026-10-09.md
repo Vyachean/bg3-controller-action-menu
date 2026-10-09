@@ -39,6 +39,31 @@ This independently confirms that `CurrentSingleHotbarFilter`,
 modern contracts in 2026. It is **keyboard-only runtime evidence** and Script
 Extender is not a shipping dependency or implementation route for CAM.
 
+#### Xbox App limitation of the development-only live probe
+
+The repository's `dev/script-extender/` probes are useful only as
+**surrogate research tooling** on a Script-Extender-supported installation.
+They are not a diagnostic path for the target Xbox App / Play Anywhere build.
+
+As of 2026-10-10, Norbyte/bg3se issue
+[#593](https://github.com/Norbyte/bg3se/issues/593) remains open for the Xbox
+Game Pass / Play Anywhere PC package. That package uses a different
+installation/executable layout (not the normal Steam/GOG `bin/bg3_dx11.exe`
+shape), and the reporter documents that Script-Extender-dependent mods do not
+work there. Current BG3SE release instructions likewise install through
+`Baldurs Gate 3/bin`.
+
+Therefore:
+
+- `GameplayInventoryProbe.lua` must never become a prerequisite for the Xbox
+  App user or the production mod;
+- a Steam/GOG probe can reveal **possible ViewModel property/identity seams**,
+  but it cannot certify Xbox App 1.8.910.0 equality;
+- the authoritative Xbox path remains read-only original-XAML capture plus
+  actual no-SE PAK runtime observation;
+- any conclusion learned through the surrogate probe must be re-grounded in a
+  game-owned source seam before shipping.
+
 ### 3. A Patch-8 controller mod was rewritten specifically to separate modes
 
 Radial Hotbar Customization v0.8.0.0 is marked Patch 8 compatible and its
