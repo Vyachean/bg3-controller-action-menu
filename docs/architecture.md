@@ -121,6 +121,33 @@ Static testing verifies symmetric entry and preserved command
 bindings, but a Noesis runtime check remains necessary to prove
 the initial frame, tooltip and A dispatch.
 
+## Metamagic vertical D-pad boundary (#155, source-level candidate)
+
+In the v0.0.109 operator test, pressing Down beyond the final native
+`FixedSideBar.SlotList` entry moved focus outside the metamagic list.
+The fixed side rail is a **one-column** `LSGrid` with
+`ActionUpEvent=UIUp` / `ActionDownEvent=UIDown`, nested in the
+`CAM_FixedSideBarList` `LSListBox` consuming those same events through
+`ActionPrevEvent` / `ActionNextEvent`. The preceding
+`KeyboardNavigation.DirectionalNavigation=Contained` on that list did not
+provide a cyclic last-to-first/first-to-last boundary.
+
+The smallest test candidate uses the Noesis/WPF list-navigation
+`DirectionalNavigation=Cycle` **on the sidebar list only**. It does not
+add an `LSInputBinding`, consume D-pad events at the root, change
+`LSGrid` directional dispatch, alter the focus owner, or replace the
+native `VMHotBarSlot -> ActionRadials.Tag -> UseSlotCommand` route.
+`HotBarList` keeps `Contained`; BG3's nested states still own its
+existing focus handoff. Static checks pin both boundaries and reject
+second input routes.
+
+**Proof limit:** the captured XAML proves event wiring, not how BG3's
+custom `LSGrid` handles its terminal coordinate at runtime. Therefore
+a green package/structural test does not establish the observed bug is
+fixed. Verify repeated Up/Down at both endpoints, tooltip/A identity and
+LB/RB return together with nested-metamagic UX (#158) in the next
+combined sorcerer milestone. Keep #155 open until that proof.
+
 ## Native metamagic side rail (0.0.99 candidate)
 
 The installed 1.8.910.0 keyboard HotBar renders native `FixedSideBar`
