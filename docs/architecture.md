@@ -1265,3 +1265,12 @@ The rest of BG3 controller mode retains original theme resources.
 Native `LSActionPointResources`, TypeId, numeric counters, resource
 availability/state, LB/RB, tooltip, grid focus and A/B execution do
 not change. Validate SHA-256 of both copied native XAML blocks.
+
+
+## 2026-10-09 source-level candidate: native action cost feedback (#166)
+
+Existing action focus calls were intentionally disabled after 0.0.75 because the keyboard HotBar's transient mouse-hover preview `Cost` was left active by persistent controller focus. The player nevertheless needs the **original** native action-cost hint in the ordinary BG3 resource bar. In this candidate, the upper CAM tab display is treated as a persistent **navigation** presentation, not a hover-cost overlay: `LSActionPointResources.HighlightedActionPoints=0`, while `MaxActionPoints`, `AvailableActionPoints`, resource icons, spell level chrome, and resource filtering remain native.
+
+The native BG3 controller-focus lifecycle becomes: immediate `LocalFocusChanged` clears old predicted cost, then the existing 70ms non-null/active-slot owner copies `LocalFocus.DataContext` to `ActionRadials.Tag`, creates the tooltip and passes that exact `VMHotBarSlot` to `HighlightResourcesCommand`. The programmatic tab-entry handoff uses the same source. The code must not clear the newly applied preview in either deferred path. Existing provider/tab transitions, nested return and normal close own invalidation; no calculated costs or secondary slot owner are introduced.
+
+This is a **draft runtime candidate** with source/CI proof only, not a runtime-accepted correction. Combined in-game validation must prove ordinary HUD resource cost feedback and unchanged upper-tab visual quantities, and no stale feedback after leaving the menu.
