@@ -896,6 +896,12 @@
                 <b:DataTrigger Binding="{Binding SummonHotBar.SlotList.Count, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}" Value="True">
                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <!-- Summon slots use CAM_ActionGridSlotContainer, whose
+                         selected-item focus action is token-gated. Without
+                         arming that token, selecting index zero only changes
+                         selection, not the actual executable LocalFocus. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <ls:SetMoveFocusAction TargetName="ActionRadials"
