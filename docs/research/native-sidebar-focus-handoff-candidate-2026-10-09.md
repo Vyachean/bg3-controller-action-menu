@@ -146,6 +146,55 @@ agrees, but the exact Larian Noesis event order is not provable
 outside the game and should be observed at the combined milestone.
 This is not a claim that native B correctly cancels metamagic.
 
+## Further native ownership review: remove redundant selection writer
+
+The sidebar's `LocalFocusChanged` callback explicitly assigned
+`CAM_FixedSideBarList.SelectedItem` from its *own*
+`LocalFocus.DataContext`. A read-through of the complete
+shipping `Lib_Controller.xaml` found **no consumer** of
+`CAM_FixedSideBarList.SelectedItem` or `SelectedIndex`
+outside its own source-level handoff. The selector ring is bound
+to `LocalFocusSelector`, tooltip and highlights use
+`LocalFocus.DataContext`, and A still uses
+`UseSlotCommand(ActionRadials.Tag)`.
+
+Therefore the synchronous `LocalFocusChanged -> SelectedItem` write
+had no separate gameplay role and coupled focus change back into
+selection change. The candidate removes **only** this redundant write.
+The list's normal `SelectedIndex=-1 -> 0` entry behavior is kept.
+This is a cleaner single-owner dataflow, not a claim of execution
+success.
+
+Independent NoesisGUI [bug #1641](https://www.noesisengine.com/bugs/view.php?id=1641)
+documents an assertion caused by selecting/focusing a ListBoxItem
+from an `IsSelected` style trigger during an ongoing selection
+change. That report concerns an unrelated Noesis SDK version,
+not Larian's `LSListBox`. It supports treating focus/selection
+reentrancy as a research risk, **not** as proof the game has that
+exact failure. This change introduces no new XAML-shape tests.
+
+## Native summon-owner handoff
+
+A separate trigger on `SummonHotBar.SlotList.Count > 0` makes
+`HotBarList` show native summoned `VMHotBarSlot` values and
+chooses `CAM_ActionGridSlotContainer`, but previously only
+cycled `SelectedIndex=-1 -> 0` before requesting focus on the
+outer `HotBarList`. Unlike other direct slot-entry paths,
+it did **not** set `HotBarList.Tag=CAM_ResetFirstFocusToken`,
+even though the item container's `IsSelected`-driven deferred
+focus request is conditional on that exact token.
+Consequently selection alone did not activate the defined
+concrete-item handoff. The candidate now invalidates old list
+`LocalFocus`, arms the existing token, then cycles selection.
+It preserves the game-owned `SummonHotBar.SlotList`, A dispatch,
+and the existing nested/upcast source overrides.
+
+This is a source-level missing precondition repair; the native
+Noesis sequencing, whether a summon override transitions
+`ItemsSource` before item selection, and actual controller
+focus remain **unverified**. Do not promote draft/release
+based only on a successful PAK build.
+
 ## Independent Noesis focus evidence, checked 2026-10-09
 
 NoesisGUI's [FocusManager documentation](https://www.noesisengine.com/docs/Gui.Core._FocusManager.html)
