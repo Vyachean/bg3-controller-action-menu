@@ -150,11 +150,20 @@ if (-not $sidebar.Success -or
     throw "Native metamagic side slots must retain exclusive focus and old-cost invalidation."
 }
 foreach ($event in @("LocalFocusChanged", "SelectionChanged")) {
-    $timer = [regex]::Match(
-        $sidebar.Value,
-        ('<b:TimerTrigger EventName="' + $event + '" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>'),
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    # v0.0.113 adds a separate 70ms lost-focus wake with no slot and
+    # deliberately no cost preview. Select the unique live-slot owner
+    # explicitly rather than assuming the first timer has that role.
+    $costTimers = @(
+        [regex]::Matches(
+            $sidebar.Value,
+            ('<b:TimerTrigger EventName="' + $event + '" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>'),
+            [System.Text.RegularExpressions.RegexOptions]::Singleline
+        ) | Where-Object { $_.Value.Contains('HighlightResourcesCommand') }
     )
+    if ($costTimers.Count -ne 1) {
+        throw "Metamagic $event requires exactly one native focused-slot cost preview owner."
+    }
+    $timer = $costTimers[0]
     if (-not $timer.Success -or
         -not $timer.Value.Contains('CAM_MetamagicModeToken') -or
         -not $timer.Value.Contains('IsEnabled, ElementName=CAM_FixedSideBarList') -or

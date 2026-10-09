@@ -866,11 +866,16 @@ def validate_native_resource_name(runtime: str) -> list[str]:
             "IsHitTestVisible": "False",
             "Focusable": "False",
             "TextWrapping": "NoWrap",
-            "ClipToBounds": "True",
             "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Top",
+            "Margin": "0,4,0,0",
+            "FontSize": "{DynamicResource MediumFontSize}",
         }.items())
-            or _attribute(caption.attrib, "Text") is not None):
-        return ["selected tab title must be noninteractive, bounded and driven by provider state"]
+            or _attribute(caption.attrib, "Text") is not None
+            or _attribute(caption.attrib, "Height") is not None
+            or _attribute(caption.attrib, "ClipToBounds") == "True"
+            or _attribute(title.attrib, "ClipToBounds") != "True"):
+        return ["selected tab title must fit dynamic font metrics without a fixed-height descender clip"]
 
     styles = [x for x in caption if local(x) == "TextBlock.Style"]
     if len(styles) != 1:
@@ -1194,6 +1199,16 @@ def main() -> int:
         if not any("70ms first-slot focus" in err
                    for err in validate_native_shoulder_entry_tabs(wrong_open_focus)):
             report["errors"].append("self-test failed: opening direction focus race not rejected")
+        clipped_resource_title = runtime.replace(
+            '                                   Margin="0,4,0,0"\n                                   MaxWidth="760"',
+            '                                   ClipToBounds="True"\n                                   Height="44"\n                                   MaxWidth="760"',
+            1,
+        )
+        if clipped_resource_title == runtime or not any(
+            "descender clip" in err
+            for err in validate_native_resource_name(clipped_resource_title)
+        ):
+            report["errors"].append("self-test failed: clipped resource title text not rejected")
         substituted_resource_name = runtime.replace(
             '<Setter Property="Text" Value="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"/>',
             '<Setter Property="Text" Value="Reaction"/>',

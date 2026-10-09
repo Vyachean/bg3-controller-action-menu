@@ -1375,3 +1375,31 @@ Gate before requesting operator action: source review and green Validate + Build
 6. Confirm regular resource-cost preview still works. Repeated weapon hold and the duplicate spell-slot IV choice are known open bugs (#154/#172); no need to exhaustively retest them during this run.
 
 Never mark gameplay parity accepted just because the Release workflow or package verification succeeds. Keep #154, #160 rumble, #172, #157 and #135 open until source and game evidence independently close them.
+
+
+
+## 2026-10-09 — v0.0.112 operator focus and title regressions
+
+Operator runtime confirms **LB double opening sound is fixed** in v0.0.112; do not reintroduce another `LSPlaySound` on `Metadata=MoveToEnd`. Three defects remain:
+
+1. The selected tab name is **clipped at the bottom**. A 64px separate row alone was insufficient because `CAM_SelectedResourceName` explicitly had `Height=44` and `ClipToBounds=True` at `ScaledDefaultFontSize`. The candidate removes fixed child height/clipping, switches to the existing native `MediumFontSize`, and places the text 4px below the title row top. The parent alone clips content to its existing 64px lane. Resource icon row and action viewport coordinates do not change. Native BG3 localization of special tabs is still unproven.
+
+2. Metamagic activation **successfully transfers** from the sidebar to the spell grid, but the border is invisible because the main native `CAM_MainSelector` is collapsed by provider `CAM_MetamagicModeToken` even when `CAM_MetamagicSpellPhaseMarker` says the *main* spell grid owns input. Now collapse only when phase token is null (sidebar phase). No change to `VMHotBarSlot`, game-owned metamagic activation, cost preview or A dispatch.
+
+3. B returning from spell phase and D-pad Down past the sidebar's last slot **lose the visible ring**. The B path used to defer focus on the whole list after resetting SelectedIndex, potentially overwriting the deferred focus of the concrete selected `ListBoxItem`. The phase handoff now enters the target list *before* selecting item 0, using the already-proven `CAM_ResetFirstFocusToken` one-shot container trigger. Also, a single 70ms `LocalFocusChanged` recovery handles a null native `LocalFocus.DataContext` while the sidebar has exclusive input and nonempty native slots: reset SelectedIndex -1/0 and enter the real first item. It is guarded against provider switching, a native nested return and spell phase, and has an anti-reentrant reset-token guard. No extra D-pad binding and no synthetic slots.
+
+This is **source/CI proof only**, not Noesis-gameplay confirmation. If the native focus skips into an *empty non-null DataContext*, or if B is intercepted by a separate engine-level route, the behavior may remain unresolved. Preserve positive v0.0.112 proof (native metamagic handoff and LB single sound), and request just **one combined published-release test** for these corrections after both CI gates and actual installer visibility.
+
+
+## v0.0.113-metamagic-focus-visibility — one combined runtime acceptance gate
+
+The operator's **actual v0.0.112 game test** confirms LB no longer double-plays its opening sound, and selecting metamagic correctly hands controller input from its sidebar to the central spells grid. Do not regress either working behavior, the earlier positive standard resource-cost highlighting, or native execution.
+
+Three remaining player-observed regressions are targeted together, and only together, in this one experimental release:
+
+1. **Resource title:** selected tab names must show their full lower glyph descenders instead of being cut off. The existing 64px title lane and native icon/tab geometry remain in the original screen position. Child now uses game-proven MediumFontSize without artificial 44px Height or independent ClipToBounds; ensure sufficiently legible appearance as well as no icon overlap.
+2. **Main focus:** choose a metamagic modifier and confirm gamepad focus transfers to the central action grid **with a visible native focus ring on the correct cell**. Move between real actions and check tooltip, cost and A all follow the visible ring.
+3. **B-back and metamagic boundary:** press B at the top level of the spell-choice phase; the metamagic sidebar should regain a visible native focus ring and a concrete selectable first item. Press Down repeatedly through its final item and one extra step; the ring should stay attached to a **real** metamagic action (return to first is acceptable), not disappear. The 70ms recovery is only a source-level hypothesis about null LocalFocus at the custom LSGrid boundary; exact behavior remains unverified. Repeat Up at the first item if convenient.
+4. **Do not retest per fix:** confirm one opening each via LB/RB if convenient and no duplicated sound. Missing LB rumble (#160), weapon repeat hold (#154), duplicate IV upcast selection (#172), and the identity of R (#157) remain open, not fixed in this release.
+
+**Delivery constraint:** user's unchanged double-click VBS downloads the newest published non-draft GitHub Release. Before requesting gameplay proof, ensure main VERSION exactly 0.0.113-metamagic-focus-visibility; successful merged main Validate, Build package and Release; required prebuilt PAK and dev-entry/install-latest/VBS helpers present; and Release step **Verify published release is installer-visible** successful. CI passing is not a runtime focus-ring guarantee.

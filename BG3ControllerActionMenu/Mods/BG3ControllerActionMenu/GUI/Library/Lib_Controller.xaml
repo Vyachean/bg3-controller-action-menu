@@ -952,15 +952,19 @@
                         <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <!-- Disable the previous list before clearing its LocalFocus,
+                         so terminal-navigation recovery cannot re-arm it. -->
+                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip" PropertyName="Content" Value="{x:Null}"/>
-                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <!-- First move into the owning list, then reselect the
+                         concrete item whose IsSelected trigger promotes focus. -->
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:PropertyChangedTrigger>
                 <!-- Clear this presentation phase if the game ends the active
                      metamagic or the user leaves its original top-level tab. -->
@@ -1235,10 +1239,9 @@
                                    VerticalAlignment="Top"
                                    TextAlignment="Center"
                                    TextWrapping="NoWrap"
-                                   ClipToBounds="True"
-                                   Height="44"
+                                   Margin="0,4,0,0"
                                    MaxWidth="760"
-                                   FontSize="{StaticResource ScaledDefaultFontSize}"
+                                   FontSize="{DynamicResource MediumFontSize}"
                                    Foreground="{StaticResource LS_PrimaryColor}"
                                    Effect="{StaticResource ShadowEffect}"
                                    IsHitTestVisible="False"
@@ -2279,6 +2282,30 @@
                                                            CommandParameter="{x:Null}"/>
                                     <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
                                 </b:EventTrigger>
+                                <!-- BG3's one-column LSGrid can move past its last real
+                                     item even with list Cycle navigation. If native
+                                     LocalFocus loses its VMHotBarSlot, reset to the
+                                     first real slot through the same one-shot focus
+                                     handoff used on provider entry. No new input binding
+                                     and no fake/endless empty list cells. -->
+                                <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
+                                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_TabCycleMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_NestedReturnMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_FixedSideBarList}" Operator="NotEqual" RightOperand="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                        <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList.Count}" Operator="GreaterThan" RightOperand="0"/>
+                                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"/>
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                                </b:TimerTrigger>
                                 <b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:Interaction.Behaviors>
                                         <b:ConditionBehavior><b:ConditionalExpression>
@@ -2566,6 +2593,10 @@
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                                <!-- Only the metamagic selector phase hides the
+                                                     main ring; the spell phase owns HotBarList
+                                                     and its original native LocalFocusSelector. -->
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"/>
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </MultiDataTrigger>
@@ -2830,12 +2861,14 @@
                             <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                             <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                             <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                            <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                            <!-- The sidebar is still disabled while we erase
+                                 its old focus; enable it only for the handoff. -->
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
-                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
-                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                            <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                             <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>
