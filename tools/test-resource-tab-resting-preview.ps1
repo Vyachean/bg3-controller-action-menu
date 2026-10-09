@@ -50,15 +50,16 @@ if (-not $resourceTabTemplate.Value.Contains('<ls:LSButton Padding="0"') -or
     -not $resourceTabTemplate.Value.Contains('Margin="4,-10,4,10"') -or
     -not $resourceTabTemplate.Value.Contains('MaxActionPoints="{Binding MaxValue}"') -or
     -not $resourceTabTemplate.Value.Contains('AvailableActionPoints="{Binding Value}"') -or
-    -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"') -or
+    -not $resourceTabTemplate.Value.Contains('HighlightedActionPoints="0"') -or
     -not $resourceTabTemplate.Value.Contains('Style="{StaticResource ActionResourcesTemplateSelector}"') -or
     -not $resourceTabTemplate.Value.Contains('x:Name="ResourcesNumeralDisplay"') -or
     -not $resourceTabTemplate.Value.Contains('ElementName="ResourcePoints" Path="MaxGroupActionPoints"') -or
     -not $resourceTabTemplate.Value.Contains('<Trigger Property="IsMouseOver" Value="True">')) {
     throw "Resource tabs must retain the literal captured HotBar quantity renderer."
 }
-# Container selection changes only the *image chrome*. It must not supply or
-# mutate the action preview's ActionResource/Cost or the FocusedTooltip data.
+# Persistent resource tabs display native available/max quantities without
+# permanently inheriting BG3's focused-action cost. Ordinary HUD preview is separate.
+# Container selection changes only the image chrome, never action identity.
 $selectedChrome = '<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True"/>'
 $specialGuard = '<Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{x:Null}"/>'
 if (-not $resourceTabTemplate.Value.Contains($selectedChrome) -or
@@ -84,27 +85,17 @@ $invokeActions = [regex]::Matches(
 )
 $highlightActions = @($invokeActions | Where-Object { $_.Value.Contains('HighlightResourcesCommand') })
 if ($highlightActions.Count -ne 3) {
-    throw "Expected exactly three preserved native HighlightResourcesCommand seams in HotBarList; found $($highlightActions.Count)."
-}
-foreach ($action in $highlightActions) {
-    if (-not $action.Value.Contains('IsEnabled="False"')) {
-        throw "Persistent controller focus must disable the mouse-HotBar HighlightResourcesCommand transport."
-    }
+    throw "Expected three game-owned action-cost highlight seams, found $($highlightActions.Count)."
 }
 
-$clearActions = @($invokeActions | Where-Object { $_.Value.Contains('ClearResourceHighlightsCommand') })
-if ($clearActions.Count -lt 3) {
-    throw "HotBarList must clear transient resource preview on ordinary focus and programmatic entry."
-}
-
-$localFocusEvent = @(
+$focusEvent = @(
     [regex]::Matches(
         $hotBarList.Value,
         '<b:EventTrigger EventName="LocalFocusChanged">[\s\S]*?</b:EventTrigger>',
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     ) | Where-Object { $_.Value.Contains('CreateFocusedTooltipDataCommand') -and $_.Value.Contains('ClearResourceHighlightsCommand') }
 ) | Select-Object -First 1
-$localFocusTimer = [regex]::Match(
+$focusTimer = [regex]::Match(
     $hotBarList.Value,
     '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
@@ -115,17 +106,33 @@ $entryWake = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 
-foreach ($trigger in @($localFocusEvent, $localFocusTimer, $entryWake)) {
-    if (-not $trigger.Success -or
-        -not $trigger.Value.Contains('CreateFocusedTooltipDataCommand') -or
-        -not $trigger.Value.Contains('ClearResourceHighlightsCommand')) {
-        throw "Every CAM action-focus presentation boundary must keep tooltip data while clearing transient resource preview."
+if (-not $focusEvent.Success -or -not $focusTimer.Success -or -not $entryWake.Success) {
+    throw "Expected current focus/entry ownership boundaries."
+}
+# An immediate focus change only invalidates prior predictions. The game's
+# active cost preview is established when that same native VMHotBarSlot has
+# survived the existing 70ms focus delay.
+if (-not $focusEvent.Value.Contains('ClearResourceHighlightsCommand') -or
+    -not $focusEvent.Value.Contains('IsEnabled="False"') -or
+    -not $focusEvent.Value.Contains('CreateFocusedTooltipDataCommand')) {
+    throw "Immediate focus transition must clear old cost and not preview a transient slot."
+}
+foreach ($deferred in @($focusTimer, $entryWake)) {
+    if (-not $deferred.Value.Contains('Command="{Binding DataContext.HighlightResourcesCommand') -or
+        -not $deferred.Value.Contains('CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
+        -not $deferred.Value.Contains('CreateFocusedTooltipDataCommand') -or
+        $deferred.Value.Contains('ClearResourceHighlightsCommand') -or
+        $deferred.Value.Contains('IsEnabled="False"')) {
+        throw "Stable focused VMHotBarSlot must request native cost, without clearing it in the same tick."
     }
 }
-
-if (-not $localFocusTimer.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
+if (-not $focusTimer.Value.Contains('Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"') -or
     -not $entryWake.Value.Contains('LocalFocus.DataContext')) {
-    throw "Resting resource preview must not change LocalFocus.DataContext as the action identity authority."
+    throw "Cost preview may never change the authoritative action slot/focus identity."
+}
+if ($resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataContext.Cost') -or
+    -not $resourceTabTemplate.Value.Contains('AvailableActionPoints="{Binding Value}"')) {
+    throw "Upper navigation tabs must retain resting quantities independent of HUD action-cost preview."
 }
 
-Write-Host "Resting resource-tab preview contract passed."
+Write-Host "Native HUD cost feedback / resting upper tab contract passed."
