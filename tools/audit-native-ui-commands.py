@@ -1194,39 +1194,34 @@ def main() -> int:
                    or "lost native pressed/state predicate" in err
                    for err in validate_native_toggle_notifications(missing_press_guard)):
             report["errors"].append("self-test failed: unguarded weapon change notification not rejected")
-        centered_footer = runtime.replace(
+        # Rejected v0.0.114/v0.0.115 geometry must not become a static
+        # gameplay gate. A different alignment/width can only be accepted in
+        # BG3 runtime, so the source audit deliberately ignores those values.
+        alternate_footer_geometry = runtime.replace(
             'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"',
             'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Center"',
             1,
         )
-        if not any("right-aligned" in err
-                   for err in validate_native_compact_footer(centered_footer)):
-            report["errors"].append("self-test failed: centered outer footer overlapping HUD not rejected")
-        wide_footer = runtime.replace(
-            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"\n                  VerticalAlignment="Bottom"\n                  MaxWidth="600"',
-            'x:Name="CAM_ControllerHintRightLane"\n                  HorizontalAlignment="Right"\n                  VerticalAlignment="Bottom"\n                  MaxWidth="1320"',
+        if validate_native_compact_footer(alternate_footer_geometry):
+            report["errors"].append(
+                "self-test failed: footer audit still freezes rejected placement geometry"
+            )
+        missing_footer_control = runtime.replace(
+            'x:Name="CancelConcentrationButton"',
+            'x:Name="MissingCancelConcentrationButton"',
             1,
         )
-        if not any("right-aligned" in err
-                   for err in validate_native_compact_footer(wide_footer)):
-            report["errors"].append("self-test failed: unbounded outer footer not rejected")
-        mirrored_hints = runtime.replace(
-            'FlowDirection="LeftToRight"\n                                       Margin="0"',
-            'FlowDirection="RightToLeft"\n                                       Margin="0"',
+        if not any("semantic control missing or duplicated: CancelConcentrationButton" in err
+                   for err in validate_native_compact_footer(missing_footer_control)):
+            report["errors"].append("self-test failed: missing native footer control not rejected")
+        visible_editor_hint = runtime.replace(
+            'x:Name="ShowContextMenu"\n                             Visibility="Collapsed"',
+            'x:Name="ShowContextMenu"\n                             Visibility="Visible"',
             1,
         )
-        if not any("original compact" in err
-                   for err in validate_native_compact_footer(mirrored_hints)):
-            report["errors"].append("self-test failed: RTL compact hint content not rejected")
-        wide_hold_button = re.sub(
-            r'(<ls:LSButton x:Name="ToggleWeaponSet"[\s\S]*?\bWidth=")Auto(")',
-            r'\g<1>1000\2',
-            runtime,
-            count=1,
-        )
-        if not any("visible controller hints" in err
-                   for err in validate_native_compact_footer(wide_hold_button)):
-            report["errors"].append("self-test failed: overflowed native hold hint not rejected")
+        if not any("context-editor hint must remain hidden" in err
+                   for err in validate_native_compact_footer(visible_editor_hint)):
+            report["errors"].append("self-test failed: visible radial editor hint not rejected")
         wrong_open_direction = runtime.replace(
             'Operator="Equal" RightOperand="MoveToEnd"/>',
             'Operator="NotEqual" RightOperand="MoveToEnd"/>',
