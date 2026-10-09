@@ -1,5 +1,33 @@
 # Testing strategy
 
+## Current verification policy (2026-10-09)
+
+The operator rejected v0.0.115 despite green CI. The old mandatory
+XAML shape assertions were a false confidence gate: they compared code
+against an earlier broken implementation instead of running BG3. The
+historical sections below record what was previously attempted; their
+instructions to add source-shape gates are superseded.
+
+Current **mandatory** checks are deliberately limited to:
+- repository/package input existence, XML well-formedness and forbidden
+  native loader / Script Extender paths;
+- the actual Windows Divine `.pak` creation, extraction, SHA-256 equality
+  of packaged `Lib_Controller.xaml` and source, and payload scan;
+- installer/developer-entry fixtures for the Xbox App PC mod workflow;
+- standalone release boundary and published asset resolution.
+
+These checks do **not** execute BG3/Noesis and must never be described
+as gameplay tests. Focus, controller navigation, metamagic, upcast,
+input timing and visual placement remain unverified until an actual
+in-game milestone. Source investigation tools (native focus-owner
+inventory, action-provider inventories, pinned-XAML comparison) may be
+run explicitly for research but are **not** mandatory CI acceptance gates.
+Do not introduce new tests that merely hard-code `Focusable`, a
+`SelectedIndex` reset, a delay or an event name in an unproven variant.
+
+## Historical testing design (superseded wherever it conflicts)
+
+
 ## Goal
 
 Keep manual Baldur's Gate 3 testing infrequent and high-value.
