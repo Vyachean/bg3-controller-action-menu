@@ -22,3 +22,5 @@ jobs:
         run: python tools/audit-controller-known-runtime-failures.py --assert-original-shape
       - name: Audit exact native B/metamagic command ownership (NOT gameplay verification)
         run: python tools/audit-controller-known-runtime-failures.py --assert-cancel-source
+      - name: Check one native metamagic directional owner (NOT gameplay verification)
+        run: python tools/audit-metamagic-directional-owner.py --self-test
