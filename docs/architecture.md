@@ -123,6 +123,32 @@ the initial frame, tooltip and A dispatch.
 
 ## Metamagic vertical D-pad boundary (#155, source-level candidate)
 
+### 2026-10-09 single-native-owner correction candidate
+
+The operator's 0.0.113 game run rejected both sidebar `Cycle`
+and the null-only 70ms terminal-focus recovery. The captured Patch 8
+`PreloadedActionRadials_c.xaml` slot-assignment grid uses a non-focusable
+`LSListBox` with focusable items and a four-direction `LSGrid`.
+CAM's sidebar previously assigned `UIDown/UIUp` to **both**
+`LSGrid.ActionDown/UpEvent` and `LSListBox.ActionNext/PrevEvent`.
+The source correction removes the duplicate list event ownership,
+makes only the sidebar list itself non-focusable, and removes the
+ineffective terminal-focus reselection timer. The native `LSGrid`,
+actual `FixedSideBar.SlotList`, focused-slot tooltip, cost feedback,
+A dispatch, native nested cancel, and the ordinary/main grid remain
+unchanged. The retained `Cycle` attribute is not considered a proof
+that a custom `LSGrid` wraps or bounds the final slot.
+
+`tools/audit-metamagic-directional-owner.py --self-test` rejects
+duplicate list navigation, misplaced focus ownership and loss of the
+native directional grid/dispatch using negative source mutations.
+**This is a source-composition correction only.** The compiled
+`LSGrid` terminal-boundary semantics and in-game ring/tooltip/A
+agreement remain unknown; do not close #155 or publish a milestone
+on this source check alone. The earlier proposal below documents
+the now rejected experimental history.
+
+
 In the v0.0.109 operator test, pressing Down beyond the final native
 `FixedSideBar.SlotList` entry moved focus outside the metamagic list.
 The fixed side rail is a **one-column** `LSGrid` with
