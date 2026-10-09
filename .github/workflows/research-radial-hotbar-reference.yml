@@ -20,33 +20,24 @@ jobs:
           curl --fail --location --retry 2             "https://gitlab.com/saghm/RadialHotbarCustomization/-/archive/v0.8.0.0/RadialHotbarCustomization-v0.8.0.0.zip"             -o /tmp/rhc.zip
           mkdir /tmp/rhc
           unzip -q /tmp/rhc.zip -d /tmp/rhc
-          find /tmp/rhc -type f -printf '%P\n' | sort | head -n 250
 
-      - name: Print bounded architecture index only
+      - name: Print bounded controller container excerpts
         shell: python
         run: |
           from pathlib import Path
-          import re
 
-          root = Path("/tmp/rhc")
-          terms = re.compile(
-              r"Controller|Keyboard|HotbarContainer|HotBarController|"
-              r"ActiveContainer|IsController|radial|wheel|Serialize|Deserialize",
-              re.I,
-          )
-          allowed = {".lua", ".tl", ".md", ".json", ".toml", ".yml", ".yaml", ".txt", ".xml", ".lsx"}
-          hits = 0
-          for path in sorted(p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in allowed):
-              try:
-                  lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-              except OSError:
-                  continue
-              matched = [(i + 1, line.strip()) for i, line in enumerate(lines) if terms.search(line)]
-              if not matched:
-                  continue
-              print(f"## {path.relative_to(root)}")
-              for lineno, line in matched[:40]:
-                  print(f"{lineno}: {line[:320]}")
-                  hits += 1
-                  if hits >= 350:
-                      raise SystemExit(0)
+          roots = list(Path("/tmp/rhc").glob("RadialHotbarCustomization-v0.8.0.0"))
+          if len(roots) != 1:
+              raise SystemExit("unexpected archive root")
+          root = roots[0]
+          excerpts = {
+              "src/entity.d.tl": (1, 70),
+              "src/tl/Server/Player.tl": (30, 165),
+              "src/tl/Server/PersistentTypes.tl": (1, 55),
+          }
+          for rel, (start, end) in excerpts.items():
+              path = root / rel
+              lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+              print(f"## {rel} {start}-{end}")
+              for lineno in range(start, min(end, len(lines)) + 1):
+                  print(f"{lineno}: {lines[lineno - 1][:360]}")
