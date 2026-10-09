@@ -1106,6 +1106,22 @@ def main() -> int:
 
     errors.extend(validate_semantics())
 
+    # The only shipping state observer is a bounded, read-only,
+    # explicitly versioned one-off diagnostic. Also ensure it cannot
+    # accidentally remain in the next normal release.
+    probe_version = VERSION.read_text(encoding="utf-8").strip() if VERSION.exists() else ""
+    probe_cmd = [sys.executable, str(ROOT / "tools/audit-state-probe.py")]
+    if probe_version == "0.0.114-native-state-probe":
+        probe_cmd.append("--self-test")
+    probe = subprocess.run(
+        probe_cmd, cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    if probe.returncode:
+        errors.append("Temporary native-state observer audit failed:\n"
+                      + probe.stdout + probe.stderr)
+    else:
+        print(probe.stdout, end="")
+
     # Native UI parity is not equivalent to having a keyword somewhere in
     # XAML. Fail on missing native transport seams and keep unresolved classes
     # visible in the source-only audit, with no need for a running BG3.
