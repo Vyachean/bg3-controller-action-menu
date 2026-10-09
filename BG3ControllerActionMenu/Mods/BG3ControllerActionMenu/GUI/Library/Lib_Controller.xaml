@@ -1744,13 +1744,41 @@
                                                             Value="0"/>
                                 </b:TimerTrigger>
 
+                                <!-- The native controller state machine sets ActionRadials.Metadata
+                                     to MoveToEnd for opening from the opposite shoulder.
+                                     Preserve original ActionRadials.xaml Loaded first/last
+                                     semantics, but use CAM's automatic rightmost All provider. -->
                                 <b:EventTrigger EventName="Loaded">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Metadata, ElementName=ActionRadials}"
+                                                                       Operator="NotEqual" RightOperand="MoveToEnd"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding FilterActionResourceCommand}"
                                                            CommandParameter="{Binding SelectedItem, ElementName=CAM_ResourceTabs}"/>
                                 </b:EventTrigger>
 
+                                <b:EventTrigger EventName="Loaded">
+                                    <b:Interaction.Behaviors>
+                                        <b:ConditionBehavior>
+                                            <b:ConditionalExpression>
+                                                <b:ComparisonCondition LeftOperand="{Binding Metadata, ElementName=ActionRadials}"
+                                                                       Operator="Equal" RightOperand="MoveToEnd"/>
+                                            </b:ConditionalExpression>
+                                        </b:ConditionBehavior>
+                                    </b:Interaction.Behaviors>
+                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag"
+                                                            Value="{StaticResource CAM_AllModeToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                </b:EventTrigger>
+
+                                <!-- The same native deferred first-slot handoff applies to
+                                     either the first resource provider or the final All tab. -->
                                 <b:TimerTrigger EventName="Loaded" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>

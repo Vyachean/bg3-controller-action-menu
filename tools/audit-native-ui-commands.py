@@ -694,6 +694,110 @@ def validate_native_toggle_notifications(runtime: str) -> list[str]:
     return errors
 
 
+
+def validate_native_shoulder_entry_tabs(runtime: str) -> list[str]:
+    """Opening direction is provided by ActionRadials.Metadata in Patch 8.
+
+    MoveToEnd is emitted by OpenActionRadialsEnd. This is an entry-time
+    choice, not permission to remap the working UITabPrev/UITabNext flow.
+    """
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"cannot inspect original controller opening direction in invalid XAML: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    def named(name: str) -> list[ET.Element]:
+        return [node for node in root.iter()
+                if _attribute(node.attrib, "Name") == name]
+
+    tabs = named("CAM_ResourceTabs")
+    top_rows = named("CAM_TopTabs")
+    if len(tabs) != 1 or len(top_rows) != 1:
+        return ["original controller opening direction needs the existing single resource tab row"]
+
+    row = top_rows[0]
+    order = [_attribute(n.attrib, "Name") for n in row
+             if _attribute(n.attrib, "Name")]
+    if not order or order[0] != "CAM_ResourceTabs" or order[-1] != "CAM_AllTab":
+        return ["native opening-direction first and last tabs must stay resource and All"]
+
+    triggers = [t for t in tabs[0].iter()
+                if local(t) == "EventTrigger"
+                and _attribute(t.attrib, "EventName") == "Loaded"]
+    if len(triggers) != 2:
+        return ["native RB/LB menu opening requires exactly two Loaded branches"]
+
+    branches: dict[str, ET.Element] = {}
+    for trigger in triggers:
+        conditions = [
+            condition for condition in trigger.iter()
+            if local(condition) == "ComparisonCondition"
+            and _attribute(condition.attrib, "LeftOperand")
+                == "{Binding Metadata, ElementName=ActionRadials}"
+        ]
+        if len(conditions) != 1 or _attribute(conditions[0].attrib, "RightOperand") != "MoveToEnd":
+            return ["native RB/LB menu opening must use exact MoveToEnd metadata"]
+        direction = _attribute(conditions[0].attrib, "Operator")
+        if direction not in ("Equal", "NotEqual") or direction in branches:
+            return ["native RB/LB menu opening must keep opposite metadata guards"]
+        branches[direction] = trigger
+
+    if set(branches) != {"Equal", "NotEqual"}:
+        return ["native RB/LB menu opening must keep opposite metadata guards"]
+
+    def actions(trigger: ET.Element) -> list[ET.Element]:
+        return [node for node in trigger
+                if local(node) in ("ChangePropertyAction", "InvokeCommandAction")]
+
+    first = actions(branches["NotEqual"])
+    last = actions(branches["Equal"])
+    def change_to(action: ET.Element, target: str, prop: str, value: str) -> bool:
+        return (
+            local(action) == "ChangePropertyAction"
+            and _attribute(action.attrib, "TargetName") == target
+            and _attribute(action.attrib, "PropertyName") == prop
+            and _attribute(action.attrib, "Value") == value
+        )
+    if not any(change_to(a, "CAM_ProviderModeMarker", "Tag", "{x:Null}") for a in first):
+        return ["native RB opening must select the first resource provider"]
+    if not any(local(a) == "InvokeCommandAction"
+               and _attribute(a.attrib, "Command") == "{Binding FilterActionResourceCommand}"
+               and _attribute(a.attrib, "CommandParameter") == "{Binding SelectedItem, ElementName=CAM_ResourceTabs}"
+               for a in first):
+        return ["native RB opening must apply its first resource filter"]
+    if not any(change_to(a, "CAM_ProviderModeMarker", "Tag",
+                         "{StaticResource CAM_AllModeToken}") for a in last):
+        return ["native LB opening must select the final All provider"]
+    if not any(change_to(a, "HotBarList", "SelectedIndex", "-1") for a in last):
+        return ["native LB opening must clear stale first-resource selection"]
+    if any(local(a) == "InvokeCommandAction" for a in last):
+        return ["native LB opening must not run the first-resource filter"]
+
+    timers = [n for n in tabs[0].iter()
+              if local(n) == "TimerTrigger"
+              and _attribute(n.attrib, "EventName") == "Loaded"]
+    if len(timers) != 1 or (
+        _attribute(timers[0].attrib, "MillisecondsPerTick") != "70"
+        or _attribute(timers[0].attrib, "TotalTicks") != "1"
+    ):
+        return ["native opening direction must preserve common 70ms first-slot focus handoff"]
+    timer_actions = actions(timers[0])
+    if not all(any(change_to(a, "HotBarList", prop, value) for a in timer_actions)
+               for prop, value in (
+                   ("LocalFocus", "{x:Null}"),
+                   ("Tag", "{StaticResource CAM_ResetFirstFocusToken}"),
+                   ("SelectedIndex", "0"),
+               )):
+        return ["native RB/LB opening must select a concrete first executable slot"]
+
+    if not named("CAM_TabLeft") or not named("CAM_TabRight"):
+        return ["native shoulder opening must not remove ordinary tab navigation"]
+    return []
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -732,6 +836,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     errors.extend(validate_controller_refusal_feedback(runtime))
     errors.extend(validate_native_weapon_switch(runtime))
     errors.extend(validate_native_compact_footer(runtime))
+    errors.extend(validate_native_shoulder_entry_tabs(runtime))
     errors.extend(validate_native_throw_world_exit(runtime))
     errors.extend(validate_native_toggle_notifications(runtime))
 
@@ -930,6 +1035,30 @@ def main() -> int:
         if not any("visible controller hints" in err
                    for err in validate_native_compact_footer(wide_hold_button)):
             report["errors"].append("self-test failed: overflowed native hold hint not rejected")
+        wrong_open_direction = runtime.replace(
+            'Operator="Equal" RightOperand="MoveToEnd"/>',
+            'Operator="NotEqual" RightOperand="MoveToEnd"/>',
+            1,
+        )
+        if not any("opposite metadata guards" in err
+                   for err in validate_native_shoulder_entry_tabs(wrong_open_direction)):
+            report["errors"].append("self-test failed: matching LB and RB entry guards not rejected")
+        wrong_last_provider = runtime.replace(
+            'TargetName="CAM_ProviderModeMarker" PropertyName="Tag"\n                                                            Value="{StaticResource CAM_AllModeToken}"/>',
+            'TargetName="CAM_ProviderModeMarker" PropertyName="Tag"\n                                                            Value="{StaticResource CAM_ItemsModeToken}"/>',
+            1,
+        )
+        if not any("final All provider" in err
+                   for err in validate_native_shoulder_entry_tabs(wrong_last_provider)):
+            report["errors"].append("self-test failed: LB opening wrong last tab not rejected")
+        wrong_open_focus = runtime.replace(
+            '<b:TimerTrigger EventName="Loaded" MillisecondsPerTick="70" TotalTicks="1">',
+            '<b:TimerTrigger EventName="Loaded" MillisecondsPerTick="0" TotalTicks="1">',
+            1,
+        )
+        if not any("70ms first-slot focus" in err
+                   for err in validate_native_shoulder_entry_tabs(wrong_open_focus)):
+            report["errors"].append("self-test failed: opening direction focus race not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
