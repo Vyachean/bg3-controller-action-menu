@@ -231,14 +231,22 @@ def audit_cancel_route(source: str) -> dict:
               and not route["nested"]]
     if len(routes) != 5 or len(parent) != 1:
         errors.append("Native B event-route topology changed; re-audit source")
-    elif (parent[0]["nativeActionCancel"]
-          or not parent[0]["presentationPhaseReset"]
-          or not parent[0]["sidebarFocusRequest"]):
-        errors.append("Known v0.0.113 metamagic parent B shape changed; re-audit required")
+    else:
+        # Do not treat the *absence* of game-owned cancellation in the
+        # broken 0.0.114 metamagic parent as a required architecture.
+        # A future candidate can add native ActionCancelCommand there,
+        # while the game's compiled cancellation behavior remains UNPROVEN.
+        # Four existing ordinary/nested native command routes MUST stay.
+        others = [route for route in routes if route is not parent[0]]
+        if not all(route["nativeActionCancel"] for route in others):
+            errors.append("Ordinary/nested native ActionCancelCommand was lost")
+        if not parent[0]["sidebarFocusRequest"]:
+            errors.append("Metamagic B still needs native concrete-slot focus handoff")
+        if not (parent[0]["presentationPhaseReset"]
+                or parent[0]["nativeActionCancel"]):
+            errors.append("Metamagic B has neither presentation return nor native cancel candidate")
     if any(route["invalidContainerFocusRequest"] for route in routes):
         errors.append("Cancelled state must not target non-focusable sidebar LSListBox")
-    if sum(route["nativeActionCancel"] for route in routes) != 4:
-        errors.append("Nested/ordinary native ActionCancelCommand routes changed")
 
     suppressed = [
         setter for setter in _nodes(root, "Setter")
@@ -268,7 +276,14 @@ def audit_cancel_route(source: str) -> dict:
             "topLevelCloseWidgetSetters": len(closes),
         },
         "blockers": {
-            "metamagicParentBUsesPresentationResetNotNativeCancel": True,
+            "metamagicParentBUsesPresentationResetNotNativeCancel": (
+                len(parent) == 1
+                and parent[0]["presentationPhaseReset"]
+                and not parent[0]["nativeActionCancel"]
+            ),
+            "metamagicParentNativeCancelCandidate": (
+                len(parent) == 1 and parent[0]["nativeActionCancel"]
+            ),
             "metamagicCloseRollsBackGameOwnedState": "UNPROVEN",
             "nativeActionCancelCancelsPendingMetamagic": "UNPROVEN",
             "compatibleOnlyExecutableSpellProvider": "UNPROVEN",
@@ -302,6 +317,40 @@ def assert_cancel_route_source(source: str) -> None:
         changed = source.replace(original, replacement)
         if not audit_cancel_route(changed)["errors"]:
             raise AssertionError(f"Native cancel regression not detected: {original}")
+
+    # Positive future-candidate fixture: the real game-owned command may
+    # be called in metamagic-parent B too. The old audit incorrectly
+    # treated that improvement direction as a regression and thereby
+    # protected the operator-rejected local-only reset. Here we admit
+    # its SOURCE shape, without claiming the native command really
+    # cancels the game-owned MetamagicActive at runtime.
+    anchor = '                            <!-- The sidebar is still disabled while we erase'
+    if source.count(anchor) != 1:
+        raise AssertionError("Metamagic parent B fixture insertion anchor changed")
+    candidate = source.replace(
+        anchor,
+        '                            <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>\n'
+        + anchor,
+        1,
+    )
+    candidate_report = audit_cancel_route(candidate)
+    if candidate_report["errors"]:
+        raise AssertionError(
+            "Future game-owned metamagic cancel source wrongly blocked: "
+            + "; ".join(candidate_report["errors"])
+        )
+    if (candidate_report["runtimeAccepted"] is not False
+            or candidate_report["blockers"]["nativeActionCancelCancelsPendingMetamagic"] != "UNPROVEN"
+            or not candidate_report["blockers"]["metamagicParentNativeCancelCandidate"]):
+        raise AssertionError("Source-only candidate must remain runtime-unproven")
+    for changed in (
+        candidate.replace('Command="{Binding ActionCancelCommand}"',
+                          'Command="{x:Null}"'),
+        candidate.replace('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"',
+                          'TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{x:Null}"'),
+    ):
+        if not audit_cancel_route(changed)["errors"]:
+            raise AssertionError("Native cancel candidate mutation escaped guards")
 
 
 def main() -> int:
