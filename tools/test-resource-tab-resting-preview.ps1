@@ -135,4 +135,36 @@ if ($resourceTabTemplate.Value.Contains('HighlightedActionPoints="{Binding DataC
     throw "Upper navigation tabs must retain resting quantities independent of HUD action-cost preview."
 }
 
+
+# Metamagic has an independent native-slot input owner. It must share the
+# game HUD cost-preview contract, but cannot rely on HotBarList's disabled
+# focus when the sidebar is selected. Never pass VMHotBar groups or labels.
+$sidebar = [regex]::Match(
+    $text,
+    '<ls:LSListBox\b[^>]*x:Name="CAM_FixedSideBarList"[\s\S]*?</ls:LSListBox>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sidebar.Success -or
+    -not $sidebar.Value.Contains('ItemsSource="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.FixedSideBar.SlotList}"') -or
+    -not $sidebar.Value.Contains('ClearResourceHighlightsCommand')) {
+    throw "Native metamagic side slots must retain exclusive focus and old-cost invalidation."
+}
+foreach ($event in @("LocalFocusChanged", "SelectionChanged")) {
+    $timer = [regex]::Match(
+        $sidebar.Value,
+        ('<b:TimerTrigger EventName="' + $event + '" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>'),
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    if (-not $timer.Success -or
+        -not $timer.Value.Contains('CAM_MetamagicModeToken') -or
+        -not $timer.Value.Contains('IsEnabled, ElementName=CAM_FixedSideBarList') -or
+        -not $timer.Value.Contains('CreateFocusedTooltipDataCommand') -or
+        -not $timer.Value.Contains('HighlightResourcesCommand') -or
+        -not $timer.Value.Contains('CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"') -or
+        $timer.Value.Contains('ClearResourceHighlightsCommand') -or
+        $timer.Value.Contains('IsEnabled="False"')) {
+        throw "Metamagic $event must preview the same current enabled native VMHotBarSlot after 70ms."
+    }
+}
+
 Write-Host "Native HUD cost feedback / resting upper tab contract passed."
