@@ -698,7 +698,7 @@
                                                HorizontalAlignment="Center"
                                                MaxActionPoints="{Binding MaxValue}"
                                                AvailableActionPoints="{Binding Value}"
-                                               HighlightedActionPoints="{Binding DataContext.Cost, ElementName=Root}"
+                                               HighlightedActionPoints="0"
                                                DataContext="{Binding ActionResource}"
                                                MaxActionPointGroups="0"
                                                SmallActionPointSize="24"
@@ -2412,10 +2412,8 @@
                                                             Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="False"
+                                    <b:InvokeCommandAction
                                                            Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                 </b:TimerTrigger>
 
@@ -2443,10 +2441,8 @@
                                                             Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="False"
+                                    <b:InvokeCommandAction
                                                            Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                 </b:TimerTrigger>
                             </b:Interaction.Triggers>
