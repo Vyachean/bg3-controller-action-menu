@@ -2829,10 +2829,10 @@
                             <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
                             <!-- Restore the native LSListBox owner, not a selection-triggered
                                  request from a child template. -->
-                                                        <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
-                                                        <ls:SetMoveFocusAction TargetName="ActionRadials"
-                                                                               FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
-                                                                               DeferFocusAction="True"/>
+                                 <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                                 <ls:SetMoveFocusAction TargetName="ActionRadials"
+                                                        FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
+                                                        DeferFocusAction="True"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>
