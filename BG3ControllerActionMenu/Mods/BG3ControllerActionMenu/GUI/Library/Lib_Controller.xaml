@@ -1138,9 +1138,16 @@
                       Width="{Binding ActualWidth, ElementName=ActionRadials}"
                       MaxWidth="1400"
                       MinWidth="800"
-                      Height="934"
+                      Height="966"
                       Background="Transparent">
+                    <!-- The extra 32px title row is compensated by the center
+                         alignment offset. The existing 84px tab strip and 850px
+                         action viewport keep their previous screen positions. -->
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="-16"/>
+                    </Grid.RenderTransform>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="32"/>
                         <RowDefinition Height="84"/>
                         <RowDefinition Height="850"/>
                     </Grid.RowDefinitions>
@@ -1149,8 +1156,57 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
+                    <!-- A reserved row ABOVE the native resource artwork, never
+                         an overlay inside the 84px tab strip. The resource name
+                         is BG3-owned; special-provider names are presentation
+                         fallback labels pending proof of localization handles. -->
+                    <Grid x:Name="CAM_SelectedTabTitleArea"
+                          Grid.Row="0"
+                          Grid.ColumnSpan="2"
+                          Height="32"
+                          MaxWidth="800"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          IsHitTestVisible="False"
+                          Focusable="False">
+                        <TextBlock x:Name="CAM_SelectedResourceName"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="760"
+                                   FontSize="{StaticResource ScaledDefaultFontSize}"
+                                   Foreground="{StaticResource LS_PrimaryColor}"
+                                   Effect="{StaticResource ShadowEffect}"
+                                   IsHitTestVisible="False"
+                                   Focusable="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_CantripsModeToken}">
+                                            <Setter Property="Text" Value="Cantrips"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_ItemsModeToken}">
+                                            <Setter Property="Text" Value="Items"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}">
+                                            <Setter Property="Text" Value="Metamagic"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_PassivesModeToken}">
+                                            <Setter Property="Text" Value="Passives"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_AllModeToken}">
+                                            <Setter Property="Text" Value="All"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
                     <DockPanel Grid.ColumnSpan="2" x:Name="CAM_ResourceHeader"
-                               Grid.Row="0"
+                               Grid.Row="1"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
                                MaxWidth="1320"
@@ -1556,37 +1612,6 @@
                               HorizontalAlignment="Center"
                               VerticalAlignment="Bottom"
                               Height="84">
-                            <!-- The native resource tooltip uses ActionResource.Name
-                                 (Patch 8 Tooltips.xaml:8253). Show the selected
-                                 game-owned localized name above the existing tab
-                                 artwork for controller users; never infer identity
-                                 from a one-letter glyph (e.g. R), and never change
-                                 FilterActionResourceCommand or the source collection. -->
-                            <TextBlock x:Name="CAM_SelectedResourceName"
-                                       Text="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Top"
-                                       Margin="0,-34,0,0"
-                                       MaxWidth="480"
-                                       FontSize="{StaticResource ScaledDefaultFontSize}"
-                                       Foreground="{StaticResource LS_PrimaryColor}"
-                                       Effect="{StaticResource ShadowEffect}"
-                                       IsHitTestVisible="False"
-                                       Focusable="False"
-                                       Panel.ZIndex="4">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <!-- Non-resource providers have their own icons,
-                                                 not a selected ActionResourceCostPreview. -->
-                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
                             <ls:LSNineSliceImage x:Name="CAM_HotbarBodyResourcesBg"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Bottom"
@@ -2082,7 +2107,7 @@
                          The 16px top/bottom focus clearance fits inside the same
                          850px catalog row; cell geometry remains 104-in-120. -->
                     <Grid x:Name="CAM_ActionRowClip"
-                          Grid.Row="1"
+                          Grid.Row="2"
                           Grid.ColumnSpan="2"
                           ClipToBounds="True"
                           Height="850">
