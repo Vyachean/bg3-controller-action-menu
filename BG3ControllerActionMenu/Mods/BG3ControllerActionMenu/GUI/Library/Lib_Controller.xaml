@@ -2500,10 +2500,12 @@
 
             <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
                                    Style="{StaticResource ButtonHint.Container.CenterWrap}"
-                                   HorizontalAlignment="Right"
-                                   HorizontalContentAlignment="Right"
-                                   Width="1000"
-                                   FlowDirection="RightToLeft"
+                                   HorizontalAlignment="Center"
+                                   HorizontalContentAlignment="Center"
+                                   VerticalAlignment="Bottom"
+                                   Width="Auto"
+                                   MaxWidth="1320"
+                                   FlowDirection="LeftToRight"
                                    Margin="26,0,26,56">
                 <!-- Original Patch 8 ActionRadials: while choosing a thrown item,
                      UIDelete returns directly to world targeting. This is
@@ -2514,7 +2516,7 @@
                              BoundEvent="UIDelete"
                              Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UIDelete, Converter={StaticResource FindInputEventConverter}}"
                              HorizontalAlignment="Left"
-                             Width="1000"
+                             Width="Auto"
                              Visibility="Collapsed"
                              Command="{Binding CustomEvent}"
                              CommandParameter="CloseRadials"/>
@@ -2527,7 +2529,7 @@
                              Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UIAccept, Converter={StaticResource FindInputEventConverter}}"
                              HorizontalContentAlignment="Left"
                              HorizontalAlignment="Left"
-                             Width="1000">
+                             Width="Auto">
                     <!-- Original Patch 8 radial UI: the accept hint emits the
                          native error sound for a refused action, without
                          consuming A or bypassing UseSlotCommand.CanUse. -->
@@ -2567,7 +2569,7 @@
                              HorizontalContentAlignment="Left"
                              HorizontalAlignment="Left"
                              Margin="10,0,20,0"
-                             Width="1000"/>
+                             Width="Auto"/>
 
                 <!-- Native Patch 8 Controller ActionRadials weapon-set shortcut.
                      Deliberately no BoundEvent: the original hold-button style
@@ -2583,7 +2585,7 @@
                              EatInput="False"
                              HorizontalAlignment="Left"
                              Margin="10,0,20,0"
-                             Width="1000"/>
+                             Width="Auto"/>
 
                 <ls:LSButton x:Name="ToggleDualWield"
                              BoundEvent="UISelectionRight"
@@ -2596,7 +2598,7 @@
                              EatInput="False"
                              HorizontalAlignment="Left"
                              Margin="10,0,20,0"
-                             Width="1000"/>
+                             Width="Auto"/>
 
                 <ls:LSButton x:Name="UseSlotBinding"
                              Command="{Binding UseSlotCommand}"
@@ -2613,7 +2615,7 @@
                              Content="{Binding CurrentPlayer.UIData.InputEvents, ConverterParameter=UICancel, Converter={StaticResource FindInputEventConverter}}"
                              HorizontalContentAlignment="Left"
                              HorizontalAlignment="Left"
-                             Width="1000">
+                             Width="Auto">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="LSButtonReleased">
                             <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
