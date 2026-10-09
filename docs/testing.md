@@ -1315,3 +1315,23 @@ No real runtime inventory is available in CI or the existing static
 capture, so the checker reports `awaiting-runtime-proof`. Its
 successful synthetic fixture check does not close gameplay parity,
 and the user must **not** be asked to enumerate all actions manually.
+
+
+### 2026-10-09 — right-side native compact footer source gate (#167)
+
+Original Patch 8 has a right-aligned/right-content/RightToLeft controller hint lane. An independent native layout variant allows `Width=Auto` button hints. Earlier 0.0.35 and current operator playtests prove centering hints over the bottom-center resource HUD is incorrect. The proposed combination therefore restores the original right lane with a bounded 380px maximum width while retaining the same six native compact controls and avoiding any input transport change. The native UI audit must fail if the panel becomes centered, exceeds its width cap, changes either right/RTL alignment, or any visible hold hint returns to the original radial's 1000px width. Build and package CI remain necessary but are insufficient to prove exact safe area; verify once in the combined **published-Release** game milestone at 1080p, including resource HUD and controller glyph/hold progress visibility.
+
+
+## Single operator game milestone — 0.0.111-controller-feedback-milestone (2026-10-09)
+
+**Delivery:** This plan is for one deliberately experimental **published** GitHub Release. The user's fixed `Install-BG3ControllerActionMenu.vbs` must select the newest published, non-draft `v0.0.111-controller-feedback-milestone`, then execute its `dev-entry.ps1` -> `install-latest.ps1` -> packaged `.pak` chain. A green PR/Build package artifact is NOT installable through the fixed VBS. Do not ask the operator to replace the permanent VBS or manually place the package.
+
+**One short game session, not per-PR tests.** Use a character who can change weapon sets and access action/bonus/spell and metamagic if available. Open Actions via RB, then later via LB. Record the version once and observe:
+
+1. **LB/RB opening:** RB first native-resource tab; LB last All tab. Each should give one normal navigation sound, and controller vibration should be checked **separately** (the new source-level fix only adds the existing sound, no confirmed haptic mechanism). Ordinary shoulder cycling should not repeatedly replay the entry sound.
+2. **Top tab UI:** resource names stay above, not on top of native icons; Cantrips/Items/Metamagic/Passives/All titles appear when selected. Their current English titles are provisional, not asserted localized. Check the unknown `R` resource if this character naturally exposes it, noting the actual native name rather than inferring the identity from the icon.
+3. **Resource cost:** with two actions of different native costs, moving focus should update the ordinary BG3 bottom resource bar. Upper navigation icons/available counts must remain correct at rest; switching tabs or leaving Actions must not leave stale highlights. Also check one metamagic sidebar action if available. Grouped All action cost remains unverified and must be reported separately.
+4. **Footer and weapon controls:** normal bottom resource bar remains unobscured; A/B, weapon/dual-wield/concentration hold glyphs and progress are visible when applicable. Hold weapon switch twice **with a release between holds** and compare actual switch to progress animation. Short D-pad left must navigate cells; normal off-menu hold-to-switch remains permitted and must not be disabled. #154 repeat/timing and global hints are **not** claimed fixed in this release.
+5. **Metamagic and dispatch:** when relevant, Up/Down from bottom/top of the sidebar should stay within its own native list. A executes the visibly selected item, B returns/close correctly, and action tooltip follows focus. If no metamagic is available on this character, report that case as untested rather than a pass.
+
+**Acceptance boundary:** no component is runtime-accepted by green CI. Report successes and failures once after this combined operator run. Keep #154, #157, #160 and #135 open where their specific behavior or underlying input/identity evidence remains unresolved. Do not create another incremental release merely to probe one guessed binding.

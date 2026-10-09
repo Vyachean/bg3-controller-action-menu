@@ -121,6 +121,33 @@ Static testing verifies symmetric entry and preserved command
 bindings, but a Noesis runtime check remains necessary to prove
 the initial frame, tooltip and A dispatch.
 
+## Metamagic vertical D-pad boundary (#155, source-level candidate)
+
+In the v0.0.109 operator test, pressing Down beyond the final native
+`FixedSideBar.SlotList` entry moved focus outside the metamagic list.
+The fixed side rail is a **one-column** `LSGrid` with
+`ActionUpEvent=UIUp` / `ActionDownEvent=UIDown`, nested in the
+`CAM_FixedSideBarList` `LSListBox` consuming those same events through
+`ActionPrevEvent` / `ActionNextEvent`. The preceding
+`KeyboardNavigation.DirectionalNavigation=Contained` on that list did not
+provide a cyclic last-to-first/first-to-last boundary.
+
+The smallest test candidate uses the Noesis/WPF list-navigation
+`DirectionalNavigation=Cycle` **on the sidebar list only**. It does not
+add an `LSInputBinding`, consume D-pad events at the root, change
+`LSGrid` directional dispatch, alter the focus owner, or replace the
+native `VMHotBarSlot -> ActionRadials.Tag -> UseSlotCommand` route.
+`HotBarList` keeps `Contained`; BG3's nested states still own its
+existing focus handoff. Static checks pin both boundaries and reject
+second input routes.
+
+**Proof limit:** the captured XAML proves event wiring, not how BG3's
+custom `LSGrid` handles its terminal coordinate at runtime. Therefore
+a green package/structural test does not establish the observed bug is
+fixed. Verify repeated Up/Down at both endpoints, tooltip/A identity and
+LB/RB return together with nested-metamagic UX (#158) in the next
+combined sorcerer milestone. Keep #155 open until that proof.
+
 ## Native metamagic side rail (0.0.99 candidate)
 
 The installed 1.8.910.0 keyboard HotBar renders native `FixedSideBar`
@@ -1265,3 +1292,26 @@ The rest of BG3 controller mode retains original theme resources.
 Native `LSActionPointResources`, TypeId, numeric counters, resource
 availability/state, LB/RB, tooltip, grid focus and A/B execution do
 not change. Validate SHA-256 of both copied native XAML blocks.
+
+
+## 2026-10-09 source-level candidate: native action cost feedback (#166)
+
+Existing action focus calls were intentionally disabled after 0.0.75 because the keyboard HotBar's transient mouse-hover preview `Cost` was left active by persistent controller focus. The player nevertheless needs the **original** native action-cost hint in the ordinary BG3 resource bar. In this candidate, the upper CAM tab display is treated as a persistent **navigation** presentation, not a hover-cost overlay: `LSActionPointResources.HighlightedActionPoints=0`, while `MaxActionPoints`, `AvailableActionPoints`, resource icons, spell level chrome, and resource filtering remain native.
+
+The native BG3 controller-focus lifecycle becomes: immediate `LocalFocusChanged` clears old predicted cost, then the existing 70ms non-null/active-slot owner copies `LocalFocus.DataContext` to `ActionRadials.Tag`, creates the tooltip and passes that exact `VMHotBarSlot` to `HighlightResourcesCommand`. The programmatic tab-entry handoff uses the same source. The code must not clear the newly applied preview in either deferred path. Existing provider/tab transitions, nested return and normal close own invalidation; no calculated costs or secondary slot owner are introduced.
+
+This is a **draft runtime candidate** with source/CI proof only, not a runtime-accepted correction. Combined in-game validation must prove ordinary HUD resource cost feedback and unchanged upper-tab visual quantities, and no stale feedback after leaving the menu.
+
+
+### 2026-10-09 metamagic owner correction
+
+`CAM_FixedSideBarList` owns its **own** native `FixedSideBar.SlotList` focus when the Metamagic provider is active and `HotBarList` is deliberately disabled. Consequently the main list's `HighlightResourcesCommand` cannot serve these focused metamagic entries. This candidate restores the exact same game-owned cost-preview call in both side-list 70ms stable-focus routes (`LocalFocusChanged` and programmatic `SelectionChanged`), using `CAM_FixedSideBarList.LocalFocus.DataContext` and only when the side list is enabled and Metamagic owns the provider. Its existing immediate focus event continues to clear stale resource highlights; `ActionRadials.Tag` and `UseSlotCommand` remain unchanged.
+
+The final `All` provider remains a separate unproved branch: its outer selection is a `VMHotBar` group and inner entries are `VMHotBarSlot` children. No new `HighlightResourcesCommand(VMHotBar)` is permitted. A follow-on source/runtime owner proof is required for cost highlight, slot sound/haptics and action identity under All. Do not call #166 complete solely because the direct and sidebar routes are CI-green.
+
+
+## 2026-10-09 partial correction — LB grouped-All opening sound (#160)
+
+The original controller state machine distinguishes `OpenActionRadials` and `OpenActionRadialsEnd` by `ActionRadials.Metadata=MoveToEnd`. The first direct-resource opening already uses the native `HotBarList.LocalFocusChanged` sound `UI_HUD_Controller_RadialMenu_SlotHover`. The LB/MoveToEnd opening instead enters the grouped `KeyboardHotBars` All provider and, according to operator game testing, produces no sound or vibration. CAM now emits **one instance of the already-proven native slot-hover sound** in the existing `CAM_ResourceTabs.Loaded` branch guarded by `Metadata==MoveToEnd`. It does not emit it on ordinary LB/RB tab navigation, nor add a duplicate on the RB normal branch. The original 70ms first-slot handoff and selected All resource/provider remain unchanged.
+
+This is a strictly **sound-only source candidate**, not proof of correct runtime playback or haptics. The game-owned haptic/vibration route is not identified by current pinned Patch 8 sources, so no fabricated rumble command or new input binding is introduced. In the next combined published-Release milestone, verify RB and LB opening each produces one sound and appropriate haptics, and that repeated tab changes don't double-play sounds. If LB still lacks vibration, #160 stays open until the actual engine-level event source is proven.
