@@ -800,11 +800,11 @@ def validate_native_shoulder_entry_tabs(runtime: str) -> list[str]:
 
 
 def validate_native_resource_name(runtime: str) -> list[str]:
-    """Show the selected native VMActionResourceCostPreview resource name.
+    """Keep the selected native resource name separate from original tab icons.
 
-    A one-letter icon is not a type contract. BG3 Tooltips.xaml:8253
-    already uses ActionResource.Name, so do not hardcode Reaction or
-    construct a second resource classification.
+    Native Tooltips.xaml:8253 supplies ActionResource.Name. Special providers
+    are CAM UI modes; visible English fallback titles are explicit until
+    their Patch 8 locale handles have been captured and verified.
     """
     try:
         root = ET.fromstring(runtime)
@@ -818,49 +818,85 @@ def validate_native_resource_name(runtime: str) -> list[str]:
         return [node for node in root.iter()
                 if _attribute(node.attrib, "Name") == name]
 
-    label = named("CAM_SelectedResourceName")
-    strip = named("CAM_ResourceStrip")
-    tabs = named("CAM_ResourceTabs")
-    if len(label) != 1 or len(strip) != 1 or len(tabs) != 1:
-        return ["resource label requires existing resource tabs and strip"]
+    names = ("CAM_AutoCatalogFocusRoot", "CAM_SelectedTabTitleArea",
+             "CAM_SelectedResourceName", "CAM_ResourceHeader",
+             "CAM_ResourceStrip", "CAM_ResourceTabs", "CAM_ActionRowClip")
+    matches = {name: named(name) for name in names}
+    if any(len(items) != 1 for items in matches.values()):
+        return ["resource title needs exactly one reserved title row, tab strip and viewport"]
+    main, title, caption, header, strip, tabs, viewport = (
+        matches[name][0] for name in names
+    )
+    if title not in list(main) or caption not in list(title) or header not in list(main):
+        return ["resource title must use a separate root row, never a visual strip overlay"]
+    if local(caption) != "TextBlock" or caption in list(strip):
+        return ["resource title must not overlay the native resource tab strip"]
 
-    node = label[0]
-    if local(node) != "TextBlock" or node not in list(strip[0]):
-        return ["native selected resource name must remain a visual strip overlay"]
+    if (_attribute(main.attrib, "Height") != "966"
+            or _attribute(title.attrib, "Grid.Row") != "0"
+            or _attribute(title.attrib, "Height") != "32"
+            or _attribute(header.attrib, "Grid.Row") != "1"
+            or _attribute(header.attrib, "Height") != "84"
+            or _attribute(viewport.attrib, "Grid.Row") != "2"
+            or _attribute(viewport.attrib, "Height") != "850"
+            or _attribute(strip.attrib, "Height") != "84"):
+        return ["resource title layout must reserve 32px without resizing 84px tabs or 850px action viewport"]
+    rowdefs = [child for x in main if local(x) == "Grid.RowDefinitions"
+               for child in x if local(child) == "RowDefinition"]
+    if [_attribute(row.attrib, "Height") for row in rowdefs] != ["32", "84", "850"]:
+        return ["resource title must occupy a dedicated 32px row above native tabs"]
+    transforms = [child for x in main if local(x) == "Grid.RenderTransform"
+                  for child in x.iter() if local(child) == "TranslateTransform"]
+    if len(transforms) != 1 or _attribute(transforms[0].attrib, "Y") != "-16":
+        return ["resource title must retain original screen coordinates of tabs and action grid"]
 
-    required = {
-        "Text": "{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}",
-        "IsHitTestVisible": "False",
-        "Focusable": "False",
-        "VerticalAlignment": "Top",
-    }
-    if any(_attribute(node.attrib, k) != v for k, v in required.items()):
-        return ["native selected resource name must be game-owned and noninteractive"]
+    if (not all(_attribute(caption.attrib, key) == value for key, value in {
+            "IsHitTestVisible": "False",
+            "Focusable": "False",
+            "TextTrimming": "CharacterEllipsis",
+            "HorizontalAlignment": "Center",
+        }.items())
+            or _attribute(caption.attrib, "Text") is not None):
+        return ["selected tab title must be noninteractive, bounded and driven by provider state"]
 
-    styles = [x for x in node if local(x) == "TextBlock.Style"]
+    styles = [x for x in caption if local(x) == "TextBlock.Style"]
     if len(styles) != 1:
-        return ["native resource label must hide on non-resource modes"]
-
-    guard = [
-        trigger for trigger in styles[0].iter()
-        if local(trigger) == "DataTrigger"
-        and _attribute(trigger.attrib, "Binding")
-            == "{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}"
-        and _attribute(trigger.attrib, "Value") == "True"
-        and any(local(setter) == "Setter"
-                and _attribute(setter.attrib, "Property") == "Visibility"
-                and _attribute(setter.attrib, "Value") == "Collapsed"
-                for setter in trigger)
-    ]
-    if len(guard) != 1:
-        return ["native selected resource name must disappear on special tabs"]
-
-    if _attribute(strip[0].attrib, "Height") != "84":
-        return ["resource name must not resize the native tab strip"]
-
+        return ["selected tab title needs its native resource binding and provider labels"]
+    setters = [x for x in styles[0].iter() if local(x) == "Setter"]
+    native_resource_name = "{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"
+    if not any(_attribute(x.attrib, "Property") == "Text"
+               and _attribute(x.attrib, "Value") == native_resource_name for x in setters):
+        return ["game-owned ActionResource.Name must be the default selected resource title"]
+    expected = {
+        "CAM_CantripsModeToken": "Cantrips",
+        "CAM_ItemsModeToken": "Items",
+        "CAM_MetamagicModeToken": "Metamagic",
+        "CAM_PassivesModeToken": "Passives",
+        "CAM_AllModeToken": "All",
+    }
+    seen = {}
+    for trig in styles[0].iter():
+        if local(trig) != "DataTrigger":
+            continue
+        mode = _attribute(trig.attrib, "Value")
+        prefix = "{StaticResource "
+        if not mode or not mode.startswith(prefix) or not mode.endswith("}"):
+            continue
+        token = mode[len(prefix):-1]
+        if token not in expected:
+            continue
+        if _attribute(trig.attrib, "Binding") != "{Binding Tag, ElementName=CAM_ProviderModeMarker}":
+            return ["provider titles must be selected only by current CAM provider state"]
+        labels = [_attribute(x.attrib, "Value") for x in trig
+                  if local(x) == "Setter" and _attribute(x.attrib, "Property") == "Text"]
+        if len(labels) != 1 or token in seen:
+            return ["selected tab title requires one caption for every special provider"]
+        seen[token] = labels[0]
+    if seen != expected:
+        return ["selected tab title requires one explicit fallback name for every provider"]
     if not any(_attribute(n.attrib, "Name") == "CAM_HotbarBodyResourcesBg"
-               for n in strip[0]):
-        return ["resource label must not replace the original BG3 resource icons"]
+               for n in strip):
+        return ["selected tab title must preserve original BG3 resource glyphs"]
     return []
 
 
