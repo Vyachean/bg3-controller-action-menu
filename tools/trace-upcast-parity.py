@@ -90,6 +90,59 @@ def site_inventory(text: str, source: str) -> dict:
     return groups
 
 
+def datatype_binding_surface(text: str, data_type: str) -> dict:
+    """Describe only bindings visibly used by one native DataTemplate type.
+
+    A presentation binding can prove that a property is exposed to XAML, but
+    cannot prove that it uniquely identifies an executable variant.
+    """
+    root = ET.fromstring(text)
+    templates: list[dict] = []
+    all_bindings: set[str] = set()
+    for node in root.iter():
+        if local(node.tag) != "DataTemplate":
+            continue
+        attrs = {local(k): v for k, v in node.attrib.items()}
+        declared = attrs.get("DataType", "")
+        if not (declared == data_type or declared.endswith(":" + data_type)):
+            continue
+        bindings: set[str] = set()
+        for child in node.iter():
+            for value in child.attrib.values():
+                if "{Binding" in value:
+                    bindings.add(value)
+                    all_bindings.add(value)
+        templates.append({
+            "dataType": declared,
+            "bindings": sorted(bindings),
+        })
+
+    level_bindings = sorted(value for value in all_bindings if "SpellSlotLevel" in value)
+    resource_tokens = (
+        "ActionResource", "ResourceName", "ResourceType", "ResourceTypeId",
+        "SpellSlotType", ".TypeId", "CostSummary",
+    )
+    resource_bindings = sorted(
+        value for value in all_bindings if any(token in value for token in resource_tokens)
+    )
+    return {
+        "dataType": data_type,
+        "templateCount": len(templates),
+        "templates": templates,
+        "spellSlotLevelBindings": level_bindings,
+        "resourceIdentityBindings": resource_bindings,
+        "levelVisibleToXaml": bool(level_bindings),
+        "resourceIdentityVisibleToXaml": bool(resource_bindings),
+        # Even level + resource-looking presentation properties do not prove
+        # uniqueness, equality semantics, or the correct native dispatch object.
+        "safeAutomaticVariantSelectionProven": False,
+        "proofLimit": (
+            "XAML presentation bindings do not prove a unique match between the "
+            "selected VMActionResourceCostPreview and an executable VMHotBarSlot."
+        ),
+    }
+
+
 def read_original_capture(path: Path, pinned: dict) -> tuple[dict[str, str], list[str], dict]:
     """Reject missing, duplicate, corrupt or unpinned source bytes."""
     original: dict[str, str] = {}
@@ -155,6 +208,7 @@ def report(cam: str, pinned: dict, capture: Path | None) -> dict:
     except ET.ParseError as exc:
         errors.append("CAM XAML XML parsing failed: " + str(exc))
         cam_sites = {key: [] for key in NEEDLES}
+    upcast_template_surface: dict | None = None
     if capture:
         try:
             sources, capture_errors, provenance = read_original_capture(capture, pinned)
@@ -164,6 +218,11 @@ def report(cam: str, pinned: dict, capture: Path | None) -> dict:
                     game[path] = compact_inventory(xml, path)
                 except ET.ParseError as exc:
                     errors.append("original XAML XML parsing failed: " + path + ": " + str(exc))
+            if TEMPLATES in sources:
+                try:
+                    upcast_template_surface = datatype_binding_surface(sources[TEMPLATES], "VMUpcast")
+                except ET.ParseError as exc:
+                    errors.append("original VMUpcast template parsing failed: " + str(exc))
         except (OSError, zipfile.BadZipFile) as exc:
             errors.append("cannot read original capture: " + str(exc))
 
@@ -174,12 +233,16 @@ def report(cam: str, pinned: dict, capture: Path | None) -> dict:
         "captureSourceStatus": "sha256-verified" if capture and not errors else "unavailable-or-unverified",
         "camBindings": cam_sites,
         "pinnedNativeBindings": game,
+        "nativeVmUpcastTemplateSurface": upcast_template_surface,
         "proof": {
             "keyboardIVBehavior": "operator observed: IV resource filter selects an IV upcast and tooltip",
             "bindingSourceInventory": "XML-verified only; comments and text excluded",
             "nativeVMConstruction": "UNKNOWN: compiled DCHotBar producer not in XAML",
             "sameHotBarContextInstance": "UNKNOWN: matching binding names do not prove same instance",
-            "variantLevelAndIdentity": "UNKNOWN: no runtime VMHotBarSlot/VMUpcast identity sample",
+            "variantLevelAndIdentity": (
+                "UNKNOWN: XAML may expose SpellSlotLevel, but a unique resource-type "
+                "match to selected VMActionResourceCostPreview is not proven"
+            ),
             "gamepadFocusAndA": "UNKNOWN: source cannot execute Noesis or input",
             "spellIVRuntimeParity": False,
         },
@@ -219,6 +282,22 @@ def self_test() -> None:
     assert x["resourceFilter"][0]["attributes"]["CommandParameter"].endswith("CAM_ResourceTabs}")
     assert all("not-real" not in str(v) for v in x.values())
     assert len(site_inventory("<Root><!-- VMUpcast --></Root>", "empty")["upcastContext"]) == 0
+    upcast_level_only = datatype_binding_surface(
+        '<Root xmlns:ls="urn:test"><DataTemplate DataType="ls:VMUpcast">'
+        '<TextBlock Text="{Binding SpellSlotLevel}"/></DataTemplate></Root>',
+        "VMUpcast",
+    )
+    assert upcast_level_only["levelVisibleToXaml"] is True
+    assert upcast_level_only["resourceIdentityVisibleToXaml"] is False
+    assert upcast_level_only["safeAutomaticVariantSelectionProven"] is False
+    upcast_with_resource = datatype_binding_surface(
+        '<Root xmlns:ls="urn:test"><DataTemplate DataType="ls:VMUpcast">'
+        '<TextBlock Text="{Binding SpellSlotLevel}" Tag="{Binding ResourceName}"/>'
+        '</DataTemplate></Root>',
+        "VMUpcast",
+    )
+    assert upcast_with_resource["resourceIdentityVisibleToXaml"] is True
+    assert upcast_with_resource["safeAutomaticVariantSelectionProven"] is False
     try:
         site_inventory("<Root><Broken></Root>", "invalid")
     except ET.ParseError:
