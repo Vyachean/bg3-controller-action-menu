@@ -8,6 +8,7 @@ it is expected to FAIL on the user-rejected v0.0.115 XAML.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -15,6 +16,8 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "BG3ControllerActionMenu/Mods/BG3ControllerActionMenu/GUI/Library/Lib_Controller.xaml"
+EVIDENCE = ROOT / "docs/evidence/patch8-1.8.910.0-runtime-contract.json"
+NATIVE_FILE = "Public/Game/GUI/Library/PreloadedActionRadials_c.xaml"
 
 
 def local(name: str) -> str:
@@ -136,6 +139,44 @@ def inspect(source: str) -> dict:
     }
 
 
+def inspect_native_capture(path: Path) -> dict:
+    """Only inspect an exact byte-matched 1.8.910.0 capture; never guess a game version."""
+    data = path.read_bytes()
+    actual = hashlib.sha256(data).hexdigest()
+    contract = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    expected = contract["sourceHashes"][NATIVE_FILE]
+    if actual != expected:
+        raise ValueError(
+            f"Wrong native capture SHA-256 {actual}, required {expected} ({NATIVE_FILE})"
+        )
+    root = ET.fromstring(data)
+    owners = {}
+    for name in ("HotBarRadial", "SingleBar"):
+        node = named(root, name)
+        if node is None or local(node.tag) != "Radial":
+            raise ValueError(f"Pinned native radial missing: {name}")
+        owner = []
+        for trigger in node.iter():
+            if local(trigger.tag) == "EventTrigger" and attr(trigger, "EventName") == "LocalFocusChanged":
+                owner.extend({
+                    "target": attr(action, "TargetName"),
+                    "property": attr(action, "PropertyName"),
+                    "value": attr(action, "Value"),
+                } for action in trigger.iter()
+                    if local(action.tag) == "ChangePropertyAction"
+                    and attr(action, "TargetName") == "ActionRadials"
+                    and attr(action, "PropertyName") == "Tag")
+        owners[name] = owner
+    return {
+        "sourceFile": NATIVE_FILE,
+        "sha256Verified": actual,
+        "gamePackageVersion": contract["gamePackageVersion"],
+        "nativeTagWriters": owners,
+        "sourceOnly": True,
+        "runtimeAccepted": False,
+    }
+
+
 def self_test() -> None:
     ns = ('xmlns:ls="urn:ls" xmlns:b="urn:b" '
           'xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"')
@@ -194,6 +235,8 @@ def main() -> int:
     parser.add_argument("--require-single-owner", action="store_true",
                         help="future architecture gate; known to fail on rejected 0.0.115")
     parser.add_argument("--source", type=Path, default=RUNTIME)
+    parser.add_argument("--native-capture", type=Path,
+                        help="exact original game XAML; SHA-256 MUST match captured Xbox App 1.8.910.0")
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -202,6 +245,12 @@ def main() -> int:
         print(f"XAML does not exist: {args.source}", file=sys.stderr)
         return 1
     report = inspect(args.source.read_text(encoding="utf-8"))
+    if args.native_capture:
+        try:
+            report["nativePinnedEvidence"] = inspect_native_capture(args.native_capture)
+        except (OSError, ET.ParseError, ValueError) as exc:
+            print(f"Native source proof FAILED: {exc}", file=sys.stderr)
+            return 1
     print(json.dumps(report, indent=2, ensure_ascii=False))
     if args.require_single_owner and not report["singlePublisherProven"]:
         print("SOURCE ownership risks present; compiled BG3 behavior still unknown",
