@@ -922,8 +922,8 @@ def main() -> int:
                    for err in validate_native_compact_footer(wide_footer)):
             report["errors"].append("self-test failed: radial-sized footer width not rejected")
         wide_hold_button = re.sub(
-            r'(<ls:LSButton x:Name="ToggleWeaponSet"[\\s\\S]*?\\bWidth=")Auto(")',
-            r'\\g<1>1000\\2',
+            r'(<ls:LSButton x:Name="ToggleWeaponSet"[\s\S]*?\bWidth=")Auto(")',
+            r'\g<1>1000\2',
             runtime,
             count=1,
         )
