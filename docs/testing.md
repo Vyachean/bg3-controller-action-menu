@@ -1315,3 +1315,8 @@ No real runtime inventory is available in CI or the existing static
 capture, so the checker reports `awaiting-runtime-proof`. Its
 successful synthetic fixture check does not close gameplay parity,
 and the user must **not** be asked to enumerate all actions manually.
+
+
+### 2026-10-09 — right-side native compact footer source gate (#167)
+
+Original Patch 8 has a right-aligned/right-content/RightToLeft controller hint lane. An independent native layout variant allows `Width=Auto` button hints. Earlier 0.0.35 and current operator playtests prove centering hints over the bottom-center resource HUD is incorrect. The proposed combination therefore restores the original right lane with a bounded 380px maximum width while retaining the same six native compact controls and avoiding any input transport change. The native UI audit must fail if the panel becomes centered, exceeds its width cap, changes either right/RTL alignment, or any visible hold hint returns to the original radial's 1000px width. Build and package CI remain necessary but are insufficient to prove exact safe area; verify once in the combined **published-Release** game milestone at 1080p, including resource HUD and controller glyph/hold progress visibility.
