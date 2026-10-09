@@ -1570,7 +1570,6 @@
                                        MaxWidth="480"
                                        FontSize="{StaticResource ScaledDefaultFontSize}"
                                        Foreground="{StaticResource LS_PrimaryColor}"
-                                       TextTrimming="CharacterEllipsis"
                                        Effect="{StaticResource ShadowEffect}"
                                        IsHitTestVisible="False"
                                        Focusable="False"
