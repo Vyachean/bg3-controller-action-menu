@@ -780,6 +780,29 @@ def validate_native_shoulder_entry_tabs(runtime: str) -> list[str]:
     if any(local(a) == "InvokeCommandAction" for a in last):
         return ["native LB opening must not run the first-resource filter"]
 
+    # The All provider skips the ordinary first filtered native slot.
+    # The installed native hover sound is proven for normal HotBarList
+    # LocalFocusChanged; emit it only for this initial MoveToEnd branch.
+    # Do not duplicate on normal RB open or ordinary LB/RB tab cycling.
+    def direct_hover_sounds(trigger: ET.Element) -> list[ET.Element]:
+        return [
+            x for x in trigger
+            if local(x) == "LSPlaySound"
+            and _attribute(x.attrib, "Sound") == "UI_HUD_Controller_RadialMenu_SlotHover"
+        ]
+
+    if len(direct_hover_sounds(branches["Equal"])) != 1:
+        return ["LB MoveToEnd entry must play exactly one native slot hover sound"]
+    if direct_hover_sounds(branches["NotEqual"]):
+        return ["RB normal entry must not duplicate native focus hover sound"]
+    if any(
+        local(x) == "LSPlaySound"
+        for x in tabs[0].iter()
+        if x not in list(branches["Equal"])
+        and x not in list(branches["NotEqual"])
+    ):
+        return ["native opening feedback must not leak into ordinary tab navigation"]
+
     timers = [n for n in tabs[0].iter()
               if local(n) == "TimerTrigger"
               and _attribute(n.attrib, "EventName") == "Loaded"]
@@ -1159,6 +1182,22 @@ def main() -> int:
         if not any("opposite metadata guards" in err
                    for err in validate_native_shoulder_entry_tabs(wrong_open_direction)):
             report["errors"].append("self-test failed: matching LB and RB entry guards not rejected")
+        missing_lb_hover_sound = runtime.replace(
+            '                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>',
+            '',
+            1,
+        )
+        if not any("exactly one native slot hover sound" in err
+                   for err in validate_native_shoulder_entry_tabs(missing_lb_hover_sound)):
+            report["errors"].append("self-test failed: silent LB grouped-All entry not rejected")
+        duplicate_rb_entry_sound = runtime.replace(
+            '                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>\n                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"',
+            '                                    <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag" Value="{x:Null}"/>\n                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>\n                                    <b:InvokeCommandAction IsEnabled="{Binding SelectedItem, ElementName=CAM_ResourceTabs, Converter={StaticResource NullToBoolFalseConverter}}"',
+            1,
+        )
+        if not any("must not duplicate native focus hover sound" in err
+                   for err in validate_native_shoulder_entry_tabs(duplicate_rb_entry_sound)):
+            report["errors"].append("self-test failed: duplicate RB entry sound not rejected")
         wrong_last_provider = runtime.replace(
             'TargetName="CAM_ProviderModeMarker" PropertyName="Tag"\n                                                            Value="{StaticResource CAM_AllModeToken}"/>',
             'TargetName="CAM_ProviderModeMarker" PropertyName="Tag"\n                                                            Value="{StaticResource CAM_ItemsModeToken}"/>',
