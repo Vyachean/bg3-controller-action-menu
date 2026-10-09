@@ -74,6 +74,35 @@ def source_errors(source: str) -> list[str]:
             if attribute(grid, key) != value:
                 errors.append(f"Native LSGrid owner lost {key}={value}")
 
+    # v0.0.114 in-game repro: after B/re-entering metamagic the ring was
+    # absent until Down, which selected slot TWO. The list root is
+    # Focusable=False; passing that root to SetMoveFocusAction can never
+    # prove the native slot-item focus. Reject every such competing
+    # focus target, including in Loaded/B/LB/RB.
+    for node in root.iter():
+        if local(node.tag) == "SetMoveFocusAction" and (
+            "CAM_FixedSideBarList" in (attribute(node, "FocusElement") or "")
+        ):
+            errors.append("Do not move focus to non-focusable CAM_FixedSideBarList root")
+
+    containers = [node for node in root.iter() if local(node.tag) == "Style"
+                  and attribute(node, "Key") == "CAM_ActionGridSlotContainer"]
+    if len(containers) != 1 or not any(
+        local(node.tag) == "SetMoveFocusAction"
+        and attribute(node, "FocusElement")
+        == "{Binding RelativeSource={RelativeSource Mode=TemplatedParent}}"
+        and attribute(node, "DeferFocusAction") == "True"
+        for node in containers[0].iter()
+    ):
+        errors.append("Native ListBoxItem must own deferred slot focus")
+    if len(containers) == 1 and not any(
+        local(node.tag) == "ComparisonCondition"
+        and attribute(node, "RightOperand")
+        == "{StaticResource CAM_ResetFirstFocusToken}"
+        for node in containers[0].iter()
+    ):
+        errors.append("Missing native item-focus reset token gate")
+
     for node in side.iter():
         if local(node.tag) != "TimerTrigger" or attribute(node, "EventName") != "LocalFocusChanged":
             continue
@@ -108,6 +137,8 @@ def self_test(source: str) -> None:
          'ItemsPanel="{StaticResource CAM_ActionGridPanel}"'),
         ('CommandParameter="{Binding Tag, ElementName=ActionRadials}"',
          'CommandParameter="{Binding SelectedItem}"'),
+        ('FocusElement="{Binding ElementName=HotBarList}"',
+         'FocusElement="{Binding ElementName=CAM_FixedSideBarList}"'),
     )
     for before, after in mutations:
         if source.count(before) != 1:
@@ -126,7 +157,7 @@ def self_test(source: str) -> None:
             changed = source.replace(before, after, 1)
         if not source_errors(changed):
             raise AssertionError(f"Invalid mutation escaped the guard: {before}")
-    print("Native metamagic ownership: baseline and 5 negative mutations passed (source-only).")
+    print("Native metamagic ownership: baseline and 6 negative mutations passed (source-only).")
 
 
 def main() -> int:
