@@ -1833,6 +1833,12 @@
                                     <b:ChangePropertyAction TargetName="CAM_ProviderModeMarker" PropertyName="Tag"
                                                             Value="{StaticResource CAM_AllModeToken}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                                    <!-- On native MoveToEnd opening, the All provider is
+                                         grouped and does not establish the direct-grid
+                                         LocalFocusChanged hover sound that RB produces.
+                                         Play the existing native hover sound once at
+                                         the entry boundary; never on ordinary tab cycling. -->
+                                    <ls:LSPlaySound Sound="UI_HUD_Controller_RadialMenu_SlotHover"/>
                                 </b:EventTrigger>
 
                                 <!-- The same native deferred first-slot handoff applies to
