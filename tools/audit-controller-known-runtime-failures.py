@@ -165,10 +165,26 @@ def audit_cancel_route(source: str) -> dict:
             and _attr(action, "PropertyName") == "Tag"
             and _attr(action, "Value") == "{x:Null}"
         ]
-        side_focus = [
+        # The sidebar LSListBox is Focusable=False, so a direct
+        # SetMoveFocusAction to it cannot establish a native slot focus.
+        # The proven CAM_ActionGridSlotContainer uses the armed parent
+        # Tag + SelectedIndex transition to focus the actual ListBoxItem.
+        side_focus_to_container = [
             action for action in _nodes(trigger, "SetMoveFocusAction")
             if "CAM_FixedSideBarList" in (_attr(action, "FocusElement") or "")
         ]
+        side_reset = any(
+            _attr(action, "TargetName") == "CAM_FixedSideBarList"
+            and _attr(action, "PropertyName") == "Tag"
+            and _attr(action, "Value") == "{StaticResource CAM_ResetFirstFocusToken}"
+            for action in _nodes(trigger, "ChangePropertyAction")
+        )
+        side_select = any(
+            _attr(action, "TargetName") == "CAM_FixedSideBarList"
+            and _attr(action, "PropertyName") == "SelectedIndex"
+            and _attr(action, "Value") == "0"
+            for action in _nodes(trigger, "ChangePropertyAction")
+        )
         nested = any(
             any(flag in (condition["left"] or "") and condition["right"] == "True"
                 for condition in conditions)
@@ -190,7 +206,8 @@ def audit_cancel_route(source: str) -> dict:
             "nested": nested,
             "nativeActionCancel": bool(native_cancel),
             "presentationPhaseReset": bool(switches_phase),
-            "sidebarFocusRequest": bool(side_focus),
+            "sidebarFocusRequest": side_reset and side_select and not side_focus_to_container,
+            "invalidContainerFocusRequest": bool(side_focus_to_container),
             "conditionCount": len(conditions),
         })
 
@@ -203,6 +220,8 @@ def audit_cancel_route(source: str) -> dict:
           or not parent[0]["presentationPhaseReset"]
           or not parent[0]["sidebarFocusRequest"]):
         errors.append("Known v0.0.113 metamagic parent B shape changed; re-audit required")
+    if any(route["invalidContainerFocusRequest"] for route in routes):
+        errors.append("Cancelled state must not target non-focusable sidebar LSListBox")
     if sum(route["nativeActionCancel"] for route in routes) != 4:
         errors.append("Nested/ordinary native ActionCancelCommand routes changed")
 
@@ -259,6 +278,8 @@ def assert_cancel_route_source(source: str) -> None:
          '<Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>'),
         ('CommandParameter" Value="CloseWidget"',
          'CommandParameter" Value="UnknownCustomEvent"'),
+        ('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"',
+         'TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{x:Null}"'),
     )
     for original, replacement in mutations:
         if original not in source:
