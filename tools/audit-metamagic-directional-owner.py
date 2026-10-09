@@ -101,8 +101,8 @@ def self_test(source: str) -> None:
     mutations = (
         ('Focusable="False"\n                                      Width="120"',
          'Focusable="True"\n                                      Width="120"'),
-        ('KeyboardNavigation.DirectionalNavigation="Cycle"',
-         'ActionNextEvent="UIDown" KeyboardNavigation.DirectionalNavigation="Cycle"'),
+        ('ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"',
+         'ItemsPanel="{StaticResource CAM_FixedSideBarPanel}" ActionNextEvent="UIDown"'),
         ('ActionDownEvent="UIDown"', 'ActionDownEvent="UILeft"'),
         ('ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"',
          'ItemsPanel="{StaticResource CAM_ActionGridPanel}"'),
