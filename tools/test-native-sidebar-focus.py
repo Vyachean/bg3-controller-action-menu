@@ -32,7 +32,7 @@ def audit(markup: str) -> list[str]:
     sidebar = matches[0]
     if attr(sidebar, "Focusable") != "True" or attr(sidebar, "Focusable") == "False":
         errors.append("sidebar must accept native list-level focus")
-    if not any(local(k) == "Focusable" and k.startswith("{") and v == "True"
+    if not any(local(k) == "MoveFocus.Focusable" and v == "True"
                for k, v in sidebar.attrib.items()):
         errors.append("sidebar must explicitly enable MoveFocus.Focusable")
     if "CAM_FixedSideBarSelector" not in attr(sidebar, "LocalFocusSelector"):
@@ -98,13 +98,7 @@ def main() -> None:
         'FocusElement="{Binding ElementName=CAM_FixedSideBarList}"',
         'FocusElement="{Binding ElementName=HotBarList}"', 1
     )))
-    assert any("selection alone" in p for p in audit(markup.replace(
-        '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">',
-        '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">',
-        1
-    ))) is False  # first replacement would target main list, not sidebar
-    # Validate the exact sidebar timer mutation rather than assuming a
-    # global occurrence belongs to it.
+    # Target the sidebar timer explicitly, not an arbitrary global event.
     sidebar_start = markup.index('<ls:LSListBox x:Name="CAM_FixedSideBarList"')
     sidebar_end = markup.index('</ls:LSListBox>', sidebar_start)
     bad = markup[:sidebar_start] + markup[sidebar_start:sidebar_end].replace(
