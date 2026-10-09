@@ -1138,7 +1138,7 @@ The final two steps are copied from the current Patch 8 controller radial horizo
 
 ## Controller shortcut evidence boundary
 
-Weapon-set switching is outside the action-catalog architecture and remains disabled until native input transport is proven. The grid keeps ordinary `UILeft` navigation. The read-only developer capture owns discovery: schema-v3 `hotbar-coverage-contract.json` records all XAML tags containing the weapon-set command/event/style/input symbols and their relevant transport attributes. CAM runtime must not add a shortcut merely because a command or visual hint exists; the evidence must show a repeatable ActionRadials-compatible transport that does not steal short grid-left input.
+Weapon-set switching is outside the action-catalog architecture and remains disabled until native input transport is proven. The grid keeps ordinary `UILeft` navigation. The read-only developer capture owns discovery: schema-v4 `hotbar-coverage-contract.json` records all XAML tags containing the weapon-set command/event/style/input symbols and their relevant transport attributes, preserving `DataContext` separately from visual `Content`. CAM runtime must not add a shortcut merely because a command or visual hint exists; the evidence must show a repeatable ActionRadials-compatible transport that does not steal short grid-left input.
 
 
 ## 0.0.87 — development entry back to install
