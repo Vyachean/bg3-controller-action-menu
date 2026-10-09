@@ -553,8 +553,9 @@ if (-not $mainList.Success -or
 }
 # Original installed HotBar 1.8.910.0 renders FixedSideBar alongside the
 # spell deck; this must be a distinct VMHotBarSlot list with focusable
-# *item containers*. The native LSGrid owns directional input and the
-# containing LSListBox itself is not focusable.
+# *item containers*. The native LSGrid still owns directional input.
+# The focused-list handoff candidate uses a focusable outer LSListBox
+# (based on tested 0.0.29); this is NOT a confirmed Patch 8 runtime result.
 $sidebar = [regex]::Match(
     $text,
     '<ls:LSListBox\b[^>]*x:Name="CAM_FixedSideBarList"[\s\S]*?</ls:LSListBox>',
@@ -565,7 +566,8 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
     -not $sidebar.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
     -not $sidebar.Value.Contains('ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"') -or
-    -not $sidebar.Value.Contains('Focusable="False"') -or
+    -not $sidebar.Value.Contains('Focusable="True"') -or
+    -not $sidebar.Value.Contains('ls:MoveFocus.Focusable="True"') -or
     $sidebar.Value.Contains('ActionNextEvent="UIDown"') -or
     $sidebar.Value.Contains('ActionPrevEvent="UIUp"') -or
     -not $sidebar.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}"') -or
@@ -659,27 +661,30 @@ if ($rejectedSideRecovery.Count -gt 0) {
     throw "The v0.0.113 metamagic null-focus timer must not return as a substitute for native LSGrid semantics."
 }
 
-# 0.0.103 had a visible sidebar LocalFocusSelector but no tooltip or A
-# command after entering the Metamagic tab. Main HotBarList already uses
-# a SelectionChanged settle wake; the sidebar must also publish the
-# same native LocalFocus.DataContext when its first slot is selected.
-$sideEntryWake = [regex]::Match(
+# The native-like dispatch authority is the real LocalFocusChanged event,
+# not an unrelated SelectionChanged timer that may fire on index-only changes.
+# Keep captured 70ms Focus -> ActionRadials.Tag/tooltip/resource transaction.
+$sideEntryFocus = [regex]::Match(
     $sidebar.Value,
-    '<b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+    '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
-if (-not $sideEntryWake.Success -or
-    -not $sideEntryWake.Value.Contains('CAM_MetamagicModeToken') -or
-    -not $sideEntryWake.Value.Contains('IsEnabled, ElementName=CAM_FixedSideBarList') -or
-    -not $sideEntryWake.Value.Contains('LocalFocus.DataContext, ElementName=CAM_FixedSideBarList') -or
-    -not $sideEntryWake.Value.Contains('TargetName="CAM_FixedSideBarTooltip"') -or
-    -not $sideEntryWake.Value.Contains('ShowTooltipOnUIElementCommand') -or
-    -not $sideEntryWake.Value.Contains('TargetName="ActionRadials"') -or
-    -not $sideEntryWake.Value.Contains('PropertyName="Tag"') -or
-    -not $sideEntryWake.Value.Contains('CreateFocusedTooltipDataCommand') -or
-    $sideEntryWake.Value.Contains('SelectedItem') -or
-    $sideEntryWake.Value.Contains('TargetName="CAM_ProviderModeMarker"')) {
-    throw "Metamagic entry must wake tooltip and UseSlotCommand identity from authoritative sidebar LocalFocus, never from visual selection."
+$sideSelectionPublisher = [regex]::Matches(
+    $sidebar.Value,
+    '<b:TimerTrigger EventName="SelectionChanged"[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sideEntryFocus.Success -or
+    -not $sideEntryFocus.Value.Contains('CAM_MetamagicModeToken') -or
+    -not $sideEntryFocus.Value.Contains('IsEnabled, ElementName=CAM_FixedSideBarList') -or
+    -not $sideEntryFocus.Value.Contains('LocalFocus.DataContext, ElementName=CAM_FixedSideBarList') -or
+    -not $sideEntryFocus.Value.Contains('TargetName="ActionRadials"') -or
+    -not $sideEntryFocus.Value.Contains('PropertyName="Tag"') -or
+    -not $sideEntryFocus.Value.Contains('CreateFocusedTooltipDataCommand') -or
+    -not $sidebar.Value.Contains('TargetName="CAM_FixedSideBarTooltip"') -or
+    -not $sidebar.Value.Contains('ShowTooltipOnUIElementCommand') -or
+    $sideSelectionPublisher.Count -ne 0) {
+    throw "Metamagic dispatch must follow native-like LocalFocusChanged, not a second selected-index publisher."
 }
 
 $gridTemplate = [regex]::Match(
@@ -790,7 +795,8 @@ if ($releaseTriggers.Count -ne 5) {
 }
 $phaseBack = @($releaseTriggers | Where-Object {
     $_.Value.Contains('CAM_MetamagicSpellPhaseToken') -and
-    $_.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -and
+    $_.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -and
+    $_.Value.Contains('DeferFocusAction="True"') -and
     $_.Value.Contains('TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"')
 })
 # Restored native gameplay cancellation must execute once BEFORE CAM's
@@ -1080,11 +1086,9 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
     throw "LB/RB must form one resource-plus-Cantrips-plus-Items-plus-Metamagic-plus-Passives-plus-All cycle without ForceSelect."
 }
 
-# 0.0.114 runtime: B and repeated LB/RB metamagic entry selected index 0
-# but left no ring; Down moved to item 1. The sidebar is Focusable=False.
-# The native ItemContainerTemplate owns SetMoveFocusAction, so require
-# armed CAM_ResetFirstFocusToken followed by a fresh -1 -> 0 selection,
-# never a deferred focus attempt on the non-focusable outer LSListBox.
+# 0.0.114 had index zero but no visible focus after B and shoulder re-entry.
+# The historical game-tested 0.0.29 list route is a focusable LSListBox;
+# explicitly request it after the provider switch, not just SelectedIndex.
 foreach ($shoulder in @(
     @{Name='UITabPrev'; Text=$tabLeft.Value},
     @{Name='UITabNext'; Text=$tabRight.Value}
@@ -1096,17 +1100,15 @@ foreach ($shoulder in @(
             [System.Text.RegularExpressions.RegexOptions]::Singleline
         ) | Where-Object {
             $_.Value.Contains('Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"') -and
-            $_.Value.Contains('CAM_ResetFirstFocusToken')
+            $_.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"')
         }
     ) | Select-Object -First 1
     if (-not $metamagicEntry -or
-        -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
         -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"') -or
         -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
-        $metamagicEntry.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
-        $metamagicEntry.Value.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -gt
-        $metamagicEntry.Value.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"')) {
-        throw "Metamagic shoulder $($shoulder.Name) must arm a real slot-item focus without targeting the non-focusable sidebar LSListBox."
+        -not $metamagicEntry.Value.Contains('DeferFocusAction="True"') -or
+        $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"')) {
+        throw "Metamagic shoulder $($shoulder.Name) must request actual focus from the active native LSListBox."
     }
 }
 
