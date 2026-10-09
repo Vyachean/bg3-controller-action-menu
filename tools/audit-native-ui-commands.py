@@ -1150,16 +1150,8 @@ def main() -> int:
         # consumes the UISelectionLeft event object through DataContext or
         # visual Content. Both shapes must remain admissible until schema-v4
         # native readback proves one; removing the seam entirely must fail.
-        content_binding = (
-            'Content="{Binding CurrentPlayer.UIData.InputEvents, '
-            'Converter={StaticResource FindInputEventConverter}, '
-            "ConverterParameter='UISelectionLeft'}""
-        )
-        datacontext_binding = (
-            'DataContext="{Binding CurrentPlayer.UIData.InputEvents, '
-            'Converter={StaticResource FindInputEventConverter}, '
-            "ConverterParameter='UISelectionLeft'}""
-        )
+        content_binding = '''Content="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"'''
+        datacontext_binding = '''DataContext="{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}"'''
         moved_to_datacontext = runtime.replace(content_binding, datacontext_binding, 1)
         if validate_native_weapon_switch(moved_to_datacontext):
             report["errors"].append(
