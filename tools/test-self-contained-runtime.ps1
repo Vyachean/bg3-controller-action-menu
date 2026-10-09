@@ -568,7 +568,7 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}"') -or
     -not $sidebar.Value.Contains('<Setter Property="IsEnabled" Value="False"/>') -or
     -not $sidebar.Value.Contains('<Setter Property="IsEnabled" Value="True"/>') -or
-    -not $sidebar.Value.Contains('KeyboardNavigation.DirectionalNavigation="Contained"') -or
+    -not $sidebar.Value.Contains('KeyboardNavigation.DirectionalNavigation="Cycle"') -or
     -not $sidebar.Value.Contains('CAM_MetamagicModeToken') -or
     $sidebar.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"') -or
     $mainList.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"') -or
@@ -577,6 +577,28 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('Height="818"')) {
     throw "The fixed sidebar must remain a native, independently focused executable VMHotBarSlot list."
 }
+# Issue #155: the one-column native FixedSideBar uses LSGrid's original
+# UIDown/UIUp events and the list's ActionNext/Prev consumers. Only the
+# sidebar list may cycle at its vertical boundary; the main action grid
+# keeps Contained. No second input handler or synthetic VMHotBarSlot.
+$sidebarPanel = [regex]::Match(
+    $text,
+    '<ItemsPanelTemplate x:Key="CAM_FixedSideBarPanel">[\s\S]*?</ItemsPanelTemplate>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $sidebarPanel.Success -or
+    -not $sidebarPanel.Value.Contains('Columns="1"') -or
+    -not $sidebarPanel.Value.Contains('ActionUpEvent="UIUp"') -or
+    -not $sidebarPanel.Value.Contains('ActionDownEvent="UIDown"') -or
+    -not $sidebarPanel.Value.Contains('AutoIndex="True"') -or
+    -not $mainList.Value.Contains('KeyboardNavigation.DirectionalNavigation="Contained"') -or
+    $sidebar.Value.Contains('BoundEvent="UIDown"') -or
+    $sidebar.Value.Contains('BoundEvent="UIUp"') -or
+    $sidebar.Value.Contains('SelectNextListBoxItem') -or
+    $sidebar.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"')) {
+    throw "Metamagic vertical boundary must cycle only in its native sidebar list without intercepting UIUp/UIDown or changing provider/focus ownership."
+}
+
 # 0.0.103 had a visible sidebar LocalFocusSelector but no tooltip or A
 # command after entering the Metamagic tab. Main HotBarList already uses
 # a SelectionChanged settle wake; the sidebar must also publish the
