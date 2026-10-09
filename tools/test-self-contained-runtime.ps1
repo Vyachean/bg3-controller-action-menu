@@ -790,7 +790,7 @@ if ($releaseTriggers.Count -ne 5) {
 }
 $phaseBack = @($releaseTriggers | Where-Object {
     $_.Value.Contains('CAM_MetamagicSpellPhaseToken') -and
-    $_.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -and
+    $_.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -and
     $_.Value.Contains('TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"')
 })
 if ($phaseBack.Count -ne 1 -or
@@ -827,7 +827,8 @@ $bPhaseCommandOverride = @(
 )
 if ($bPhaseCommandOverride.Count -ne 1 -or
     -not $phaseBack[0].Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
-    -not $phaseBack[0].Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"')) {
+    $phaseBack[0].Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
+    -not $phaseBack[0].Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"')) {
     throw "Top-level B close must be disabled only for metamagic spell phase and must restore native selector."
 }
 
@@ -1070,9 +1071,11 @@ if (-not $tabLeft.Success -or -not $tabRight.Success -or
     throw "LB/RB must form one resource-plus-Cantrips-plus-Items-plus-Metamagic-plus-Passives-plus-All cycle without ForceSelect."
 }
 
-# Runtime report: Metamagic LB/RB showed its provider but had no initial
-# concrete focus. SelectedIndex is not controller focus for a second list.
-# Require the game-native SetMoveFocusAction before selecting slot zero.
+# 0.0.114 runtime: B and repeated LB/RB metamagic entry selected index 0
+# but left no ring; Down moved to item 1. The sidebar is Focusable=False.
+# The native ItemContainerTemplate owns SetMoveFocusAction, so require
+# armed CAM_ResetFirstFocusToken followed by a fresh -1 -> 0 selection,
+# never a deferred focus attempt on the non-focusable outer LSListBox.
 foreach ($shoulder in @(
     @{Name='UITabPrev'; Text=$tabLeft.Value},
     @{Name='UITabNext'; Text=$tabRight.Value}
@@ -1088,14 +1091,13 @@ foreach ($shoulder in @(
         }
     ) | Select-Object -First 1
     if (-not $metamagicEntry -or
-        -not $metamagicEntry.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
-        -not $metamagicEntry.Value.Contains('TargetName="ActionRadials"') -or
-        -not $metamagicEntry.Value.Contains('DeferFocusAction="True"') -or
+        -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
         -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"') -or
         -not $metamagicEntry.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
-        $metamagicEntry.Value.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
-        $metamagicEntry.Value.IndexOf('PropertyName="SelectedIndex" Value="0"')) {
-        throw "Metamagic shoulder $($shoulder.Name) must transfer native focus to the enabled sidebar before selecting its first concrete VMHotBarSlot."
+        $metamagicEntry.Value.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
+        $metamagicEntry.Value.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -gt
+        $metamagicEntry.Value.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"')) {
+        throw "Metamagic shoulder $($shoulder.Name) must arm a real slot-item focus without targeting the non-focusable sidebar LSListBox."
     }
 }
 
@@ -1570,15 +1572,19 @@ if (-not $metamagicRestore -or
     $metamagicRestore.Value.Contains('TargetName="HotBarList"')) {
     throw "Metamagic nested exit must refocus the native fixed sidebar, never the main spell list."
 }
-# v0.0.112: a deferred SetMoveFocusAction on the *whole list*
-# after SelectedIndex=0 replaced the item-level native focus reset.
-# Hand controller ownership to list first; then select the concrete
-# ListBoxItem while CAM_ResetFirstFocusToken is armed.
+# The 0.0.114 operator game test invalidated list-directed focus entirely.
+# Phase reset must enable the sidebar, then arm the REAL ListBoxItem focus
+# and force a fresh selection transition (-1 -> 0). Do not re-add deferred
+# SetMoveFocusAction on the non-focusable sidebar itself.
 if ($phaseBack.Count -eq 1) {
     $b = $phaseBack[0].Value
-    if ($b.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
-        $b.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"')) {
-        throw "Metamagic B must enter sidebar before selecting first native slot or its ring remains missing."
+    if ($b.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -or
+        -not $b.Contains('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"') -or
+        -not $b.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"') -or
+        -not $b.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"') -or
+        $b.IndexOf('TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"') -gt
+        $b.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"')) {
+        throw "Metamagic B must enable sidebar and arm focus on the concrete first slot item."
     }
 }
 if ($metaActivePhase.Success -and
@@ -1590,6 +1596,12 @@ if ($metaActivePhase.Success -and
     $metaActivePhase.Value.IndexOf('FocusElement="{Binding ElementName=HotBarList}"') -gt
     $metaActivePhase.Value.IndexOf('TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"')) {
     throw "Metamagic spell phase must enter main list before selecting its concrete VMHotBarSlot."
+}
+
+# Do not attempt to focus the non-focusable fixed sidebar list root.
+# Its focused VMHotBarSlot ListBoxItem owns the native focus ring and A.
+if ($text.Contains('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"')) {
+    throw "Non-focusable metamagic list is not an input focus target; use the native ListBoxItem reset."
 }
 
 # The original one-way metamagic nested return must now be phase-aware:
