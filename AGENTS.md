@@ -339,16 +339,18 @@ focus/scroll. Treat adaptive-grid column change at narrow viewport
 widths as a potential runtime consequence.
 
 The user cannot test every BG3 class/inventory/status/mod combination.
-The normal Validate workflow must run
-`tools/audit-native-ui-commands.py`, pin the two installed Patch 8
-native UI command inventories, flag deleted real CAM command/provider
-routes, and keep missing native UI transports / unresolved action
-catalog categories explicit. The audit is **source-only**, not
-proof of dynamic VMHotBarSlot reachability or execution. The full
-command-risk inventory is documented in
-`docs/research/native-ui-command-parity-2026-10-08.md`.
-Do not close action coverage merely because all captured native
-command *names* are classified; they are not action instances.
+`tools/audit-native-ui-commands.py` remains an **optional source
+diagnostic**, useful with a SHA-pinned original capture for command/provider
+inventory and investigation. It must NOT be promoted back into the normal
+Validate gameplay gate: several historical exact-XAML assertions preserved
+rejected implementations, and static command/source parity cannot execute
+Noesis or produce dynamic VMHotBarSlot identities. Normal Validate is limited
+to honest package/preflight facts plus independent parser self-tests.
+
+Keep missing native UI transports and unresolved action-catalog categories
+explicit in `docs/research/native-ui-command-parity-2026-10-08.md` and the
+capability matrix. Do not close action coverage merely because all captured
+native command *names* are classified; they are not action instances.
 
 ## Full gameplay capability parity is a blocking acceptance gate (#135)
 
