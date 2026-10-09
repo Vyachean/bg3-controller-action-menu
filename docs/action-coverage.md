@@ -588,3 +588,21 @@ The next game milestone should answer the remaining semantic equality questions 
 run: whether the union of CAM providers contains representative free, item/scroll/charge,
 temporary and recast actions, and whether ItemHotBar covers the relevant radial
 `Inventory.Slots` cases, in addition to the already proven resource-bound/nested cases.
+
+
+## 2026-10-09 draft correction — selected tab title has its own row (#165)
+
+The 0.0.110 title used a `-34px` top margin inside the native 84px resource icon strip and intentionally hid its name on special providers. In-game evidence rejected both: the title overlapped resource tabs and five special providers had no names. The original `ActionResource.Name` binding remains authoritative for resource tabs, including unknown mod-added entries such as the reported `R` glyph. No glyph identity or resource filter is inferred from its appearance.
+
+The draft replaces the overlapping title with a dedicated 32px root row **above** the unchanged 84px resource strip and 850px clipped action viewport. The total main surface becomes 966px; a -16px visual translation compensates for the extra height in the center-aligned parent so that both the existing tabs and the action grid stay at their earlier screen coordinates. The new title is noninteractive, centrally aligned, bounded and clipped (Noesis-compatible, without unsupported ellipsis), with five explicit provider-state text branches.
+
+**Localization remaining:** the special-provider branches currently use English interim names (`Cantrips`, `Items`, `Metamagic`, `Passives`, `All`). They are not claimed to be BG3-localized. Before marking #165 resolved or publishing the combined runtime milestone as fully localized, replace these fallbacks with **verified** original BG3 localization handles or another captured engine-localized provider title source. Never guess hash-like translation IDs. Resource names already use the native game-localized `ActionResource.Name`.
+
+This branch changes presentation only; its source-level tests assert title/strip/viewport separation and protect native font, selector and provider semantics. CI/build checks are not runtime proof of collision freedom at different resolutions.
+
+
+## 2026-10-09 draft — right-side controller hint safe area (#167)
+
+The user confirms the compact **centered** footer still overlays the original BG3 bottom resource bar. Historical 0.0.35 evidence already recorded the same center-bottom collision and 0.0.36 restored the original right-hand lane. The current candidate preserves the BG3 native `ButtonHint.Container.CenterWrap` style, gamepad glyphs, `ControllerHoldButtonStyle`, `SwitchWeaponSetCommand`, `ReleaseConcentrationCommand`, `ToggleDualWieldingCommand`, A/B, the six compact `Width=Auto` hint elements and exact original `Margin=26,0,26,56`, but restores the original controller's right/right/RightToLeft anchor. A 380px maximum width prevents the container from sprawling across the center-bottom resource HUD; unlike the original radial, no child is given a 1000px width.
+
+This is a **source/CI-only layout candidate**. Exact no-collision proof at 1080p and other UI scales is not possible from XAML alone. It does not address actual `UISelectionLeft` hold duration or repeatability (#154); do not claim haptics, timing, or global off-menu hint fixed. Include footer positioning and repeated weapon switches in the single post-Release gameplay milestone.
