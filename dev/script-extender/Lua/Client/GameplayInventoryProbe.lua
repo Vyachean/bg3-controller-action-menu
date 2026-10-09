@@ -44,6 +44,7 @@ local function describe(v)
         "PassiveName", "SpellSlotLevel", "RootSpell", "UUID",
         "CanUse", "IsActive", "IsModified", "IsMetaMagic",
         "IsContainer", "IsEquipment", "Resource", "Cost",
+        "TypeId", "Level", "Value", "MaxValue", "HotBarType",
     }) do
         local value = prop(v, field)
         if type(value) == "string" or type(value) == "boolean" or type(value) == "number" then
@@ -126,6 +127,42 @@ local function findPage()
     return attempt("ActionRadials", function() return content:Find("ActionRadials") end)
 end
 
+local function resourcePreview(v)
+    if v == nil then return nil end
+    local resource = prop(v, "ActionResource")
+    return {
+        Preview = describe(v),
+        ActionResource = describe(resource),
+        ActionResourceName = tostring(prop(resource, "Name") or ""),
+    }
+end
+
+local function activeSlotTrace(dc, current)
+    local slot = prop(dc, "CurrentActiveSlot")
+    local spell = slot and prop(slot, "Spell")
+    local variants = spell and prop(spell, "SpellUpcast")
+    local uiData = current and prop(current, "UIData")
+    local activeTask = uiData and prop(uiData, "ActiveTask")
+    local upcast = activeTask and prop(activeTask, "Upcast")
+    return {
+        CurrentSingleHotbarFilter = tostring(prop(dc, "CurrentSingleHotbarFilter") or ""),
+        ResourceFilter = describe(prop(dc, "ResourceFilter")),
+        CurrentActiveSlot = describe(slot),
+        CurrentActiveSlotContent = slot and describe(prop(slot, "Content")) or nil,
+        CurrentActiveSpell = describe(spell),
+        NativeSpellUpcastVariants = collection(
+            variants,
+            "CurrentActiveSlot.Spell.SpellUpcast",
+            false
+        ),
+        ActiveTaskUpcastCostSummary = collection(
+            upcast and prop(upcast, "CostSummary"),
+            "CurrentPlayer.UIData.ActiveTask.Upcast.CostSummary",
+            false
+        ),
+    }
+end
+
 local function uiCollection(page, name)
     local node = attempt(name, function() return page:Find(name) end)
     if not node then return { Name = name, Found = false, Complete = false } end
@@ -192,6 +229,8 @@ local function snapshot(reason)
         CamVisibleLists = {},
         CamModeMarker = currentMode,
         CamResourceSelectedIndex = prop(resourceTabs, "SelectedIndex"),
+        CamSelectedResource = resourcePreview(prop(resourceTabs, "SelectedItem")),
+        NativeFilterAndUpcast = activeSlotTrace(dc, current),
         AutoStateFingerprint = fingerprint,
         ActionRadialsSlotTag = describe(prop(page, "Tag")),
         NestedFlags = {
@@ -217,7 +256,7 @@ local function snapshot(reason)
     end
     snapshots[#snapshots + 1] = snap
     local report = {
-        SchemaVersion = 1,
+        SchemaVersion = 2,
         Probe = "CAM-dev-read-only-gameplay-inventory",
         Safety = {
             GameStateMutated = false,
@@ -231,6 +270,7 @@ local function snapshot(reason)
         -- This is intentionally NOT tools/compare-runtime-gameplay.py's
         -- complete nativeExecutable / camExecutable observation schema.
         RequiresNativeExecutableIdentityAdapter = true,
+        UpcastTraceSemantics = "observation-only; selected resource level/type, filtered slots, current active slot and native variants are not executable identity proof",
     }
     local json = attempt("serialize", function()
         return Ext.Json.Stringify(report, { Beautify = true, StringifyInternalTypes = true })
