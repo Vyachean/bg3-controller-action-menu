@@ -1235,10 +1235,9 @@
                                    VerticalAlignment="Top"
                                    TextAlignment="Center"
                                    TextWrapping="NoWrap"
-                                   ClipToBounds="True"
-                                   Height="44"
+                                   Margin="0,4,0,0"
                                    MaxWidth="760"
-                                   FontSize="{StaticResource ScaledDefaultFontSize}"
+                                   FontSize="{DynamicResource MediumFontSize}"
                                    Foreground="{StaticResource LS_PrimaryColor}"
                                    Effect="{StaticResource ShadowEffect}"
                                    IsHitTestVisible="False"
@@ -2566,6 +2565,10 @@
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                                <!-- Only the metamagic selector phase hides the
+                                                     main ring; the spell phase owns HotBarList
+                                                     and its original native LocalFocusSelector. -->
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"/>
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </MultiDataTrigger>
