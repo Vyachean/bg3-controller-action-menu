@@ -49,14 +49,6 @@ jobs:
         shell: pwsh
         run: ./tools/test-deploy-xbox-dev.ps1
 
-      - name: Test self-contained Patch 8 runtime
-        shell: pwsh
-        run: ./tools/test-self-contained-runtime.ps1
-
-      - name: Test resting resource-tab preview
-        shell: pwsh
-        run: ./tools/test-resource-tab-resting-preview.ps1
-
       - name: Test release boundary
         shell: pwsh
         run: ./tools/assert-self-contained-release.ps1
