@@ -49,6 +49,43 @@ and fault-injected negative cases (unfocusable list, misrouted transfer,
 duplicate selection dispatcher). `tools/validate.py` executes it.
 The source audit does **not** pretend to simulate or certify Noesis.
 
+## Independent Noesis focus evidence, checked 2026-10-09
+
+NoesisGUI's [FocusManager documentation](https://www.noesisengine.com/docs/Gui.Core._FocusManager.html)
+distinguishes **keyboard focus** from **logical focus** and explicitly
+states that different focus scopes can retain separate logical focus.
+Its [extension action guide](https://www.noesisengine.com/docs/Gui.Core.ExtensionsTutorial.html)
+has *different* actions for selecting a ListBoxItem (`SelectAction`)
+and requesting focus (`SetFocusAction`/`MoveFocusAction`).
+Accordingly, `SelectedIndex=0` is not a documented substitute for
+focus, and more than one visible list does not prove which focused
+`VMHotBarSlot` BG3 will execute.
+
+These are **general Noesis** documents, not authoritative information
+about Larian's custom `ls:SetMoveFocusAction`, `LSListBox.LocalFocus`,
+or the exact Noesis version used by Xbox App BG3. This candidate
+requests list-level focus instead of merely selecting a child, but
+**there is no independent evidence that this produces a focused first
+ListBoxItem**. Therefore do not merge or release it solely because
+the package compiles. The former source-shape gate suite was retired
+in PR #192: no new gameplay-XAML-specific CI assertions are justified.
+
+## Other issues not mechanically solvable from this source
+
+The game's `ControllerHoldButtonStyle` / `ToggleWeaponSet`
+declaration (captured native source, see
+`docs/research/schema-v3-capture-2026-10-08.md`) intentionally has
+**no explicit** `BoundEvent=UISelectionLeft`. A preceding game
+attempt to add such a binding failed or intercepted ordinary controller
+navigation. Copying that native declaration cannot by itself prove
+weapon hold input is live in a CAM override.
+
+`FilterActionResourceCommand` yields source VMHotBarSlot collections,
+but no source proof maps a selected resource tab to a concrete
+level-specific `VMUpcast` executable. `Content.IsModified` can dim
+incompatible metamagic spells without excluding them. Neither is a
+functional fix, and neither justifies bypassing the BG3 action command.
+
 ## Boundaries and remaining work
 
 The exact original `PreloadedActionRadials_c.xaml` (pinned hash in
