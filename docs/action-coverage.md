@@ -189,6 +189,33 @@ Static CI verifies both mutually exclusive `Loaded` branches and the
 existing initial focus timer; actual direction-sensitive opening is a
 combined in-game regression check, not a standalone operator test.
 
+## Game-owned resource names for controller tab identification
+
+Operator playtest of v0.0.109 found a resource tab rendered as a single
+letter `R`. This glyph is not enough to identify its native type; do not
+assume `Reaction`, `Rage`, `RitualPoint` or a custom/modded resource without
+checking the **actual** runtime `ActionResource.TypeId`.
+
+The original installed Patch 8
+`Public/Game/GUI/Library/Tooltips.xaml:8253` uses
+`VMActionResourceCostPreview.ActionResource.Name` for the localized name
+of a resource. CAM already renders exactly the same native
+`CurrentPlayer.UIData.ActionResourcesCostPreview` entries in
+`CAM_ResourceTabs` and applies `FilterActionResourceCommand` with its
+selected object unchanged.
+
+For gamepad usability, display
+`CAM_ResourceTabs.SelectedItem.ActionResource.Name` as a **small
+noninteractive text caption above the original resource icons**, only
+while an actual resource provider is selected. Hide that caption for
+Cantrips, Items, Metamagic, Passives and All modes. This provides the
+game-owned localized name even for resources added by other mods; no
+string mapping or gameplay filter is introduced. Preserve the 84px
+resource strip, accepted controller glyph templates and action row
+geometry. Visual placement/actual name still require a combined
+operator runtime check and the precise meaning of `R` remains unknown
+until the character's native `ActionResource.TypeId` is observed.
+
 ## Identity boundary
 
 Coverage is about executable BG3 objects, not names or icons.
