@@ -446,16 +446,29 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
     if len(buttons) != 1:
         return ["native weapon-set switch button missing or duplicated"]
     button = buttons[0]
+    # Exact Patch 8 capture proves the native hold style/command, no
+    # direct BoundEvent, and a UISelectionLeft input-event/hint seam. The old
+    # schema-v3 aggregate did NOT preserve whether that event object was
+    # attached through DataContext or visual Content. Do not freeze the
+    # rejected CAM guess into CI while schema-v4 readback is pending.
     expected = {
         "Style": "{StaticResource ControllerHoldButtonStyle}",
         "Command": "{Binding SwitchWeaponSetCommand}",
-        "Content": "{Binding CurrentPlayer.UIData.InputEvents, Converter={StaticResource FindInputEventConverter}, ConverterParameter='UISelectionLeft'}",
         "EatInput": "False",
     }
     errors: list[str] = []
     if any(_attribute(button.attrib, key) != value
            for key, value in expected.items()):
         errors.append("native weapon-set switch must use original hold-button style and command")
+    event_binding = " ".join(filter(None, (
+        _attribute(button.attrib, "DataContext"),
+        _attribute(button.attrib, "Content"),
+    )))
+    if "FindInputEventConverter" not in event_binding or "UISelectionLeft" not in event_binding:
+        errors.append(
+            "weapon-set hold control must retain the proven UISelectionLeft input-event/hint seam "
+            "without assuming whether Patch 8 owns it through DataContext or Content"
+        )
     if _attribute(button.attrib, "BoundEvent") is not None:
         errors.append("native weapon-set switch button must not bind a direct input event")
 
