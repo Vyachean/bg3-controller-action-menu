@@ -1874,6 +1874,12 @@
                                     <b:ChangePropertyAction TargetName="HotBarList"
                                                             PropertyName="Tag"
                                                             Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <!-- Selecting index zero again can be idempotent.
+                                         Request a real deselect/reselect transition
+                                         before the item-owned deferred focus action. -->
+                                    <b:ChangePropertyAction TargetName="HotBarList"
+                                                            PropertyName="SelectedIndex"
+                                                            Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList"
                                                             PropertyName="SelectedIndex"
                                                             Value="0"/>
