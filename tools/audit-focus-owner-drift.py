@@ -106,17 +106,40 @@ def inspect(source: str) -> dict:
         if route["delayMs"] > 0
         and any("LocalFocus.DataContext" in w["value"] for w in route["writes"])
     ]
-    route_count = sum(len(item["routes"]) for item in lists.values())
+    # BG3's captured 1.8.910.0 focus lifecycle is documented as a
+    # synchronous clear followed by a 70 ms LocalFocusChanged re-publication.
+    # That pair is one *event source*, not two competing owners. Preserve
+    # it in the inventory without falsely declaring it a gameplay bug.
+    native_like_clear_then_delay = [
+        name for name, info in lists.items()
+        if any(route["event"] == "LocalFocusChanged" and route["delayMs"] == 0
+               and any(w["value"] == "{x:Null}" for w in route["writes"])
+               for route in info["routes"])
+        and any(route["event"] == "LocalFocusChanged" and route["delayMs"] == 70
+                and any("LocalFocus.DataContext" in w["value"]
+                        for w in route["writes"])
+                for route in info["routes"])
+    ]
+    nonnull_sources = sorted({
+        (name, route["event"])
+        for name, info in lists.items()
+        for route in info["routes"]
+        if any(w["value"] != "{x:Null}" for w in route["writes"])
+    })
+    selection_publishers = [
+        name for name, event in nonnull_sources if event == "SelectionChanged"
+    ]
+    publishing_lists = sorted({name for name, _event in nonnull_sources})
     problems = []
     if accept is None or current["boundEvent"] != "UIAccept" or (
         "UseSlotCommand" not in current["command"]
         or "Tag, ElementName=ActionRadials" not in current["commandParameter"]
     ):
         problems.append("page-level UIAccept -> UseSlotCommand(ActionRadials.Tag) missing")
-    if immediate_null and deferred_slot:
-        problems.append("dispatch Tag is nulled immediately and republished from delayed LocalFocus.DataContext")
-    if route_count > len(lists):
-        problems.append("multiple independently triggered Tag publishers across list focus/selection")
+    if selection_publishers:
+        problems.append("SelectionChanged independently publishes execution Tag beyond LocalFocusChanged")
+    if len(publishing_lists) > 1:
+        problems.append("multiple lists publish execution Tag; exclusive active focus is not statically proven")
     if selected_focus_requests:
         problems.append("selection-triggered SetMoveFocusAction is only a focus request, not observed LocalFocus")
     return {
@@ -134,6 +157,10 @@ def inspect(source: str) -> dict:
         "selectedItemTriggeredFocusRequests": selected_focus_requests,
         "observedImmediateNullPublishers": immediate_null,
         "observedDelayedSlotPublishers": deferred_slot,
+        "observedNativeLikeClearThenDelay": native_like_clear_then_delay,
+        "nonnullTagEventSources": [
+            {"list": name, "event": event} for name, event in nonnull_sources
+        ],
         "sourceRisks": problems,
         "candidateSourceOwnershipShape": not problems,  # DOES NOT PROVE native focus/exclusivity
     }
@@ -155,23 +182,14 @@ def inspect_native_capture(path: Path) -> dict:
         node = named(root, name)
         if node is None or local(node.tag) != "Radial":
             raise ValueError(f"Pinned native radial missing: {name}")
-        owner = []
-        for trigger in node.iter():
-            if local(trigger.tag) == "EventTrigger" and attr(trigger, "EventName") == "LocalFocusChanged":
-                owner.extend({
-                    "target": attr(action, "TargetName"),
-                    "property": attr(action, "PropertyName"),
-                    "value": attr(action, "Value"),
-                } for action in trigger.iter()
-                    if local(action.tag) == "ChangePropertyAction"
-                    and attr(action, "TargetName") == "ActionRadials"
-                    and attr(action, "PropertyName") == "Tag")
-        owners[name] = owner
+        # Include the native TimerTrigger as well as EventTrigger; the old
+        # audit silently discarded the delayed half of the focus transaction.
+        owners[name] = owners_for_list(node)
     return {
         "sourceFile": NATIVE_FILE,
         "sha256Verified": actual,
         "gamePackageVersion": contract["gamePackageVersion"],
-        "nativeTagWriters": owners,
+        "nativeTagRoutes": owners,
         "sourceOnly": True,
         "runtimeAccepted": False,
     }
@@ -203,7 +221,33 @@ def self_test() -> None:
     assert report["observedImmediateNullPublishers"] == ["HotBarList"]
     assert report["observedDelayedSlotPublishers"] == ["HotBarList"]
     assert len(report["selectedItemTriggeredFocusRequests"]) == 1
+    assert report["observedNativeLikeClearThenDelay"] == ["HotBarList"]
     assert not report["candidateSourceOwnershipShape"] and not report["runtimeAccepted"]
+    # A native-like clear+delay sequence alone must NOT fail the static gate:
+    # v0.0.29 copied BG3 triggers and worked; this is not a gameplay test.
+    native_like = sample.replace(
+        '<Style x:Key="items"><DataTrigger Binding="{Binding IsSelected}">'
+        '<ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding .}"/>'
+        '</DataTrigger></Style>', '',
+    )
+    native_report = inspect(native_like)
+    assert native_report["candidateSourceOwnershipShape"], native_report["sourceRisks"]
+    assert native_report["observedNativeLikeClearThenDelay"] == ["HotBarList"]
+    assert native_report["runtimeAccepted"] is False
+    # An *additional event source* writing the execution parameter remains
+    # a risk even when the canonical clear+delay pair is preserved.
+    duplicate = native_like.replace(
+        '</b:TimerTrigger></ls:LSListBox>',
+        '</b:TimerTrigger><b:TimerTrigger EventName="SelectionChanged" '
+        'MillisecondsPerTick="70">'
+        '<b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" '
+        'Value="{Binding LocalFocus.DataContext}"/>'
+        '</b:TimerTrigger></ls:LSListBox>',
+    )
+    duplicate_report = inspect(duplicate)
+    assert any("SelectionChanged independently" in risk
+               for risk in duplicate_report["sourceRisks"])
+    assert not duplicate_report["candidateSourceOwnershipShape"]
     atomic = sample.replace(
         '<b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>',
         '<b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" '
