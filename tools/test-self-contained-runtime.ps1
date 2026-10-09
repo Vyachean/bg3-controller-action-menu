@@ -552,7 +552,9 @@ if (-not $mainList.Success -or
     throw "The main HotBarList must retain native SingleHotBar/ItemHotBar/PassivesHotBar/KeyboardHotBars providers and must never substitute FixedSideBar for spells."
 }
 # Original installed HotBar 1.8.910.0 renders FixedSideBar alongside the
-# spell deck; this must be a separate, controller-focusable VMHotBarSlot list.
+# spell deck; this must be a distinct VMHotBarSlot list with focusable
+# *item containers*. The native LSGrid owns directional input and the
+# containing LSListBox itself is not focusable.
 $sidebar = [regex]::Match(
     $text,
     '<ls:LSListBox\b[^>]*x:Name="CAM_FixedSideBarList"[\s\S]*?</ls:LSListBox>',
@@ -563,8 +565,9 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('ItemContainerStyle="{StaticResource CAM_ActionGridSlotContainer}"') -or
     -not $sidebar.Value.Contains('ItemTemplate="{StaticResource CAM_ActionGridSlotTemplate}"') -or
     -not $sidebar.Value.Contains('ItemsPanel="{StaticResource CAM_FixedSideBarPanel}"') -or
-    -not $sidebar.Value.Contains('ActionNextEvent="UIDown"') -or
-    -not $sidebar.Value.Contains('ActionPrevEvent="UIUp"') -or
+    -not $sidebar.Value.Contains('Focusable="False"') -or
+    $sidebar.Value.Contains('ActionNextEvent="UIDown"') -or
+    $sidebar.Value.Contains('ActionPrevEvent="UIUp"') -or
     -not $sidebar.Value.Contains('LocalFocusSelector="{Binding ElementName=CAM_FixedSideBarSelector,Mode=OneWay}"') -or
     -not $sidebar.Value.Contains('<Setter Property="IsEnabled" Value="False"/>') -or
     -not $sidebar.Value.Contains('<Setter Property="IsEnabled" Value="True"/>') -or
@@ -614,10 +617,10 @@ if (([regex]::Matches($text, 'TargetName="CAM_MetamagicSpellPhaseMarker" Propert
     throw "Metamagic phase must reset on native state/provider changes with no synthetic input."
 }
 
-# Issue #155: the one-column native FixedSideBar uses LSGrid's original
-# UIDown/UIUp events and the list's ActionNext/Prev consumers. Only the
-# sidebar list may cycle at its vertical boundary; the main action grid
-# keeps Contained. No second input handler or synthetic VMHotBarSlot.
+# Issue #155: the installed Patch 8 radial slot grid delegates
+# UIUp/UIDown/UILeft/UIRight to LSGrid. The containing LSListBox is
+# non-focusable, with no duplicate directional consumers. The main
+# grid remains Contained; native terminal behavior remains unproved.
 $sidebarPanel = [regex]::Match(
     $text,
     '<ItemsPanelTemplate x:Key="CAM_FixedSideBarPanel">[\s\S]*?</ItemsPanelTemplate>',
@@ -627,57 +630,33 @@ if (-not $sidebarPanel.Success -or
     -not $sidebarPanel.Value.Contains('Columns="1"') -or
     -not $sidebarPanel.Value.Contains('ActionUpEvent="UIUp"') -or
     -not $sidebarPanel.Value.Contains('ActionDownEvent="UIDown"') -or
+    -not $sidebarPanel.Value.Contains('ActionLeftEvent="UILeft"') -or
+    -not $sidebarPanel.Value.Contains('ActionRightEvent="UIRight"') -or
     -not $sidebarPanel.Value.Contains('AutoIndex="True"') -or
     -not $mainList.Value.Contains('KeyboardNavigation.DirectionalNavigation="Contained"') -or
     $sidebar.Value.Contains('BoundEvent="UIDown"') -or
     $sidebar.Value.Contains('BoundEvent="UIUp"') -or
     $sidebar.Value.Contains('SelectNextListBoxItem') -or
     $sidebar.Value.Contains('TargetName="CAM_ProviderModeMarker" PropertyName="Tag"')) {
-    throw "Metamagic vertical boundary must cycle only in its native sidebar list without intercepting UIUp/UIDown or changing provider/focus ownership."
+    throw "Metamagic navigation must retain one native LSGrid directional owner without changing provider or focus identity."
 }
 
-# v0.0.112 runtime: Down beyond the last metamagic item erased the
-# selector. If the native LSGrid yields a null/empty LocalFocus, settle
-# for 70ms and return to the first concrete native VMHotBarSlot using
-# CAM's established one-shot Tag/SelectedIndex + SetMoveFocusAction seam.
-# Guard the lost-focus wake against phase transitions and tab navigation.
-$sideLostFocus = @(
+# The 0.0.113 null-only focus recovery was rejected by in-game
+# evidence. Keep it absent: a non-null wrong focus owner is not
+# constrained by a delayed SelectedIndex reselection. This static
+# assertion is NOT proof of LSGrid terminal boundaries in-game.
+$rejectedSideRecovery = @(
     [regex]::Matches(
         $sidebar.Value,
         '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     ) | Where-Object {
-        $_.Value.Contains('LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{x:Null}"')
+        $_.Value.Contains('LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{x:Null}"') -and
+        $_.Value.Contains('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex"')
     }
 )
-if ($sideLostFocus.Count -ne 1) {
-    throw "Metamagic terminal focus must have one guarded native-slot recovery, not a new directional-input interceptor."
-}
-$lost = $sideLostFocus[0].Value
-foreach ($token in @(
-    'CAM_MetamagicModeToken',
-    'CAM_MetamagicSpellPhaseMarker',
-    'IsEnabled, ElementName=CAM_FixedSideBarList',
-    'CAM_TabCycleMarker',
-    'CAM_NestedReturnMarker',
-    'CAM_ResetFirstFocusToken',
-    'FixedSideBar.SlotList.Count',
-    'TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"',
-    'TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"',
-    'FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"'
-)) {
-    if (-not $lost.Contains($token)) {
-        throw "Metamagic end-of-list recovery missing native guard/slot handoff: $token"
-    }
-}
-if ($lost.Contains('BoundEvent="UIDown"') -or
-    $lost.Contains('BoundEvent="UIUp"') -or
-    $lost.Contains('TargetName="CAM_ProviderModeMarker"')) {
-    throw "Terminal focus repair must not intercept D-pad or change selected top-level provider."
-}
-if ($lost.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
-    $lost.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"')) {
-    throw "Metamagic lost-focus wake must enter the list before selecting the concrete first item."
+if ($rejectedSideRecovery.Count -gt 0) {
+    throw "The v0.0.113 metamagic null-focus timer must not return as a substitute for native LSGrid semantics."
 }
 
 # 0.0.103 had a visible sidebar LocalFocusSelector but no tooltip or A
