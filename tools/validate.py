@@ -1122,6 +1122,21 @@ def main() -> int:
     else:
         print(probe.stdout, end="")
 
+    # Preserve a *reproducible* ownership analyzer, but do not fail
+    # validation merely because the currently released 0.0.115 gameplay
+    # candidate still has the operator-rejected multi-writer source shape.
+    # The opt-in --require-single-owner mode is a future architecture gate;
+    # its passing would still not constitute compiled BG3 gameplay proof.
+    focus_ownership = subprocess.run(
+        [sys.executable, str(ROOT / "tools/audit-focus-owner-drift.py"), "--self-test"],
+        cwd=ROOT, text=True, capture_output=True, check=False,
+    )
+    if focus_ownership.returncode != 0:
+        errors.append("Source-only focus ownership analyzer fixture failed:\\n"
+                      + focus_ownership.stdout + focus_ownership.stderr)
+    else:
+        print(focus_ownership.stdout, end="")
+
     # Native UI parity is not equivalent to having a keyword somewhere in
     # XAML. Fail on missing native transport seams and keep unresolved classes
     # visible in the source-only audit, with no need for a running BG3.
