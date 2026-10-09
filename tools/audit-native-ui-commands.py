@@ -1146,6 +1146,33 @@ def main() -> int:
         if not any("must not bind a direct input event" in err
                    for err in validate_native_weapon_switch(added_shortcut)):
             report["errors"].append("self-test failed: unsafe weapon button input not rejected")
+        # Schema-v3 did not establish whether the current Patch 8 hold style
+        # consumes the UISelectionLeft event object through DataContext or
+        # visual Content. Both shapes must remain admissible until schema-v4
+        # native readback proves one; removing the seam entirely must fail.
+        content_binding = (
+            'Content="{Binding CurrentPlayer.UIData.InputEvents, '
+            "Converter={StaticResource FindInputEventConverter}, "
+            "ConverterParameter='UISelectionLeft'}""
+        )
+        datacontext_binding = (
+            'DataContext="{Binding CurrentPlayer.UIData.InputEvents, '
+            "Converter={StaticResource FindInputEventConverter}, "
+            "ConverterParameter='UISelectionLeft'}""
+        )
+        moved_to_datacontext = runtime.replace(content_binding, datacontext_binding, 1)
+        if validate_native_weapon_switch(moved_to_datacontext):
+            report["errors"].append(
+                "self-test failed: weapon hold audit still freezes unproven Content/DataContext placement"
+            )
+        removed_event_seam = runtime.replace(
+            "ConverterParameter='UISelectionLeft'",
+            "ConverterParameter='MissingWeaponHoldInput'",
+            1,
+        )
+        if not any("retain the proven UISelectionLeft" in err
+                   for err in validate_native_weapon_switch(removed_event_seam)):
+            report["errors"].append("self-test failed: weapon UISelectionLeft seam loss undetected")
         removed_ranged_guard = runtime.replace(
             'Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="False"',
             'Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.HasRangedAttack}" Value="True"',
