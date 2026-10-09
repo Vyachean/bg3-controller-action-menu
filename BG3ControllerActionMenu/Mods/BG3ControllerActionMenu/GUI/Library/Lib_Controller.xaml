@@ -2279,8 +2279,10 @@
                                 <b:EventTrigger EventName="LocalFocusChanged">
                                     <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
                                         <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
-                                        <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                                    <!-- A lost LocalFocus must immediately invalidate the
+                                         previous executable VMHotBarSlot; do not guard the
+                                         clear/tooltip lifecycle on non-null focus. -->
                                     <!-- The same ActionRadials.Tag -> UseSlotCommand route
                                          used by the main grid must own the side selection. -->
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
@@ -2294,6 +2296,9 @@
                                     <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}"
                                                            Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolTrueConverter}}"
+                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.ClearResourceHighlightsCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
