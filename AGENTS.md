@@ -32,6 +32,28 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## Public no-Script-Extender UI/Osiris capability boundary (2026-10-09)
+
+Read `docs/research/public-native-ui-osiris-metamagic-upcast-2026-10-09.md`
+before introducing Osiris/TutorialEvents, a second game-state source or
+a direct spell execution path. The production NMCM source proves that
+controller XAML can signal a **fixed UUID** to Osiris and observe
+script-owned passives/resources, not that a dynamic `VMHotBarSlot`
+or level-specific `VMUpcast` reaches Osiris. The official Osiris
+`UseSpell` **ignores preconditions including action resources**:
+NEVER substitute it for `UseSlotCommand` in CAM. `TogglePassive`
+requires an exact passive ID and is not proof that BG3's pending
+metamagic selection task or game-owned `MetamagicActive` resets.
+Metamagic Extended's `UnlockSpellVariant` shows engine-defined
+compatibility predicates, not a native controller-compatible executable
+spell collection. Preserve supported mod-added actions and all costs.
+
+This source review does not authorize a new runtime dependency,
+shipping Story change or another micro-release. Either find the true
+native VM execution/cancel semantics or leave the exact gameplay
+contract explicitly UNPROVEN. New focus guidance from NMCM also
+requires Patch 8 LSGrid ownership/runtime verification.
+
 ## P0 runtime rejection of XAML-only UX assumptions — v0.0.113 (#176)
 
 The operator's 2026-10-09 v0.0.113 test **rejected** the current metamagic terminal navigation, compatibility-filter scope, B return and close cancellation, resource-level-specific cast selection, LB/RB feedback parity and original footer horizontal alignment. Read `docs/research/v0113-native-controller-state-audit-2026-10-09.md` before changing the action template, preparing a VERSION bump or publishing a new Release.
