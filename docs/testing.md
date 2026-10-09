@@ -1251,7 +1251,7 @@ No standalone game run is requested for this correction. It belongs in the next 
 
 The weapon-set shortcut remains intentionally absent. Runtime releases 0.0.51–0.0.54 already reject all known CAM-owned transports, including the hold-threshold variant. No fifth input guess is allowed.
 
-The portable capture now emits schema-v3 `hotbar-coverage-contract.json` with `InputTransportProbes`. In one read-only capture it must search all captured XAML for:
+The portable capture now emits schema-v4 `hotbar-coverage-contract.json` with `InputTransportProbes`. Schema v4 preserves `DataContext` and `Content` as separate fields so a `ControllerHoldButtonStyle` input-event binding cannot be mistaken for a visual hint binding. In one read-only capture it must search all captured XAML for:
 
 - `SwitchWeaponSetCommand`;
 - `ToggleWeaponSet`;
