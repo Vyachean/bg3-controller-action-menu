@@ -952,15 +952,19 @@
                         <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <!-- Disable the previous list before clearing its LocalFocus,
+                         so terminal-navigation recovery cannot re-arm it. -->
+                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip" PropertyName="Content" Value="{x:Null}"/>
-                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <!-- First move into the owning list, then reselect the
+                         concrete item whose IsSelected trigger promotes focus. -->
                     <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                 </b:PropertyChangedTrigger>
                 <!-- Clear this presentation phase if the game ends the active
                      metamagic or the user leaves its original top-level tab. -->
@@ -2833,12 +2837,14 @@
                             <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
                             <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                             <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
-                            <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                            <!-- The sidebar is still disabled while we erase
+                                 its old focus; enable it only for the handoff. -->
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
-                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                             <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
-                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                            <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                             <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>
