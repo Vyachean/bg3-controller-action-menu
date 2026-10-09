@@ -26,37 +26,44 @@ is the game's intended result. Previous 380px/600px width guesses
 and direct centered layout failed operator tests or overlapped the
 game's center-bottom resource HUD.
 
-## Candidate composition — not gameplay proof
+## v0.0.115 two-layer composition — runtime rejected
 
-The menu requires two distinct constraints, which cannot be applied
-as one inherited alignment:
+The previous source candidate combined two **different** native layouts:
 
-1. **Placement:** outer `CAM_ControllerHintRightLane` is attached to
-   bottom-right, `MaxWidth=600` and original margin. This keeps the
-   entire group out of the HUD's central region without making every
-   hint 1000px wide.
-2. **Contents:** direct child `ButtonHintsContainer` preserves the
-   game's narrow variant center/center/LeftToRight with `Width=Auto`,
-   zero inside margin, unmodified `ButtonHint.Container.CenterWrap`
-   style and the original native hint controls.
+1. custom outer `CAM_ControllerHintRightLane`:
+   bottom-right, `MaxWidth=600`, original margin;
+2. inner `ButtonHintsContainer` copied from the game's separate compact
+   center/center/LeftToRight, `Width=Auto` variant.
+
+The operator's v0.0.115 run reported no meaningful improvement and the
+horizontal placement still did not match the original radial. Treat this
+composition as **historical rejected evidence**, not the current architecture
+contract. In particular, neither `MaxWidth=600` nor the outer wrapper is
+source-proven game behavior.
+
+Static validation now intentionally ignores footer geometry. It protects only:
+
+- exactly one semantic `ButtonHintsContainer`;
+- required native A/B/concentration/weapon/dual-wield/throw controls;
+- the hidden radial editor;
+- established command/input ownership invariants.
+
+The exact installed game still proves two whole native variants: default
+right/right/RightToLeft with 1000px sizing, and a separate
+center/center/LeftToRight auto-width variant. The old capture summary did not
+retain the **trigger condition** that selects the compact variant, so a new
+hybrid cannot be derived safely from those summaries.
+
+Schema-v5 read-only capture now records the original trigger-owned
+`Setter` mutations for `ButtonHintsContainer` and its controller hints,
+together with the full `ControllerHoldButtonStyle` definition. A future
+single capture can therefore recover both the native wide↔compact condition
+and the hold/re-arm presentation lifecycle without another gameplay
+micro-release.
 
 No changes to `BoundEvent`, `UICancel`, `UIAccept`,
-`UISelectionLeft`, `ControllerHoldButtonStyle`,
-`SwitchWeaponSetCommand`, `UseSlotCommand`, or radial dispatch.
-The existing original BG3 resource HUD is not moved.
-
-`tools/audit-native-ui-commands.py` enforces both source layers,
-their correct ownership, that hints stay compact and the editor
-stub remains hidden. Negative mutations must reject central outer
-placement, overlarge outer bounds, RTL reversal of the compact
-buttons and widened weapon hint.
-
-This is **only a source/CI candidate**. It is not accepted until an
-actual Noesis/BG3 screenshot shows correct button sequence and
-horizontal alignment at 1080p and no overlap with HUD resources.
-Exact `MaxWidth=600` is a constrained candidate, **not a proven
-responsive safe-area metric**. The plugin must not create another
-release exclusively to test width or input speculation.
+`UISelectionLeft`, `SwitchWeaponSetCommand`, `UseSlotCommand` or radial
+dispatch are justified by the rejected layout.
 
 ## Independent evidence still missing
 
