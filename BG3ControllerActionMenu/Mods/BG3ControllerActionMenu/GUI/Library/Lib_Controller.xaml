@@ -2200,6 +2200,8 @@
                                                             Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                     <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                 </b:TimerTrigger>
                                 <!-- Sidebar selection is programmatic at LB/RB entry. The
                                      selector can be visible with a stable LocalFocus,
@@ -2224,6 +2226,8 @@
                                                             Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                     <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                 </b:TimerTrigger>
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
