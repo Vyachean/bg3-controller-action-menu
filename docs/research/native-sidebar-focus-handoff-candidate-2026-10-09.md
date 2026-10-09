@@ -43,11 +43,15 @@ Noesis engine bug or confirmed causal explanation.
 
 ## Verification
 
-`tools/test-native-sidebar-focus.py` verifies actual XAML structure,
-five concrete sidebar entry paths, one focus publication event source,
-and fault-injected negative cases (unfocusable list, misrouted transfer,
-duplicate selection dispatcher). `tools/validate.py` executes it.
-The source audit does **not** pretend to simulate or certify Noesis.
+This draft originally included `tools/test-native-sidebar-focus.py`
+and had its structural assertions invoked through `tools/validate.py`.
+Those exact-markup tests were retired with the operator-approved
+cleanup in merged PR #192. They were **not carried forward** into this
+minimal draft PR. The current fast validation checks only package
+inputs/XML/metadata/forbidden payloads; Windows CI separately builds
+the actual Divine .pak and round-trips it through extraction, plus
+installer checks. Neither stage exercises Larian's controller focus,
+metamagic gameplay or Noesis runtime. A green build is not acceptance.
 
 ## Follow-up: main-list focus and execution owner
 
@@ -195,6 +199,40 @@ Noesis sequencing, whether a summon override transitions
 focus remain **unverified**. Do not promote draft/release
 based only on a successful PAK build.
 
+## Native summon disappearance and active-owner restoration
+
+Follow-up source review exposed the reverse half of the
+`SummonHotBar.SlotList.Count > 0` transition. When the native
+summon collection becomes empty, an unconditional handler invalidated
+`ActionRadials.Tag`, changed `HotBarList.SelectedIndex=-1 -> 0`,
+but **did not invalidate old `LocalFocus` or arm**
+`CAM_ResetFirstFocusToken`. The next guarded handler merely
+requested outer list focus. The item template would not request focus
+of its first `VMHotBarSlot` without that token.
+
+The candidate now separates concerns: the shared change first clears
+the old dispatch slot, tooltip and `HotBarList.LocalFocus`; the
+conditional branch for an enabled `HotBarList` arms its existing
+first-slot token, cycles the selected index and requests deferred
+list focus. If instead the enabled owner is the metamagic sidebar,
+its existing index reset/list focus route is preserved.
+
+A second independent defect was in the fallback guard:
+`CAM_ProviderModeMarker != CAM_MetamagicModeToken` excluded an
+**enabled HotBarList while metamagic spell-choice or native nested
+state is active**. Metamagic is the provider mode, not necessarily
+the input owner; source `HotBarList.IsEnabled` is the existing
+focus-ownership signal. That guard was removed, allowing the main
+list to restore focus whenever it is enabled, including a nested
+metamagic spell grid. This has no effect on the native
+`SummonHotBar.SlotList` materialization itself.
+
+**Important:** These are explicit missing guard/token facts in
+shipped source; actual Noesis scheduling, especially initial
+`Count=False` activation and animated list reuse, remains unproved.
+No new source-shape gameplay tests were added, and no release was
+created.
+
 ## Independent Noesis focus evidence, checked 2026-10-09
 
 NoesisGUI's [FocusManager documentation](https://www.noesisengine.com/docs/Gui.Core._FocusManager.html)
@@ -241,11 +279,14 @@ independent comparison. The legacy 0.0.29 generator is direct
 historical code/runtime evidence, **not** proof that this adapted
 `SetMoveFocusAction` transition works in the current compiled engine.
 
-The central `HotBarList` still has a `SelectionChanged` publisher and
-a separate selected-item token path. That is an independent second
-candidate to simplify **after** its entry contract is grounded. Likewise,
-metamagic-compatible spell filtering, active modifier rollback, direct
-upcast variant identity, footer geometry, and weapon hold remain open.
+The central `HotBarList` formerly had an additional
+`SelectionChanged` dispatcher. It was removed in this same draft,
+so both active slot lists now publish non-null `ActionRadials.Tag`
+only on the captured-native-like delayed `LocalFocusChanged` path.
+The `IsSelected`-triggered token route remains a **focus request**,
+not independently verified focus. Metamagic-compatible spell filtering,
+game-owned modifier rollback, direct upcast-variant identity, footer
+geometry, and weapon hold remain open.
 Do not issue a release or request a one-off user game check until the
 whole focus/dispatcher architecture and loaded-PAK identity have a
 combined credible proof strategy.
