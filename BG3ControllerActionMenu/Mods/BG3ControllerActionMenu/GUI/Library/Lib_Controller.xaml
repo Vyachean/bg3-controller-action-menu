@@ -2308,10 +2308,10 @@
                                     <!-- The same ActionRadials.Tag -> UseSlotCommand route
                                          used by the main grid must own the side selection. -->
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
-                                    <!-- The native focused VMHotBarSlot owns both A and the
-                                         selected metamagic frame. -->
-                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedItem"
-                                                            Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                    <!-- LocalFocus.DataContext is the sole source for
+                                         selector chrome, tooltip and A. Do not change
+                                         SelectedItem from inside LocalFocusChanged:
+                                         selection is not a second focus authority. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
                                                             PropertyName="Content"
                                                             Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
