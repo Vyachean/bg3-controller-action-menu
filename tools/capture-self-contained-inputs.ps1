@@ -512,7 +512,7 @@ if ($CoverageSelfTest) {
 </Grid>
 '@ | Set-Content -LiteralPath $hotBarFixture -Encoding UTF8
         @'
-<Grid>
+<Grid xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ls="urn:synthetic-ls">
   <ItemsControl ItemsSource="{Binding PlayerCharacterProperties.SpellsAndActions}"/>
   <ItemsControl ItemsSource="{Binding Inventory.Slots}"/>
   <ls:LSInputBinding x:Name="WeaponInput"
