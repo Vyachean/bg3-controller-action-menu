@@ -2557,14 +2557,18 @@
                 </b:Interaction.Triggers>
             </ls:LSNineSliceImage>
 
+            <!-- Native radial's right-side hint lane, combined with BG3's
+                 compact Width=Auto layout variant. Do not center hints over
+                 the normal HUD action-resource display or give each hint
+                 the original radial-specific 1000px width. -->
             <ls:AlignableWrapPanel x:Name="ButtonHintsContainer"
                                    Style="{StaticResource ButtonHint.Container.CenterWrap}"
-                                   HorizontalAlignment="Center"
-                                   HorizontalContentAlignment="Center"
+                                   HorizontalAlignment="Right"
+                                   HorizontalContentAlignment="Right"
                                    VerticalAlignment="Bottom"
                                    Width="Auto"
-                                   MaxWidth="1320"
-                                   FlowDirection="LeftToRight"
+                                   MaxWidth="380"
+                                   FlowDirection="RightToLeft"
                                    Margin="26,0,26,56">
                 <!-- Original Patch 8 ActionRadials: while choosing a thrown item,
                      UIDelete returns directly to world targeting. This is
