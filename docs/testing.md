@@ -1335,3 +1335,16 @@ Original Patch 8 has a right-aligned/right-content/RightToLeft controller hint l
 5. **Metamagic and dispatch:** when relevant, Up/Down from bottom/top of the sidebar should stay within its own native list. A executes the visibly selected item, B returns/close correctly, and action tooltip follows focus. If no metamagic is available on this character, report that case as untested rather than a pass.
 
 **Acceptance boundary:** no component is runtime-accepted by green CI. Report successes and failures once after this combined operator run. Keep #154, #157, #160 and #135 open where their specific behavior or underlying input/identity evidence remains unresolved. Do not create another incremental release merely to probe one guessed binding.
+
+
+## 2026-10-09 runtime correction after published v0.0.111
+
+Operator's actual test disproved three visual/audio assumptions in the preceding milestone:
+
+- LB/MoveToEnd **double-played** its menu opening sound and still did not vibrate. The additional `LSPlaySound(UI_HUD_Controller_RadialMenu_SlotHover)` at `CAM_ResourceTabs.Loaded` was a duplicate; remove it. Opening audio/haptics must ultimately come from a **single proven native lifecycle**. Do not claim this source rollback fixes missing LB vibration.
+- A 32px title row did **not** prevent selected resource/provider text from overlapping original tab art. New bounded visual candidate uses a **64px** reserved title lane, a top-aligned 44px clipped text box and 20px gutter. The center-offset is adjusted from -16 to -32 so native 84px tab row and 850px grid retain their prior positions. Actual scaled Noesis rendering is not proven by static geometry.
+- Right-hand hint panel `MaxWidth=380` **clipped** original controller hints. Increase the bound to **600px** while keeping right-side placement and compact `Width=Auto` children; native center HUD non-overlap must be checked in game, not asserted from maximum width alone.
+
+The same operator explicitly **confirmed resource-cost highlighting works**; preserve its native `HighlightResourcesCommand` paths, including focused metamagic slots, and do not disable them while repairing focus UI.
+
+Other uncorrected v0.0.111 issues: in-menu weapon hold/progress, metamagic focus-frame divergence, selected metamagic not handing focus to compatible spell grid, duplicated IV-level upcast choice (#172), and LB haptics. Do not advertise any of these as fixed by the local audio/layout rollback. Prepare a combined source/CI-reviewed candidate and one published-Release gameplay check, never one release per tweak.
