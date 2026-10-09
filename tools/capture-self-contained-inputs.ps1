@@ -321,6 +321,11 @@ function Get-HotBarCoverageReport {
                             Command = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Command"
                             CommandParameter = Get-XamlAttributeFromTag -Tag $tag -AttributeName "CommandParameter"
                             Style = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Style"
+                            # Hold-style controller controls can bind the physical
+                            # input-event object through DataContext rather than
+                            # visual Content. Preserve both independently; treating
+                            # one as a substitute for the other hid a #154 proof gap.
+                            DataContext = Get-XamlAttributeFromTag -Tag $tag -AttributeName "DataContext"
                             Content = Get-XamlAttributeFromTag -Tag $tag -AttributeName "Content"
                             HoldTime = Get-XamlAttributeFromTag -Tag $tag -AttributeName "HoldTime"
                             TapTime = Get-XamlAttributeFromTag -Tag $tag -AttributeName "TapTime"
@@ -355,7 +360,7 @@ function Get-HotBarCoverageReport {
     )
 
     [ordered]@{
-        SchemaVersion = 3
+        SchemaVersion = 4
         HotBarSha256 = if ($HotBarPath -and (Test-Path -LiteralPath $HotBarPath -PathType Leaf)) {
             (Get-FileHash -Algorithm SHA256 -LiteralPath $HotBarPath).Hash.ToLowerInvariant()
         } else {
@@ -397,7 +402,8 @@ if ($CoverageSelfTest) {
                      EatInput="False"/>
   <ls:LSButton x:Name="WeaponHint"
                Style="{StaticResource ControllerHoldButtonStyle}"
-               Content="{Binding InputEvents, ConverterParameter=UISelectionLeft}"/>
+               DataContext="{Binding InputEvents, ConverterParameter=UISelectionLeft}"
+               Content="Visual only"/>
   <Style x:Key="WeaponSetSwitchStyle">
     <Setter Property="BoundEvent" Value="ToggleWeaponSet"/>
   </Style>
@@ -454,10 +460,16 @@ if ($CoverageSelfTest) {
             -not $weaponStyle.Present) {
             throw "Coverage self-test did not preserve input-binding/style transport structure."
         }
+        $weaponHint = @($holdStyle.Matches | Where-Object { $_.ElementName -eq "WeaponHint" })[0]
+        if (-not $weaponHint -or
+            $weaponHint.DataContext -ne "{Binding InputEvents, ConverterParameter=UISelectionLeft}" -or
+            $weaponHint.Content -ne "Visual only") {
+            throw "Coverage self-test conflated ControllerHoldButtonStyle DataContext with visual Content."
+        }
         if (@($report.MissingInputTransportSymbols).Count -ne 0) {
             throw "Coverage self-test unexpectedly reported missing input-transport symbols."
         }
-        if ($report.SchemaVersion -ne 3 -or $report.ScannedXamlCount -ne 2) {
+        if ($report.SchemaVersion -ne 4 -or $report.ScannedXamlCount -ne 2) {
             throw "Coverage self-test produced the wrong report schema."
         }
 
