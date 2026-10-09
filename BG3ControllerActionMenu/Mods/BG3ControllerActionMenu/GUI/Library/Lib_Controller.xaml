@@ -2207,6 +2207,7 @@
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"/>
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="IsEnabled" Value="True"/>
                                         </MultiDataTrigger>
@@ -2247,6 +2248,10 @@
                                     <!-- The same ActionRadials.Tag -> UseSlotCommand route
                                          used by the main grid must own the side selection. -->
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                                    <!-- The native focused VMHotBarSlot owns both A and the
+                                         selected metamagic frame. -->
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedItem"
+                                                            Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
                                                             PropertyName="Content"
                                                             Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
@@ -2321,6 +2326,7 @@
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                                <Condition Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"/>
                                                 <Condition Binding="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"/>
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="Visibility" Value="Visible"/>
@@ -2372,6 +2378,7 @@
                                                 <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
                                                 <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
                                                 <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                                                 <Condition Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"/>
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="IsEnabled" Value="False"/>
                                         </MultiDataTrigger>
