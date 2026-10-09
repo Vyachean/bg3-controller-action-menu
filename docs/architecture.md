@@ -1274,3 +1274,10 @@ Existing action focus calls were intentionally disabled after 0.0.75 because the
 The native BG3 controller-focus lifecycle becomes: immediate `LocalFocusChanged` clears old predicted cost, then the existing 70ms non-null/active-slot owner copies `LocalFocus.DataContext` to `ActionRadials.Tag`, creates the tooltip and passes that exact `VMHotBarSlot` to `HighlightResourcesCommand`. The programmatic tab-entry handoff uses the same source. The code must not clear the newly applied preview in either deferred path. Existing provider/tab transitions, nested return and normal close own invalidation; no calculated costs or secondary slot owner are introduced.
 
 This is a **draft runtime candidate** with source/CI proof only, not a runtime-accepted correction. Combined in-game validation must prove ordinary HUD resource cost feedback and unchanged upper-tab visual quantities, and no stale feedback after leaving the menu.
+
+
+### 2026-10-09 metamagic owner correction
+
+`CAM_FixedSideBarList` owns its **own** native `FixedSideBar.SlotList` focus when the Metamagic provider is active and `HotBarList` is deliberately disabled. Consequently the main list's `HighlightResourcesCommand` cannot serve these focused metamagic entries. This candidate restores the exact same game-owned cost-preview call in both side-list 70ms stable-focus routes (`LocalFocusChanged` and programmatic `SelectionChanged`), using `CAM_FixedSideBarList.LocalFocus.DataContext` and only when the side list is enabled and Metamagic owns the provider. Its existing immediate focus event continues to clear stale resource highlights; `ActionRadials.Tag` and `UseSlotCommand` remain unchanged.
+
+The final `All` provider remains a separate unproved branch: its outer selection is a `VMHotBar` group and inner entries are `VMHotBarSlot` children. No new `HighlightResourcesCommand(VMHotBar)` is permitted. A follow-on source/runtime owner proof is required for cost highlight, slot sound/haptics and action identity under All. Do not call #166 complete solely because the direct and sidebar routes are CI-green.
