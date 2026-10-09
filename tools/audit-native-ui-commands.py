@@ -1152,12 +1152,12 @@ def main() -> int:
         # native readback proves one; removing the seam entirely must fail.
         content_binding = (
             'Content="{Binding CurrentPlayer.UIData.InputEvents, '
-            "Converter={StaticResource FindInputEventConverter}, "
+            'Converter={StaticResource FindInputEventConverter}, '
             "ConverterParameter='UISelectionLeft'}""
         )
         datacontext_binding = (
             'DataContext="{Binding CurrentPlayer.UIData.InputEvents, '
-            "Converter={StaticResource FindInputEventConverter}, "
+            'Converter={StaticResource FindInputEventConverter}, '
             "ConverterParameter='UISelectionLeft'}""
         )
         moved_to_datacontext = runtime.replace(content_binding, datacontext_binding, 1)
