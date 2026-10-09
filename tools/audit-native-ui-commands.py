@@ -1163,21 +1163,36 @@ def main() -> int:
                    for err in validate_native_shoulder_entry_tabs(wrong_open_focus)):
             report["errors"].append("self-test failed: opening direction focus race not rejected")
         substituted_resource_name = runtime.replace(
-            'Text="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"',
-            'Text="Reaction"',
+            '<Setter Property="Text" Value="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"/>',
+            '<Setter Property="Text" Value="Reaction"/>',
             1,
         )
-        if not any("game-owned and noninteractive" in err
+        if not any("game-owned ActionResource.Name" in err
                    for err in validate_native_resource_name(substituted_resource_name)):
-            report["errors"].append("self-test failed: hardcoded resource name not rejected")
-        unguarded_resource_name = runtime.replace(
-            'Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"',
-            'Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}" Value="False"',
+            report["errors"].append("self-test failed: hardcoded resource identity not rejected")
+        misplaced_title = runtime.replace(
+            'x:Name="CAM_SelectedTabTitleArea"\n                          Grid.Row="0"',
+            'x:Name="CAM_SelectedTabTitleArea"\n                          Grid.Row="1"',
             1,
         )
-        if not any("disappear on special tabs" in err
-                   for err in validate_native_resource_name(unguarded_resource_name)):
-            report["errors"].append("self-test failed: special-tab resource label leak not rejected")
+        if not any("reserve 32px" in err for err in validate_native_resource_name(misplaced_title)):
+            report["errors"].append("self-test failed: overlapping selected title not rejected")
+        missing_provider_title = runtime.replace(
+            '<Setter Property="Text" Value="Cantrips"/>',
+            '<Setter Property="Text" Value=""/>',
+            1,
+        )
+        if not any("fallback name for every provider" in err
+                   for err in validate_native_resource_name(missing_provider_title)):
+            report["errors"].append("self-test failed: missing special provider title not rejected")
+        title_moved_tab_strip = runtime.replace(
+            '<TranslateTransform Y="-16"/>',
+            '<TranslateTransform Y="0"/>',
+            1,
+        )
+        if not any("original screen coordinates" in err
+                   for err in validate_native_resource_name(title_moved_tab_strip)):
+            report["errors"].append("self-test failed: shifted native action viewport not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
