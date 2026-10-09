@@ -1130,6 +1130,9 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Invalidate stale native LocalFocus from the nested source;
+                         selection alone never publishes an executable slot. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <!-- Force a real IsSelected transition even if the previous
                          provider already had first index selected. Otherwise the
@@ -1148,6 +1151,9 @@
                             </b:ConditionalExpression>
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
+                    <!-- Invalidate stale native LocalFocus from the nested source;
+                         selection alone never publishes an executable slot. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
                     <!-- Force a real IsSelected transition even if the previous
                          provider already had first index selected. Otherwise the
