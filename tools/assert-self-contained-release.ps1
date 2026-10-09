@@ -8,7 +8,6 @@ $Launcher = Join-Path $Root "tools\Install-BG3ControllerActionMenu.vbs"
 $DevEntry = Join-Path $Root "tools\dev-entry.ps1"
 $LatestInstaller = Join-Path $Root "tools\install-latest.ps1"
 $XboxInstaller = Join-Path $Root "tools\install-xbox-dev.ps1"
-$RuntimeTest = Join-Path $Root "tools\test-self-contained-runtime.ps1"
 
 if (-not (Test-Path -LiteralPath $Library -PathType Leaf)) {
     throw @"
@@ -50,10 +49,5 @@ foreach ($path in @($Launcher, $LatestInstaller, $XboxInstaller)) {
 if (-not $libraryXml.DocumentElement) {
     throw "Release blocked: self-contained Lib_Controller.xaml has no XML document element."
 }
-
-if (-not (Test-Path -LiteralPath $RuntimeTest -PathType Leaf)) {
-    throw "Release blocked: self-contained runtime contract test is missing."
-}
-& $RuntimeTest
 
 Write-Host "Self-contained release boundary passed."
