@@ -108,8 +108,16 @@ focus requests in JSON. It can be rerun as:
 python tools/audit-focus-owner-drift.py
 python tools/audit-focus-owner-drift.py --self-test
 python tools/audit-focus-owner-drift.py --require-single-owner
+python tools/audit-focus-owner-drift.py --native-capture /path/to/PreloadedActionRadials_c.xaml
 ```
 
+- The optional `--native-capture` command refuses to inspect the
+  original resource unless its bytes match the **exact**
+  `PreloadedActionRadials_c.xaml` SHA-256 from the operator's
+  pinned Xbox App 1.8.910.0 evidence. When matched, it enumerates
+  `HotBarRadial`/`SingleBar` native focus-to-tag publisher paths.
+  No original proprietary bytes are committed or shipped, and a
+  mismatched public Patch 8 archive cannot silently substitute.
 - Default report and `--self-test` are **read-only** and do not
   make unsupported gameplay-success claims.
 - `--require-single-owner` is deliberately **expected to fail**
