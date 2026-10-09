@@ -636,6 +636,50 @@ if (-not $sidebarPanel.Success -or
     throw "Metamagic vertical boundary must cycle only in its native sidebar list without intercepting UIUp/UIDown or changing provider/focus ownership."
 }
 
+# v0.0.112 runtime: Down beyond the last metamagic item erased the
+# selector. If the native LSGrid yields a null/empty LocalFocus, settle
+# for 70ms and return to the first concrete native VMHotBarSlot using
+# CAM's established one-shot Tag/SelectedIndex + SetMoveFocusAction seam.
+# Guard the lost-focus wake against phase transitions and tab navigation.
+$sideLostFocus = @(
+    [regex]::Matches(
+        $sidebar.Value,
+        '<b:TimerTrigger EventName="LocalFocusChanged" MillisecondsPerTick="70" TotalTicks="1">[\s\S]*?</b:TimerTrigger>',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    ) | Where-Object {
+        $_.Value.Contains('LeftOperand="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}" Operator="Equal" RightOperand="{x:Null}"')
+    }
+)
+if ($sideLostFocus.Count -ne 1) {
+    throw "Metamagic terminal focus must have one guarded native-slot recovery, not a new directional-input interceptor."
+}
+$lost = $sideLostFocus[0].Value
+foreach ($token in @(
+    'CAM_MetamagicModeToken',
+    'CAM_MetamagicSpellPhaseMarker',
+    'IsEnabled, ElementName=CAM_FixedSideBarList',
+    'CAM_TabCycleMarker',
+    'CAM_NestedReturnMarker',
+    'CAM_ResetFirstFocusToken',
+    'FixedSideBar.SlotList.Count',
+    'TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"',
+    'TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"',
+    'FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"'
+)) {
+    if (-not $lost.Contains($token)) {
+        throw "Metamagic end-of-list recovery missing native guard/slot handoff: $token"
+    }
+}
+if ($lost.Contains('BoundEvent="UIDown"') -or
+    $lost.Contains('BoundEvent="UIUp"') -or
+    $lost.Contains('TargetName="CAM_ProviderModeMarker"')) {
+    throw "Terminal focus repair must not intercept D-pad or change selected top-level provider."
+}
+if ($lost.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
+    $lost.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"')) {
+    throw "Metamagic lost-focus wake must enter the list before selecting the concrete first item."
+}
+
 # 0.0.103 had a visible sidebar LocalFocusSelector but no tooltip or A
 # command after entering the Metamagic tab. Main HotBarList already uses
 # a SelectionChanged settle wake; the sidebar must also publish the
@@ -1547,6 +1591,28 @@ if (-not $metamagicRestore -or
     $metamagicRestore.Value.Contains('TargetName="HotBarList"')) {
     throw "Metamagic nested exit must refocus the native fixed sidebar, never the main spell list."
 }
+# v0.0.112: a deferred SetMoveFocusAction on the *whole list*
+# after SelectedIndex=0 replaced the item-level native focus reset.
+# Hand controller ownership to list first; then select the concrete
+# ListBoxItem while CAM_ResetFirstFocusToken is armed.
+if ($phaseBack.Count -eq 1) {
+    $b = $phaseBack[0].Value
+    if ($b.IndexOf('FocusElement="{Binding ElementName=CAM_FixedSideBarList}"') -gt
+        $b.IndexOf('TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"')) {
+        throw "Metamagic B must enter sidebar before selecting first native slot or its ring remains missing."
+    }
+}
+if ($metaActivePhase.Success -and
+    $metaActivePhase.Value.IndexOf('CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"') -gt
+    $metaActivePhase.Value.IndexOf('CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"')) {
+    throw "Disable old metamagic input owner before erasing its LocalFocus to avoid race with terminal-focus recovery."
+}
+if ($metaActivePhase.Success -and
+    $metaActivePhase.Value.IndexOf('FocusElement="{Binding ElementName=HotBarList}"') -gt
+    $metaActivePhase.Value.IndexOf('TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"')) {
+    throw "Metamagic spell phase must enter main list before selecting its concrete VMHotBarSlot."
+}
+
 # The original one-way metamagic nested return must now be phase-aware:
 # back from a metamagic choice returns to sidebar; back from native
 # nested/upcast spell choice returns to the still-active central grid.
@@ -1661,6 +1727,15 @@ if (-not $sideSelector.Success -or
     -not $mainList.Value.Contains('IsSelectingUpcastedSpell') -or
     -not $mainList.Value.Contains('IsShowingItemsToThrow')) {
     throw "The resource grid and sidebar must have mutually exclusive visible native focus selectors, except during BG3 nested state."
+}
+
+# v0.0.112: the primary selector was unconditionally collapsed for
+# Metamagic provider, even after native MetamagicActive handed control to
+# the spell-grid phase. The collapse predicate must exclude that phase.
+if (-not $mainSelector.Value.Contains('Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"') -or
+    -not $mainSelector.Value.Contains('CAM_MetamagicModeToken') -or
+    -not $sideSelector.Value.Contains('Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{x:Null}"')) {
+    throw "Only the metamagic sidebar phase may hide the central spell selector; the spell phase must show its native ring."
 }
 
 if ($hotBarList.Value.Contains('<b:PropertyChangedTrigger Binding="{Binding LocalFocus.DataContext, ElementName=HotBarList}">')) {
