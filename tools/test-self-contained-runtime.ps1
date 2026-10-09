@@ -725,7 +725,7 @@ $fixedSidebarRegion = [regex]::Match(
     [System.Text.RegularExpressions.RegexOptions]::Singleline
 )
 if (-not $rowClip.Success -or
-    -not $rowClip.Value.Contains('Grid.Row="1"') -or
+    -not $rowClip.Value.Contains('Grid.Row="2"') -or
     -not $rowClip.Value.Contains('Grid.ColumnSpan="2"') -or
     -not $rowClip.Value.Contains('ClipToBounds="True"') -or
     -not $rowClip.Value.Contains('Height="850"') -or
