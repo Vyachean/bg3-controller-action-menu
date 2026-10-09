@@ -473,11 +473,12 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
 
 
 def validate_native_compact_footer(runtime: str) -> list[str]:
-    """Original radial has a Width=Auto controller hint layout variant.
+    """Keep compact native hold controls inside the original right-side lane.
 
-    The 1000px-per-button radial geometry stacks hold affordances offscreen
-    below CAM's 934px action grid. Keep original hold controls/input intact;
-    change visual geometry only, as BG3's own Layout=Left/Right source does.
+    Centering the otherwise-correct compact footer overlaps BG3's regular
+    center-bottom resource HUD (operator confirmation and historical 0.0.35).
+    Reuse the original right/right/RTL placement, retain the game-owned
+    compact Width=Auto variant and bound maximum width. Do not touch input.
     """
     try:
         root = ET.fromstring(runtime)
@@ -497,13 +498,16 @@ def validate_native_compact_footer(runtime: str) -> list[str]:
     panel = panels[0]
     expected = {
         "Width": "Auto",
-        "HorizontalAlignment": "Center",
-        "HorizontalContentAlignment": "Center",
+        "MaxWidth": "380",
+        "HorizontalAlignment": "Right",
+        "HorizontalContentAlignment": "Right",
         "VerticalAlignment": "Bottom",
-        "FlowDirection": "LeftToRight",
+        "FlowDirection": "RightToLeft",
+        "Margin": "26,0,26,56",
+        "Style": "{StaticResource ButtonHint.Container.CenterWrap}",
     }
     if any(_attribute(panel.attrib, k) != v for k, v in expected.items()):
-        return ["controller hints must use native compact centered layout"]
+        return ["controller hints must use compact right-side lane and avoid center resource HUD"]
 
     visible_hint_names = {
         "SelectButtonVisual",
@@ -1085,14 +1089,22 @@ def main() -> int:
                    or "lost native pressed/state predicate" in err
                    for err in validate_native_toggle_notifications(missing_press_guard)):
             report["errors"].append("self-test failed: unguarded weapon change notification not rejected")
-        wide_footer = runtime.replace(
-            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Center"\n                                   HorizontalContentAlignment="Center"\n                                   VerticalAlignment="Bottom"\n                                   Width="Auto"',
-            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Center"\n                                   HorizontalContentAlignment="Center"\n                                   VerticalAlignment="Bottom"\n                                   Width="1000"',
+        centered_footer = runtime.replace(
+            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Right"',
+            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Center"',
             1,
         )
-        if not any("compact centered layout" in err
+        if not any("avoid center resource HUD" in err
+                   for err in validate_native_compact_footer(centered_footer)):
+            report["errors"].append("self-test failed: centered footer overlapping original resource HUD not rejected")
+        wide_footer = runtime.replace(
+            'MaxWidth="380"\n                                   FlowDirection="RightToLeft"',
+            'MaxWidth="1320"\n                                   FlowDirection="RightToLeft"',
+            1,
+        )
+        if not any("avoid center resource HUD" in err
                    for err in validate_native_compact_footer(wide_footer)):
-            report["errors"].append("self-test failed: radial-sized footer width not rejected")
+            report["errors"].append("self-test failed: oversized footer lane not rejected")
         wide_hold_button = re.sub(
             r'(<ls:LSButton x:Name="ToggleWeaponSet"[\s\S]*?\bWidth=")Auto(")',
             r'\g<1>1000\2',
