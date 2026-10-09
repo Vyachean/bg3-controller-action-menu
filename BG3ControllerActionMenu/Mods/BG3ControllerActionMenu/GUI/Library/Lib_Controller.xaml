@@ -1556,6 +1556,38 @@
                               HorizontalAlignment="Center"
                               VerticalAlignment="Bottom"
                               Height="84">
+                            <!-- The native resource tooltip uses ActionResource.Name
+                                 (Patch 8 Tooltips.xaml:8253). Show the selected
+                                 game-owned localized name above the existing tab
+                                 artwork for controller users; never infer identity
+                                 from a one-letter glyph (e.g. R), and never change
+                                 FilterActionResourceCommand or the source collection. -->
+                            <TextBlock x:Name="CAM_SelectedResourceName"
+                                       Text="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Top"
+                                       Margin="0,-34,0,0"
+                                       MaxWidth="480"
+                                       FontSize="{StaticResource ScaledDefaultFontSize}"
+                                       Foreground="{StaticResource LS_PrimaryColor}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Effect="{StaticResource ShadowEffect}"
+                                       IsHitTestVisible="False"
+                                       Focusable="False"
+                                       Panel.ZIndex="4">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <!-- Non-resource providers have their own icons,
+                                                 not a selected ActionResourceCostPreview. -->
+                                            <DataTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <ls:LSNineSliceImage x:Name="CAM_HotbarBodyResourcesBg"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Bottom"
