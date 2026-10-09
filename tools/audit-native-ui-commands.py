@@ -332,16 +332,38 @@ def validate_summon_source_route(runtime: str) -> list[str]:
                    ("HotBarList", "SelectedIndex"),
                ))
     ]
-    fallback_focus = [
-        a for t in exit_triggers for a in t.iter()
-        if local(a) == "SetMoveFocusAction"
-    ]
-    if len(cleanup) != 1 or not all(
-        any(_attribute(a.attrib, "FocusElement") == f"{{Binding ElementName={owner}}}"
-            for a in fallback_focus)
-        for owner in ("HotBarList", "CAM_FixedSideBarList")
-    ):
-        errors.append("Native summon exit must clear stale dispatch and restore the prior grid or sidebar focus")
+    # The main grid is an actual native focus receiver; the metamagic
+    # sidebar is *not* (Focusable=False). On return, the existing
+    # CAM_ActionGridSlotContainer template focuses a real selected
+    # ListBoxItem if its parent Tag holds CAM_ResetFirstFocusToken.
+    fallback_main_focus = any(
+        local(a) == "SetMoveFocusAction"
+        and _attribute(a.attrib, "FocusElement") == "{Binding ElementName=HotBarList}"
+        for t in exit_triggers for a in t.iter()
+    )
+    fallback_sidebar_item = any(
+        all(any(
+            local(a) == "ChangePropertyAction"
+            and _attribute(a.attrib, "TargetName") == "CAM_FixedSideBarList"
+            and _attribute(a.attrib, "PropertyName") == prop
+            and _attribute(a.attrib, "Value") == value
+            for a in t.iter()
+        ) for prop, value in (
+            ("Tag", "{StaticResource CAM_ResetFirstFocusToken}"),
+            ("SelectedIndex", "-1"), ("SelectedIndex", "0")))
+        for t in exit_triggers
+    )
+    invalid_sidebar_focus = any(
+        local(a) == "SetMoveFocusAction"
+        and "CAM_FixedSideBarList" in (_attribute(a.attrib, "FocusElement") or "")
+        for t in exit_triggers for a in t.iter()
+    )
+    if (len(cleanup) != 1 or not fallback_main_focus
+            or not fallback_sidebar_item or invalid_sidebar_focus):
+        errors.append(
+            "Native summon exit must clear stale dispatch and restore native "
+            "focus through main list or concrete sidebar ListBoxItem"
+        )
     return errors
 
 
