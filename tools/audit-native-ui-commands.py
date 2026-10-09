@@ -471,6 +471,65 @@ def validate_native_weapon_switch(runtime: str) -> list[str]:
 
 
 
+
+def validate_native_compact_footer(runtime: str) -> list[str]:
+    """Original radial has a Width=Auto controller hint layout variant.
+
+    The 1000px-per-button radial geometry stacks hold affordances offscreen
+    below CAM's 934px action grid. Keep original hold controls/input intact;
+    change visual geometry only, as BG3's own Layout=Left/Right source does.
+    """
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"invalid CAM XAML for controller hint layout: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    panels = [
+        n for n in root.iter()
+        if local(n) == "AlignableWrapPanel"
+        and _attribute(n.attrib, "Name") == "ButtonHintsContainer"
+    ]
+    if len(panels) != 1:
+        return ["compact controller hint panel missing or duplicated"]
+    panel = panels[0]
+    expected = {
+        "Width": "Auto",
+        "HorizontalAlignment": "Center",
+        "HorizontalContentAlignment": "Center",
+        "VerticalAlignment": "Bottom",
+        "FlowDirection": "LeftToRight",
+    }
+    if any(_attribute(panel.attrib, k) != v for k, v in expected.items()):
+        return ["controller hints must use native compact centered layout"]
+
+    visible_hint_names = {
+        "SelectButtonVisual",
+        "ToWorldButton",
+        "CancelConcentrationButton",
+        "ToggleWeaponSet",
+        "ToggleDualWield",
+        "CancelButton",
+    }
+    controls = {
+        _attribute(n.attrib, "Name"): n
+        for n in panel
+        if local(n) == "LSButton"
+    }
+    if any(name not in controls or _attribute(controls[name].attrib, "Width") != "Auto"
+           for name in visible_hint_names):
+        return ["all visible controller hints must use native auto width"]
+
+    stub = controls.get("ShowContextMenu")
+    if stub is None or _attribute(stub.attrib, "Visibility") != "Collapsed" or (
+        _attribute(stub.attrib, "Width") != "0"
+    ):
+        return ["radial context-editor hint must remain hidden in CAM"]
+    return []
+
+
 def validate_native_throw_world_exit(runtime: str) -> list[str]:
     """Keep the original Throw item-picker world exit, not a radial editor."""
     try:
@@ -672,6 +731,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     errors.extend(validate_summon_source_route(runtime))
     errors.extend(validate_controller_refusal_feedback(runtime))
     errors.extend(validate_native_weapon_switch(runtime))
+    errors.extend(validate_native_compact_footer(runtime))
     errors.extend(validate_native_throw_world_exit(runtime))
     errors.extend(validate_native_toggle_notifications(runtime))
 
@@ -853,6 +913,22 @@ def main() -> int:
                    or "lost native pressed/state predicate" in err
                    for err in validate_native_toggle_notifications(missing_press_guard)):
             report["errors"].append("self-test failed: unguarded weapon change notification not rejected")
+        wide_footer = runtime.replace(
+            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Center"\n                                   HorizontalContentAlignment="Center"\n                                   VerticalAlignment="Bottom"\n                                   Width="Auto"',
+            'x:Name="ButtonHintsContainer"\n                                   Style="{StaticResource ButtonHint.Container.CenterWrap}"\n                                   HorizontalAlignment="Center"\n                                   HorizontalContentAlignment="Center"\n                                   VerticalAlignment="Bottom"\n                                   Width="1000"',
+            1,
+        )
+        if not any("compact centered layout" in err
+                   for err in validate_native_compact_footer(wide_footer)):
+            report["errors"].append("self-test failed: radial-sized footer width not rejected")
+        wide_hold_button = runtime.replace(
+            'x:Name="ToggleWeaponSet"\n                             Style="{StaticResource ControllerHoldButtonStyle}"',
+            'x:Name="ToggleWeaponSet" Width="1000"\n                             Style="{StaticResource ControllerHoldButtonStyle}"',
+            1,
+        )
+        if not any("visible controller hints" in err
+                   for err in validate_native_compact_footer(wide_hold_button)):
+            report["errors"].append("self-test failed: overflowed native hold hint not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
