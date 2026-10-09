@@ -90,6 +90,34 @@ the game-owned `LSListBox` must be observed at a later consolidated
 milestone. Never claim this is runtime-fixed solely from a green
 package check.
 
+## Follow-up: focus-loss invalidation and resource switch
+
+The sidebar's synchronous `LocalFocusChanged` event had a conditional
+expression requiring `LocalFocus.DataContext != null` **around the
+entire handler**. That made its `ActionRadials.Tag = null` action
+unreachable when the actual focus became null while the sidebar was
+still enabled. Even if the native selector cleared itself, BG3's
+`UIAccept -> UseSlotCommand(ActionRadials.Tag)` would still be allowed
+to reference the previously selected metamagic slot. The side-list
+handler now requires only `IsEnabled=true` for synchronous
+invalidation, clears its native tooltip if focus/content is lost,
+and keeps the 70 ms *non-null* guard for setting a new `VMHotBarSlot`.
+The main grid already follows this two-stage native pattern.
+A submenu/tab transition still explicitly clears `ActionRadials.Tag`
+before disabling one owner and enabling the other.
+
+The resource strip's delayed `SelectionChanged` branch also wrote
+`HotBarList.Tag=CAM_ResetFirstFocusToken` and only
+`SelectedIndex=0`, so it had the same idempotent-selection problem as
+the direct-provider return. It now requests `-1 -> 0` before allowing
+the item-level deferred native focus handoff. This does **not**
+verify that Larian's list supports the exact focus transition.
+
+These are control-flow correctness improvements, not evidence that a
+new `LSGrid` first-item focus route actually works in game. In
+particular, no automatic test can synthesize the engine's native
+`LocalFocusChanged` event semantics. Keep draft and do not publish.
+
 ## Independent Noesis focus evidence, checked 2026-10-09
 
 NoesisGUI's [FocusManager documentation](https://www.noesisengine.com/docs/Gui.Core._FocusManager.html)
