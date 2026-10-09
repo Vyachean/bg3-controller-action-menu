@@ -1,0 +1,52 @@
+name: Research radial hotbar reference
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-radial-hotbar-reference.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-public-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download immutable public source archive without executing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2             "https://gitlab.com/saghm/RadialHotbarCustomization/-/archive/v0.8.0.0/RadialHotbarCustomization-v0.8.0.0.zip"             -o /tmp/rhc.zip
+          mkdir /tmp/rhc
+          unzip -q /tmp/rhc.zip -d /tmp/rhc
+          find /tmp/rhc -type f -printf '%P\n' | sort | head -n 250
+
+      - name: Print bounded architecture index only
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path("/tmp/rhc")
+          terms = re.compile(
+              r"Controller|Keyboard|HotbarContainer|HotBarController|"
+              r"ActiveContainer|IsController|radial|wheel|Serialize|Deserialize",
+              re.I,
+          )
+          allowed = {".lua", ".md", ".json", ".toml", ".yml", ".yaml", ".txt", ".xml", ".lsx"}
+          hits = 0
+          for path in sorted(p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in allowed):
+              try:
+                  lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+              except OSError:
+                  continue
+              matched = [(i + 1, line.strip()) for i, line in enumerate(lines) if terms.search(line)]
+              if not matched:
+                  continue
+              print(f"## {path.relative_to(root)}")
+              for lineno, line in matched[:40]:
+                  print(f"{lineno}: {line[:320]}")
+                  hits += 1
+                  if hits >= 350:
+                      raise SystemExit(0)
