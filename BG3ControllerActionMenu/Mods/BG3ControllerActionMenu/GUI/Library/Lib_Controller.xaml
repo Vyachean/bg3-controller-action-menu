@@ -2775,9 +2775,67 @@
                              HorizontalAlignment="Left"
                              Width="Auto">
                     <b:Interaction.Triggers>
+                        <!-- Retain BG3's exact native cancel behavior for all ordinary
+                             providers, including original nested upcast/throw. -->
                         <b:EventTrigger EventName="LSButtonReleased">
+                            <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                            </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                             <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
                             <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                        </b:EventTrigger>
+                        <!-- Native nested selection remains BG3-owned even when it
+                             arose from the new metamagic spell-choice phase. -->
+                        <b:EventTrigger EventName="LSButtonReleased">
+                            <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="True"/>
+                            </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                            <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
+                            <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                        </b:EventTrigger>
+                        <b:EventTrigger EventName="LSButtonReleased">
+                            <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="False"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="True"/>
+                            </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                            <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
+                            <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                        </b:EventTrigger>
+                        <b:EventTrigger EventName="LSButtonReleased">
+                            <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="False"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="False"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="True"/>
+                            </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                            <b:InvokeCommandAction Command="{Binding ActionCancelCommand}"/>
+                            <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                        </b:EventTrigger>
+                        <!-- At the spell-choice parent level, B backs out one CAM
+                             focus phase only. Do NOT execute ActionCancelCommand
+                             or CloseWidget: BG3's active metamagic and costs
+                             are game-owned and remain unchanged. -->
+                        <b:EventTrigger EventName="LSButtonReleased">
+                            <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="False"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="False"/>
+                                <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
+                            </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                            <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                            <b:ChangePropertyAction TargetName="CAM_ActionTooltip" PropertyName="Content" Value="{x:Null}"/>
+                            <b:InvokeCommandAction Command="{Binding ClearResourceHighlightsCommand}"/>
+                            <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                            <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                            <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                            <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="0"/>
+                            <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=CAM_FixedSideBarList}" DeferFocusAction="True"/>
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ls:LSButton>
@@ -2828,6 +2886,21 @@
                 <Setter TargetName="CancelButton" Property="Command" Value="{Binding CustomEvent}"/>
                 <Setter TargetName="CancelButton" Property="CommandParameter" Value="CloseWidget"/>
             </DataTrigger>
+            <!-- Suppress native top-level CloseWidget *only* at the
+                 metamagic spell-choice parent; LSButtonReleased above
+                 transfers focus back without cancelling game-owned state. -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Value="{StaticResource CAM_MetamagicModeToken}"/>
+                    <Condition Binding="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                    <Condition Binding="{Binding IsShowingAContainerWithVariants}" Value="False"/>
+                    <Condition Binding="{Binding IsSelectingUpcastedSpell}" Value="False"/>
+                    <Condition Binding="{Binding IsShowingItemsToThrow}" Value="False"/>
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="CancelButton" Property="Command" Value="{x:Null}"/>
+                <Setter TargetName="CancelButton" Property="CommandParameter" Value="{x:Null}"/>
+                <Setter TargetName="CancelButton" Property="Tag" Value="{Binding Source='h01d5c470g61bfg498cgb17eg7be425444fa5', Converter={StaticResource TranslatedStringConverter}}"/>
+            </MultiDataTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 </ResourceDictionary>
