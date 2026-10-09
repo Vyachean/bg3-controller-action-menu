@@ -149,10 +149,10 @@ if (-not $sidebar.Success -or
     -not $sidebar.Value.Contains('ClearResourceHighlightsCommand')) {
     throw "Native metamagic side slots must retain exclusive focus and old-cost invalidation."
 }
-foreach ($event in @("LocalFocusChanged", "SelectionChanged")) {
-    # v0.0.113 adds a separate 70ms lost-focus wake with no slot and
-    # deliberately no cost preview. Select the unique live-slot owner
-    # explicitly rather than assuming the first timer has that role.
+# The sidebar may publish cost only from the actual native focus change.
+# A SelectionChanged timer is an independent non-authoritative dispatch path.
+foreach ($event in @("LocalFocusChanged")) {
+    # Source-only: exact identity is still BG3-owned LocalFocus.DataContext.
     $costTimers = @(
         [regex]::Matches(
             $sidebar.Value,
@@ -174,6 +174,15 @@ foreach ($event in @("LocalFocusChanged", "SelectionChanged")) {
         $timer.Value.Contains('IsEnabled="False"')) {
         throw "Metamagic $event must preview the same current enabled native VMHotBarSlot after 70ms."
     }
+}
+
+$sidebarSelectionTimers = @([regex]::Matches(
+    $sidebar.Value,
+    '<b:TimerTrigger EventName="SelectionChanged"[\s\S]*?</b:TimerTrigger>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+))
+if ($sidebarSelectionTimers.Count -ne 0) {
+    throw "The sidebar must not duplicate game-owned cost preview on SelectionChanged."
 }
 
 Write-Host "Native HUD cost feedback / resting upper tab contract passed."
