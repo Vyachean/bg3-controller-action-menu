@@ -2327,12 +2327,8 @@
                                          selection is not a second focus authority. -->
                                     <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
                                                             PropertyName="Content"
-                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList, Converter={StaticResource NullToBoolTrueConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                            Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
@@ -2356,6 +2352,14 @@
                                     <b:ChangePropertyAction TargetName="ActionRadials"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
+                                    <!-- Only the native focus-committed executable slot may
+                                         supply an actionable tooltip. Never preview a new
+                                         slot while UIAccept still has a null/old Tag. -->
+                                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=CAM_FixedSideBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=CAM_FixedSideBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=CAM_FixedSideBarList}"/>
                                      <b:InvokeCommandAction Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -2525,12 +2529,8 @@
                                     </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
                                     <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
                                                             PropertyName="Content"
-                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolFalseConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction IsEnabled="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList, Converter={StaticResource NullToBoolTrueConverter}}"
-                                                           Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                            Value="{x:Null}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
@@ -2551,6 +2551,14 @@
                                     <b:ChangePropertyAction TargetName="ActionRadials"
                                                             PropertyName="Tag"
                                                             Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
+                                    <!-- Only the native focus-committed executable slot may
+                                         supply an actionable tooltip. Never preview a new
+                                         slot while UIAccept still has a null/old Tag. -->
+                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
+                                                            PropertyName="Content"
+                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
+                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
+                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
                                     <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                     <b:InvokeCommandAction
