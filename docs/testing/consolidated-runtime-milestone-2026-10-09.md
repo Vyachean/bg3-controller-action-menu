@@ -50,13 +50,23 @@ or ad-hoc action/spell calculation.
 
 Use the **Build package GitHub Actions artifact from the exact
 PR commit**; never mistake the latest published release for PR code.
-Before the session, record PR SHA, workflow run ID, PAK SHA-256, Xbox App
-build version, installed mod version, and whether conflicting ActionRadials
-UI overrides are active. Do not modify the game files to instrument
-Noesis. The current one-click VBS fetches **published latest**, not
-necessarily a draft PR artifact; it is NOT evidence that PR #193 is
-running. The game test must not start until the exact candidate PAK can
-be installed and identified by an approved development path.
+The workflow now uploads a run-unique artifact named
+`BG3ControllerActionMenu-<VERSION>-run-<workflowRunId>`
+with `build/candidate-identity.json` alongside the .pak. That manifest
+records the **PR source head SHA**, checked-out CI commit (possibly a
+synthetic PR merge), workflow event/run ID, version, PAK SHA-256 and size.
+Verify the candidate PAK's SHA-256 against the manifest *after download*.
+The manifest proves build artifact provenance, **not** that BG3 loaded
+this .pak.
+
+Before the session, also record Xbox App build version, actual installed
+package identity, installed mod version, and whether competing
+ActionRadials UI overrides are active. Do not modify the game files
+to instrument Noesis. The current one-click VBS fetches **published
+latest**, not necessarily a draft PR artifact; it is NOT evidence
+that PR #193 is running. The game test must not start until the exact
+candidate PAK can be installed and identified by an approved
+development path.
 
 ## One-session observation matrix
 
