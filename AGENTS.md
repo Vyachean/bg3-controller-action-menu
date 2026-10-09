@@ -32,6 +32,10 @@ The primary runtime target includes the **Xbox App / Microsoft Store PC build**,
 8. **Milestone game tests only.**
    In-game testing should be requested only when a build crosses a runtime proof boundary that cannot be established statically. Do not ask the user to validate one speculative binding/layout hypothesis per build. First exhaust current game-file inspection, public Patch 8 resources, deterministic fixtures and package checks; then combine remaining runtime-only questions into one high-information run.
 
+## 2026-10-09 footer safe-area correction (#167)
+
+The operator's latest in-game run reproduces a historical 0.0.35 defect: horizontal **centering** of `ButtonHintsContainer` overlaps the original center-bottom action-resource HUD. This overrides the old generic instruction below to preserve the centered variant unchanged. Retain all original native controller button styles, commands, input glyphs, visibility rules and `Width=Auto` compact variant, but place the panel back in the **game-owned right-side hint lane** (`HorizontalAlignment=Right`, `HorizontalContentAlignment=Right`, `FlowDirection=RightToLeft`) with a bounded `MaxWidth`, not a giant 1000px child or centered 1320px row. The width cap is a source-level proposal, not in-game proof at all UI scales. Never rebind `UISelectionLeft`, remap D-pad, or introduce another input shortcut to fix overlapping hints. One combined game run after an actual published Release is the only runtime acceptance route. See #167.
+
 ## Functional parity is not original radial layout parity (2026-10-08)
 
 The operator requires full gameplay-capability parity with BG3, not preservation of the player-configured original radial layout. An **Original Radials** tab or runtime dependence on manually configured `ControllerHotBars` is rejected. Inspect `ControllerHotBars` as independent reference evidence only. CAM must discover available actions automatically from verified BG3-owned executable slot providers and retain native global controller functions, rather than relying on assigned original radial slots.
