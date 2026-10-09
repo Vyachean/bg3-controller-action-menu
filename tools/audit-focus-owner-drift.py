@@ -135,7 +135,7 @@ def inspect(source: str) -> dict:
         "observedImmediateNullPublishers": immediate_null,
         "observedDelayedSlotPublishers": deferred_slot,
         "sourceRisks": problems,
-        "singlePublisherProven": not problems,
+        "candidateSourceOwnershipShape": not problems,  # DOES NOT PROVE native focus/exclusivity
     }
 
 
@@ -203,7 +203,7 @@ def self_test() -> None:
     assert report["observedImmediateNullPublishers"] == ["HotBarList"]
     assert report["observedDelayedSlotPublishers"] == ["HotBarList"]
     assert len(report["selectedItemTriggeredFocusRequests"]) == 1
-    assert not report["singlePublisherProven"] and not report["runtimeAccepted"]
+    assert not report["candidateSourceOwnershipShape"] and not report["runtimeAccepted"]
     atomic = sample.replace(
         '<b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>',
         '<b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" '
@@ -222,7 +222,7 @@ def self_test() -> None:
     )
     result = inspect(atomic)
     assert not result["sourceRisks"], result["sourceRisks"]
-    assert result["singlePublisherProven"]
+    assert result["candidateSourceOwnershipShape"]
     assert result["runtimeAccepted"] is False  # source-only clean is not gameplay proof
     lost_accept = atomic.replace('BoundEvent="UIAccept"', 'BoundEvent="Unknown"')
     assert "page-level UIAccept" in inspect(lost_accept)["sourceRisks"][0]
@@ -252,7 +252,7 @@ def main() -> int:
             print(f"Native source proof FAILED: {exc}", file=sys.stderr)
             return 1
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    if args.require_single_owner and not report["singlePublisherProven"]:
+    if args.require_single_owner and not report["candidateSourceOwnershipShape"]:
         print("SOURCE ownership risks present; compiled BG3 behavior still unknown",
               file=sys.stderr)
         return 2
