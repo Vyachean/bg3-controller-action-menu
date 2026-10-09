@@ -6,6 +6,21 @@ Build a controller-first replacement for Baldur's Gate 3 action radials.
 
 The primary runtime target includes the **Xbox App / Microsoft Store PC build**, so the shipping mod must work as a normal BG3 `.pak` without third-party runtime injection.
 
+## Active verification policy (2026-10-09; overrides stale historical test instructions below)
+
+Keep CI fast and honest: preflight the package inputs, compile/package with Divine,
+round-trip extract and hash-check the actual .pak, and test installer packaging
+and mock deployment. **Never gate an architectural gameplay change on exact
+XAML attributes, timers, names, SelectedIndex/Focusable constants or text
+fragments from a previous unsuccessful implementation.** These tests
+previously preserved runtime-broken behavior. Static checks do not execute
+Noesis or Baldur's Gate 3 and cannot certify controller focus, B, metamagic,
+upcast, footer positioning or weapon hold. Use optional source-inventory tools
+for research only; neither a green check nor a candidate warrants release.
+Request a game test only at an informative, consolidated milestone.
+No Script Extender, DLL, native loader, or install-time game XAML extraction
+in the shipped PAK. Normal merge commits only; never rebase or squash.
+
 ## Non-negotiable architecture rules
 
 1. **BG3 remains the source of truth.**
