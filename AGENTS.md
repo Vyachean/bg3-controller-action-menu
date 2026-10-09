@@ -85,6 +85,26 @@ Do not close #158, suppress the native IV picker, or ship another
 micro-release based only on source tests. Include this in the next
 single consolidated game milestone.
 
+## v0.0.115 combined runtime milestone (2026-10-09)
+
+The three distinct, source-backed improvements merged since the
+operator's published v0.0.114 test are bundled **once** for the next
+gameplay observation: #182 concrete metamagic first-slot focus,
+#183 original compact controller-hint order in a separate right HUD
+lane, and #186 one native metamagic-parent
+`ActionCancelCommand` before CAM presentation reset.
+See `docs/research/v0115-consolidated-native-input-milestone-2026-10-09.md`.
+
+`VERSION=0.0.115-consolidated-native-input` is a normal release:
+the one-off `CAM_StateProbePanel` was completely retired from
+shipping XAML as mandated by `tools/audit-state-probe.py`.
+Static/PAK/installer/release validation proves only source mechanics.
+Native metamagic transaction cleanup and Noesis focus, footer
+pixel alignment and weapon hold remain **runtime UNVERIFIED**.
+The compatible-only spell provider and IV-level-specific casting
+are **not repaired** and must remain open.
+One consolidated in-game session, no serial micro-releases.
+
 ## v0.0.114 temporary diagnostic release exception (#176)
 
 The one published diagnostic milestone may include the **read-only**,
