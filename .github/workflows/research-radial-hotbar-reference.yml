@@ -34,7 +34,7 @@ jobs:
               r"ActiveContainer|IsController|radial|wheel|Serialize|Deserialize",
               re.I,
           )
-          allowed = {".lua", ".md", ".json", ".toml", ".yml", ".yaml", ".txt", ".xml", ".lsx"}
+          allowed = {".lua", ".tl", ".md", ".json", ".toml", ".yml", ".yaml", ".txt", ".xml", ".lsx"}
           hits = 0
           for path in sorted(p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in allowed):
               try:
