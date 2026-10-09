@@ -588,3 +588,10 @@ The next game milestone should answer the remaining semantic equality questions 
 run: whether the union of CAM providers contains representative free, item/scroll/charge,
 temporary and recast actions, and whether ItemHotBar covers the relevant radial
 `Inventory.Slots` cases, in addition to the already proven resource-bound/nested cases.
+
+
+## 2026-10-09 draft — right-side controller hint safe area (#167)
+
+The user confirms the compact **centered** footer still overlays the original BG3 bottom resource bar. Historical 0.0.35 evidence already recorded the same center-bottom collision and 0.0.36 restored the original right-hand lane. The current candidate preserves the BG3 native `ButtonHint.Container.CenterWrap` style, gamepad glyphs, `ControllerHoldButtonStyle`, `SwitchWeaponSetCommand`, `ReleaseConcentrationCommand`, `ToggleDualWieldingCommand`, A/B, the six compact `Width=Auto` hint elements and exact original `Margin=26,0,26,56`, but restores the original controller's right/right/RightToLeft anchor. A 380px maximum width prevents the container from sprawling across the center-bottom resource HUD; unlike the original radial, no child is given a 1000px width.
+
+This is a **source/CI-only layout candidate**. Exact no-collision proof at 1080p and other UI scales is not possible from XAML alone. It does not address actual `UISelectionLeft` hold duration or repeatability (#154); do not claim haptics, timing, or global off-menu hint fixed. Include footer positioning and repeated weapon switches in the single post-Release gameplay milestone.
