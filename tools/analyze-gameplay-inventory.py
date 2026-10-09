@@ -45,10 +45,10 @@ def possible_key(entry: dict | None) -> tuple | None:
 def analyze(report: dict) -> dict:
     errors = []
     snapshots = report.get("Snapshots")
-    if report.get("SchemaVersion") != 1 or not isinstance(snapshots, list) or not snapshots:
+    if report.get("SchemaVersion") not in (1, 2) or not isinstance(snapshots, list) or not snapshots:
         return {
             "status": "invalid-or-empty",
-            "errors": ["missing schema-1 gameplay inventory snapshots"],
+            "errors": ["missing schema-1/2 gameplay inventory snapshots"],
             "snapshots": [],
             "realExecutableIdentityParityProven": False,
         }
@@ -86,6 +86,56 @@ def analyze(report: dict) -> dict:
                 "focusedNativeVmEvidence": possible_key(value),
                 "itemsCount": (info.get("Items") or {}).get("Count"),
             }
+        selected_resource = snapshot.get("CamSelectedResource") or {}
+        selected_action_resource = selected_resource.get("ActionResource") or {}
+        selected_type = selected_action_resource.get("TypeId")
+        selected_level = selected_action_resource.get("Level")
+        upcast_trace = snapshot.get("NativeFilterAndUpcast") or {}
+        current_filter = upcast_trace.get("CurrentSingleHotbarFilter")
+        current_active_slot = upcast_trace.get("CurrentActiveSlot") or {}
+        current_active_content = upcast_trace.get("CurrentActiveSlotContent") or {}
+        native_variants = upcast_trace.get("NativeSpellUpcastVariants") or {}
+        variant_items = native_variants.get("Items") or []
+        variant_levels = []
+        for item in variant_items:
+            level = (item.get("Value") or {}).get("SpellSlotLevel")
+            if level is None:
+                level = (item.get("Content") or {}).get("SpellSlotLevel")
+            if level is not None:
+                variant_levels.append(str(level))
+        filtered_slots = native.get("SingleHotBar.SlotList") or {}
+        filtered_level_candidates = []
+        for item in filtered_slots.get("Items") or []:
+            content = item.get("Content") or {}
+            level = content.get("SpellSlotLevel")
+            if level is not None:
+                filtered_level_candidates.append({
+                    "sourceIndex": item.get("SourceIndex"),
+                    "spellSlotLevel": str(level),
+                    "identity": possible_key(item),
+                })
+        level_match_count = (
+            sum(1 for item in filtered_level_candidates if item["spellSlotLevel"] == str(selected_level))
+            if selected_level is not None else None
+        )
+        upcast_observation = {
+            "selectedResourceTypeId": selected_type,
+            "selectedResourceLevel": selected_level,
+            "currentSingleHotbarFilter": current_filter,
+            "currentActiveSlotIdentity": possible_key({"Value": current_active_slot, "Content": current_active_content}),
+            "currentActiveContentSpellSlotLevel": current_active_content.get("SpellSlotLevel"),
+            "nativeUpcastVariantLevels": variant_levels,
+            "filteredSlotsWithSpellSlotLevel": filtered_level_candidates,
+            "filteredSelectedLevelMatchCount": level_match_count,
+            "safeAutomaticVariantSelectionProven": False,
+        }
+        if selected_level is not None and level_match_count == 0:
+            caveats.append("selected resource level has no visible level-specific filtered slot in this snapshot")
+        if selected_level is not None and level_match_count and level_match_count > 1:
+            caveats.append("selected resource level maps to multiple filtered slots; level alone is non-unique")
+        if selected_type and variant_levels and selected_level is not None:
+            caveats.append("native upcast levels observed, but resource-family identity of variants remains unproven")
+
         source_route = MODE_TO_REFERENCE.get(mode)
         mismatch = None
         if source_route and not snapshot.get("NestedFlags", {}).get("IsShowingAContainerWithVariants") and not snapshot.get("NestedFlags", {}).get("IsSelectingUpcastedSpell") and not snapshot.get("NestedFlags", {}).get("IsShowingItemsToThrow"):
@@ -112,6 +162,7 @@ def analyze(report: dict) -> dict:
             "id": id_, "mode": mode, "nativeSourceCounts": observed,
             "selectedProviderCountMismatch": mismatch, "focus": focus,
             "rawItemsWithPotentialNativeIds": samples,
+            "upcastObservation": upcast_observation,
             "caveats": caveats,
         })
     return {
@@ -119,13 +170,13 @@ def analyze(report: dict) -> dict:
         "snapshots": summaries,
         "errors": errors,
         "realExecutableIdentityParityProven": False,
-        "nextProof": "Compare executable VMHotBarSlot identity with independent raw radial/keyboard action identity using a verified BG3-owned identity adapter. Never infer this from name/icon.",
+        "nextProof": "Compare the exact level/resource-specific executable VMHotBarSlot produced by keyboard versus controller DCHotBar. Never infer automatic variant choice from name/icon or SpellSlotLevel alone.",
     }
 
 
 def fixtures() -> list[str]:
     base = {
-        "SchemaVersion": 1, "RequiresNativeExecutableIdentityAdapter": True,
+        "SchemaVersion": 2, "RequiresNativeExecutableIdentityAdapter": True,
         "Snapshots": [{
             "Id": 1, "CamModeMarker": "CAM_ItemsMode",
             "SourceCatalogComplete": True,
@@ -139,7 +190,18 @@ def fixtures() -> list[str]:
                 "HotBarList": {"Found": True, "IsEnabled": True, "LocalFocus": {"ActionId": "attack"},
                                "Items": {"Count": 2}},
                 "CAM_FixedSideBarList": {"Found": True, "IsEnabled": False, "Items": {"Count": 0}}
-            }, "NestedFlags": {},
+            },
+            "CamSelectedResource": {"ActionResource": {"TypeId": "SpellSlot", "Level": 4}},
+            "NativeFilterAndUpcast": {
+                "CurrentSingleHotbarFilter": "Spell Slot IV",
+                "CurrentActiveSlot": {"SlotType": "Spell"},
+                "CurrentActiveSlotContent": {"SpellId": "Fireball", "SpellSlotLevel": 4},
+                "NativeSpellUpcastVariants": {
+                    "Items": [{"Value": {"SpellSlotLevel": 4}}],
+                    "Count": 1, "Observed": 1, "Complete": True
+                }
+            },
+            "NestedFlags": {},
         }]
     }
     problems = []
@@ -158,6 +220,9 @@ def fixtures() -> list[str]:
         problems.append("unsafe action-name-only identity was accepted")
     if possible_key({"Content": {"SpellId": "Fireball", "SpellSlotLevel": 2}}) == possible_key({"Content": {"SpellId": "Fireball", "SpellSlotLevel": 3}}):
         problems.append("resource-distinct spell variants were merged")
+    observed = analyze(base)["snapshots"][0]["upcastObservation"]
+    if observed["selectedResourceLevel"] != 4 or observed["safeAutomaticVariantSelectionProven"] is not False:
+        problems.append("upcast observation lost selected level or incorrectly proved automatic variant selection")
     return problems
 
 
