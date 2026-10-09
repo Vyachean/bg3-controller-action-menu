@@ -159,6 +159,36 @@ messages and noninteractive overlay; it does not imply that button holds
 fire repeatedly in the Xbox App runtime. Verify feedback and repeatability
 during the next combined gameplay milestone, not as a standalone user test.
 
+## Native opening direction selects first or last automatic tab
+
+The Xbox App 1.8.910.0 installed controller state machine has two distinct
+open events: `OpenActionRadials` (normal) and `OpenActionRadialsEnd` (sets
+`ActionRadials.Metadata="MoveToEnd"`). Original
+`Mods/MainUI/GUI/Pages/ActionRadials.xaml:42–65` responds on `Loaded`:
+non-`MoveToEnd` begins at the first entry, `MoveToEnd` begins at the last.
+
+CAM preserves this **opening-only** behavior without editing native
+`ActionRadials.xaml` or the controller state machine:
+
+- RB/normal opening: the first native `ActionResourcesCostPreview` resource
+  tab and its regular `FilterActionResourceCommand` provider.
+- LB/`MoveToEnd` opening: the always-rightmost `All` tab, selected via
+  `CAM_ProviderModeMarker.Tag=CAM_AllModeToken`, which uses the existing
+  grouped `KeyboardHotBars[*].SlotList` fallback. It is **not** the last
+  resource value in the strip (additional Cantrips, Items, Metamagic,
+  Passives and All tabs follow the native resource previews).
+
+Normal `CallAllies` metadata is not `MoveToEnd` and keeps its original
+first-entry behavior. A pre-existing 70 ms selected-item focus handoff
+continues to focus the **first executable slot in the selected provider**;
+choosing the last tab does not mean choosing the last action in it.
+
+Do not change shoulder navigation while the menu is open, tab order,
+native automatic sources, nested action selection, or `UseSlotCommand`.
+Static CI verifies both mutually exclusive `Loaded` branches and the
+existing initial focus timer; actual direction-sensitive opening is a
+combined in-game regression check, not a standalone operator test.
+
 ## Identity boundary
 
 Coverage is about executable BG3 objects, not names or icons.
