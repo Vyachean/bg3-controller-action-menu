@@ -1131,6 +1131,10 @@
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <!-- Force a real IsSelected transition even if the previous
+                         provider already had first index selected. Otherwise the
+                         token-guarded focus request may never run. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
@@ -1145,6 +1149,10 @@
                         </b:ConditionBehavior>
                     </b:Interaction.Behaviors>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <!-- Force a real IsSelected transition even if the previous
+                         provider already had first index selected. Otherwise the
+                         token-guarded focus request may never run. -->
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker" PropertyName="Tag" Value="{x:Null}"/>
                 </b:DataTrigger>
@@ -1903,6 +1911,7 @@
                                 <b:TimerTrigger EventName="Loaded" MillisecondsPerTick="70" TotalTicks="1">
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
                                     <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
                                 </b:TimerTrigger>
                             </b:Interaction.Triggers>
@@ -2503,34 +2512,9 @@
                                                            CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
                                 </b:TimerTrigger>
 
-                                <!-- Programmatic tab entry changes SelectedIndex first, then the selected
-                                     concrete container performs deferred SetMoveFocusAction. Wake presentation
-                                     one tick later, but only from the LocalFocus that actually won navigation. -->
-                                <b:TimerTrigger EventName="SelectionChanged" MillisecondsPerTick="70" TotalTicks="1">
-                                    <b:Interaction.Behaviors>
-                                        <b:ConditionBehavior>
-                                            <b:ConditionalExpression>
-                                                <b:ComparisonCondition LeftOperand="{Binding LocalFocus.DataContext, ElementName=HotBarList}"
-                                                                       Operator="NotEqual"
-                                                                       RightOperand="{x:Null}"/>
-                                                <b:ComparisonCondition LeftOperand="{Binding IsEnabled, ElementName=HotBarList}" Operator="Equal" RightOperand="{StaticResource TrueValue}"/>
-                                            </b:ConditionalExpression>
-                                        </b:ConditionBehavior>
-                                    </b:Interaction.Behaviors>
-                                    <b:ChangePropertyAction TargetName="CAM_ActionTooltip"
-                                                            PropertyName="Content"
-                                                            Value="{Binding LocalFocus.DataContext.Content, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding ShowTooltipOnUIElementCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding ., ElementName=HotBarList}"/>
-                                    <b:ChangePropertyAction TargetName="ActionRadials"
-                                                            PropertyName="Tag"
-                                                            Value="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction Command="{Binding DataContext.CreateFocusedTooltipDataCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                    <b:InvokeCommandAction
-                                                           Command="{Binding DataContext.HighlightResourcesCommand, RelativeSource={RelativeSource AncestorType={x:Type ls:UIWidget}}}"
-                                                           CommandParameter="{Binding LocalFocus.DataContext, ElementName=HotBarList}"/>
-                                </b:TimerTrigger>
+                                <!-- A selection event is not a focus commit. Only
+                                     LocalFocusChanged may publish ActionRadials.Tag;
+                                     if focus has not moved, UIAccept stays fail-closed. -->
                             </b:Interaction.Triggers>
                         </ls:LSListBox>
 
