@@ -798,6 +798,72 @@ def validate_native_shoulder_entry_tabs(runtime: str) -> list[str]:
     return []
 
 
+
+def validate_native_resource_name(runtime: str) -> list[str]:
+    """Show the selected native VMActionResourceCostPreview resource name.
+
+    A one-letter icon is not a type contract. BG3 Tooltips.xaml:8253
+    already uses ActionResource.Name, so do not hardcode Reaction or
+    construct a second resource classification.
+    """
+    try:
+        root = ET.fromstring(runtime)
+    except ET.ParseError as exc:
+        return [f"cannot inspect native resource label in invalid CAM XAML: {exc}"]
+
+    def local(node: ET.Element) -> str:
+        return node.tag.rsplit("}", 1)[-1]
+
+    def named(name: str) -> list[ET.Element]:
+        return [node for node in root.iter()
+                if _attribute(node.attrib, "Name") == name]
+
+    label = named("CAM_SelectedResourceName")
+    strip = named("CAM_ResourceStrip")
+    tabs = named("CAM_ResourceTabs")
+    if len(label) != 1 or len(strip) != 1 or len(tabs) != 1:
+        return ["resource label requires existing resource tabs and strip"]
+
+    node = label[0]
+    if local(node) != "TextBlock" or node not in list(strip[0]):
+        return ["native selected resource name must remain a visual strip overlay"]
+
+    required = {
+        "Text": "{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}",
+        "IsHitTestVisible": "False",
+        "Focusable": "False",
+        "VerticalAlignment": "Top",
+    }
+    if any(_attribute(node.attrib, k) != v for k, v in required.items()):
+        return ["native selected resource name must be game-owned and noninteractive"]
+
+    styles = [x for x in node if local(x) == "TextBlock.Style"]
+    if len(styles) != 1:
+        return ["native resource label must hide on non-resource modes"]
+
+    guard = [
+        trigger for trigger in styles[0].iter()
+        if local(trigger) == "DataTrigger"
+        and _attribute(trigger.attrib, "Binding")
+            == "{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}"
+        and _attribute(trigger.attrib, "Value") == "True"
+        and any(local(setter) == "Setter"
+                and _attribute(setter.attrib, "Property") == "Visibility"
+                and _attribute(setter.attrib, "Value") == "Collapsed"
+                for setter in trigger)
+    ]
+    if len(guard) != 1:
+        return ["native selected resource name must disappear on special tabs"]
+
+    if _attribute(strip[0].attrib, "Height") != "84":
+        return ["resource name must not resize the native tab strip"]
+
+    if not any(_attribute(n.attrib, "Name") == "CAM_HotbarBodyResourcesBg"
+               for n in strip[0]):
+        return ["resource label must not replace the original BG3 resource icons"]
+    return []
+
+
 def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinned: dict) -> dict:
     errors: list[str] = []
     groups = manifest.get("classification", {})
@@ -837,6 +903,7 @@ def evaluate(manifest: dict, runtime: str, capture: dict[str, str] | None, pinne
     errors.extend(validate_native_weapon_switch(runtime))
     errors.extend(validate_native_compact_footer(runtime))
     errors.extend(validate_native_shoulder_entry_tabs(runtime))
+    errors.extend(validate_native_resource_name(runtime))
     errors.extend(validate_native_throw_world_exit(runtime))
     errors.extend(validate_native_toggle_notifications(runtime))
 
@@ -1059,6 +1126,22 @@ def main() -> int:
         if not any("70ms first-slot focus" in err
                    for err in validate_native_shoulder_entry_tabs(wrong_open_focus)):
             report["errors"].append("self-test failed: opening direction focus race not rejected")
+        substituted_resource_name = runtime.replace(
+            'Text="{Binding SelectedItem.ActionResource.Name, ElementName=CAM_ResourceTabs}"',
+            'Text="Reaction"',
+            1,
+        )
+        if not any("game-owned and noninteractive" in err
+                   for err in validate_native_resource_name(substituted_resource_name)):
+            report["errors"].append("self-test failed: hardcoded resource name not rejected")
+        unguarded_resource_name = runtime.replace(
+            'Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}" Value="True"',
+            'Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker, Converter={StaticResource NullToBoolFalseConverter}}" Value="False"',
+            1,
+        )
+        if not any("disappear on special tabs" in err
+                   for err in validate_native_resource_name(unguarded_resource_name)):
+            report["errors"].append("self-test failed: special-tab resource label leak not rejected")
         removed_summon_source = runtime.replace(
             'Value="{Binding SummonHotBar.SlotList}"',
             'Value="{Binding SingleHotBar.SlotList}"',
