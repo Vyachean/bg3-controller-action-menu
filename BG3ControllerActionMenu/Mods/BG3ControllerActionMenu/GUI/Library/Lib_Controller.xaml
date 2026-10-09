@@ -49,6 +49,7 @@
     <System:String x:Key="CAM_ItemsModeToken">CAM_ItemsMode</System:String>
     <System:String x:Key="CAM_AllModeToken">CAM_AllMode</System:String>
     <System:String x:Key="CAM_MetamagicModeToken">CAM_MetamagicMode</System:String>
+    <System:String x:Key="CAM_MetamagicSpellPhaseToken">CAM_MetamagicSpellPhase</System:String>
     <System:String x:Key="CAM_PassivesModeToken">CAM_PassivesMode</System:String>
     <System:String x:Key="CAM_CantripFilterParameter">h7d02199dg44ecg4a1egbcacg9cc1cec197b3</System:String>
 
@@ -847,6 +848,11 @@
                      IsEnabled="False"
                      Focusable="False"
                      Tag="{x:Null}"/>
+            <Control x:Name="CAM_MetamagicSpellPhaseMarker"
+                     Visibility="Collapsed"
+                     IsEnabled="False"
+                     Focusable="False"
+                     Tag="{x:Null}"/>
             <ls:LSButton x:Name="CAM_ProviderRestoreCommand"
                          Visibility="Collapsed"
                          IsEnabled="False"
@@ -933,6 +939,45 @@
                                            FocusElement="{Binding ElementName=CAM_FixedSideBarList}"
                                            DeferFocusAction="True"/>
                 </b:DataTrigger>
+                <!-- Native MetamagicActive is the game-owned action result.
+                     Metamagic remains in the same provider; only focus input
+                     moves from the sidebar VMHotBarSlot to the real spell grid. -->
+                <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}">
+                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}" Operator="Equal" RightOperand="True"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{x:Null}"/>
+                        <b:ComparisonCondition LeftOperand="{Binding IsShowingAContainerWithVariants}" Operator="Equal" RightOperand="False"/>
+                        <b:ComparisonCondition LeftOperand="{Binding IsSelectingUpcastedSpell}" Operator="Equal" RightOperand="False"/>
+                        <b:ComparisonCondition LeftOperand="{Binding IsShowingItemsToThrow}" Operator="Equal" RightOperand="False"/>
+                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="ActionRadials" PropertyName="Tag" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="CAM_FixedSideBarTooltip" PropertyName="Content" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="LocalFocus" Value="{x:Null}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="Tag" Value="{StaticResource CAM_ResetFirstFocusToken}"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="-1"/>
+                    <b:ChangePropertyAction TargetName="HotBarList" PropertyName="SelectedIndex" Value="0"/>
+                    <ls:SetMoveFocusAction TargetName="ActionRadials" FocusElement="{Binding ElementName=HotBarList}" DeferFocusAction="True"/>
+                </b:PropertyChangedTrigger>
+                <!-- Clear this presentation phase if the game ends the active
+                     metamagic or the user leaves its original top-level tab. -->
+                <b:PropertyChangedTrigger Binding="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}">
+                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding CurrentPlayer.SelectedCharacter.PlayerCharacterProperties.MetamagicActive}" Operator="Equal" RightOperand="False"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                </b:PropertyChangedTrigger>
+                <b:PropertyChangedTrigger Binding="{Binding Tag, ElementName=CAM_ProviderModeMarker}">
+                    <b:Interaction.Behaviors><b:ConditionBehavior><b:ConditionalExpression>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_ProviderModeMarker}" Operator="NotEqual" RightOperand="{StaticResource CAM_MetamagicModeToken}"/>
+                        <b:ComparisonCondition LeftOperand="{Binding Tag, ElementName=CAM_MetamagicSpellPhaseMarker}" Operator="Equal" RightOperand="{StaticResource CAM_MetamagicSpellPhaseToken}"/>
+                    </b:ConditionalExpression></b:ConditionBehavior></b:Interaction.Behaviors>
+                    <b:ChangePropertyAction TargetName="CAM_MetamagicSpellPhaseMarker" PropertyName="Tag" Value="{x:Null}"/>
+                </b:PropertyChangedTrigger>
                 <b:DataTrigger Binding="{Binding IsShowingAContainerWithVariants}" Value="True">
                     <b:ChangePropertyAction TargetName="CAM_NestedReturnMarker"
                                             PropertyName="Tag"
