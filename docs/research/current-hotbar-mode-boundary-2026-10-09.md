@@ -64,21 +64,40 @@ Therefore:
 - any conclusion learned through the surrogate probe must be re-grounded in a
   game-owned source seam before shipping.
 
-### 3. A Patch-8 controller mod was rewritten specifically to separate modes
+### 3. Patch-8 Radial Hotbar Customization source directly separates modes
 
-Radial Hotbar Customization v0.8.0.0 is marked Patch 8 compatible and its
-February 2026 changelog says its underlying data handling was overhauled to
-account for keyboard/mouse and controller radials separately:
-https://www.nexusmods.com/baldursgate3/mods/18194
-
-The author also reports that older versions could behave inconsistently because
-they could operate on data for the wrong UI mode. Source is published under
-Apache-2.0; tag `v0.8.0.0` points at GitLab commit `83950d75`:
+Radial Hotbar Customization v0.8.0.0 is marked Patch 8 compatible. Its
+Apache-2.0 source tag `v0.8.0.0` points at GitLab commit `83950d75`:
 https://gitlab.com/saghm/RadialHotbarCustomization/-/tags
 
-The GitLab source tree was not retrievable through the current tooling, so no
-specific Lua property or algorithm from this mod is treated as inspected.
-The author/changelog evidence corroborates the **mode boundary only**.
+The immutable tag archive was downloaded in a one-shot GitHub Actions research
+job without executing its code. The relevant source is explicit:
+
+- `src/entity.d.tl`: `Entity.HotbarContainer -> Containers.DefaultBarContainer`;
+- each `Bar` exposes `Elements`, `Index`, and `field_1`; the source comment
+  records observed `field_1=0` for keyboard/mouse hotbars and `field_1=1`
+  for controller radials;
+- `src/tl/Server/Player.tl`: `Player:Containers()` returns
+  `entity.HotbarContainer.Containers`; `ClearHotbars()` iterates
+  `DefaultBarContainer` and branches on `bar.field_1 == 0`;
+- `GetSerializedHotbars()` serializes the **whole**
+  `DefaultBarContainer`; restore unserializes it back and calls
+  `entity:Replicate("HotbarContainer")`;
+- `src/tl/Server/PersistentTypes.tl` maps numeric marker `0 -> "Hotbar"`,
+  `1 -> "Radial"`.
+
+This independently corroborates current BG3SE's controller marker and proves
+that the mod treats keyboard/mouse bars and controller radials as distinct
+**persisted hotbar-container state**. It also clarifies what this evidence is
+*not*: the source never exposes Larian's live `DCHotBar`,
+`FilterActionResourceCommand`, `SingleHotBar.SlotList` or the runtime
+`VMHotBarSlot` materialized after a resource filter. Therefore this source
+cannot justify using persisted `ControllerHotBars`/radial assignments as
+CAM's automatic catalog and cannot solve direct resource-IV upcast parity.
+
+The mod README also documents trouble with three-level radial selections when
+bars are locked. That corroborates that nested variant/upcast state interacts
+with radial persistence, but it is not an execution contract for CAM.
 
 ### 4. Auto-Sorting Hotbar independently added controller-radial support in 2026
 
